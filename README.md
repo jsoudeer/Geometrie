@@ -38,6 +38,14 @@ page isolée qui ne voit pas ce dépôt : pour que les images choisies y
 apparaissent aussi, il faut les faire republier explicitement dans cette
 page-là.
 
+## Écran de démarrage
+
+L'appli s'ouvre sur un écran de présentation ("Géo Miaou VS Geo Chaos 9000")
+avec un visuel chat kawaii / brainrot face à face, dessiné par le code (voir
+`drawSplashArt` dans `index.html`, même technique que les personnages). Un
+export fixe de ce visuel vit dans `assets/branding/splash-cat-vs-brainrot.svg`
+pour réutilisation hors appli (icône, réseaux, packaging futur).
+
 ## Suite prévue
 
 - Empaquetage en application Windows (Tauri) et Android (Capacitor), pour un

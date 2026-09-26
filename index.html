@@ -1,4 +1,5 @@
 <title>Géo Kawaii vs Brainrot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B1%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&family=Bungee&family=Rubik:wght@400;600;700;800&display=swap">
 <style>
@@ -311,6 +312,44 @@
     .shake{ animation:none; }
   }
 
+  /* ============ ÉCRAN DE DÉMARRAGE (splash) ============ */
+  .splash-overlay{
+    position:fixed; inset:0; z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    background:linear-gradient(160deg, #FFF6F0 0%, #FFE7EF 55%, #E9E1FF 100%);
+    transition:opacity .35s ease, visibility .35s ease;
+  }
+  .splash-overlay.splash-hide{ opacity:0; visibility:hidden; pointer-events:none; }
+  .splash-card{
+    background:#FFFFFF; border-radius:24px; box-shadow:0 24px 60px -20px rgba(91,64,52,.35);
+    padding:20px 22px 24px; max-width:360px; width:100%; text-align:center;
+    animation:splashPop .55s cubic-bezier(.2,1.2,.4,1);
+  }
+  .splash-art{
+    width:100%; max-width:300px; height:auto; border-radius:18px; overflow:hidden;
+    display:block; margin:0 auto 14px; box-shadow:0 6px 18px -8px rgba(0,0,0,.3);
+  }
+  .splash-title{ font-size:18.5px; line-height:1.35; color:#5B4034; margin-bottom:8px; }
+  .splash-vs-inline{
+    display:inline-block; background:#FFD24C; color:#5B4034; font-size:12px; font-weight:900;
+    border-radius:8px; padding:2px 7px; margin:0 3px; vertical-align:middle;
+  }
+  .splash-sub{ color:#9C7C6E; font-size:13px; line-height:1.55; margin:0 0 18px; }
+  .splash-start-btn{ width:100%; font-size:15.5px; padding:14px; }
+  @keyframes splashPop{
+    0%{ transform:scale(.86) translateY(14px); opacity:0; }
+    100%{ transform:scale(1) translateY(0); opacity:1; }
+  }
+  @media (prefers-reduced-motion: reduce){ .splash-card{ animation:none; } }
+
+  /* ============ TRANSITION D'ENTRÉE D'UNE NOUVELLE QUESTION ============ */
+  .qenter{ animation:qFadeIn .35s ease; }
+  @keyframes qFadeIn{
+    0%{ opacity:0; transform:translateY(6px); }
+    100%{ opacity:1; transform:translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){ .qenter{ animation:none; } }
+
   /* ============ MASCOTTE (buste en bas de l'écran) ============ */
   .mascot-dock{
     position:fixed; right:2vw; bottom:0;
@@ -474,6 +513,19 @@
 </style>
 
 <div class="app" id="app">
+  <!-- Écran de démarrage : présente le duo Chat kawaii / Brainrot avant
+       d'entrer dans l'appli (voir drawSplashArt). Un export fixe de ce
+       visuel vit aussi dans assets/branding/ pour réutilisation (icône,
+       README, packaging futur). -->
+  <div class="splash-overlay" id="splash-overlay">
+    <div class="splash-card">
+      <svg id="splashSvg" class="splash-art" viewBox="0 0 320 180"></svg>
+      <h1 class="splash-title">Géo Miaou <span class="splash-vs-inline">VS</span> Geo Chaos 9000</h1>
+      <p class="splash-sub">La géométrie CE1 comme un jeu : mesure, formes, quiz et bataille de personnages !</p>
+      <button class="btn primary splash-start-btn" id="splash-start-btn" type="button">Commencer à jouer ▶</button>
+    </div>
+  </div>
+
   <header class="topbar">
     <div class="brand">
       <span class="mascot" id="mascotIcon">🐱</span>
@@ -967,6 +1019,63 @@
     return e;
   }
   drawMascotBig(); // premier dessin, une fois svgNS/el() réellement assignés
+
+  /* ---- Écran de démarrage : duo chat kawaii / brainrot face à face ----
+     Couleurs volontairement écrites en dur (pas de var(--...)) : ce visuel
+     montre les DEUX univers à la fois, avant même le choix de thème, donc
+     il ne doit pas suivre le thème actif. Les mêmes tracés (dessinés à la
+     main, comme drawMascotBig) sont aussi exportés tels quels dans
+     assets/branding/splash-cat-vs-brainrot.svg pour réutilisation hors app. */
+  function drawSplashArt(svg){
+    if(!svg) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox','0 0 320 180');
+    svg.appendChild(el('rect',{x:0,y:0,width:160,height:180, fill:'#FFE7EF'}));
+    svg.appendChild(el('rect',{x:160,y:0,width:160,height:180, fill:'#1E1830'}));
+
+    var gCat = el('g',{transform:'translate(24,4) scale(0.62)'});
+    gCat.appendChild(el('path',{d:'M42,150 C42,108 158,108 158,150 L172,240 L28,240 Z', fill:'#FFB8CE', stroke:'#5B4034','stroke-width':4,'stroke-linejoin':'round'}));
+    // Tête ET oreilles dessinées AVANT le cercle de tête n'est pas assez :
+    // ici les oreilles sont tracées APRÈS le cercle pour garantir qu'elles
+    // ressortent bien nettement au-dessus de la tête, quelle que soit
+    // l'échelle utilisée (contrairement au dessin original, pensé pour une
+    // échelle 1:1 où seule la pointe dépasse).
+    gCat.appendChild(el('circle',{cx:100,cy:112,r:66, fill:'#FFB8CE', stroke:'#5B4034','stroke-width':4}));
+    gCat.appendChild(el('polygon',{points:'55,72 40,10 82,58', fill:'#FFB8CE', stroke:'#5B4034','stroke-width':4,'stroke-linejoin':'round'}));
+    gCat.appendChild(el('polygon',{points:'145,72 160,10 118,58', fill:'#FFB8CE', stroke:'#5B4034','stroke-width':4,'stroke-linejoin':'round'}));
+    gCat.appendChild(el('polygon',{points:'60,62 50,26 76,54', fill:'#FFD9E6'}));
+    gCat.appendChild(el('polygon',{points:'140,62 150,26 124,54', fill:'#FFD9E6'}));
+    gCat.appendChild(el('circle',{cx:56,cy:126,r:12, fill:'#FF9EB8','fill-opacity':0.6}));
+    gCat.appendChild(el('circle',{cx:144,cy:126,r:12, fill:'#FF9EB8','fill-opacity':0.6}));
+    gCat.appendChild(el('circle',{cx:78,cy:104,r:6, fill:'#2B2B2B'}));
+    gCat.appendChild(el('circle',{cx:122,cy:104,r:6, fill:'#2B2B2B'}));
+    gCat.appendChild(el('circle',{cx:80,cy:102,r:1.8, fill:'#fff'}));
+    gCat.appendChild(el('circle',{cx:124,cy:102,r:1.8, fill:'#fff'}));
+    svg.appendChild(gCat);
+
+    var gBrain = el('g',{transform:'translate(154,4) scale(0.62)'});
+    var bpts = [[100,26],[128,42],[162,36],[176,70],[164,104],[182,132],[152,152],[140,186],[100,196],
+      [60,186],[48,152],[18,132],[36,104],[24,70],[38,36],[72,42]];
+    gBrain.appendChild(el('path',{d:'M42,140 C42,108 158,108 158,140 L172,240 L28,240 Z', fill:'#8CF06B', stroke:'#F5F0FF','stroke-width':4,'stroke-linejoin':'round'}));
+    gBrain.appendChild(el('polygon',{points:bpts.map(function(p){return p[0]+','+p[1];}).join(' '), fill:'#8CF06B', stroke:'#F5F0FF','stroke-width':4,'stroke-linejoin':'round'}));
+    gBrain.appendChild(el('circle',{cx:70,cy:110,r:11, fill:'#fff'}));
+    gBrain.appendChild(el('circle',{cx:130,cy:112,r:8, fill:'#fff'}));
+    gBrain.appendChild(el('circle',{cx:73,cy:112,r:4.5, fill:'#2B2B2B'}));
+    gBrain.appendChild(el('circle',{cx:132,cy:114,r:3.2, fill:'#2B2B2B'}));
+    svg.appendChild(gBrain);
+
+    svg.appendChild(el('circle',{cx:160,cy:148,r:27, fill:'#FFD24C', stroke:'#5B4034','stroke-width':4}));
+    var vsText = el('text',{x:160,y:156,'text-anchor':'middle','font-size':21,'font-family':"'Baloo 2', sans-serif",'font-weight':'800',fill:'#5B4034'});
+    vsText.textContent = 'VS';
+    svg.appendChild(vsText);
+  }
+  drawSplashArt(document.getElementById('splashSvg'));
+  document.getElementById('splash-start-btn').addEventListener('click', function(){
+    var overlay = document.getElementById('splash-overlay');
+    overlay.classList.add('splash-hide');
+    setTimeout(function(){ overlay.hidden = true; }, 400);
+    playSound('good');
+  });
 
   function shuffle(arr){
     for(var i=arr.length-1;i>0;i--){
@@ -2240,6 +2349,11 @@
       } while(tries<30 && isColinear(pts));
       if(isColinear(pts)) pts = [{col:0,row:0},{col:1,row:0},{col:0,row:2}];
     }
+    // Forme et couleur du repère variées à chaque question (au lieu d'un
+    // rond rose systématique) : purement visuel, pour que l'exercice ne
+    // ressemble jamais deux fois de suite à la même image.
+    var markerShape = pick(MARKER_SHAPES);
+    var markerColor = pick(['var(--accent)','var(--accent2)','var(--accent3)']);
     return {
       tag:'Alignement',
       question:'Ces 3 points sont-ils alignés (sur une même droite) ?',
@@ -2248,7 +2362,7 @@
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         drawGridBase(svg);
-        pts.forEach(function(p){ drawPointMarker(svg,p.col,p.row,null,'var(--accent)'); });
+        pts.forEach(function(p){ drawShapeMarkerOnGrid(svg,p.col,p.row,markerShape,markerColor); });
       },
       cols3:false,
       choices: shuffle([{label:'Oui, alignés', ok:aligned},{label:'Non, pas alignés', ok:!aligned}])
@@ -2507,11 +2621,25 @@
   }
 
   // ===================== Symétrie =====================
+  // Le triangle isocèle change de taille, de position ET d'orientation
+  // (pointe en haut/bas/gauche/droite) à chaque question, au lieu d'être
+  // toujours rigoureusement le même dessin — seules les 3 droites candidates
+  // changeaient avant, ce qui rendait l'exercice très répétitif.
   function genSymAxeQuestion(){
+    var dir = pick(['up','down','left','right']);
+    var vertical = (dir==='up' || dir==='down');
+    var cx=100, cy=100;
+    var apexDist = 55+randInt(0,25), baseDist = 45+randInt(0,15), baseHalf = 32+randInt(0,22);
+    var apex, baseA, baseB;
+    if(dir==='up'){    apex=[cx,cy-apexDist]; baseA=[cx-baseHalf,cy+baseDist]; baseB=[cx+baseHalf,cy+baseDist]; }
+    else if(dir==='down'){ apex=[cx,cy+apexDist]; baseA=[cx-baseHalf,cy-baseDist]; baseB=[cx+baseHalf,cy-baseDist]; }
+    else if(dir==='left'){ apex=[cx-apexDist,cy]; baseA=[cx+baseDist,cy-baseHalf]; baseB=[cx+baseDist,cy+baseHalf]; }
+    else {             apex=[cx+apexDist,cy]; baseA=[cx-baseDist,cy-baseHalf]; baseB=[cx-baseDist,cy+baseHalf]; }
     var offset = 20+Math.floor(Math.random()*11);
-    var xs = [100-offset, 100, 100+offset];
+    var axisCoord = vertical ? cx : cy;
+    var coords = [axisCoord-offset, axisCoord, axisCoord+offset];
     var labels = shuffle(['1','2','3']);
-    var correctIdx = xs.indexOf(100);
+    var correctIdx = coords.indexOf(axisCoord);
     var correctLabel = labels[correctIdx];
     return {
       tag:'Symétrie',
@@ -2520,21 +2648,40 @@
       explain:'La droite ' + correctLabel + ' passe par la pointe et le milieu de la base : elle partage le triangle en deux parties identiques.',
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(el('polygon',{points:'100,40 150,165 50,165', fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4,'stroke-linejoin':'round'}));
-        xs.forEach(function(x,i){
-          svg.appendChild(el('line',{x1:x,y1:22,x2:x,y2:182,stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'6,5'}));
-          svg.appendChild(svgText(x,15,13,labels[i]));
+        svg.appendChild(el('polygon',{points:[apex,baseA,baseB].map(function(p){return p[0]+','+p[1];}).join(' '), fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4,'stroke-linejoin':'round'}));
+        coords.forEach(function(v,i){
+          if(vertical){
+            svg.appendChild(el('line',{x1:v,y1:22,x2:v,y2:182,stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'6,5'}));
+            svg.appendChild(svgText(v,15,13,labels[i]));
+          } else {
+            svg.appendChild(el('line',{x1:22,y1:v,x2:182,y2:v,stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'6,5'}));
+            svg.appendChild(svgText(14,v+4,13,labels[i]));
+          }
         });
       },
       cols3:true,
       choices: ['1','2','3'].map(function(l){ return { label:l, ok:l===correctLabel }; })
     };
   }
+  // Le rectangle change de taille à chaque question (jamais un carré : sinon
+  // la diagonale deviendrait un vrai axe, ce qui casserait la question), et
+  // les propositions "fausses" varient entre diagonale et droite décalée
+  // plutôt que toujours les 2 mêmes diagonales fixes.
   function genSymVraiQuestion(){
     var isAxis = Math.random()<0.5;
+    var w = 70+randInt(0,60);
+    var h; do{ h = 40+randInt(0,50); }while(Math.abs(w-h)<20); // jamais un carré
+    var rx = 100-w/2, ry = 100-h/2;
     var lc;
-    if(isAxis){ lc = Math.random()<0.5 ? {x1:100,y1:55,x2:100,y2:145} : {x1:30,y1:100,x2:170,y2:100}; }
-    else { lc = Math.random()<0.5 ? {x1:40,y1:70,x2:160,y2:130} : {x1:160,y1:70,x2:40,y2:130}; }
+    if(isAxis){
+      lc = Math.random()<0.5 ? {x1:100,y1:ry-15,x2:100,y2:ry+h+15} : {x1:rx-15,y1:100,x2:rx+w+15,y2:100};
+    } else {
+      var variant = pick(['diag1','diag2','offV','offH']);
+      if(variant==='diag1') lc = {x1:rx-10,y1:ry-10,x2:rx+w+10,y2:ry+h+10};
+      else if(variant==='diag2') lc = {x1:rx+w+10,y1:ry-10,x2:rx-10,y2:ry+h+10};
+      else if(variant==='offV') lc = {x1:rx+w*0.28,y1:ry-15,x2:rx+w*0.28,y2:ry+h+15};
+      else lc = {x1:rx-15,y1:ry+h*0.28,x2:rx+w+15,y2:ry+h*0.28};
+    }
     return {
       tag:'Symétrie',
       question:'Cette droite est-elle un axe de symétrie du rectangle ?',
@@ -2542,7 +2689,7 @@
       explain: isAxis ? 'Oui : en pliant le long de cette droite, les deux moitiés du rectangle se superposent.' : 'Non : cette droite ne partage pas le rectangle en deux parties identiques.',
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(el('rect',{x:40,y:70,width:120,height:60, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4}));
+        svg.appendChild(el('rect',{x:rx,y:ry,width:w,height:h, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4}));
         svg.appendChild(el('line',{x1:lc.x1,y1:lc.y1,x2:lc.x2,y2:lc.y2, stroke:'var(--text)','stroke-width':3,'stroke-dasharray':'6,5'}));
       },
       cols3:false,
@@ -3402,6 +3549,12 @@
     document.getElementById('practice-family-tag').textContent = FAMILY_TAGS[key];
     setCoachReaction('neutral');
     bounceMascotTalk();
+    // Petite transition d'entrée à chaque nouvelle question, pour une
+    // sensation plus soignée qu'un changement de contenu instantané.
+    var exWrap = document.getElementById('practice-exercise');
+    exWrap.classList.remove('qenter');
+    void exWrap.offsetWidth;
+    exWrap.classList.add('qenter');
   }
   function nextPracticeQuestion(){
     var key = (appMode==='manual' && manualFamily) ? manualFamily : pick(familyKeys());
