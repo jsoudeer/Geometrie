@@ -105,6 +105,31 @@
   }
   .settings-checkbox-row input{ width:18px; height:18px; accent-color:var(--accent); flex:none; }
 
+  /* ============ CONFIGURATION DES ACTIVITÉS (settings avancés) ============ */
+  .activity-config-panel{ max-width:520px; max-height:88vh; overflow-y:auto; }
+  .aconf-item{
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:12px;
+    padding:10px 12px; margin-bottom:8px;
+  }
+  .aconf-item-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    font-family:var(--font-display); font-weight:800; font-size:13.5px; margin-bottom:6px;
+  }
+  .aconf-level-toggles{ display:flex; gap:5px; flex:none; }
+  .aconf-level-btn{
+    border:1.5px solid var(--border); background:var(--surface); color:var(--text-soft);
+    font-family:var(--font-body); font-weight:800; font-size:11px;
+    border-radius:8px; padding:5px 8px; cursor:pointer; transition:all .15s;
+  }
+  .aconf-level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:#14121A; }
+  .aconf-note{ font-size:11.5px; color:var(--text-soft); line-height:1.45; margin:0; }
+  .aconf-static-card{
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:12px;
+    padding:12px 14px;
+  }
+  .aconf-static-card h3{ font-size:14px; margin-bottom:6px; }
+  .aconf-static-card p{ font-size:12.5px; color:var(--text-soft); line-height:1.55; margin:0; }
+
   /* ============ THEME SWITCH ============ */
   .theme-switch{
     display:flex; gap:8px; padding:4px; margin-bottom:14px;
@@ -482,6 +507,26 @@
         <p class="muted">Bonnes réponses d'affilée nécessaires :</p>
         <div class="level-row" id="auto-advance-count-row"></div>
       </div>
+
+      <hr class="settings-divider">
+
+      <button class="btn ghost" id="open-activity-config-btn" type="button" style="width:100%;">🎚️ Configurer les activités et leur difficulté</button>
+    </div>
+  </div>
+
+  <!-- Configuration avancée : liste de toutes les activités (et, pour Quizz
+       et Patron→Solide, leurs sous-types) avec les niveaux où chacune
+       apparaît actuellement, modifiables à la main, et une note expliquant
+       ce qui est tiré au hasard vs fixe pour chaque épreuve. -->
+  <div class="settings-overlay" id="activity-config-overlay" hidden>
+    <div class="settings-panel activity-config-panel">
+      <div class="settings-panel-head">
+        <h2>Activités &amp; difficulté</h2>
+        <button class="settings-close" id="activity-config-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <p class="muted">Pour Quizz et Patron→Solide, coche les niveaux où chaque épreuve doit apparaître (décoche pour la retirer d'un niveau, coche pour l'y ajouter). Les autres activités n'ont pas de sous-types : une note explique comment leur difficulté fonctionne.</p>
+      <div class="level-row" id="activity-config-family-row"></div>
+      <div id="activity-config-list"></div>
     </div>
   </div>
 
@@ -1518,10 +1563,33 @@
 
   var M3_ANSWER_LABELS = { cube:'Cube', pave:'Pavé droit', pyramide:'Pyramide', aucun:'Aucun solide' };
 
+  // Chaque patron ("épreuve" du module Patron→Solide) est déclaré une fois
+  // ici avec ses niveaux PAR DÉFAUT ; le panneau de réglages "Activités &
+  // difficulté" peut ensuite surcharger ces niveaux (voir netLevelOverrides
+  // / rebuildM3Pools plus bas dans l'orchestrateur), qui reconstruit alors
+  // M3_LEVELS[*].pool à partir de ces définitions.
+  var NET_DEFS = [
+    { id:'cross',        obj:NET_CROSS,        label:'Croix (6 faces en croix)',            defaultLevels:[0,1,2],
+      randomNote:'Le dessin de ce patron est toujours le même (fixe) ; c\'est seulement le CHOIX du patron parmi ceux du niveau qui est tiré au hasard. Se déplie en : Cube.' },
+    { id:'strip',        obj:NET_STRIP,        label:'Bande de 6 faces alignées',            defaultLevels:[0,1],
+      randomNote:'Patron fixe (toujours le même dessin) ; c\'est un piège, il ne se referme pas en solide. Se déplie en : Aucun solide.' },
+    { id:'staircase',    obj:NET_STAIRCASE,    label:'Escalier (faces en zigzag)',           defaultLevels:[1,2],
+      randomNote:'Patron fixe (toujours le même dessin). Se déplie en : Cube.' },
+    { id:'block2x3',     obj:NET_BLOCK2X3,     label:'Bloc 2×3',                             defaultLevels:[1,2],
+      randomNote:'Patron fixe (toujours le même dessin) ; c\'est un piège, il ne se referme pas en solide. Se déplie en : Aucun solide.' },
+    { id:'pave',         obj:NET_PAVE,         label:'Pavé droit (boîte rectangulaire)',     defaultLevels:[0,1,2],
+      randomNote:'Patron fixe (toujours le même dessin). Se déplie en : Pavé droit.' },
+    { id:'pyramid',      obj:NET_PYRAMID,      label:'Pyramide à base carrée',               defaultLevels:[0,1,2],
+      randomNote:'Patron fixe (toujours le même dessin). Se déplie en : Pyramide.' },
+    { id:'pyramid_trou', obj:NET_PYRAMID_TROU, label:'Pyramide avec un triangle manquant',   defaultLevels:[2],
+      randomNote:'Patron fixe (toujours le même dessin) ; c\'est un piège volontaire pour le niveau Difficile, il reste un trou. Se déplie en : Aucun solide.' }
+  ];
+  // pool rempli par rebuildM3Pools() (appelée après le chargement des
+  // éventuelles surcharges manuelles, voir plus bas) — jamais laissé vide.
   var M3_LEVELS = [
-    { name:'Facile',    pool:[NET_CROSS, NET_PAVE, NET_PYRAMID, NET_STRIP] },
-    { name:'Moyen',     pool:[NET_CROSS, NET_STAIRCASE, NET_PAVE, NET_PYRAMID, NET_STRIP, NET_BLOCK2X3] },
-    { name:'Difficile', pool:[NET_CROSS, NET_STAIRCASE, NET_PAVE, NET_PYRAMID, NET_PYRAMID_TROU, NET_BLOCK2X3] }
+    { name:'Facile',    pool:[] },
+    { name:'Moyen',     pool:[] },
+    { name:'Difficile', pool:[] }
   ];
 
   function foldRule(dx,dy){
@@ -1837,18 +1905,71 @@
     enigme:'Énigme', vie:'Maths de la vie'
   };
 
+  // Chaque type de question du Quizz (module 4) est déclaré une fois ici,
+  // avec ses niveaux PAR DÉFAUT (defaultLevels) et une note qui explique ce
+  // qui est tiré au hasard vs fixe pour ce type précis. Le panneau de
+  // réglages "Activités & difficulté" peut surcharger defaultLevels (voir
+  // typeLevelOverrides / rebuildM4Types plus bas dans l'orchestrateur), qui
+  // reconstruit alors M4_LEVELS[*].types à partir de ces définitions —
+  // qcmTypeLevels() (mode Manuel) lit donc toujours le résultat à jour.
+  var QCM_TYPE_DEFS = [
+    { id:'sides',        label:TYPE_LABELS.sides,        defaultLevels:[0,1,2],
+      randomNote:'La forme est tirée au hasard parmi celles autorisées à ce niveau ; son nombre de côtés en découle de façon fixe (ce n\'est pas lui qui est tiré, seule la forme l\'est).' },
+    { id:'vertices',     label:TYPE_LABELS.vertices,     defaultLevels:[0,1,2],
+      randomNote:'Même principe que "Côtés" : la forme est tirée au hasard, son nombre de sommets en découle de façon fixe.' },
+    { id:'name',         label:TYPE_LABELS.name,         defaultLevels:[0,1,2],
+      randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.' },
+    { id:'calc',         label:TYPE_LABELS.calc,         defaultLevels:[0,1,2],
+      randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".' },
+    { id:'align',        label:TYPE_LABELS.align,        defaultLevels:[0,1,2],
+      randomNote:'Les 3 points (alignés ou non) et leur disposition sont tirés au hasard à chaque question.' },
+    { id:'milieu',       label:TYPE_LABELS.milieu,       defaultLevels:[0,1,2],
+      randomNote:'La position du segment et les formes-repères sont tirées au hasard à chaque question.' },
+    { id:'coord',        label:TYPE_LABELS.coord,        defaultLevels:[0,1,2],
+      randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.' },
+    { id:'solideNom',    label:TYPE_LABELS.solideNom,    defaultLevels:[0,1,2],
+      randomNote:'Le solide est tiré au hasard parmi les 6 solides connus ; son nom (la réponse) en découle de façon fixe.' },
+    { id:'monnaie',      label:TYPE_LABELS.monnaie,      defaultLevels:[0,1,2],
+      randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.' },
+    { id:'heure',        label:TYPE_LABELS.heure,        defaultLevels:[0,1,2],
+      randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, n\'importe quelle tranche de 5 min en Difficile.' },
+    { id:'angle',        label:TYPE_LABELS.angle,        defaultLevels:[1,2],
+      randomNote:'La catégorie (droit/aigu/obtus) et la valeur en degrés sont tirées au hasard. C\'est le NIVEAU qui resserre l\'écart minimum autour de 90° (14° en Moyen, 7° en Difficile), rendant la distinction plus fine à l\'œil.' },
+    { id:'image',        label:TYPE_LABELS.image,        defaultLevels:[1,2],
+      randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.' },
+    { id:'coordFind',    label:TYPE_LABELS.coordFind,    defaultLevels:[1,2],
+      randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.' },
+    { id:'codage',       label:TYPE_LABELS.codage,       defaultLevels:[1,2],
+      randomNote:'Le point de départ et la suite de flèches (2 à 3 déplacements) sont tirés au hasard.' },
+    { id:'chasse',       label:TYPE_LABELS.chasse,       defaultLevels:[1,2],
+      randomNote:'Le nombre et la disposition des formes affichées sont tirés au hasard à chaque question.' },
+    { id:'symAxe',       label:TYPE_LABELS.symAxe,       defaultLevels:[1,2],
+      randomNote:'La position des 3 droites candidates est tirée au hasard ; le triangle est toujours isocèle, donc il y a toujours exactement un vrai axe de symétrie parmi elles (règle fixe).' },
+    { id:'solideCompte', label:TYPE_LABELS.solideCompte, defaultLevels:[1,2],
+      randomNote:'Le solide (cube/pavé/pyramide) et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant est ensuite fixe pour ce solide.' },
+    { id:'vie',          label:TYPE_LABELS.vie,          defaultLevels:[1,2],
+      randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes, puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.' },
+    { id:'decodage',     label:TYPE_LABELS.decodage,     defaultLevels:[2],
+      randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.' },
+    { id:'symVrai',      label:TYPE_LABELS.symVrai,      defaultLevels:[2],
+      randomNote:'La droite proposée (vrai axe ou non, et son orientation) est tirée au hasard à chaque question.' },
+    { id:'enigme',       label:TYPE_LABELS.enigme,       defaultLevels:[2],
+      randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 24 énigmes (texte non généré : toujours les mêmes formulations).' }
+  ];
+  // types rempli par rebuildM4Types() (appelée après le chargement des
+  // éventuelles surcharges manuelles, voir plus bas) — jamais laissé vide.
   var M4_LEVELS = [
     { name:'Facile',
       shapes:['triangle','carre','rectangle'],
-      types:['sides','vertices','name','calc','align','milieu','coord','solideNom','monnaie','heure'],
+      types:[],
       angleGap:20, calcModes:['add'], calcMax:10 },
     { name:'Moyen',
       shapes:['triangle','carre','rectangle','pentagone','hexagone','cercle'],
-      types:['sides','vertices','name','angle','image','calc','align','milieu','coord','coordFind','codage','chasse','symAxe','solideNom','solideCompte','monnaie','heure','vie'],
+      types:[],
       angleGap:14, calcModes:['add'], calcMax:20 },
     { name:'Difficile',
       shapes:['triangle','carre','rectangle','pentagone','hexagone','cercle','losange'],
-      types:['sides','vertices','name','angle','image','calc','align','milieu','coord','coordFind','codage','decodage','chasse','symAxe','symVrai','solideNom','solideCompte','monnaie','heure','enigme','vie'],
+      types:[],
       angleGap:7, calcModes:['add','missing'], calcMax:20 }
   ];
   var m4TypeFilter = 'random';
@@ -3074,6 +3195,134 @@
     vie:'Maths de la vie', image:'Photo / illustration'
   };
   var LEVEL_NAMES = ['Facile','Moyen','Difficile'];
+  var LEVEL_SHORT = ['Fa','Mo','Di'];
+
+  /* ===================== CONFIGURATION DES ACTIVITÉS =====================
+     Panneau de réglages avancé (⚙️ → "Configurer les activités et leur
+     difficulté") : pour Quizz (QCM_TYPE_DEFS) et Patron→Solide (NET_DEFS),
+     affiche chaque épreuve avec les niveaux où elle apparaît actuellement et
+     permet de les cocher/décocher à la main (au moins un niveau doit rester
+     coché). Les surcharges sont persistées et fusionnées par-dessus
+     defaultLevels via effectiveLevels(), puis rebuildM4Types()/
+     rebuildM3Pools() reconstruisent M4_LEVELS[*].types / M3_LEVELS[*].pool à
+     partir du résultat — tout le reste du code (qcmTypeLevels, genQuestion,
+     pickNetForLevel...) continue de lire ces tableaux normalement, sans
+     rien savoir des surcharges. */
+  var typeLevelOverrides = {}, netLevelOverrides = {};
+  try{ typeLevelOverrides = JSON.parse(localStorage.getItem('geo_qcm_level_overrides') || '{}'); }catch(e){}
+  try{ netLevelOverrides = JSON.parse(localStorage.getItem('geo_net_level_overrides') || '{}'); }catch(e){}
+  function effectiveLevels(def, kind){
+    var overrides = kind==='qcm' ? typeLevelOverrides : netLevelOverrides;
+    var lv = overrides[def.id];
+    return (lv && lv.length) ? lv : def.defaultLevels;
+  }
+  function rebuildM4Types(){
+    M4_LEVELS.forEach(function(lv, idx){
+      lv.types = QCM_TYPE_DEFS.filter(function(d){ return effectiveLevels(d,'qcm').indexOf(idx)!==-1; })
+        .map(function(d){ return d.id; });
+    });
+  }
+  function rebuildM3Pools(){
+    M3_LEVELS.forEach(function(lv, idx){
+      lv.pool = NET_DEFS.filter(function(d){ return effectiveLevels(d,'net').indexOf(idx)!==-1; })
+        .map(function(d){ return d.obj; });
+    });
+  }
+  rebuildM4Types();
+  rebuildM3Pools();
+
+  var STATIC_FAMILY_NOTES = {
+    measure:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
+    deform:'Une seule épreuve avec 3 formes cibles (losange, rectangle, parallélogramme) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins en Moyen, les 4 coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
+    'clock-lire':'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen, n\'importe quelle tranche de 5 minutes en Difficile.',
+    'clock-regler':'Une seule épreuve, sans paliers de difficulté (identique quel que soit l\'onglet Facile/Moyen/Difficile). L\'heure cible à reproduire est tirée au hasard à chaque question ; c\'est pour ça qu\'elle n\'apparaît pas dans la liste de niveaux du mode Manuel.'
+  };
+  var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
+  var currentAconfFamily = 'qcm';
+  function flashAconfWarning(){
+    var wrap = document.getElementById('activity-config-list');
+    wrap.classList.remove('shake');
+    void wrap.offsetWidth;
+    wrap.classList.add('shake');
+    setTimeout(function(){ wrap.classList.remove('shake'); }, 420);
+  }
+  function toggleAconfLevel(def, kind, idx){
+    var overrides = kind==='qcm' ? typeLevelOverrides : netLevelOverrides;
+    var current = effectiveLevels(def, kind).slice();
+    var pos = current.indexOf(idx);
+    if(pos!==-1){
+      if(current.length===1){ flashAconfWarning(); return; } // au moins un niveau doit rester coché
+      current.splice(pos,1);
+    } else {
+      current.push(idx);
+      current.sort();
+    }
+    overrides[def.id] = current;
+    try{
+      localStorage.setItem(kind==='qcm' ? 'geo_qcm_level_overrides' : 'geo_net_level_overrides', JSON.stringify(overrides));
+    }catch(e){}
+    if(kind==='qcm') rebuildM4Types(); else rebuildM3Pools();
+    renderActivityConfig(currentAconfFamily);
+  }
+  function buildAconfItem(def, kind){
+    var item = document.createElement('div');
+    item.className = 'aconf-item';
+    var head = document.createElement('div'); head.className = 'aconf-item-head';
+    var nameSpan = document.createElement('span'); nameSpan.textContent = def.label;
+    head.appendChild(nameSpan);
+    var toggles = document.createElement('div'); toggles.className = 'aconf-level-toggles';
+    var levels = effectiveLevels(def, kind);
+    LEVEL_SHORT.forEach(function(short, idx){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'aconf-level-btn' + (levels.indexOf(idx)!==-1 ? ' active' : '');
+      b.textContent = short;
+      b.title = LEVEL_NAMES[idx];
+      b.setAttribute('aria-label', LEVEL_NAMES[idx]);
+      b.addEventListener('click', function(){ toggleAconfLevel(def, kind, idx); });
+      toggles.appendChild(b);
+    });
+    head.appendChild(toggles);
+    item.appendChild(head);
+    var note = document.createElement('p'); note.className = 'aconf-note'; note.textContent = def.randomNote;
+    item.appendChild(note);
+    return item;
+  }
+  function renderActivityConfig(familyKey){
+    var wrap = document.getElementById('activity-config-list');
+    wrap.innerHTML = '';
+    if(familyKey === 'qcm'){
+      QCM_TYPE_DEFS.forEach(function(def){ wrap.appendChild(buildAconfItem(def, 'qcm')); });
+    } else if(familyKey === 'net'){
+      NET_DEFS.forEach(function(def){ wrap.appendChild(buildAconfItem(def, 'net')); });
+    } else {
+      var card = document.createElement('div'); card.className = 'aconf-static-card';
+      var h3 = document.createElement('h3'); h3.textContent = FAMILY_TAGS[familyKey];
+      var p = document.createElement('p'); p.textContent = STATIC_FAMILY_NOTES[familyKey];
+      card.appendChild(h3); card.appendChild(p);
+      wrap.appendChild(card);
+    }
+  }
+  buildLevelRow(
+    document.getElementById('activity-config-family-row'),
+    ACTIVITY_CONFIG_FAMILIES.map(function(k){ return FAMILY_TAGS[k]; }),
+    ACTIVITY_CONFIG_FAMILIES.indexOf('qcm'),
+    function(idx){
+      currentAconfFamily = ACTIVITY_CONFIG_FAMILIES[idx];
+      renderActivityConfig(currentAconfFamily);
+    }
+  );
+  document.getElementById('open-activity-config-btn').addEventListener('click', function(){
+    document.getElementById('settings-overlay').hidden = true;
+    document.getElementById('activity-config-overlay').hidden = false;
+    renderActivityConfig(currentAconfFamily);
+  });
+  document.getElementById('activity-config-close').addEventListener('click', function(){
+    document.getElementById('activity-config-overlay').hidden = true;
+  });
+  document.getElementById('activity-config-overlay').addEventListener('click', function(e){
+    if(e.target.id === 'activity-config-overlay') document.getElementById('activity-config-overlay').hidden = true;
+  });
   // Reconstruit le sélecteur de niveau avec UNIQUEMENT les niveaux passés en
   // argument (ex : un type de quizz qui n'existe qu'en Difficile n'affiche
   // qu'un seul bouton) — c'est le choix d'activité qui pilote les niveaux
