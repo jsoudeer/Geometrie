@@ -378,16 +378,13 @@
     <!-- MODULE 3 -->
     <section class="tabpanel" id="tab-net" hidden>
       <div class="card">
-        <h2>Ce patron va-t-il former un cube ?</h2>
-        <p class="muted" id="m3-sub">Observe les 6 carrés à plat, puis donne ta réponse.</p>
+        <h2>Quel solide ce patron va-t-il former ?</h2>
+        <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
         <div class="level-row" id="m3-levels"></div>
         <div class="stage" id="stage">
           <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
         </div>
-        <div class="yesno-row" id="m3-yesno">
-          <button class="btn primary" id="m3-yes" type="button">Oui, ça fait un cube</button>
-          <button class="btn ghost" id="m3-no" type="button">Non, pas un cube</button>
-        </div>
+        <div class="qcm-choices" id="m3-choices"></div>
         <div class="feedback" id="m3-feedback"></div>
         <div class="btn-row">
           <button class="btn ghost" id="m3-next" type="button" hidden>Autre patron ↻</button>
@@ -963,8 +960,12 @@
     return faces;
   }
 
+  // Chaque patron déclare maintenant "answer" : le solide qu'il forme une
+  // fois plié ('cube', 'pave', 'pyramide') ou 'aucun' s'il reste un trou /
+  // un chevauchement. Ça permet de poser une vraie question à choix
+  // multiples ("quel solide ?") plutôt qu'un simple oui/non "cube ou pas".
   var NET_CROSS = {
-    valid:true, gridW:4, gridH:3,
+    answer:'cube', gridW:4, gridH:3,
     root:{ id:'r', dx:1, dy:1, num:1 },
     faces:[
       {id:'n0', parent:'r',  dx:0, dy:-1, num:2},
@@ -975,17 +976,17 @@
     ]
   };
   var NET_STRIP = {
-    valid:false, gridW:6, gridH:1,
+    answer:'aucun', gridW:6, gridH:1,
     root:{ id:'r', dx:0, dy:0, num:1 },
     faces: faceChain(1, [[1,0],[1,0],[1,0],[1,0],[1,0]])
   };
   var NET_STAIRCASE = {
-    valid:true, gridW:4, gridH:3,
+    answer:'cube', gridW:4, gridH:3,
     root:{ id:'r', dx:0, dy:0, num:1 },
     faces: faceChain(1, [[1,0],[0,1],[1,0],[0,1],[1,0]])
   };
   var NET_BLOCK2X3 = {
-    valid:false, gridW:2, gridH:3,
+    answer:'aucun', gridW:2, gridH:3,
     root:{ id:'r', dx:0, dy:0, num:1 },
     faces:[
       {id:'n0', parent:'r',  dx:1, dy:0, num:2},
@@ -995,12 +996,11 @@
       {id:'n4', parent:'n3', dx:1, dy:0, num:6}
     ]
   };
-  // Un patron de pavé droit (parallélépipède) : il SE REFERME bien en 3D,
-  // mais ses faces ne sont pas toutes des carrés identiques -> ce n'est
-  // pas un cube. C'est le piège demandé : "ça se plie, mais en boîte
-  // rectangulaire, pas en cube".
-  var NET_CUBOID = {
-    valid:false, closesAsBox:true, gridAbsolute:true, stageW:272, stageH:168,
+  // Un patron de pavé droit (parallélépipède) : il se referme bien en 3D,
+  // mais ses faces ne sont pas toutes des carrés identiques comme sur un
+  // cube -> "pave", une vraie 3e famille de solides à reconnaître.
+  var NET_PAVE = {
+    answer:'pave', gridAbsolute:true, stageW:272, stageH:168,
     root:{ id:'r', left:52, top:52, w:84, h:64, num:1 },
     faces:[
       {id:'n0', parent:'r',  dx:0, dy:-1, left:0,  top:-52, w:84, h:52, num:2}, // dessus
@@ -1010,11 +1010,40 @@
       {id:'n4', parent:'n3', dx:1, dy:0,  left:52, top:0,   w:84, h:64, num:6}  // arrière
     ]
   };
+  // Pyramide à base carrée : 1 carré (la base) + 4 triangles, un sur chaque
+  // côté, qui se replient (angle plus petit qu'un pli à 90°) pour se
+  // rejoindre en un sommet.
+  function pyramidFace(id, dir, dx, dy, left, top, w, h, num, angle){
+    return { id:id, parent:'r', dx:dx, dy:dy, left:left, top:top, w:w, h:h, num:num, shape:'triangle', dir:dir, angle:angle };
+  }
+  var NET_PYRAMID = {
+    answer:'pyramide', gridAbsolute:true, stageW:168, stageH:168,
+    root:{ id:'r', left:52, top:52, w:64, h:64, num:1 },
+    faces:[
+      pyramidFace('n0','up',    0,-1, 52, 0,   64, 52, 2, -62),
+      pyramidFace('n1','down',  0, 1, 52, 116, 64, 52, 3,  62),
+      pyramidFace('n2','left', -1, 0, 0,  52,  52, 64, 4,  62),
+      pyramidFace('n3','right', 1, 0, 116,52,  52, 64, 5, -62)
+    ]
+  };
+  // Même patron de pyramide, mais avec un triangle manquant : un vrai trou,
+  // donc "aucun" solide fermé (piège pour le niveau difficile).
+  var NET_PYRAMID_TROU = {
+    answer:'aucun', gridAbsolute:true, stageW:168, stageH:168,
+    root:{ id:'r', left:52, top:52, w:64, h:64, num:1 },
+    faces:[
+      pyramidFace('n0','up',    0,-1, 52, 0,   64, 52, 2, -62),
+      pyramidFace('n2','left', -1, 0, 0,  52,  52, 64, 3,  62),
+      pyramidFace('n3','right', 1, 0, 116,52,  52, 64, 4, -62)
+    ]
+  };
+
+  var M3_ANSWER_LABELS = { cube:'Cube', pave:'Pavé droit', pyramide:'Pyramide', aucun:'Aucun solide' };
 
   var M3_LEVELS = [
-    { name:'Facile',    valid:[NET_CROSS],               invalid:[NET_STRIP] },
-    { name:'Moyen',     valid:[NET_STAIRCASE, NET_CROSS], invalid:[NET_STRIP, NET_CUBOID] },
-    { name:'Difficile', valid:[NET_CROSS, NET_STAIRCASE], invalid:[NET_BLOCK2X3, NET_CUBOID] }
+    { name:'Facile',    pool:[NET_CROSS, NET_PAVE, NET_PYRAMID, NET_STRIP] },
+    { name:'Moyen',     pool:[NET_CROSS, NET_STAIRCASE, NET_PAVE, NET_PYRAMID, NET_STRIP, NET_BLOCK2X3] },
+    { name:'Difficile', pool:[NET_CROSS, NET_STAIRCASE, NET_PAVE, NET_PYRAMID, NET_PYRAMID_TROU, NET_BLOCK2X3] }
   ];
   var m3Level = 0;
 
@@ -1024,6 +1053,12 @@
     if(dx===0 && dy===-1) return {origin:'50% 100%', axis:'X', angle:-90};
     if(dx===0 && dy===1)  return {origin:'50% 0%',    axis:'X', angle:90};
     return {origin:'50% 50%', axis:'Y', angle:0};
+  }
+  function trianglePoints(dir){
+    if(dir==='up')    return 'polygon(0% 100%, 100% 100%, 50% 0%)';
+    if(dir==='down')  return 'polygon(0% 0%, 100% 0%, 50% 100%)';
+    if(dir==='left')  return 'polygon(100% 0%, 100% 100%, 0% 50%)';
+    return 'polygon(0% 0%, 0% 100%, 100% 50%)'; // 'right'
   }
 
   var palette = ['var(--accent2)','var(--accent3)','var(--accent)','var(--accent2)','var(--accent3)'];
@@ -1070,9 +1105,17 @@
       div.style.top  = (net.gridAbsolute ? f.top  : f.dy*S3)+'px';
       div.style.background = NET_PALETTE[(f.num-1) % NET_PALETTE.length];
       div.textContent = f.num;
+      if(f.shape==='triangle'){
+        div.style.clipPath = trianglePoints(f.dir);
+        div.classList.add('face-tri');
+      }
       var rule = foldRule(f.dx,f.dy);
+      // Un patron peut imposer son propre angle de pliage (ex : une pyramide
+      // se replie moins qu'à 90°, pour que les triangles se rejoignent en
+      // pointe au lieu de se refermer à plat comme un cube).
+      var angle = (typeof f.angle === 'number') ? f.angle : rule.angle;
       div.dataset.axis = rule.axis;
-      div.dataset.angle = rule.angle;
+      div.dataset.angle = angle;
       div.dataset.flatOrigin = rule.origin;
       parentEl.appendChild(div);
       elems[f.id] = div;
@@ -1106,12 +1149,26 @@
       }
     });
     var netEl = document.getElementById('netEl');
-    var cx = netEl.offsetWidth * 0.35, cy = netEl.offsetHeight * 0.35;
-    // Seul le centrage (translation) vit ici ; l'inclinaison de vue est
-    // gérée séparément par #netSpin, que l'enfant peut ensuite tourner
-    // au doigt (voir setSpin / le gestionnaire de pointer plus bas).
+    // Centrage : la face racine (root) ne bouge jamais pendant le pliage —
+    // c'est donc elle qui doit finir pile au centre de la scène, quelle que
+    // soit sa position dans le patron à plat (au milieu comme NET_CROSS, ou
+    // tout en haut à gauche comme NET_STAIRCASE). On calcule sa position
+    // réelle à partir de la définition du patron (currentNet), au lieu
+    // d'un décalage approximatif fixe qui ne marchait bien que pour un seul
+    // patron et laissait les autres "collés" en haut à gauche.
+    // #netSpin (le parent qui tourne au doigt) a par défaut son axe de
+    // rotation au centre de SA propre boîte, qui a la même taille que
+    // #netEl : en amenant la racine exactement à ce centre, la rotation
+    // pivote donc naturellement autour du milieu du solide assemblé.
+    var net = currentNet;
+    var rw = net.gridAbsolute ? net.root.w : S3;
+    var rh = net.gridAbsolute ? net.root.h : S3;
+    var rootLeft = net.gridAbsolute ? net.root.left : net.root.dx*S3;
+    var rootTop  = net.gridAbsolute ? net.root.top  : net.root.dy*S3;
+    var vx = netEl.offsetWidth/2  - (rootLeft + rw/2);
+    var vy = netEl.offsetHeight/2 - (rootTop  + rh/2);
     netEl.style.transform = fold
-      ? 'translate3d(-'+cx+'px,-'+cy+'px,0)'
+      ? 'translate3d('+vx+'px,'+vy+'px,0)'
       : 'none';
     return maxDepth;
   }
@@ -1164,63 +1221,68 @@
     m3Spin = { x:0, y:0 };
     applySpin();
     currentElems = buildNet(net);
-    document.getElementById('m3-yesno').style.display = 'flex';
-    document.getElementById('m3-yes').disabled = false;
-    document.getElementById('m3-no').disabled = false;
+    var wrap = document.getElementById('m3-choices');
+    wrap.innerHTML = '';
+    ['cube','pave','pyramide','aucun'].forEach(function(key){
+      var b = document.createElement('button');
+      b.className = 'choice-btn';
+      b.type = 'button';
+      b.textContent = M3_ANSWER_LABELS[key];
+      b.addEventListener('click', function(){ answerNet(key, b); });
+      wrap.appendChild(b);
+    });
     document.getElementById('m3-next').hidden = true;
     var fb = document.getElementById('m3-feedback');
     fb.className='feedback'; fb.textContent='';
-    document.getElementById('m3-sub').textContent = 'Observe les 6 carrés à plat, puis donne ta réponse.';
+    document.getElementById('m3-sub').textContent = 'Observe les faces à plat, puis choisis le bon solide.';
   }
 
   function pickNetForLevel(idx){
-    var lv = M3_LEVELS[idx];
-    var pool = Math.random()<0.5 ? lv.valid : lv.invalid;
+    var pool = M3_LEVELS[idx].pool;
     return pool[Math.floor(Math.random()*pool.length)];
   }
 
   function netExplain(net){
-    if(net.valid) return 'Un cube a 6 faces carrées identiques, qui se referment sans trou ni chevauchement.';
-    if(net.closesAsBox) return 'Ici, le patron se referme bien, mais ses faces ne sont pas toutes des carrés identiques (regarde les rectangles) : c\'est un pavé droit, pas un cube.';
-    return 'Pour former un cube, il faut exactement 6 faces bien placées, sans trou ni face en trop.';
+    if(net.answer==='cube') return 'Un cube a 6 faces carrées identiques, qui se referment sans trou ni chevauchement.';
+    if(net.answer==='pave') return 'Un pavé droit (une boîte rectangulaire) a 6 faces rectangulaires, mais elles ne sont pas toutes des carrés identiques comme sur un cube.';
+    if(net.answer==='pyramide') return 'Une pyramide à base carrée a 1 face carrée (la base) et 4 faces triangulaires qui se rejoignent toutes en un seul sommet, en haut.';
+    return 'Il manque une face bien placée, ou il y a un trou : ce patron ne forme aucun solide fermé.';
   }
 
-  function answerNet(userSaysCube){
+  function answerNet(userChoice, btn){
     if(answered) return;
     answered = true;
-    document.getElementById('m3-yes').disabled = true;
-    document.getElementById('m3-no').disabled = true;
-    var correct = (userSaysCube === currentNet.valid);
+    var buttons = document.querySelectorAll('#m3-choices .choice-btn');
+    buttons.forEach(function(b){ b.disabled = true; });
+    var correct = (userChoice === currentNet.answer);
     var fb = document.getElementById('m3-feedback');
-    var headline;
     if(correct){
-      headline = currentNet.valid ? '✔ Exact, ce patron se referme en cube !'
-        : (currentNet.closesAsBox ? '✔ Bien vu : il se referme, mais en pavé droit, pas en cube !' : '✔ Bien vu, ce patron ne forme pas un cube fermé.');
+      btn.classList.add('correct');
+      fb.className = 'feedback good show';
+      fb.innerHTML = '<div>✔ Exact, c\'est bien "' + M3_ANSWER_LABELS[currentNet.answer] + '" !</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
+      addStar(1);
     } else {
-      headline = currentNet.valid ? '✘ Regarde bien : il se referme en cube.'
-        : (currentNet.closesAsBox ? '✘ Regarde bien : il se referme, mais ce n\'est pas un cube.' : '✘ Regarde bien : il reste des trous, ce n\'est pas un cube.');
+      btn.classList.add('wrong');
+      buttons.forEach(function(b){ if(b.textContent === M3_ANSWER_LABELS[currentNet.answer]) b.classList.add('correct'); });
+      fb.className = 'feedback bad show';
+      fb.innerHTML = '<div>✘ Pas tout à fait : la bonne réponse était "' + M3_ANSWER_LABELS[currentNet.answer] + '".</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
     }
-    fb.className = 'feedback ' + (correct?'good':'bad') + ' show';
-    fb.innerHTML = '<div>'+headline+'</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
     playSound(correct?'good':'bad');
     celebrate(correct?'good':'bad', fb);
-    if(correct) addStar(1);
 
     var maxDepth = foldNet(currentElems, currentRootId, true);
     var genAtAnswer = m3Gen;
-    if(currentNet.valid){
-      document.getElementById('m3-sub').textContent = 'Regarde-le se refermer en cube, doucement...';
-    } else if(currentNet.closesAsBox){
-      document.getElementById('m3-sub').textContent = 'Regarde bien : il se referme en boîte, mais ses faces ne sont pas toutes carrées.';
+    if(currentNet.answer==='aucun'){
+      document.getElementById('m3-sub').textContent = 'Regarde bien : une face (en rouge) ne se pose pas au bon endroit, il reste un trou.';
     } else {
-      document.getElementById('m3-sub').textContent = 'Regarde bien : une face (en rouge) ne se pose pas au bon endroit, il manque une vraie face pour fermer le cube.';
+      document.getElementById('m3-sub').textContent = 'Regarde-le se refermer doucement...';
     }
     document.getElementById('m3-next').hidden = false;
 
     var totalMs = 220*maxDepth + 1800 + 300;
     setTimeout(function(){
       if(genAtAnswer !== m3Gen) return; // un autre patron a été chargé entre-temps
-      if(!currentNet.valid && !currentNet.closesAsBox){
+      if(currentNet.answer==='aucun'){
         var deepestId = null, deepestDepth = -1;
         Object.keys(currentElems).forEach(function(id){
           var d = depthOf(currentElems[id]);
@@ -1237,8 +1299,6 @@
     }, totalMs);
   }
 
-  document.getElementById('m3-yes').addEventListener('click', function(){ answerNet(true); });
-  document.getElementById('m3-no').addEventListener('click', function(){ answerNet(false); });
   document.getElementById('m3-next').addEventListener('click', function(){
     loadNet(pickNetForLevel(m3Level));
   });
