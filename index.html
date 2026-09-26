@@ -624,7 +624,7 @@
             <div class="feedback" id="m2-feedback"></div>
             <div class="btn-row">
               <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>
-              <button class="btn ghost" id="m2-reset" type="button">Essayer encore ↺</button>
+              <button class="btn ghost" id="m2-next" type="button">Nouvelle activité ↻</button>
             </div>
           </div>
 
@@ -1436,13 +1436,6 @@
     });
   }
 
-  function resetDeform(){
-    pts = m2StartPts.map(function(p){ return p.slice(); });
-    drawDeform();
-    var fb = document.getElementById('m2-feedback');
-    fb.className='feedback'; fb.textContent='';
-  }
-
   function newDeformQuestion(){
     m2ShapeIdx = randInt(0,2);
     document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
@@ -1454,7 +1447,7 @@
     fb.className='feedback'; fb.textContent='';
   }
 
-  document.getElementById('m2-reset').addEventListener('click', resetDeform);
+  document.getElementById('m2-next').addEventListener('click', nextPracticeQuestion);
   enableTapToContinue('m2-feedback', nextPracticeQuestion);
 
   document.getElementById('m2-check').addEventListener('click', function(){
