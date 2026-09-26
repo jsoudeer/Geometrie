@@ -335,116 +335,121 @@
   </div>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="measure" type="button"><span class="ic">📏</span>Mesurer</button>
-    <button class="tab-btn" data-tab="deform" type="button"><span class="ic">🔷</span>Déformer</button>
-    <button class="tab-btn" data-tab="net" type="button"><span class="ic">📦</span>Patron→Cube</button>
-    <button class="tab-btn" data-tab="qcm" type="button"><span class="ic">❓</span>QCM Formes</button>
-    <button class="tab-btn" data-tab="clock" type="button"><span class="ic">🕐</span>Horloge</button>
+    <button class="tab-btn active" data-tab="facile" type="button"><span class="ic">🙂</span>Facile</button>
+    <button class="tab-btn" data-tab="moyen" type="button"><span class="ic">🤔</span>Moyen</button>
+    <button class="tab-btn" data-tab="difficile" type="button"><span class="ic">🔥</span>Difficile</button>
     <button class="tab-btn" data-tab="arena" type="button"><span class="ic">🎮</span>Boutique</button>
   </nav>
 
   <main id="tabContent">
 
-    <!-- MODULE 1 -->
-    <section class="tabpanel" id="tab-measure">
+    <!-- ENTRAINEMENT : fusion de tous les anciens onglets (Mesurer,
+         Déformer, Patron->Solide, QCM Formes, Horloge). Le niveau
+         (Facile/Moyen/Difficile) est choisi tout en haut et détermine à la
+         fois la difficulté ET le mélange d'exercices tirés au hasard, pour
+         qu'il n'y ait plus qu'un seul menu à trois entrées. -->
+    <section class="tabpanel" id="tab-practice">
       <div class="card">
-        <h2>Combien mesure ce segment ?</h2>
-        <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
-        <div class="level-row" id="m1-levels"></div>
-        <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100"></svg></div>
-        <div class="choices" id="m1-choices"></div>
-        <div class="feedback" id="m1-feedback"></div>
-        <div class="btn-row">
-          <button class="btn primary" id="m1-next" type="button">Nouveau segment ↻</button>
-        </div>
-      </div>
-    </section>
+        <h2>Entraînement</h2>
+        <div class="level-row" id="practice-mode"></div>
 
-    <!-- MODULE 2 -->
-    <section class="tabpanel" id="tab-deform" hidden>
-      <div class="card">
-        <h2>Une forme qui se transforme</h2>
-        <p class="muted" id="m2-instructions">Fais glisser les coins pour transformer le carré en losange : les 4 côtés doivent rester égaux.</p>
-        <div class="level-row" id="m2-levels"></div>
-        <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260"></svg></div>
-        <div class="feedback" id="m2-feedback"></div>
-        <div class="btn-row">
-          <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>
-          <button class="btn ghost" id="m2-reset" type="button">Recommencer ↺</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- MODULE 3 -->
-    <section class="tabpanel" id="tab-net" hidden>
-      <div class="card">
-        <h2>Quel solide ce patron va-t-il former ?</h2>
-        <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
-        <div class="level-row" id="m3-levels"></div>
-        <div class="stage" id="stage">
-          <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
-        </div>
-        <div class="qcm-choices" id="m3-choices"></div>
-        <div class="feedback" id="m3-feedback"></div>
-        <div class="btn-row">
-          <button class="btn ghost" id="m3-next" type="button" hidden>Autre patron ↻</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- MODULE 4 -->
-    <section class="tabpanel" id="tab-qcm" hidden>
-      <div class="card">
-        <h2>QCM Formes</h2>
-        <p class="muted">Choisis d'abord le niveau, puis le type de question (ou "Aléatoire").</p>
-        <div class="level-row" id="m4-levels"></div>
-        <div class="level-row" id="m4-types"></div>
-        <!-- La question posée est affichée ICI, juste avant le dessin et les
-             réponses : comme il y a maintenant beaucoup de types possibles
-             ci-dessus, il ne faut pas que la question se perde tout en haut. -->
-        <span class="qtype-tag" id="m4-tag">Côtés</span>
-        <div class="coach-row">
-          <span class="coach-avatar" id="m4-avatar">🐱</span>
-          <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>
-        </div>
-        <p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>
-        <div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200"></svg></div>
-        <div class="qcm-choices" id="m4-choices"></div>
-        <div class="feedback" id="m4-feedback"></div>
-        <div class="btn-row">
-          <button class="btn primary" id="m4-next" type="button">Question suivante ↻</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- MODULE 5 : HORLOGE -->
-    <section class="tabpanel" id="tab-clock" hidden>
-      <div class="card">
-        <h2 id="m5-title">Lire l'heure</h2>
-        <p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>
-        <div class="level-row" id="m5-modes"></div>
-
-        <div id="m5-lire-wrap">
-          <div class="coach-row">
-            <span class="coach-avatar" id="m5-avatar">🐱</span>
-            <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>
-          </div>
-          <div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200"></svg></div>
-          <div class="qcm-choices" id="m5-choices"></div>
-          <div class="feedback" id="m5-feedback"></div>
+        <!-- Mode "compte à rebours" : réglages avant de démarrer -->
+        <div id="countdown-setup" hidden>
+          <p class="muted">Choisis la durée du défi : réponds à un maximum de questions avant la fin du temps !</p>
+          <div class="level-row" id="countdown-time-row"></div>
           <div class="btn-row">
-            <button class="btn primary" id="m5-next" type="button">Nouvelle horloge ↻</button>
+            <button class="btn primary" id="countdown-start-btn" type="button">Démarrer ! ⏱️</button>
           </div>
         </div>
 
-        <div id="m5-regler-wrap" hidden>
-          <p class="muted">Place les aiguilles sur : <strong id="m5-target">3 h</strong></p>
-          <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200"></svg></div>
-          <div class="feedback" id="m5r-feedback"></div>
+        <!-- Mode "compte à rebours" : pendant le défi -->
+        <div id="countdown-hud" class="arena-star-note" hidden>
+          <span>⏱️</span><span>Temps restant : <strong id="countdown-time-left">60 s</strong> — Score : <strong id="countdown-score-live">0 / 0</strong></span>
+        </div>
+
+        <!-- Mode "compte à rebours" : résultats -->
+        <div id="countdown-results" hidden>
+          <p class="muted" id="countdown-results-text"></p>
           <div class="btn-row">
-            <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>
-            <button class="btn ghost" id="m5r-new" type="button">Nouvelle heure ↻</button>
+            <button class="btn primary" id="countdown-restart-btn" type="button">Recommencer ↻</button>
           </div>
+        </div>
+
+        <!-- Zone d'exercice partagée : un seul des blocs "fam-*" ci-dessous
+             est visible à la fois, choisi au hasard par nextPracticeQuestion(). -->
+        <div id="practice-exercise">
+          <span class="qtype-tag" id="practice-family-tag">Mesurer</span>
+
+          <div id="fam-measure" hidden>
+            <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
+            <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100"></svg></div>
+            <div class="choices" id="m1-choices"></div>
+            <div class="feedback" id="m1-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m1-next" type="button">Nouveau segment ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-deform" hidden>
+            <p class="muted" id="m2-instructions">Fais glisser les coins pour transformer la forme.</p>
+            <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260"></svg></div>
+            <div class="feedback" id="m2-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>
+              <button class="btn ghost" id="m2-reset" type="button">Essayer encore ↺</button>
+            </div>
+          </div>
+
+          <div id="fam-net" hidden>
+            <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
+            <div class="stage" id="stage">
+              <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
+            </div>
+            <div class="qcm-choices" id="m3-choices"></div>
+            <div class="feedback" id="m3-feedback"></div>
+            <div class="btn-row">
+              <button class="btn ghost" id="m3-next" type="button" hidden>Autre patron ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-qcm" hidden>
+            <div class="coach-row">
+              <span class="coach-avatar" id="m4-avatar">🐱</span>
+              <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>
+            </div>
+            <p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>
+            <div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200"></svg></div>
+            <div class="qcm-choices" id="m4-choices"></div>
+            <div class="feedback" id="m4-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m4-next" type="button">Question suivante ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-clock-lire" hidden>
+            <div class="coach-row">
+              <span class="coach-avatar" id="m5-avatar">🐱</span>
+              <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>
+            </div>
+            <p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>
+            <div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200"></svg></div>
+            <div class="qcm-choices" id="m5-choices"></div>
+            <div class="feedback" id="m5-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m5-next" type="button">Nouvelle horloge ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-clock-regler" hidden>
+            <p class="muted">Place les aiguilles sur : <strong id="m5-target">3 h</strong></p>
+            <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200"></svg></div>
+            <div class="feedback" id="m5r-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>
+              <button class="btn ghost" id="m5r-new" type="button">Nouvelle heure ↻</button>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -539,13 +544,19 @@
     document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
   })();
 
+  var DIFFICULTY_TABS = { facile:0, moyen:1, difficile:2 };
   document.querySelectorAll('.tab-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
       var tab = btn.getAttribute('data-tab');
       document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
-      document.getElementById('tab-'+tab).hidden = false;
+      if(tab in DIFFICULTY_TABS){
+        document.getElementById('tab-practice').hidden = false;
+        setGlobalLevel(DIFFICULTY_TABS[tab]);
+      } else {
+        document.getElementById('tab-'+tab).hidden = false;
+      }
     });
   });
 
@@ -681,7 +692,6 @@
     { name:'Moyen',     visibleLen:14, startMin:0,  startMax:0,  offsetMax:4, half:false, lenMin:2, lenMax:8 },
     { name:'Difficile', visibleLen:15, startMin:-4, startMax:-1, offsetMax:5, half:true,  lenMin:2, lenMax:8 }
   ];
-  var m1Level = 0;
   var currentLen = 5, m1SegStart = 0, m1SegEnd = 5, m1RulerStart = 0;
 
   function randInt(a,b){ return Math.floor(rand(a, b+1)); }
@@ -721,7 +731,7 @@
   }
 
   function newMeasureQuestion(){
-    var lv = M1_LEVELS[m1Level];
+    var lv = M1_LEVELS[globalLevel];
     var span = (lv.lenMax - lv.lenMin);
     if(lv.half){
       var steps = span*2;
@@ -794,30 +804,31 @@
     playSound(ok?'good':'bad');
     celebrate(ok?'good':'bad', fb);
     if(ok) addStar(1);
+    onPracticeAnswered(ok);
   }
 
-  buildLevelRow(document.getElementById('m1-levels'), M1_LEVELS.map(function(l){return l.name;}), 0, function(idx){
-    m1Level = idx; newMeasureQuestion();
-  });
-  document.getElementById('m1-next').addEventListener('click', newMeasureQuestion);
-  enableTapToContinue('m1-feedback', newMeasureQuestion);
+  document.getElementById('m1-next').addEventListener('click', nextPracticeQuestion);
+  enableTapToContinue('m1-feedback', nextPracticeQuestion);
   newMeasureQuestion();
 
   /* ===================== MODULE 2 : DEFORMER ===================== */
   var SCALE2 = 20; // px per cm
   var basePts = [[70,70],[190,70],[190,190],[70,190]];
   var pts = basePts.map(function(p){ return p.slice(); });
+  var m2StartPts = pts.map(function(p){ return p.slice(); });
+  var m2ShapeIdx = 0;
 
-  // Deux niveaux de tolérance par exercice : "great" = assez précis pour la
-  // meilleure remarque, "ok" = plus large, encore réussi mais avec une
-  // remarque qui encourage à être un peu plus précis la prochaine fois.
-  // On ne demande jamais une précision au centimètre/degré près.
+  // Les 3 formes cibles restent les mêmes (Losange/Rectangle/Parallélogramme),
+  // tirées au hasard à chaque exercice. Ce qui change maintenant avec le
+  // niveau (Facile/Moyen/Difficile), c'est la distance de départ par rapport
+  // à cette cible : un seul coin décalé en Facile, plusieurs coins bien
+  // décalés en Moyen, les 4 coins très décalés en Difficile — voir
+  // perturbForLevel() plus bas.
   var M2_LEVELS = [
-    { name:'Losange',      instr:"Fais glisser les coins pour transformer le carré en losange : les 4 côtés doivent rester à peu près égaux.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
-    { name:'Rectangle',    instr:"Transforme le carré en rectangle : les côtés opposés doivent être à peu près égaux, et les 4 angles doivent rester à peu près droits.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
-    { name:'Parallélogramme', instr:"Transforme le carré en parallélogramme : les côtés opposés doivent rester à peu près égaux, mais les angles ne doivent plus être droits.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} }
+    { name:'Losange',      instr:"Fais glisser les coins pour transformer la forme en losange : les 4 côtés doivent rester à peu près égaux.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
+    { name:'Rectangle',    instr:"Transforme la forme en rectangle : les côtés opposés doivent être à peu près égaux, et les 4 angles doivent rester à peu près droits.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
+    { name:'Parallélogramme', instr:"Transforme la forme en parallélogramme : les côtés opposés doivent rester à peu près égaux, mais les angles ne doivent plus être droits.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} }
   ];
-  var m2Level = 0;
 
   function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
   function angleAtDeg(prev,curr,next){
@@ -870,6 +881,52 @@
     return {ok:false, msg:'✘ Il faut incliner un peu plus la forme pour que les angles ne soient plus droits.'};
   }
 
+  // Construit une forme cible qui satisfait DÉJÀ le critère "great" du type
+  // demandé (losange/rectangle/parallélogramme), avec un peu de hasard sur
+  // les proportions et une légère rotation pour varier l'affichage — la
+  // rotation ne change ni les longueurs de côtés ni les angles internes,
+  // donc elle ne remet jamais en cause la validité de la forme cible.
+  function clampCoord(v){ return Math.max(20, Math.min(240, v)); }
+  function rotatePt(p, cx, cy, rad){
+    var dx=p[0]-cx, dy=p[1]-cy;
+    return [cx + dx*Math.cos(rad) - dy*Math.sin(rad), cy + dx*Math.sin(rad) + dy*Math.cos(rad)];
+  }
+  function shapeTargetPoints(shapeIdx){
+    var cx=130, cy=130, rot=rand(0,Math.PI/2), raw;
+    if(shapeIdx===0){ // losange
+      var d1=rand(90,150), d2=rand(60,d1-25);
+      raw = [[0,-d1/2],[d2/2,0],[0,d1/2],[-d2/2,0]];
+    } else if(shapeIdx===1){ // rectangle
+      var w=rand(100,150), h=w*rand(0.5,0.75);
+      raw = [[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]];
+    } else { // parallélogramme : rectangle + cisaillement horizontal
+      var w2=rand(90,130), h2=rand(80,120);
+      var shear = Math.tan(rand(24,36)*Math.PI/180) * h2;
+      raw = [[-w2/2,-h2/2],[w2/2,-h2/2],[w2/2,h2/2],[-w2/2,h2/2]].map(function(p){
+        return [p[0] + shear*(p[1]/h2), p[1]];
+      });
+    }
+    return raw.map(function(p){
+      var rp = rotatePt([p[0], p[1]], 0, 0, rot);
+      return [clampCoord(cx+rp[0]), clampCoord(cy+rp[1])];
+    });
+  }
+
+  // Facile = 1 seul coin décalé (petit effort), Moyen = 3 coins décalés
+  // (plusieurs mouvements), Difficile = les 4 coins bien décalés (gros effort).
+  function perturbForLevel(target, level){
+    var cornerCount = level===0 ? 1 : (level===2 ? 4 : 3);
+    var magRange = level===0 ? [35,55] : (level===2 ? [45,75] : [25,45]);
+    var idxs = shuffle([0,1,2,3]).slice(0, cornerCount);
+    var startPts = target.map(function(p){ return p.slice(); });
+    idxs.forEach(function(i){
+      var ang = rand(0, Math.PI*2), mag = rand(magRange[0], magRange[1]);
+      startPts[i][0] = clampCoord(startPts[i][0] + Math.cos(ang)*mag);
+      startPts[i][1] = clampCoord(startPts[i][1] + Math.sin(ang)*mag);
+    });
+    return startPts;
+  }
+
   function drawDeform(){
     var svg = document.getElementById('deformSvg');
     svg.innerHTML = "";
@@ -918,24 +975,28 @@
   }
 
   function resetDeform(){
-    pts = basePts.map(function(p){ return p.slice(); });
+    pts = m2StartPts.map(function(p){ return p.slice(); });
     drawDeform();
     var fb = document.getElementById('m2-feedback');
     fb.className='feedback'; fb.textContent='';
   }
 
-  buildLevelRow(document.getElementById('m2-levels'), M2_LEVELS.map(function(l){return l.name;}), 0, function(idx){
-    m2Level = idx;
-    document.getElementById('m2-instructions').textContent = M2_LEVELS[idx].instr;
-    resetDeform();
-  });
-  document.getElementById('m2-instructions').textContent = M2_LEVELS[0].instr;
-  drawDeform();
+  function newDeformQuestion(){
+    m2ShapeIdx = randInt(0,2);
+    document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
+    var target = shapeTargetPoints(m2ShapeIdx);
+    m2StartPts = perturbForLevel(target, globalLevel);
+    pts = m2StartPts.map(function(p){ return p.slice(); });
+    drawDeform();
+    var fb = document.getElementById('m2-feedback');
+    fb.className='feedback'; fb.textContent='';
+  }
 
   document.getElementById('m2-reset').addEventListener('click', resetDeform);
+  enableTapToContinue('m2-feedback', nextPracticeQuestion);
 
   document.getElementById('m2-check').addEventListener('click', function(){
-    var lv = M2_LEVELS[m2Level];
+    var lv = M2_LEVELS[m2ShapeIdx];
     var res = lv.check(lv.tolGreat, lv.tolOk);
     var fb = document.getElementById('m2-feedback');
     fb.className = 'feedback ' + (res.ok ? 'good' : 'bad') + ' show';
@@ -1045,7 +1106,6 @@
     { name:'Moyen',     pool:[NET_CROSS, NET_STAIRCASE, NET_PAVE, NET_PYRAMID, NET_STRIP, NET_BLOCK2X3] },
     { name:'Difficile', pool:[NET_CROSS, NET_STAIRCASE, NET_PAVE, NET_PYRAMID, NET_PYRAMID_TROU, NET_BLOCK2X3] }
   ];
-  var m3Level = 0;
 
   function foldRule(dx,dy){
     if(dx===1 && dy===0)  return {origin:'0% 50%',   axis:'Y', angle:-90};
@@ -1269,6 +1329,7 @@
     }
     playSound(correct?'good':'bad');
     celebrate(correct?'good':'bad', fb);
+    onPracticeAnswered(correct);
 
     var maxDepth = foldNet(currentElems, currentRootId, true);
     var genAtAnswer = m3Gen;
@@ -1299,15 +1360,7 @@
     }, totalMs);
   }
 
-  document.getElementById('m3-next').addEventListener('click', function(){
-    loadNet(pickNetForLevel(m3Level));
-  });
-
-  buildLevelRow(document.getElementById('m3-levels'), M3_LEVELS.map(function(l){return l.name;}), 0, function(idx){
-    m3Level = idx;
-    loadNet(pickNetForLevel(idx));
-  });
-  loadNet(NET_CROSS);
+  document.getElementById('m3-next').addEventListener('click', nextPracticeQuestion);
 
   /* ===================== MODULE 4 : QCM FORMES =====================
      Deux familles de questions, comme discuté :
@@ -1381,7 +1434,6 @@
       types:['sides','vertices','name','angle','image','calc','align','milieu','coord','coordFind','codage','decodage','chasse','symAxe','symVrai','solideNom','solideCompte','monnaie','heure','enigme','vie'],
       angleGap:7, calcModes:['add','missing'], calcMax:20 }
   ];
-  var m4Level = 0;
   var m4TypeFilter = 'random';
   var m4Current = null;
 
@@ -2126,30 +2178,40 @@
     svg.appendChild(el('circle',{cx:100,cy:100,r:4, fill:'var(--text)'}));
   }
 
-  function genHeureQuestion(svgId){
+  // Précision de lecture d'heure selon le niveau : Facile = heure pile ou
+  // demie, Moyen = + les quarts d'heure, Difficile = n'importe quelle
+  // tranche de 5 minutes.
+  function minutesToClockLabel(totalMin){
+    var h = Math.floor(totalMin/60) % 12; if(h===0) h = 12;
+    var m = totalMin % 60;
+    return m===0 ? (h+' h') : (h+' h '+(m<10?'0'+m:m));
+  }
+  function genHeureQuestion(svgId, level){
     svgId = svgId || 'm4Svg';
+    level = level || 0;
+    var step = level===0 ? 30 : (level===1 ? 15 : 5);
     var hour = 1+randInt(0,11);
-    var half = Math.random()<0.5;
-    var minuteVal = half?30:0;
+    var minuteVal = level===0 ? (Math.random()<0.5?0:30) : pick((function(){
+      var opts=[]; for(var m=0;m<60;m+=step) opts.push(m); return opts;
+    })());
     var hourAngleDeg = ((hour%12) + minuteVal/60) * 30 - 90;
     var minuteAngleDeg = (minuteVal/60)*360 - 90;
     var hourTip = angleToXY(hourAngleDeg, 42);
     var minTip = angleToXY(minuteAngleDeg, 62);
-    var correctLabel = half ? (hour + ' h 30') : (hour + ' h');
-    var distractPool=[];
-    [hour-1,hour,hour+1].forEach(function(h){
-      var hh = ((h-1+12)%12)+1;
-      distractPool.push(hh + ' h'); distractPool.push(hh + ' h 30');
+    var totalMinCorrect = (hour%12)*60 + minuteVal;
+    var correctLabel = minutesToClockLabel(totalMinCorrect);
+    var pool = [], seen = {}; seen[correctLabel]=true;
+    [-3,-2,-1,1,2,3].forEach(function(k){
+      var cand = ((totalMinCorrect + k*step) % 720 + 720) % 720;
+      var label = minutesToClockLabel(cand);
+      if(!seen[label]){ seen[label]=true; pool.push(label); }
     });
-    var seen={}; seen[correctLabel]=true;
-    var uniq = distractPool.filter(function(l){ if(l===correctLabel||seen[l]) return false; seen[l]=true; return true; });
-    uniq = shuffle(uniq);
-    var choiceLabels = shuffle([correctLabel].concat(uniq.slice(0,3)));
+    var choiceLabels = shuffle([correctLabel].concat(shuffle(pool).slice(0,3)));
     return {
       tag:'Lire l\'heure',
       question:'Quelle heure indique cette horloge ?',
       sub:'Regarde bien la petite aiguille (les heures) et la grande (les minutes).',
-      explain:'La petite aiguille est sur ' + hour + ' et la grande est sur ' + (half?'6 (30 minutes)':'12 (0 minute)') + ' : il est ' + correctLabel + '.',
+      explain:'La petite aiguille indique les heures et la grande les minutes : il est ' + correctLabel + '.',
       draw:function(){
         var svg=document.getElementById(svgId); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         drawClockFace(svg, hourTip, minTip);
@@ -2249,7 +2311,7 @@
   }
 
   function genQuestion(){
-    var lv = M4_LEVELS[m4Level];
+    var lv = M4_LEVELS[globalLevel];
     var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pick(lv.types);
 
     if(type==='sides' || type==='vertices'){
@@ -2352,7 +2414,7 @@
     if(type==='solideNom')  return genSolideNomQuestion();
     if(type==='solideCompte') return genSolideCompteQuestion();
     if(type==='monnaie')    return genMonnaieQuestion();
-    if(type==='heure')      return genHeureQuestion();
+    if(type==='heure')      return genHeureQuestion('m4Svg', globalLevel);
     if(type==='enigme')     return genEnigmeQuestion();
     if(type==='vie')        return genVieQuestion();
 
@@ -2362,20 +2424,9 @@
     return pick(IMAGE_QUESTIONS)();
   }
 
-  function buildTypeRow(){
-    var lv = M4_LEVELS[m4Level];
-    var keys = ['random'].concat(lv.types);
-    var labels = keys.map(function(k){ return k==='random' ? 'Aléatoire' : TYPE_LABELS[k]; });
-    m4TypeFilter = 'random';
-    buildLevelRow(document.getElementById('m4-types'), labels, 0, function(idx){
-      m4TypeFilter = keys[idx];
-      newQCM();
-    });
-  }
-
   function newQCM(){
     m4Current = genQuestion();
-    document.getElementById('m4-tag').textContent = m4Current.tag;
+    document.getElementById('practice-family-tag').textContent = m4Current.tag;
     document.getElementById('m4-question').textContent = m4Current.question;
     document.getElementById('m4-sub').textContent = m4Current.sub;
     m4Current.draw();
@@ -2415,15 +2466,11 @@
     }
     playSound(choice.ok?'good':'bad');
     celebrate(choice.ok?'good':'bad', fb);
+    onPracticeAnswered(choice.ok);
   }
 
-  buildLevelRow(document.getElementById('m4-levels'), M4_LEVELS.map(function(l){return l.name;}), 0, function(idx){
-    m4Level = idx; buildTypeRow(); newQCM();
-  });
-  buildTypeRow();
-  document.getElementById('m4-next').addEventListener('click', newQCM);
-  enableTapToContinue('m4-feedback', newQCM);
-  newQCM();
+  document.getElementById('m4-next').addEventListener('click', nextPracticeQuestion);
+  enableTapToContinue('m4-feedback', nextPracticeQuestion);
 
   /* ===================== MODULE 5 : HORLOGE (à part entière) =====================
      Deux modes : "Lire l'heure" (QCM, réutilise genHeureQuestion) et
@@ -2438,7 +2485,7 @@
   // ---- Mode "Lire l'heure" (même moteur que le QCM, ciblé sur m5Svg) ----
   var m5Current = null;
   function newM5Lire(){
-    m5Current = genHeureQuestion('m5Svg');
+    m5Current = genHeureQuestion('m5Svg', globalLevel);
     document.getElementById('m5-question').textContent = m5Current.question;
     document.getElementById('m5-sub').textContent = m5Current.sub;
     m5Current.draw();
@@ -2475,8 +2522,9 @@
     }
     playSound(choice.ok?'good':'bad');
     celebrate(choice.ok?'good':'bad', fb);
+    onPracticeAnswered(choice.ok);
   }
-  document.getElementById('m5-next').addEventListener('click', newM5Lire);
+  document.getElementById('m5-next').addEventListener('click', nextPracticeQuestion);
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
   // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
@@ -2535,7 +2583,7 @@
     svg.addEventListener('pointercancel', endDrag);
   })();
 
-  document.getElementById('m5r-new').addEventListener('click', m5rGenTarget);
+  document.getElementById('m5r-new').addEventListener('click', nextPracticeQuestion);
   document.getElementById('m5r-check').addEventListener('click', function(){
     var targetTick = (m5Target.hour % 12) * 2 + (m5Target.half ? 1 : 0);
     var hourOk = m5rHourTick === targetTick;
@@ -2558,20 +2606,135 @@
     celebrate(hourOk && minOk ? 'good' : 'bad', fb);
   });
 
-  var m5Mode = 0;
-  buildLevelRow(document.getElementById('m5-modes'), ['Lire l\'heure','Régler l\'heure'], 0, function(idx){
-    m5Mode = idx;
-    document.getElementById('m5-lire-wrap').hidden = idx!==0;
-    document.getElementById('m5-regler-wrap').hidden = idx!==1;
-    document.getElementById('m5-title').textContent = idx===0 ? 'Lire l\'heure' : 'Régler l\'heure';
-    document.getElementById('m5-sub').textContent = idx===0
-      ? 'Regarde bien la petite et la grande aiguille.'
-      : 'Fais glisser chaque aiguille avec ton doigt pour placer la bonne heure.';
-    if(idx===1) drawSettableClock();
+  enableTapToContinue('m5-feedback', nextPracticeQuestion);
+
+  /* ===================== ENTRAINEMENT : ORCHESTRATEUR =====================
+     Fusionne les anciens modules 1 à 5 en un seul menu à 3 niveaux (Facile/
+     Moyen/Difficile). Le niveau choisi pilote directement M1_LEVELS,
+     M2_LEVELS (via perturbForLevel), M3_LEVELS.pool, M4_LEVELS et
+     genHeureQuestion — chacun lisait auparavant sa propre variable de
+     niveau (m1Level, m3Level, m4Level...), remplacée ici par un seul
+     "globalLevel" partagé. À chaque nouvelle question, une "famille"
+     d'exercice est tirée au hasard et affichée dans #practice-exercise ;
+     tout le reste (génération, correction, dessin) est inchangé et reste
+     dans chaque module. */
+  var globalLevel = 0;
+  var practiceMode = 'free'; // 'free' | 'countdown'
+  var currentFamily = null;
+  var countdownScore = { correct:0, total:0 };
+  var countdownRunning = false, countdownInterval = null, countdownEndAt = 0, countdownSeconds = 60;
+
+  var FAMILY_TAGS = {
+    measure:'Mesurer', deform:'Déformer', net:'Patron → Solide',
+    qcm:'Formes', 'clock-lire':'Lire l\'heure', 'clock-regler':'Régler l\'heure'
+  };
+  var FAMILY_WRAP_IDS = {
+    measure:'fam-measure', deform:'fam-deform', net:'fam-net',
+    qcm:'fam-qcm', 'clock-lire':'fam-clock-lire', 'clock-regler':'fam-clock-regler'
+  };
+  // Manipulations plus lentes (glisser des coins, régler des aiguilles) sont
+  // réservées au mode libre : un compte à rebours mélange seulement les
+  // familles qui se répondent en un tap.
+  function familyKeys(){
+    return practiceMode==='countdown'
+      ? ['measure','net','qcm','clock-lire']
+      : ['measure','deform','net','qcm','clock-lire','clock-regler'];
+  }
+  function showFamily(key){
+    currentFamily = key;
+    Object.keys(FAMILY_WRAP_IDS).forEach(function(k){
+      var wrap = document.getElementById(FAMILY_WRAP_IDS[k]);
+      if(wrap) wrap.hidden = (k!==key);
+    });
+    document.getElementById('practice-family-tag').textContent = FAMILY_TAGS[key];
+  }
+  function nextPracticeQuestion(){
+    var key = pick(familyKeys());
+    showFamily(key);
+    if(key==='measure') newMeasureQuestion();
+    else if(key==='deform') newDeformQuestion();
+    else if(key==='net') loadNet(pickNetForLevel(globalLevel));
+    else if(key==='qcm') newQCM();
+    else if(key==='clock-lire') newM5Lire();
+    else if(key==='clock-regler') m5rGenTarget();
+  }
+  function setGlobalLevel(idx){
+    globalLevel = idx;
+    if(practiceMode==='free'){
+      nextPracticeQuestion();
+    } else if(countdownRunning){
+      endCountdown(); // le niveau a changé en pleine partie : on clôt la manche en cours
+    }
+  }
+  function onPracticeAnswered(correct){
+    if(practiceMode!=='countdown' || !countdownRunning) return;
+    countdownScore.total++;
+    if(correct) countdownScore.correct++;
+    updateCountdownHud();
+    setTimeout(function(){ if(countdownRunning) nextPracticeQuestion(); }, 900);
+  }
+
+  function updateCountdownHud(remainMs){
+    if(remainMs===undefined) remainMs = Math.max(0, countdownEndAt - Date.now());
+    document.getElementById('countdown-time-left').textContent = Math.ceil(remainMs/1000) + ' s';
+    document.getElementById('countdown-score-live').textContent = countdownScore.correct + ' / ' + countdownScore.total;
+  }
+  function startCountdown(){
+    countdownScore = { correct:0, total:0 };
+    countdownRunning = true;
+    countdownEndAt = Date.now() + countdownSeconds*1000;
+    document.getElementById('countdown-setup').hidden = true;
+    document.getElementById('countdown-results').hidden = true;
+    document.getElementById('countdown-hud').hidden = false;
+    document.getElementById('practice-exercise').hidden = false;
+    updateCountdownHud();
+    clearInterval(countdownInterval);
+    countdownInterval = setInterval(function(){
+      var remain = Math.max(0, countdownEndAt - Date.now());
+      updateCountdownHud(remain);
+      if(remain<=0) endCountdown();
+    }, 250);
+    nextPracticeQuestion();
+  }
+  function endCountdown(){
+    countdownRunning = false;
+    clearInterval(countdownInterval);
+    document.getElementById('countdown-hud').hidden = true;
+    document.getElementById('practice-exercise').hidden = true;
+    document.getElementById('countdown-results').hidden = false;
+    var starsWon = Math.max(1, Math.round(countdownScore.correct/2));
+    addStar(starsWon);
+    document.getElementById('countdown-results-text').innerHTML =
+      'Tu as répondu correctement à <strong>' + countdownScore.correct + '</strong> question(s) sur ' +
+      countdownScore.total + ' ! (+' + starsWon + ' ⭐)';
+  }
+
+  buildLevelRow(document.getElementById('practice-mode'), ['Questions libres','Compte à rebours'], 0, function(idx){
+    practiceMode = idx===0 ? 'free' : 'countdown';
+    clearInterval(countdownInterval);
+    countdownRunning = false;
+    document.getElementById('countdown-hud').hidden = true;
+    document.getElementById('countdown-results').hidden = true;
+    if(practiceMode==='free'){
+      document.getElementById('countdown-setup').hidden = true;
+      document.getElementById('practice-exercise').hidden = false;
+      nextPracticeQuestion();
+    } else {
+      document.getElementById('practice-exercise').hidden = true;
+      document.getElementById('countdown-setup').hidden = false;
+    }
   });
-  enableTapToContinue('m5-feedback', newM5Lire);
-  newM5Lire();
-  m5rGenTarget();
+  var COUNTDOWN_DURATIONS = [60,120,180,300];
+  buildLevelRow(document.getElementById('countdown-time-row'), ['1 min','2 min','3 min','5 min'], 0, function(idx){
+    countdownSeconds = COUNTDOWN_DURATIONS[idx];
+  });
+  document.getElementById('countdown-start-btn').addEventListener('click', startCountdown);
+  document.getElementById('countdown-restart-btn').addEventListener('click', function(){
+    document.getElementById('countdown-results').hidden = true;
+    document.getElementById('countdown-setup').hidden = false;
+  });
+
+  setGlobalLevel(0); // charge la toute première question, niveau Facile
 
   /* ===================== MODULE 6 : BOUTIQUE + BATAILLE =====================
      Personnages 100% originaux et procéduraux (dessinés en SVG, comme le
