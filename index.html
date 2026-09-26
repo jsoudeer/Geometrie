@@ -47,7 +47,7 @@
   .app{
     max-width:480px;
     margin:0 auto;
-    padding:14px 16px calc(28px + env(safe-area-inset-bottom,0px));
+    padding:14px 16px calc(130px + env(safe-area-inset-bottom,0px));
     min-height:100%;
   }
 
@@ -70,6 +70,34 @@
     font-weight:800; font-size:14px; flex:none;
     font-variant-numeric: tabular-nums;
   }
+  .topbar-right{ display:flex; align-items:center; gap:8px; flex:none; }
+  .settings-btn{
+    flex:none; width:38px; height:38px; border-radius:50%;
+    background:var(--surface2); border:1px solid var(--border);
+    font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  .settings-btn:active{ transform:scale(.9) rotate(25deg); }
+
+  /* ============ RÉGLAGES ============ */
+  .settings-overlay{
+    position:fixed; inset:0; background:rgba(20,15,10,.45);
+    display:flex; align-items:center; justify-content:center;
+    z-index:80; padding:16px;
+  }
+  .settings-overlay[hidden]{ display:none; }
+  .settings-panel{
+    background:var(--surface); border:1.5px solid var(--border); border-radius:16px;
+    box-shadow:var(--shadow); padding:16px 18px; width:100%; max-width:360px;
+  }
+  .settings-panel-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;
+  }
+  .settings-close{
+    background:var(--surface2); border:1px solid var(--border); border-radius:50%;
+    width:30px; height:30px; font-size:14px; cursor:pointer;
+  }
+  .settings-hint{ font-size:12px; margin-top:8px; }
 
   /* ============ THEME SWITCH ============ */
   .theme-switch{
@@ -252,6 +280,60 @@
     .shake{ animation:none; }
   }
 
+  /* ============ MASCOTTE (buste en bas de l'écran) ============ */
+  .mascot-dock{
+    position:fixed; right:2vw; bottom:0;
+    width:130px; max-width:30vw; z-index:5; pointer-events:none;
+  }
+  .mascot-dock svg{ width:100%; height:auto; display:block; filter:drop-shadow(0 6px 10px rgba(0,0,0,.15)); }
+  .mascot-dock .mascot-face{
+    position:absolute; top:16%; left:50%; transform:translateX(-50%);
+    width:auto; height:auto; background:none; border:none;
+    font-size:min(15vw, 52px);
+  }
+  .mascot-dock.talk svg{ animation:mascotBob .5s ease-in-out; }
+  .mascot-dock.good svg{ animation:mascotJump .55s ease-out; }
+  .mascot-dock.bad svg{ animation:mascotShake .4s; }
+  @keyframes mascotBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
+  @keyframes mascotJump{
+    0%{ transform:translateY(0) scale(1); }
+    30%{ transform:translateY(-26px) scale(1.06); }
+    60%{ transform:translateY(0) scale(.97); }
+    100%{ transform:translateY(0) scale(1); }
+  }
+  @keyframes mascotShake{
+    10%,90%{ transform:translateX(-3px); } 20%,80%{ transform:translateX(6px); }
+    30%,50%,70%{ transform:translateX(-11px); } 40%,60%{ transform:translateX(11px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .mascot-dock.talk svg, .mascot-dock.good svg, .mascot-dock.bad svg{ animation:none; }
+  }
+
+  /* ============ MODE OVERLOAD (effets amplifiés, réglage dans ⚙️) ========= */
+  .overload-pop{
+    position:fixed; top:38%; left:50%; transform:translate(-50%,-50%) scale(.4);
+    font-family:var(--font-display); font-weight:900; font-size:44px;
+    z-index:9999; pointer-events:none; text-shadow:0 3px 0 rgba(0,0,0,.15);
+    animation:overloadPop .9s cubic-bezier(.2,1.6,.4,1) forwards;
+  }
+  .overload-pop.good{ color:var(--good); }
+  .overload-pop.bad{ color:var(--bad); }
+  @keyframes overloadPop{
+    0%{ transform:translate(-50%,-50%) scale(.3) rotate(-8deg); opacity:0; }
+    25%{ transform:translate(-50%,-50%) scale(1.15) rotate(4deg); opacity:1; }
+    45%{ transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; }
+    100%{ transform:translate(-50%,-60%) scale(1) rotate(0deg); opacity:0; }
+  }
+  body.overload-shake{ animation:overloadShakeBody .5s; }
+  @keyframes overloadShakeBody{
+    10%,90%{ transform:translateX(-4px); } 20%,80%{ transform:translateX(8px); }
+    30%,50%,70%{ transform:translateX(-14px); } 40%,60%{ transform:translateX(14px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .overload-pop{ animation:none; opacity:0; }
+    body.overload-shake{ animation:none; }
+  }
+
   /* ============ MODULE 6 : BOUTIQUE + BATAILLE ============ */
   .arena-star-note{
     display:flex; align-items:center; gap:8px; background:var(--surface2);
@@ -326,8 +408,24 @@
       <span class="mascot" id="mascotIcon">🐱</span>
       <h1 id="appTitle">Géo Miaou</h1>
     </div>
-    <div class="stars">⭐ <span id="starCount">0</span></div>
+    <div class="topbar-right">
+      <div class="stars">⭐ <span id="starCount">0</span></div>
+      <button class="settings-btn" id="settings-btn" type="button" aria-label="Réglages">⚙️</button>
+    </div>
   </header>
+
+  <!-- Réglages : intensité des effets (son + confettis) sur les réponses -->
+  <div class="settings-overlay" id="settings-overlay" hidden>
+    <div class="settings-panel">
+      <div class="settings-panel-head">
+        <h2>Réglages</h2>
+        <button class="settings-close" id="settings-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <p class="muted">Effets sur les bonnes/mauvaises réponses :</p>
+      <div class="level-row" id="sfx-mode-row"></div>
+      <p class="muted settings-hint" id="sfx-mode-hint"></p>
+    </div>
+  </div>
 
   <div class="theme-switch" role="tablist" aria-label="Choix de l'univers">
     <button class="theme-btn active" data-theme="cats" type="button">🐱 Chats Kawaii</button>
@@ -515,6 +613,14 @@
     </section>
 
   </main>
+
+  <!-- Mascotte : personnage (chat ou brainrot selon le thème) visible jusqu'au
+       tronc en bas de l'écran, qui "pose" les questions et réagit aux
+       réponses (voir setCoachReaction / celebrate). -->
+  <div class="mascot-dock" id="mascot-dock">
+    <svg id="mascotBigSvg" viewBox="0 0 200 240"></svg>
+    <span class="coach-avatar mascot-face" id="mascot-face">🐱</span>
+  </div>
 </div>
 
 <script>
@@ -538,6 +644,35 @@
     if(saved){ stars = parseInt(saved,10)||0; document.getElementById('starCount').textContent = stars; }
   }catch(e){}
 
+  /* ===================== RÉGLAGES : intensité des effets (SFX) ===================== */
+  var sfxMode = 'normal'; // 'normal' | 'overload'
+  try{
+    var savedSfx = localStorage.getItem('geo_sfx_mode');
+    if(savedSfx === 'overload') sfxMode = 'overload';
+  }catch(e){}
+  var SFX_HINTS = {
+    normal:'Confettis et petit son à chaque réponse.',
+    overload:'Sons plus forts, gros effets à l\'écran et la mascotte s\'agite fort à chaque réponse !'
+  };
+  function updateSfxHint(){
+    document.getElementById('sfx-mode-hint').textContent = SFX_HINTS[sfxMode];
+  }
+  buildLevelRow(document.getElementById('sfx-mode-row'), ['Normal','Mode Overload 🔊'], sfxMode==='overload' ? 1 : 0, function(idx){
+    sfxMode = idx===1 ? 'overload' : 'normal';
+    try{ localStorage.setItem('geo_sfx_mode', sfxMode); }catch(e){}
+    updateSfxHint();
+  });
+  updateSfxHint();
+  document.getElementById('settings-btn').addEventListener('click', function(){
+    document.getElementById('settings-overlay').hidden = false;
+  });
+  document.getElementById('settings-close').addEventListener('click', function(){
+    document.getElementById('settings-overlay').hidden = true;
+  });
+  document.getElementById('settings-overlay').addEventListener('click', function(e){
+    if(e.target.id === 'settings-overlay') document.getElementById('settings-overlay').hidden = true;
+  });
+
   document.querySelectorAll('.theme-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -549,6 +684,7 @@
       document.getElementById('appTitle').textContent = cfg.title;
       document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
       try{ localStorage.setItem('geo_theme', th); }catch(e){}
+      drawMascotBig();
     });
   });
   (function initTheme(){
@@ -563,7 +699,56 @@
     document.getElementById('mascotIcon').textContent = cfg.mascot;
     document.getElementById('appTitle').textContent = cfg.title;
     document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
+    // (le premier dessin de la mascotte se fait plus bas, une fois svgNS/el
+    // définis : el() en dépend, et ce IIFE s'exécute avant leur assignation)
   })();
+
+  /* ---- Mascotte géante (buste) fixée en bas de l'écran : dessine un
+     chat ou un brainrot selon le thème, jusqu'au torse. L'expression du
+     visage est gérée séparément par setCoachReaction (span .mascot-face,
+     qui partage la classe .coach-avatar avec les petits avatars des
+     familles Formes/Horloge). */
+  function drawMascotBig(){
+    var svg = document.getElementById('mascotBigSvg');
+    if(!svg) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox','0 0 200 240');
+    if(currentThemeKey()==='cats'){
+      svg.appendChild(el('path',{d:'M42,150 C42,108 158,108 158,150 L172,240 L28,240 Z', fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
+      svg.appendChild(el('polygon',{points:'55,72 40,18 78,54', fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
+      svg.appendChild(el('polygon',{points:'145,72 160,18 122,54', fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
+      svg.appendChild(el('polygon',{points:'58,62 50,34 72,52', fill:'#FFD9E6'}));
+      svg.appendChild(el('polygon',{points:'142,62 150,34 128,52', fill:'#FFD9E6'}));
+      svg.appendChild(el('circle',{cx:100,cy:112,r:66, fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3}));
+      svg.appendChild(el('circle',{cx:56,cy:126,r:12, fill:'#FF9EB8','fill-opacity':0.6}));
+      svg.appendChild(el('circle',{cx:144,cy:126,r:12, fill:'#FF9EB8','fill-opacity':0.6}));
+      [-1,1].forEach(function(side){
+        for(var i=0;i<3;i++){
+          var y = 118+i*8;
+          svg.appendChild(el('line',{x1:100+side*48, y1:y, x2:100+side*84, y2:y-4+i*4, stroke:'var(--text)','stroke-width':2,'stroke-linecap':'round','stroke-opacity':0.5}));
+        }
+      });
+    } else {
+      var pts = [[100,26],[128,42],[162,36],[176,70],[164,104],[182,132],[152,152],[140,186],[100,196],
+        [60,186],[48,152],[18,132],[36,104],[24,70],[38,36],[72,42]];
+      svg.appendChild(el('path',{d:'M42,140 C42,108 158,108 158,140 L172,240 L28,240 Z', fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
+      svg.appendChild(el('polygon',{points:pts.map(function(p){return p[0]+','+p[1];}).join(' '), fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
+    }
+  }
+  function bounceMascotTalk(){
+    var dock = document.getElementById('mascot-dock');
+    if(!dock) return;
+    dock.classList.remove('talk','good','bad');
+    void dock.offsetWidth;
+    dock.classList.add('talk');
+  }
+  function reactMascot(kind){
+    var dock = document.getElementById('mascot-dock');
+    if(!dock) return;
+    dock.classList.remove('talk','good','bad');
+    void dock.offsetWidth;
+    dock.classList.add(kind);
+  }
 
   var DIFFICULTY_TABS = { facile:0, moyen:1, difficile:2 };
   document.querySelectorAll('.tab-btn').forEach(function(btn){
@@ -574,13 +759,16 @@
       document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
       if(tab in DIFFICULTY_TABS){
         document.getElementById('tab-practice').hidden = false;
+        document.getElementById('mascot-dock').hidden = false;
         setAppMode('auto');
         setGlobalLevel(DIFFICULTY_TABS[tab]);
       } else if(tab === 'manuel'){
         document.getElementById('tab-practice').hidden = false;
+        document.getElementById('mascot-dock').hidden = false;
         setAppMode('manual');
       } else {
         document.getElementById('tab-'+tab).hidden = false;
+        document.getElementById('mascot-dock').hidden = true;
       }
     });
   });
@@ -591,6 +779,8 @@
     for(var k in attrs){ e.setAttribute(k, attrs[k]); }
     return e;
   }
+  drawMascotBig(); // premier dessin, une fois svgNS/el() réellement assignés
+
   function shuffle(arr){
     for(var i=arr.length-1;i>0;i--){
       var j = Math.floor(Math.random()*(i+1));
@@ -634,36 +824,65 @@
       if(!Ctx) return;
       var ctx = new Ctx();
       var t0 = ctx.currentTime;
+      var overload = (sfxMode==='overload');
       if(kind==='good'){
-        [523.25, 783.99].forEach(function(freq, i){
+        var notes = overload ? [523.25, 659.25, 783.99, 1046.5] : [523.25, 783.99];
+        var peak = overload ? 0.42 : 0.25;
+        notes.forEach(function(freq, i){
           var o=ctx.createOscillator(), g=ctx.createGain();
           o.type='sine'; o.frequency.value=freq;
-          g.gain.setValueAtTime(0.0001, t0+i*0.09);
-          g.gain.exponentialRampToValueAtTime(0.25, t0+i*0.09+0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, t0+i*0.09+0.22);
+          g.gain.setValueAtTime(0.0001, t0+i*0.08);
+          g.gain.exponentialRampToValueAtTime(peak, t0+i*0.08+0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0+i*0.08+(overload?0.32:0.22));
           o.connect(g); g.connect(ctx.destination);
-          o.start(t0+i*0.09); o.stop(t0+i*0.09+0.25);
+          o.start(t0+i*0.08); o.stop(t0+i*0.08+(overload?0.35:0.25));
         });
+        if(overload){
+          // petite couche de "paillettes" aiguës en plus, façon fanfare
+          for(var k=0;k<5;k++){
+            var o2=ctx.createOscillator(), g2=ctx.createGain();
+            o2.type='triangle'; o2.frequency.value = 1300 + k*220;
+            var ts = t0 + 0.3 + k*0.05;
+            g2.gain.setValueAtTime(0.0001, ts);
+            g2.gain.exponentialRampToValueAtTime(0.18, ts+0.02);
+            g2.gain.exponentialRampToValueAtTime(0.0001, ts+0.15);
+            o2.connect(g2); g2.connect(ctx.destination);
+            o2.start(ts); o2.stop(ts+0.16);
+          }
+        }
       } else {
         var o=ctx.createOscillator(), g=ctx.createGain();
         o.type='sawtooth';
-        o.frequency.setValueAtTime(180,t0);
-        o.frequency.exponentialRampToValueAtTime(90, t0+0.28);
-        g.gain.setValueAtTime(0.22,t0);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0+0.3);
+        o.frequency.setValueAtTime(overload?260:180,t0);
+        o.frequency.exponentialRampToValueAtTime(overload?55:90, t0+(overload?0.5:0.28));
+        g.gain.setValueAtTime(overload?0.38:0.22,t0);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0+(overload?0.55:0.3));
         o.connect(g); g.connect(ctx.destination);
-        o.start(t0); o.stop(t0+0.32);
+        o.start(t0); o.stop(t0+(overload?0.58:0.32));
+        if(overload){
+          var o3=ctx.createOscillator(), g3=ctx.createGain();
+          o3.type='square'; o3.frequency.setValueAtTime(90,t0+0.05);
+          g3.gain.setValueAtTime(0.0001, t0+0.05);
+          g3.gain.exponentialRampToValueAtTime(0.3, t0+0.08);
+          g3.gain.exponentialRampToValueAtTime(0.0001, t0+0.5);
+          o3.connect(g3); g3.connect(ctx.destination);
+          o3.start(t0+0.05); o3.stop(t0+0.52);
+        }
       }
-      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 700);
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 900);
     }catch(e){ /* audio non disponible : on continue sans son */ }
   }
 
   function celebrate(kind, anchorEl){
+    setCoachReaction(kind);
+    reactMascot(kind);
+    if(sfxMode==='overload') overloadBlast(kind);
     if(!anchorEl) return;
     if(kind==='good'){
       var rect = anchorEl.getBoundingClientRect();
       var emojis = ['✨','⭐','🎉','💫'];
-      for(var i=0;i<6;i++){
+      var count = sfxMode==='overload' ? 14 : 6;
+      for(var i=0;i<count;i++){
         var s = document.createElement('span');
         s.className = 'burst-particle';
         s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
@@ -678,6 +897,38 @@
       void anchorEl.offsetWidth; // relance l'animation si déjà jouée
       anchorEl.classList.add('shake');
       setTimeout(function(){ anchorEl.classList.remove('shake'); }, 420);
+    }
+  }
+
+  // Mode Overload : gros effet plein écran (texte qui "pop", secousse de
+  // l'écran, pluie de confettis partout) en plus des effets normaux.
+  function overloadBlast(kind){
+    var goodTexts = ['SUPER !','GÉNIAL !','BOOM !','TROP FORT !','INCROYABLE !'];
+    var badTexts = ['OUPS !','RATÉ !','AÏE !','PRESQUE !'];
+    var text = kind==='good' ? pick(goodTexts) : pick(badTexts);
+    var popEl = document.createElement('div');
+    popEl.className = 'overload-pop ' + kind;
+    popEl.textContent = text;
+    document.body.appendChild(popEl);
+    setTimeout(function(){ popEl.remove(); }, 950);
+
+    document.body.classList.remove('overload-shake');
+    void document.body.offsetWidth;
+    document.body.classList.add('overload-shake');
+    setTimeout(function(){ document.body.classList.remove('overload-shake'); }, 550);
+
+    var emojis = kind==='good' ? ['✨','⭐','🎉','💫','🌟','🥳','🎊'] : ['💥','😵','⚡','❌','😱'];
+    var vw = window.innerWidth, vh = window.innerHeight;
+    for(var i=0;i<24;i++){
+      var s = document.createElement('span');
+      s.className = 'burst-particle';
+      s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      s.style.left = (Math.random()*vw)+'px';
+      s.style.top = (Math.random()*vh*0.6)+'px';
+      s.style.fontSize = (16+Math.random()*22)+'px';
+      s.style.setProperty('--dx',(Math.random()*160-80)+'px');
+      document.body.appendChild(s);
+      (function(el){ setTimeout(function(){ el.remove(); }, 1000); })(s);
     }
   }
 
@@ -2709,6 +2960,8 @@
       if(wrap) wrap.hidden = (k!==key);
     });
     document.getElementById('practice-family-tag').textContent = FAMILY_TAGS[key];
+    setCoachReaction('neutral');
+    bounceMascotTalk();
   }
   function nextPracticeQuestion(){
     var key = (appMode==='manual' && manualFamily) ? manualFamily : pick(familyKeys());
