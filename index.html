@@ -363,6 +363,15 @@
             <p class="muted">Niveau :</p>
             <div class="level-row" id="manual-level-row"></div>
           </div>
+          <!-- La famille "Formes" (QCM) contient à elle seule une vingtaine
+               de types de questions différents (côtés, angles, coordonnées,
+               symétrie, solides, énigmes, calcul...) : ce sélecteur permet
+               de s'entraîner sur un type précis plutôt que de tous les
+               mélanger au hasard. -->
+          <div id="manual-qcm-type-wrap" hidden>
+            <p class="muted">Type de question (Formes) :</p>
+            <div class="level-row" id="manual-qcm-type-row"></div>
+          </div>
         </div>
 
         <!-- Mode "compte à rebours" : réglages avant de démarrer -->
@@ -2656,6 +2665,33 @@
   var FAMILIES_WITH_LEVELS = {
     measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':false
   };
+  // La famille "Formes" (QCM) regroupe à elle seule ~20 types de questions
+  // (M4_LEVELS[*].types) qui étaient auparavant sélectionnables un par un.
+  // On les réexpose ici en mode Manuel via l'ancien mécanisme m4TypeFilter
+  // (déjà lu par genQuestion, mais plus jamais réglé depuis la fusion).
+  var QCM_TYPE_LABELS = {
+    sides:'Compter les côtés', vertices:'Compter les sommets', name:'Nom de la forme',
+    angle:'Angles (droit/aigu/obtus)', calc:'Calcul', align:'Alignement',
+    milieu:'Milieu d\'un segment', coord:'Lire des coordonnées',
+    coordFind:'Trouver sur le quadrillage', codage:'Déplacement (codage)',
+    decodage:'Trajet (décodage)', chasse:'Chasse aux formes',
+    symAxe:'Axe de symétrie', symVrai:'Vrai axe de symétrie ?',
+    solideNom:'Nom du solide', solideCompte:'Compter faces/sommets/arêtes',
+    monnaie:'Monnaie', heure:'Lire l\'heure (QCM)', enigme:'Énigme',
+    vie:'Maths de la vie', image:'Photo / illustration'
+  };
+  function refreshManualQcmTypes(){
+    var wrap = document.getElementById('manual-qcm-type-wrap');
+    if(manualFamily !== 'qcm'){ wrap.hidden = true; m4TypeFilter = 'random'; return; }
+    wrap.hidden = false;
+    var types = M4_LEVELS[globalLevel].types;
+    var labels = ['Aléatoire'].concat(types.map(function(t){ return QCM_TYPE_LABELS[t] || t; }));
+    m4TypeFilter = 'random';
+    buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
+      m4TypeFilter = idx===0 ? 'random' : types[idx-1];
+      nextPracticeQuestion();
+    });
+  }
   // Manipulations plus lentes (glisser des coins, régler des aiguilles) sont
   // réservées au mode Aléatoire : un compte à rebours mélange seulement les
   // familles qui se répondent en un tap. Le patron 3D en est exclu aussi :
@@ -2707,12 +2743,17 @@
       document.getElementById('countdown-setup').hidden = true;
       document.getElementById('practice-exercise').hidden = !manualFamily;
       if(manualFamily) nextPracticeQuestion();
-    } else if(practiceMode==='free'){
-      document.getElementById('countdown-setup').hidden = true;
-      document.getElementById('practice-exercise').hidden = false;
-    } else if(!countdownRunning){
-      document.getElementById('practice-exercise').hidden = true;
-      document.getElementById('countdown-setup').hidden = false;
+    } else {
+      // Retour en mode auto (Facile/Moyen/Difficile) : jamais de type QCM
+      // forcé, le mélange redevient entièrement aléatoire.
+      m4TypeFilter = 'random';
+      if(practiceMode==='free'){
+        document.getElementById('countdown-setup').hidden = true;
+        document.getElementById('practice-exercise').hidden = false;
+      } else if(!countdownRunning){
+        document.getElementById('practice-exercise').hidden = true;
+        document.getElementById('countdown-setup').hidden = false;
+      }
     }
   }
   function onPracticeAnswered(correct){
@@ -2792,12 +2833,14 @@
     function(idx){
       manualFamily = MANUAL_FAMILY_LIST[idx];
       document.getElementById('manual-level-wrap').hidden = !FAMILIES_WITH_LEVELS[manualFamily];
+      refreshManualQcmTypes();
       document.getElementById('practice-exercise').hidden = false;
       nextPracticeQuestion();
     }
   );
   buildLevelRow(document.getElementById('manual-level-row'), ['Facile','Moyen','Difficile'], 0, function(idx){
     globalLevel = idx;
+    refreshManualQcmTypes();
     if(appMode==='manual' && manualFamily) nextPracticeQuestion();
   });
 
