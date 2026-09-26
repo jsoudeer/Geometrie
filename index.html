@@ -338,6 +338,7 @@
     <button class="tab-btn active" data-tab="facile" type="button"><span class="ic">🙂</span>Facile</button>
     <button class="tab-btn" data-tab="moyen" type="button"><span class="ic">🤔</span>Moyen</button>
     <button class="tab-btn" data-tab="difficile" type="button"><span class="ic">🔥</span>Difficile</button>
+    <button class="tab-btn" data-tab="manuel" type="button"><span class="ic">🎯</span>Manuel</button>
     <button class="tab-btn" data-tab="arena" type="button"><span class="ic">🎮</span>Boutique</button>
   </nav>
 
@@ -352,6 +353,17 @@
       <div class="card">
         <h2>Entraînement</h2>
         <div class="level-row" id="practice-mode"></div>
+
+        <!-- Mode "Manuel" : choix d'une activité précise, à travailler en
+             boucle (au lieu d'un tirage aléatoire parmi toutes les familles). -->
+        <div id="manual-picker" hidden>
+          <p class="muted">Choisis une activité à travailler :</p>
+          <div class="level-row" id="manual-family-row"></div>
+          <div id="manual-level-wrap" hidden>
+            <p class="muted">Niveau :</p>
+            <div class="level-row" id="manual-level-row"></div>
+          </div>
+        </div>
 
         <!-- Mode "compte à rebours" : réglages avant de démarrer -->
         <div id="countdown-setup" hidden>
@@ -386,7 +398,7 @@
             <div class="choices" id="m1-choices"></div>
             <div class="feedback" id="m1-feedback"></div>
             <div class="btn-row">
-              <button class="btn primary" id="m1-next" type="button">Nouveau segment ↻</button>
+              <button class="btn primary" id="m1-next" type="button">Nouvelle activité ↻</button>
             </div>
           </div>
 
@@ -408,7 +420,7 @@
             <div class="qcm-choices" id="m3-choices"></div>
             <div class="feedback" id="m3-feedback"></div>
             <div class="btn-row">
-              <button class="btn ghost" id="m3-next" type="button" hidden>Autre patron ↻</button>
+              <button class="btn ghost" id="m3-next" type="button" hidden>Nouvelle activité ↻</button>
             </div>
           </div>
 
@@ -422,7 +434,7 @@
             <div class="qcm-choices" id="m4-choices"></div>
             <div class="feedback" id="m4-feedback"></div>
             <div class="btn-row">
-              <button class="btn primary" id="m4-next" type="button">Question suivante ↻</button>
+              <button class="btn primary" id="m4-next" type="button">Nouvelle activité ↻</button>
             </div>
           </div>
 
@@ -436,7 +448,7 @@
             <div class="qcm-choices" id="m5-choices"></div>
             <div class="feedback" id="m5-feedback"></div>
             <div class="btn-row">
-              <button class="btn primary" id="m5-next" type="button">Nouvelle horloge ↻</button>
+              <button class="btn primary" id="m5-next" type="button">Nouvelle activité ↻</button>
             </div>
           </div>
 
@@ -446,7 +458,7 @@
             <div class="feedback" id="m5r-feedback"></div>
             <div class="btn-row">
               <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>
-              <button class="btn ghost" id="m5r-new" type="button">Nouvelle heure ↻</button>
+              <button class="btn ghost" id="m5r-new" type="button">Nouvelle activité ↻</button>
             </div>
           </div>
 
@@ -553,7 +565,11 @@
       document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
       if(tab in DIFFICULTY_TABS){
         document.getElementById('tab-practice').hidden = false;
+        setAppMode('auto');
         setGlobalLevel(DIFFICULTY_TABS[tab]);
+      } else if(tab === 'manuel'){
+        document.getElementById('tab-practice').hidden = false;
+        setAppMode('manual');
       } else {
         document.getElementById('tab-'+tab).hidden = false;
       }
@@ -2618,7 +2634,9 @@
      tout le reste (génération, correction, dessin) est inchangé et reste
      dans chaque module. */
   var globalLevel = 0;
-  var practiceMode = 'free'; // 'free' | 'countdown'
+  var practiceMode = 'free'; // 'free' | 'countdown'  (utilisé seulement en mode 'auto')
+  var appMode = 'auto'; // 'auto' (Facile/Moyen/Difficile) | 'manual' (activité choisie à la main)
+  var manualFamily = null;
   var currentFamily = null;
   var countdownScore = { correct:0, total:0 };
   var countdownRunning = false, countdownInterval = null, countdownEndAt = 0, countdownSeconds = 60;
@@ -2631,12 +2649,21 @@
     measure:'fam-measure', deform:'fam-deform', net:'fam-net',
     qcm:'fam-qcm', 'clock-lire':'fam-clock-lire', 'clock-regler':'fam-clock-regler'
   };
+  var MANUAL_FAMILY_LIST = ['measure','deform','net','qcm','clock-lire','clock-regler'];
+  // "Régler l'heure" est la seule activité qui n'a pas de vrais paliers de
+  // difficulté (voir m5rGenTarget) : en mode Manuel, on masque alors le
+  // sélecteur de niveau pour cette activité-là.
+  var FAMILIES_WITH_LEVELS = {
+    measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':false
+  };
   // Manipulations plus lentes (glisser des coins, régler des aiguilles) sont
-  // réservées au mode libre : un compte à rebours mélange seulement les
-  // familles qui se répondent en un tap.
+  // réservées au mode Aléatoire : un compte à rebours mélange seulement les
+  // familles qui se répondent en un tap. Le patron 3D en est exclu aussi :
+  // l'animation de pliage n'a pas le temps de se jouer correctement avant
+  // l'enchaînement automatique de la question suivante.
   function familyKeys(){
     return practiceMode==='countdown'
-      ? ['measure','net','qcm','clock-lire']
+      ? ['measure','qcm','clock-lire']
       : ['measure','deform','net','qcm','clock-lire','clock-regler'];
   }
   function showFamily(key){
@@ -2648,7 +2675,7 @@
     document.getElementById('practice-family-tag').textContent = FAMILY_TAGS[key];
   }
   function nextPracticeQuestion(){
-    var key = pick(familyKeys());
+    var key = (appMode==='manual' && manualFamily) ? manualFamily : pick(familyKeys());
     showFamily(key);
     if(key==='measure') newMeasureQuestion();
     else if(key==='deform') newDeformQuestion();
@@ -2659,10 +2686,33 @@
   }
   function setGlobalLevel(idx){
     globalLevel = idx;
+    if(appMode!=='auto') return;
     if(practiceMode==='free'){
       nextPracticeQuestion();
     } else if(countdownRunning){
       endCountdown(); // le niveau a changé en pleine partie : on clôt la manche en cours
+    }
+  }
+  function setAppMode(mode){
+    appMode = mode;
+    var isManual = (mode==='manual');
+    document.getElementById('practice-mode').hidden = isManual;
+    document.getElementById('manual-picker').hidden = !isManual;
+    if(isManual){
+      // Pas de compte à rebours en mode Manuel : on arrête celui en cours s'il y en a un.
+      clearInterval(countdownInterval);
+      countdownRunning = false;
+      document.getElementById('countdown-hud').hidden = true;
+      document.getElementById('countdown-results').hidden = true;
+      document.getElementById('countdown-setup').hidden = true;
+      document.getElementById('practice-exercise').hidden = !manualFamily;
+      if(manualFamily) nextPracticeQuestion();
+    } else if(practiceMode==='free'){
+      document.getElementById('countdown-setup').hidden = true;
+      document.getElementById('practice-exercise').hidden = false;
+    } else if(!countdownRunning){
+      document.getElementById('practice-exercise').hidden = true;
+      document.getElementById('countdown-setup').hidden = false;
     }
   }
   function onPracticeAnswered(correct){
@@ -2708,7 +2758,7 @@
       countdownScore.total + ' ! (+' + starsWon + ' ⭐)';
   }
 
-  buildLevelRow(document.getElementById('practice-mode'), ['Questions libres','Compte à rebours'], 0, function(idx){
+  buildLevelRow(document.getElementById('practice-mode'), ['Aléatoire','Chronométré'], 0, function(idx){
     practiceMode = idx===0 ? 'free' : 'countdown';
     clearInterval(countdownInterval);
     countdownRunning = false;
@@ -2731,6 +2781,24 @@
   document.getElementById('countdown-restart-btn').addEventListener('click', function(){
     document.getElementById('countdown-results').hidden = true;
     document.getElementById('countdown-setup').hidden = false;
+  });
+
+  // Mode "Manuel" : choix d'une activité précise à répéter en boucle, avec
+  // son propre sélecteur de niveau (masqué pour les activités qui n'en ont pas).
+  buildLevelRow(
+    document.getElementById('manual-family-row'),
+    MANUAL_FAMILY_LIST.map(function(k){ return FAMILY_TAGS[k]; }),
+    -1,
+    function(idx){
+      manualFamily = MANUAL_FAMILY_LIST[idx];
+      document.getElementById('manual-level-wrap').hidden = !FAMILIES_WITH_LEVELS[manualFamily];
+      document.getElementById('practice-exercise').hidden = false;
+      nextPracticeQuestion();
+    }
+  );
+  buildLevelRow(document.getElementById('manual-level-row'), ['Facile','Moyen','Difficile'], 0, function(idx){
+    globalLevel = idx;
+    if(appMode==='manual' && manualFamily) nextPracticeQuestion();
   });
 
   setGlobalLevel(0); // charge la toute première question, niveau Facile
