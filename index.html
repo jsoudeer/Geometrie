@@ -98,6 +98,12 @@
     width:30px; height:30px; font-size:14px; cursor:pointer;
   }
   .settings-hint{ font-size:12px; margin-top:8px; }
+  .settings-divider{ border:none; border-top:1px solid var(--border); margin:14px 0; }
+  .settings-checkbox-row{
+    display:flex; align-items:center; gap:8px; font-weight:800; font-size:13.5px;
+    cursor:pointer;
+  }
+  .settings-checkbox-row input{ width:18px; height:18px; accent-color:var(--accent); flex:none; }
 
   /* ============ THEME SWITCH ============ */
   .theme-switch{
@@ -334,6 +340,23 @@
     body.overload-shake{ animation:none; }
   }
 
+  .auto-advance-toast{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%);
+    background:var(--good); color:#fff; font-family:var(--font-display); font-weight:800;
+    font-size:14px; padding:10px 18px; border-radius:999px; box-shadow:var(--shadow);
+    z-index:9999; pointer-events:none;
+    animation:toastPop 2.2s ease-in-out forwards;
+  }
+  @keyframes toastPop{
+    0%{ transform:translateX(-50%) translateY(-16px); opacity:0; }
+    12%{ transform:translateX(-50%) translateY(0); opacity:1; }
+    85%{ transform:translateX(-50%) translateY(0); opacity:1; }
+    100%{ transform:translateX(-50%) translateY(-10px); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .auto-advance-toast{ animation:none; }
+  }
+
   /* ============ MODULE 6 : BOUTIQUE + BATAILLE ============ */
   .arena-star-note{
     display:flex; align-items:center; gap:8px; background:var(--surface2);
@@ -369,7 +392,30 @@
   body[data-app-theme="brainrot"] .sprite-card .sp-buy{ color:#14121A; }
   .sprite-card .sp-buy[disabled]{ opacity:.4; cursor:default; }
 
-  .duel-wrap{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin:10px 0 4px; }
+  .duel-wrap{ display:flex; align-items:center; justify-content:center; gap:10px; margin:10px 0 4px; }
+  /* Portrait : les deux combattants l'un au-dessus de l'autre. Paysage :
+     côte à côte (voir aussi max-width de .app, qui reste raisonnable en
+     paysage sur un téléphone/tablette). */
+  @media (orientation: portrait){
+    .duel-wrap{ flex-direction:column; }
+  }
+  @media (orientation: landscape){
+    .duel-wrap{ flex-direction:row; flex-wrap:nowrap; }
+    .duel-fighter{ flex:1 1 0; }
+  }
+  .attack-bolt{
+    position:fixed; font-size:30px; z-index:200; pointer-events:none;
+    transform:translate(-50%,-50%);
+    animation:attackFly .5s cubic-bezier(.3,.1,.3,1) forwards;
+  }
+  @keyframes attackFly{
+    0%{ transform:translate(-50%,-50%) scale(.5) rotate(0deg); opacity:0; }
+    15%{ opacity:1; transform:translate(-50%,-50%) scale(1.1) rotate(10deg); }
+    100%{ transform:translate(calc(-50% + var(--tx,0px)), calc(-50% + var(--ty,0px))) scale(1.3) rotate(-10deg); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .attack-bolt{ animation:none; opacity:0; }
+  }
   .duel-fighter{
     flex:1 1 150px; max-width:220px; background:var(--surface2); border:2px solid var(--border);
     border-radius:16px; padding:12px 10px; text-align:center;
@@ -424,6 +470,18 @@
       <p class="muted">Effets sur les bonnes/mauvaises réponses :</p>
       <div class="level-row" id="sfx-mode-row"></div>
       <p class="muted settings-hint" id="sfx-mode-hint"></p>
+
+      <hr class="settings-divider">
+
+      <label class="settings-checkbox-row" for="auto-advance-toggle">
+        <input type="checkbox" id="auto-advance-toggle">
+        <span>Avancement automatique (mode Manuel)</span>
+      </label>
+      <p class="muted settings-hint">En mode Manuel, monte automatiquement au niveau supérieur après plusieurs bonnes réponses d'affilée.</p>
+      <div id="auto-advance-count-wrap" hidden>
+        <p class="muted">Bonnes réponses d'affilée nécessaires :</p>
+        <div class="level-row" id="auto-advance-count-row"></div>
+      </div>
     </div>
   </div>
 
@@ -453,22 +511,28 @@
         <div class="level-row" id="practice-mode"></div>
 
         <!-- Mode "Manuel" : choix d'une activité précise, à travailler en
-             boucle (au lieu d'un tirage aléatoire parmi toutes les familles). -->
+             boucle (au lieu d'un tirage aléatoire parmi toutes les familles).
+             La liste des activités se replie toute seule au bout de 5s
+             d'inactivité (voir armManualCollapse) pour laisser plus de place
+             à l'exercice ; "Afficher les activités" la fait revenir. -->
         <div id="manual-picker" hidden>
-          <p class="muted">Choisis une activité à travailler :</p>
-          <div class="level-row" id="manual-family-row"></div>
+          <button class="btn ghost" id="manual-show-activities-btn" type="button" hidden>👁 Afficher les activités</button>
+          <div id="manual-activity-picker">
+            <p class="muted">Choisis une activité à travailler :</p>
+            <div class="level-row" id="manual-family-row"></div>
+            <!-- La famille "Quizz" contient à elle seule une vingtaine de
+                 types de questions différents (côtés, angles, coordonnées,
+                 symétrie, solides, énigmes, calcul...) : ce sélecteur permet
+                 de s'entraîner sur un type précis plutôt que de tous les
+                 mélanger au hasard. -->
+            <div id="manual-qcm-type-wrap" hidden>
+              <p class="muted">Type de question (Quizz) :</p>
+              <div class="level-row" id="manual-qcm-type-row"></div>
+            </div>
+          </div>
           <div id="manual-level-wrap" hidden>
             <p class="muted">Niveau :</p>
             <div class="level-row" id="manual-level-row"></div>
-          </div>
-          <!-- La famille "Formes" (QCM) contient à elle seule une vingtaine
-               de types de questions différents (côtés, angles, coordonnées,
-               symétrie, solides, énigmes, calcul...) : ce sélecteur permet
-               de s'entraîner sur un type précis plutôt que de tous les
-               mélanger au hasard. -->
-          <div id="manual-qcm-type-wrap" hidden>
-            <p class="muted">Type de question (Formes) :</p>
-            <div class="level-row" id="manual-qcm-type-row"></div>
           </div>
         </div>
 
@@ -589,23 +653,73 @@
 
         <!-- ===== BATAILLE ===== -->
         <div id="arena-battle-wrap" hidden>
-          <p class="muted" id="battle-instructions">Choisis un chat, puis un brainrot dans tes personnages débloqués.</p>
-          <p class="qtype-tag">Tes chats 🐱</p>
-          <div class="sprite-grid" id="battle-cat-grid"></div>
-          <p class="qtype-tag" style="margin-top:14px;">Tes brainrots 👹</p>
-          <div class="sprite-grid" id="battle-brain-grid"></div>
+          <div class="btn-row">
+            <button class="btn ghost" id="unlock-all-btn" type="button">🔓 Débloquer tous les personnages (test)</button>
+          </div>
+          <div class="level-row" id="battle-modes"></div>
 
-          <div id="battle-duel-wrap" hidden>
-            <div class="duel-wrap">
-              <div class="duel-fighter" id="duel-cat"></div>
-              <div class="duel-vs">VS</div>
-              <div class="duel-fighter" id="duel-brain"></div>
+          <!-- ----- Duel rapide (1 chat vs 1 brainrot) ----- -->
+          <div id="battle-duel-mode">
+            <div id="duel-pick-wrap">
+              <p class="muted" id="battle-instructions">Choisis un chat, puis un brainrot dans tes personnages débloqués.</p>
+              <p class="qtype-tag">Tes chats 🐱</p>
+              <div class="sprite-grid" id="battle-cat-grid"></div>
+              <p class="qtype-tag" style="margin-top:14px;">Tes brainrots 👹</p>
+              <div class="sprite-grid" id="battle-brain-grid"></div>
             </div>
-            <p class="muted" id="battle-pick-note" style="text-align:center;">Choisis une statistique de ton chat pour lancer le duel !</p>
-            <div id="battle-stats"></div>
-            <div class="duel-result" id="battle-result"></div>
-            <div class="btn-row" style="justify-content:center;">
-              <button class="btn primary" id="battle-again" type="button" hidden>Nouveau duel ↻</button>
+
+            <div id="battle-duel-wrap" hidden>
+              <div class="btn-row">
+                <button class="btn ghost" id="duel-change-btn" type="button">↩️ Changer les personnages</button>
+              </div>
+              <div class="duel-wrap">
+                <div class="duel-fighter" id="duel-cat"></div>
+                <div class="duel-vs">VS</div>
+                <div class="duel-fighter" id="duel-brain"></div>
+              </div>
+              <p class="muted" id="battle-pick-note" style="text-align:center;">Choisis une statistique de ton chat pour lancer le duel !</p>
+              <div id="battle-stats"></div>
+              <div class="duel-result" id="battle-result"></div>
+              <div class="btn-row" style="justify-content:center;">
+                <button class="btn primary" id="battle-again" type="button" hidden>Nouveau duel ↻</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ----- Mode Équipe (5 chats vs adversaires aléatoires, en gauntlet) ----- -->
+          <div id="battle-team-mode" hidden>
+            <div id="team-pick-wrap">
+              <p class="muted">Choisis <strong>5 chats</strong> pour former ton équipe (<span id="team-pick-count">0</span>/5).</p>
+              <div class="sprite-grid" id="team-pick-grid"></div>
+              <div class="btn-row" style="justify-content:center;">
+                <button class="btn primary" id="team-start-btn" type="button" hidden>Commencer le combat ! ⚔️</button>
+              </div>
+            </div>
+
+            <div id="team-fight-wrap" hidden>
+              <div class="btn-row">
+                <button class="btn ghost" id="team-abandon-btn" type="button">↩️ Changer d'équipe</button>
+              </div>
+              <div class="arena-star-note"><span>🏆</span><span>Adversaires vaincus : <strong id="team-score">0</strong></span></div>
+              <p class="muted" id="team-roster-note" style="text-align:center;"></p>
+              <div class="duel-wrap">
+                <div class="duel-fighter" id="team-duel-cat"></div>
+                <div class="duel-vs">VS</div>
+                <div class="duel-fighter" id="team-duel-brain"></div>
+              </div>
+              <p class="muted" id="team-pick-note" style="text-align:center;">Choisis une statistique pour attaquer !</p>
+              <div id="team-battle-stats"></div>
+              <div class="duel-result" id="team-battle-result"></div>
+              <div class="btn-row" style="justify-content:center;">
+                <button class="btn primary" id="team-next-btn" type="button" hidden>Adversaire suivant ↻</button>
+              </div>
+            </div>
+
+            <div id="team-over-wrap" hidden>
+              <p class="duel-result" id="team-over-text"></p>
+              <div class="btn-row" style="justify-content:center;">
+                <button class="btn primary" id="team-restart-btn" type="button">Reformer une équipe ↺</button>
+              </div>
             </div>
           </div>
         </div>
@@ -663,6 +777,34 @@
     updateSfxHint();
   });
   updateSfxHint();
+
+  /* ---- Avancement automatique (mode Manuel) : monte de niveau toute seule
+     après X bonnes réponses d'affilée sur la même activité. ---- */
+  var autoAdvanceEnabled = false;
+  var autoAdvanceThreshold = 5;
+  var AUTO_ADVANCE_OPTIONS = [3,5,8,10];
+  try{
+    if(localStorage.getItem('geo_auto_advance') === '1') autoAdvanceEnabled = true;
+    var savedThreshold = parseInt(localStorage.getItem('geo_auto_advance_n'),10);
+    if(AUTO_ADVANCE_OPTIONS.indexOf(savedThreshold)!==-1) autoAdvanceThreshold = savedThreshold;
+  }catch(e){}
+  document.getElementById('auto-advance-toggle').checked = autoAdvanceEnabled;
+  document.getElementById('auto-advance-count-wrap').hidden = !autoAdvanceEnabled;
+  document.getElementById('auto-advance-toggle').addEventListener('change', function(e){
+    autoAdvanceEnabled = e.target.checked;
+    document.getElementById('auto-advance-count-wrap').hidden = !autoAdvanceEnabled;
+    try{ localStorage.setItem('geo_auto_advance', autoAdvanceEnabled ? '1' : '0'); }catch(err){}
+  });
+  buildLevelRow(
+    document.getElementById('auto-advance-count-row'),
+    AUTO_ADVANCE_OPTIONS.map(function(n){ return n+''; }),
+    AUTO_ADVANCE_OPTIONS.indexOf(autoAdvanceThreshold),
+    function(idx){
+      autoAdvanceThreshold = AUTO_ADVANCE_OPTIONS[idx];
+      try{ localStorage.setItem('geo_auto_advance_n', String(autoAdvanceThreshold)); }catch(e){}
+    }
+  );
+
   document.getElementById('settings-btn').addEventListener('click', function(){
     document.getElementById('settings-overlay').hidden = false;
   });
@@ -2903,7 +3045,7 @@
 
   var FAMILY_TAGS = {
     measure:'Mesurer', deform:'Déformer', net:'Patron → Solide',
-    qcm:'Formes', 'clock-lire':'Lire l\'heure', 'clock-regler':'Régler l\'heure'
+    qcm:'Quizz', 'clock-lire':'Lire l\'heure', 'clock-regler':'Régler l\'heure'
   };
   var FAMILY_WRAP_IDS = {
     measure:'fam-measure', deform:'fam-deform', net:'fam-net',
@@ -2916,7 +3058,7 @@
   var FAMILIES_WITH_LEVELS = {
     measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':false
   };
-  // La famille "Formes" (QCM) regroupe à elle seule ~20 types de questions
+  // La famille "Quizz" (QCM) regroupe à elle seule ~20 types de questions
   // (M4_LEVELS[*].types) qui étaient auparavant sélectionnables un par un.
   // On les réexpose ici en mode Manuel via l'ancien mécanisme m4TypeFilter
   // (déjà lu par genQuestion, mais plus jamais réglé depuis la fusion).
@@ -2931,18 +3073,74 @@
     monnaie:'Monnaie', heure:'Lire l\'heure (QCM)', enigme:'Énigme',
     vie:'Maths de la vie', image:'Photo / illustration'
   };
+  var LEVEL_NAMES = ['Facile','Moyen','Difficile'];
+  // Reconstruit le sélecteur de niveau avec UNIQUEMENT les niveaux passés en
+  // argument (ex : un type de quizz qui n'existe qu'en Difficile n'affiche
+  // qu'un seul bouton) — c'est le choix d'activité qui pilote les niveaux
+  // disponibles, jamais l'inverse.
+  var manualAvailableLevels = [0,1,2];
+  function rebuildManualLevelRow(levels){
+    var wrap = document.getElementById('manual-level-wrap');
+    manualStreak = 0;
+    manualAvailableLevels = levels || [];
+    if(!levels || !levels.length){ wrap.hidden = true; return; }
+    wrap.hidden = false;
+    var labels = levels.map(function(i){ return LEVEL_NAMES[i]; });
+    buildLevelRow(document.getElementById('manual-level-row'), labels, 0, function(idx){
+      globalLevel = levels[idx];
+      manualStreak = 0;
+      nextPracticeQuestion();
+      armManualCollapse();
+    });
+    globalLevel = levels[0];
+  }
+  // Niveaux où un type de quizz donné existe réellement (M4_LEVELS[*].types).
+  function qcmTypeLevels(type){
+    if(type==='random') return [0,1,2];
+    var levels = [];
+    for(var i=0;i<M4_LEVELS.length;i++){
+      if(M4_LEVELS[i].types.indexOf(type)!==-1) levels.push(i);
+    }
+    return levels.length ? levels : [0,1,2];
+  }
   function refreshManualQcmTypes(){
     var wrap = document.getElementById('manual-qcm-type-wrap');
     if(manualFamily !== 'qcm'){ wrap.hidden = true; m4TypeFilter = 'random'; return; }
     wrap.hidden = false;
-    var types = M4_LEVELS[globalLevel].types;
-    var labels = ['Aléatoire'].concat(types.map(function(t){ return QCM_TYPE_LABELS[t] || t; }));
+    // Union de tous les types sur tous les niveaux, pour qu'une activité ne
+    // disparaisse jamais de la liste selon le niveau actuellement choisi.
+    var allTypes = [];
+    M4_LEVELS.forEach(function(lv){
+      lv.types.forEach(function(t){ if(allTypes.indexOf(t)===-1) allTypes.push(t); });
+    });
+    var labels = ['Aléatoire'].concat(allTypes.map(function(t){ return QCM_TYPE_LABELS[t] || t; }));
     m4TypeFilter = 'random';
     buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
-      m4TypeFilter = idx===0 ? 'random' : types[idx-1];
+      m4TypeFilter = idx===0 ? 'random' : allTypes[idx-1];
+      rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));
       nextPracticeQuestion();
+      armManualCollapse();
     });
+    rebuildManualLevelRow(qcmTypeLevels('random'));
   }
+  // ---- Repli automatique de la liste d'activités après 5s d'inactivité ----
+  var manualCollapseTimer = null;
+  function armManualCollapse(){
+    clearTimeout(manualCollapseTimer);
+    manualCollapseTimer = setTimeout(function(){
+      document.getElementById('manual-activity-picker').hidden = true;
+      document.getElementById('manual-show-activities-btn').hidden = false;
+    }, 5000);
+  }
+  function expandManualActivities(){
+    clearTimeout(manualCollapseTimer);
+    document.getElementById('manual-activity-picker').hidden = false;
+    document.getElementById('manual-show-activities-btn').hidden = true;
+  }
+  document.getElementById('manual-show-activities-btn').addEventListener('click', function(){
+    expandManualActivities();
+    armManualCollapse();
+  });
   // Manipulations plus lentes (glisser des coins, régler des aiguilles) sont
   // réservées au mode Aléatoire : un compte à rebours mélange seulement les
   // familles qui se répondent en un tap. Le patron 3D en est exclu aussi :
@@ -2995,11 +3193,13 @@
       document.getElementById('countdown-results').hidden = true;
       document.getElementById('countdown-setup').hidden = true;
       document.getElementById('practice-exercise').hidden = !manualFamily;
+      expandManualActivities();
       if(manualFamily) nextPracticeQuestion();
     } else {
       // Retour en mode auto (Facile/Moyen/Difficile) : jamais de type QCM
       // forcé, le mélange redevient entièrement aléatoire.
       m4TypeFilter = 'random';
+      clearTimeout(manualCollapseTimer);
       if(practiceMode==='free'){
         document.getElementById('countdown-setup').hidden = true;
         document.getElementById('practice-exercise').hidden = false;
@@ -3009,12 +3209,44 @@
       }
     }
   }
+  var manualStreak = 0;
   function onPracticeAnswered(correct){
+    if(appMode==='manual' && manualFamily){
+      if(!correct){
+        manualStreak = 0;
+      } else {
+        manualStreak++;
+        if(autoAdvanceEnabled && manualStreak >= autoAdvanceThreshold){
+          manualStreak = 0;
+          var pos = manualAvailableLevels.indexOf(globalLevel);
+          if(pos !== -1 && pos < manualAvailableLevels.length - 1){
+            var nextLevel = manualAvailableLevels[pos+1];
+            setTimeout(function(){ manualAdvanceLevel(nextLevel); }, 700);
+          }
+        }
+      }
+    }
     if(practiceMode!=='countdown' || !countdownRunning) return;
     countdownScore.total++;
     if(correct) countdownScore.correct++;
     updateCountdownHud();
     setTimeout(function(){ if(countdownRunning) nextPracticeQuestion(); }, 900);
+  }
+  function manualAdvanceLevel(newLevel){
+    globalLevel = newLevel;
+    var pos = manualAvailableLevels.indexOf(newLevel);
+    document.querySelectorAll('#manual-level-row .level-btn').forEach(function(b,i){
+      b.classList.toggle('active', i===pos);
+    });
+    showAutoAdvanceToast(LEVEL_NAMES[newLevel]);
+    nextPracticeQuestion();
+  }
+  function showAutoAdvanceToast(levelName){
+    var t = document.createElement('div');
+    t.className = 'auto-advance-toast';
+    t.textContent = '⬆️ Niveau ' + levelName + ' débloqué, bravo !';
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2200);
   }
 
   function updateCountdownHud(remainMs){
@@ -3077,25 +3309,24 @@
     document.getElementById('countdown-setup').hidden = false;
   });
 
-  // Mode "Manuel" : choix d'une activité précise à répéter en boucle, avec
-  // son propre sélecteur de niveau (masqué pour les activités qui n'en ont pas).
+  // Mode "Manuel" : choix d'une activité précise à répéter en boucle. Le
+  // niveau (en dessous) dépend de l'activité choisie : moins de boutons si
+  // elle n'existe pas en Facile et/ou en Moyen (voir rebuildManualLevelRow).
   buildLevelRow(
     document.getElementById('manual-family-row'),
     MANUAL_FAMILY_LIST.map(function(k){ return FAMILY_TAGS[k]; }),
     -1,
     function(idx){
       manualFamily = MANUAL_FAMILY_LIST[idx];
-      document.getElementById('manual-level-wrap').hidden = !FAMILIES_WITH_LEVELS[manualFamily];
-      refreshManualQcmTypes();
+      refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
+      if(manualFamily !== 'qcm'){
+        rebuildManualLevelRow(FAMILIES_WITH_LEVELS[manualFamily] ? [0,1,2] : []);
+      }
       document.getElementById('practice-exercise').hidden = false;
       nextPracticeQuestion();
+      armManualCollapse();
     }
   );
-  buildLevelRow(document.getElementById('manual-level-row'), ['Facile','Moyen','Difficile'], 0, function(idx){
-    globalLevel = idx;
-    refreshManualQcmTypes();
-    if(appMode==='manual' && manualFamily) nextPracticeQuestion();
-  });
 
   setGlobalLevel(0); // charge la toute première question, niveau Facile
 
@@ -3400,12 +3631,23 @@
     renderShop();
   });
 
-  /* ---- Bataille (façon "bataille de cartes" : une statistique choisie l'emporte) ---- */
-  var selectedCatId = null, selectedBrainId = null;
+  /* ---- Bataille : Duel rapide (1v1) et Mode Équipe (5 vs adversaires
+     aléatoires, en gauntlet) partagent le même moteur de résolution
+     (runDuelResolution : anim. d'attaque puis résultat). ---- */
   function findSprite(list, id){
     for(var i=0;i<list.length;i++){ if(list[i].id===id) return list[i]; }
     return null;
   }
+  function unlockAllSprites(){
+    CAT_SPRITES.forEach(function(s){ ownedCats[s.id] = true; });
+    BRAINROT_SPRITES.forEach(function(s){ ownedBrain[s.id] = true; });
+    saveOwned();
+    renderShop();
+    renderBattleGrids();
+    renderTeamPickGrid();
+  }
+  document.getElementById('unlock-all-btn').addEventListener('click', unlockAllSprites);
+
   function renderPickGrid(container, list, ownedMap, selectedId, onPick){
     container.innerHTML = '';
     var ownedList = list.filter(function(s){ return ownedMap[s.id]; });
@@ -3428,19 +3670,6 @@
       container.appendChild(msg);
     }
   }
-  function renderBattleGrids(){
-    renderPickGrid(document.getElementById('battle-cat-grid'), CAT_SPRITES, ownedCats, selectedCatId, function(id){
-      selectedCatId = id; renderBattleGrids(); checkDuelReady();
-    });
-    renderPickGrid(document.getElementById('battle-brain-grid'), BRAINROT_SPRITES, ownedBrain, selectedBrainId, function(id){
-      selectedBrainId = id; renderBattleGrids(); checkDuelReady();
-    });
-  }
-  function checkDuelReady(){
-    var wrap = document.getElementById('battle-duel-wrap');
-    if(selectedCatId && selectedBrainId){ wrap.hidden = false; startDuel(); }
-    else { wrap.hidden = true; }
-  }
   function renderFighterCard(container, sprite){
     container.innerHTML = '';
     renderSpriteVisual(container, sprite);
@@ -3451,19 +3680,88 @@
     rarity.style.background = RARITY_META[sprite.rarity].color;
     container.appendChild(rarity);
   }
-  function renderBattleStats(cat, brain, active){
-    var wrap = document.getElementById('battle-stats');
+  function renderBattleStatsInto(containerId, cat, active, onPick){
+    var wrap = document.getElementById(containerId);
     wrap.innerHTML = '';
     STAT_KEYS.forEach(function(key){
       var row = document.createElement('div');
       row.className = 'stat-row' + (active ? '' : ' disabled');
       row.innerHTML = '<span>'+STAT_LABELS[key]+'</span><span class="stat-val">'+cat.stats[key]+'</span>';
-      if(active){
-        row.addEventListener('click', function(){ resolveDuel(cat, brain, key); });
-      }
+      if(active) row.addEventListener('click', function(){ onPick(key); });
       wrap.appendChild(row);
     });
   }
+  // Petite flèche/éclair qui vole du gagnant vers le perdant avant que le
+  // résultat ne s'affiche (voir runDuelResolution).
+  function playAttackAnim(fromEl, toEl, emoji){
+    var fromRect = fromEl.getBoundingClientRect(), toRect = toEl.getBoundingClientRect();
+    var fx = fromRect.left+fromRect.width/2, fy = fromRect.top+fromRect.height/2;
+    var tx = toRect.left+toRect.width/2, ty = toRect.top+toRect.height/2;
+    var bolt = document.createElement('div');
+    bolt.className = 'attack-bolt';
+    bolt.textContent = emoji;
+    bolt.style.left = fx+'px'; bolt.style.top = fy+'px';
+    bolt.style.setProperty('--tx',(tx-fx)+'px');
+    bolt.style.setProperty('--ty',(ty-fy)+'px');
+    document.body.appendChild(bolt);
+    setTimeout(function(){ bolt.remove(); }, 550);
+  }
+  // Moteur de résolution partagé par le Duel rapide et le Mode Équipe :
+  // joue l'animation d'attaque (gagnant -> perdant), puis révèle le
+  // résultat. onDone(catWon) reçoit true/false/null (égalité).
+  function runDuelResolution(opts){
+    var catVal = opts.catSprite.stats[opts.key], brainVal = opts.brainSprite.stats[opts.key];
+    var catEl = document.getElementById(opts.catElId), brainEl = document.getElementById(opts.brainElId);
+    var resultEl = document.getElementById(opts.resultElId);
+    var tie = catVal === brainVal;
+    var catWins = catVal > brainVal;
+    if(!tie) playAttackAnim(catWins ? catEl : brainEl, catWins ? brainEl : catEl, catWins ? '⚔️' : '💥');
+    setTimeout(function(){
+      if(tie){
+        resultEl.textContent = '🤝 Égalité ! (' + catVal + ' contre ' + brainVal + ')';
+        resultEl.style.color = 'var(--text)';
+        playSound('good');
+      } else if(catWins){
+        if(opts.chosenRowEl) opts.chosenRowEl.classList.add('win');
+        catEl.classList.add('winner'); brainEl.classList.add('loser');
+        resultEl.textContent = '🎉 ' + opts.catSprite.name + ' gagne ! (' + catVal + ' contre ' + brainVal + ')';
+        resultEl.style.color = 'var(--good)';
+        playSound('good'); celebrate('good', catEl);
+      } else {
+        if(opts.chosenRowEl) opts.chosenRowEl.classList.add('lose');
+        brainEl.classList.add('winner'); catEl.classList.add('loser');
+        resultEl.textContent = '💥 ' + opts.brainSprite.name + ' gagne ! (' + brainVal + ' contre ' + catVal + ')';
+        resultEl.style.color = 'var(--bad)';
+        playSound('bad'); celebrate('bad', brainEl);
+      }
+      opts.onDone(tie ? null : catWins);
+    }, tie ? 0 : 480);
+  }
+
+  /* ----- Duel rapide (1 chat vs 1 brainrot, choisis à la main) ----- */
+  var selectedCatId = null, selectedBrainId = null;
+  function renderBattleGrids(){
+    renderPickGrid(document.getElementById('battle-cat-grid'), CAT_SPRITES, ownedCats, selectedCatId, function(id){
+      selectedCatId = id; renderBattleGrids(); checkDuelReady();
+    });
+    renderPickGrid(document.getElementById('battle-brain-grid'), BRAINROT_SPRITES, ownedBrain, selectedBrainId, function(id){
+      selectedBrainId = id; renderBattleGrids(); checkDuelReady();
+    });
+  }
+  function checkDuelReady(){
+    var ready = !!(selectedCatId && selectedBrainId);
+    document.getElementById('battle-duel-wrap').hidden = !ready;
+    // On nettoie l'UI (masque les grilles de choix) une fois les deux
+    // adversaires sélectionnés, pour gagner en lisibilité.
+    document.getElementById('duel-pick-wrap').hidden = ready;
+    if(ready) startDuel();
+  }
+  document.getElementById('duel-change-btn').addEventListener('click', function(){
+    selectedCatId = null; selectedBrainId = null;
+    document.getElementById('battle-duel-wrap').hidden = true;
+    document.getElementById('duel-pick-wrap').hidden = false;
+    renderBattleGrids();
+  });
   function startDuel(){
     var cat = findSprite(CAT_SPRITES, selectedCatId);
     var brain = findSprite(BRAINROT_SPRITES, selectedBrainId);
@@ -3475,37 +3773,130 @@
     document.getElementById('battle-result').textContent = '';
     document.getElementById('battle-pick-note').hidden = false;
     document.getElementById('battle-again').hidden = true;
-    renderBattleStats(cat, brain, true);
+    renderBattleStatsInto('battle-stats', cat, true, function(key){ resolveDuel(cat, brain, key); });
   }
   function resolveDuel(cat, brain, key){
-    var catVal = cat.stats[key], brainVal = brain.stats[key];
     document.getElementById('battle-pick-note').hidden = true;
-    renderBattleStats(cat, brain, false);
-    var idx = STAT_KEYS.indexOf(key);
-    var rows = document.querySelectorAll('#battle-stats .stat-row');
-    var chosenRow = rows[idx];
-    var resultEl = document.getElementById('battle-result');
-    var catEl = document.getElementById('duel-cat'), brainEl = document.getElementById('duel-brain');
-    if(catVal === brainVal){
-      resultEl.textContent = '🤝 Égalité ! (' + catVal + ' contre ' + brainVal + ')';
-      resultEl.style.color = 'var(--text)';
-      playSound('good');
-    } else if(catVal > brainVal){
-      if(chosenRow) chosenRow.classList.add('win');
-      catEl.classList.add('winner'); brainEl.classList.add('loser');
-      resultEl.textContent = '🎉 ' + cat.name + ' gagne ! (' + catVal + ' contre ' + brainVal + ')';
-      resultEl.style.color = 'var(--good)';
-      playSound('good'); celebrate('good', catEl);
-    } else {
-      if(chosenRow) chosenRow.classList.add('lose');
-      brainEl.classList.add('winner'); catEl.classList.add('loser');
-      resultEl.textContent = '💥 ' + brain.name + ' gagne ! (' + brainVal + ' contre ' + catVal + ')';
-      resultEl.style.color = 'var(--bad)';
-      playSound('bad'); celebrate('bad', brainEl);
-    }
-    document.getElementById('battle-again').hidden = false;
+    renderBattleStatsInto('battle-stats', cat, false, null);
+    var chosenRowEl = document.querySelectorAll('#battle-stats .stat-row')[STAT_KEYS.indexOf(key)];
+    runDuelResolution({
+      catSprite:cat, brainSprite:brain, key:key, chosenRowEl:chosenRowEl,
+      catElId:'duel-cat', brainElId:'duel-brain', resultElId:'battle-result',
+      onDone:function(){ document.getElementById('battle-again').hidden = false; }
+    });
   }
   document.getElementById('battle-again').addEventListener('click', startDuel);
+
+  /* ----- Mode Équipe : 5 chats choisis à l'avance affrontent une suite
+     d'adversaires tirés au hasard (gauntlet). Une victoire garde le même
+     chat (nouvel adversaire tiré au sort) ; une défaite fait entrer le chat
+     suivant de l'équipe. Le score = nombre d'adversaires vaincus. ----- */
+  var teamRoster = [];
+  var teamFightIdx = 0;
+  var teamScore = 0;
+  var teamCurrentBrain = null;
+  function renderTeamPickGrid(){
+    var container = document.getElementById('team-pick-grid');
+    container.innerHTML = '';
+    var ownedList = CAT_SPRITES.filter(function(s){ return ownedCats[s.id]; });
+    ownedList.forEach(function(sprite){
+      var picked = teamRoster.indexOf(sprite.id) !== -1;
+      var card = document.createElement('div');
+      card.className = 'sprite-card owned' + (picked ? ' selected' : '');
+      renderSpriteVisual(card, sprite);
+      var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
+      card.appendChild(nameEl);
+      var rarity = document.createElement('div'); rarity.className='rarity-pill';
+      rarity.textContent = RARITY_META[sprite.rarity].label;
+      rarity.style.background = RARITY_META[sprite.rarity].color;
+      card.appendChild(rarity);
+      card.addEventListener('click', function(){
+        var pos = teamRoster.indexOf(sprite.id);
+        if(pos!==-1) teamRoster.splice(pos,1);
+        else if(teamRoster.length<5) teamRoster.push(sprite.id);
+        renderTeamPickGrid();
+      });
+      container.appendChild(card);
+    });
+    if(!ownedList.length){
+      var msg = document.createElement('p'); msg.className='muted';
+      msg.textContent = 'Rien débloqué pour le moment — va faire un tour à la boutique !';
+      container.appendChild(msg);
+    }
+    document.getElementById('team-pick-count').textContent = teamRoster.length;
+    document.getElementById('team-start-btn').hidden = teamRoster.length !== 5;
+  }
+  function drawRandomBrainOpponent(){
+    var pool = BRAINROT_SPRITES.filter(function(s){ return ownedBrain[s.id]; });
+    if(!pool.length) pool = BRAINROT_SPRITES;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+  function currentTeamCat(){ return findSprite(CAT_SPRITES, teamRoster[teamFightIdx]); }
+  function startTeamBattle(){
+    teamCurrentBrain = drawRandomBrainOpponent();
+    document.getElementById('team-score').textContent = teamScore;
+    document.getElementById('team-roster-note').textContent =
+      'Ton champion : ' + currentTeamCat().name + ' (' + (teamFightIdx+1) + '/5)';
+    renderFighterCard(document.getElementById('team-duel-cat'), currentTeamCat());
+    renderFighterCard(document.getElementById('team-duel-brain'), teamCurrentBrain);
+    document.getElementById('team-duel-cat').className = 'duel-fighter';
+    document.getElementById('team-duel-brain').className = 'duel-fighter';
+    document.getElementById('team-battle-result').textContent = '';
+    document.getElementById('team-pick-note').hidden = false;
+    document.getElementById('team-next-btn').hidden = true;
+    renderBattleStatsInto('team-battle-stats', currentTeamCat(), true, function(key){ resolveTeamDuel(key); });
+  }
+  function resolveTeamDuel(key){
+    var cat = currentTeamCat(), brain = teamCurrentBrain;
+    document.getElementById('team-pick-note').hidden = true;
+    renderBattleStatsInto('team-battle-stats', cat, false, null);
+    var chosenRowEl = document.querySelectorAll('#team-battle-stats .stat-row')[STAT_KEYS.indexOf(key)];
+    runDuelResolution({
+      catSprite:cat, brainSprite:brain, key:key, chosenRowEl:chosenRowEl,
+      catElId:'team-duel-cat', brainElId:'team-duel-brain', resultElId:'team-battle-result',
+      onDone:function(catWon){
+        if(catWon===true){ teamScore++; document.getElementById('team-score').textContent = teamScore; }
+        else if(catWon===false){ teamFightIdx++; }
+        document.getElementById('team-next-btn').hidden = false;
+      }
+    });
+  }
+  document.getElementById('team-start-btn').addEventListener('click', function(){
+    teamFightIdx = 0; teamScore = 0;
+    document.getElementById('team-pick-wrap').hidden = true;
+    document.getElementById('team-over-wrap').hidden = true;
+    document.getElementById('team-fight-wrap').hidden = false;
+    startTeamBattle();
+  });
+  document.getElementById('team-abandon-btn').addEventListener('click', function(){
+    teamRoster = [];
+    document.getElementById('team-fight-wrap').hidden = true;
+    document.getElementById('team-over-wrap').hidden = true;
+    document.getElementById('team-pick-wrap').hidden = false;
+    renderTeamPickGrid();
+  });
+  document.getElementById('team-restart-btn').addEventListener('click', function(){
+    teamRoster = [];
+    document.getElementById('team-over-wrap').hidden = true;
+    document.getElementById('team-pick-wrap').hidden = false;
+    renderTeamPickGrid();
+  });
+  document.getElementById('team-next-btn').addEventListener('click', function(){
+    if(teamFightIdx >= teamRoster.length){
+      document.getElementById('team-fight-wrap').hidden = true;
+      document.getElementById('team-over-wrap').hidden = false;
+      document.getElementById('team-over-text').textContent =
+        '💀 Toute ton équipe a été vaincue ! Score final : ' + teamScore + ' adversaire(s) battu(s).';
+    } else {
+      startTeamBattle();
+    }
+  });
+
+  buildLevelRow(document.getElementById('battle-modes'), ['Duel rapide ⚔️','Mode Équipe 🛡️'], 0, function(idx){
+    document.getElementById('battle-duel-mode').hidden = idx!==0;
+    document.getElementById('battle-team-mode').hidden = idx!==1;
+    if(idx===1) renderTeamPickGrid();
+  });
 
   buildLevelRow(document.getElementById('arena-modes'), ['Boutique 🛒','Bataille ⚔️'], 0, function(idx){
     document.getElementById('arena-shop-wrap').hidden = idx!==0;
