@@ -2054,7 +2054,7 @@
     { id:'decodage',     label:TYPE_LABELS.decodage,     defaultLevels:[2],
       randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.' },
     { id:'symVrai',      label:TYPE_LABELS.symVrai,      defaultLevels:[2],
-      randomNote:'La droite proposée (vrai axe ou non, et son orientation) est tirée au hasard à chaque question.' },
+      randomNote:'La droite proposée est parallèle à un côté (jamais une diagonale, qui prêtait à confusion) : soit exactement au milieu (vrai axe), soit décalée d\'un pourcentage variable (10 à 90%, jamais 50%) tiré au hasard.' },
     { id:'enigme',       label:TYPE_LABELS.enigme,       defaultLevels:[2],
       randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 24 énigmes (texte non généré : toujours les mêmes formulations).' }
   ];
@@ -2667,26 +2667,37 @@
   // la diagonale deviendrait un vrai axe, ce qui casserait la question), et
   // les propositions "fausses" varient entre diagonale et droite décalée
   // plutôt que toujours les 2 mêmes diagonales fixes.
+  // Une diagonale coupe bien un rectangle en 2 triangles de MÊME AIRE, ce qui
+  // prêtait à confusion ("ça a l'air coupé en deux parts égales, donc
+  // symétrique ?"). Or une diagonale n'est un axe de symétrie que pour un
+  // carré (les 2 moitiés ne se superposent pas en pliant, sauf carré) : on
+  // ne l'utilise donc plus comme fausse réponse. Les "non-axes" sont
+  // maintenant uniquement des droites parallèles à un côté mais décalées du
+  // centre (jamais 50%), à des pourcentages variés (10/20/30/35/65/70/80/90)
+  // pour que l'écart avec le vrai milieu soit tantôt petit, tantôt grand.
+  var SYM_VRAI_OFFSETS = [10,20,30,35,65,70,80,90];
   function genSymVraiQuestion(){
     var isAxis = Math.random()<0.5;
     var w = 70+randInt(0,60);
     var h; do{ h = 40+randInt(0,50); }while(Math.abs(w-h)<20); // jamais un carré
     var rx = 100-w/2, ry = 100-h/2;
+    var vertical = Math.random()<0.5;
+    var pct = isAxis ? 50 : pick(SYM_VRAI_OFFSETS);
     var lc;
-    if(isAxis){
-      lc = Math.random()<0.5 ? {x1:100,y1:ry-15,x2:100,y2:ry+h+15} : {x1:rx-15,y1:100,x2:rx+w+15,y2:100};
+    if(vertical){
+      var x = rx + w*(pct/100);
+      lc = {x1:x, y1:ry-15, x2:x, y2:ry+h+15};
     } else {
-      var variant = pick(['diag1','diag2','offV','offH']);
-      if(variant==='diag1') lc = {x1:rx-10,y1:ry-10,x2:rx+w+10,y2:ry+h+10};
-      else if(variant==='diag2') lc = {x1:rx+w+10,y1:ry-10,x2:rx-10,y2:ry+h+10};
-      else if(variant==='offV') lc = {x1:rx+w*0.28,y1:ry-15,x2:rx+w*0.28,y2:ry+h+15};
-      else lc = {x1:rx-15,y1:ry+h*0.28,x2:rx+w+15,y2:ry+h*0.28};
+      var y = ry + h*(pct/100);
+      lc = {x1:rx-15, y1:y, x2:rx+w+15, y2:y};
     }
     return {
       tag:'Symétrie',
       question:'Cette droite est-elle un axe de symétrie du rectangle ?',
       sub:'Imagine que tu plies la figure le long de la droite : les deux côtés se superposent-ils exactement ?',
-      explain: isAxis ? 'Oui : en pliant le long de cette droite, les deux moitiés du rectangle se superposent.' : 'Non : cette droite ne partage pas le rectangle en deux parties identiques.',
+      explain: isAxis
+        ? 'Oui : cette droite passe exactement au milieu, donc en pliant le long d\'elle, les deux moitiés du rectangle se superposent.'
+        : 'Non : cette droite ne passe pas exactement au milieu (elle est décalée), donc les deux parties n\'ont pas la même taille — ce n\'est pas un axe de symétrie.',
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         svg.appendChild(el('rect',{x:rx,y:ry,width:w,height:h, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4}));
