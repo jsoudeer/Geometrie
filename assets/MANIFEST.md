@@ -1,20 +1,33 @@
 # Personnages — noms de fichiers attendus
 
-Dépose une image dans le dossier correspondant (`assets/cats/` ou
-`assets/brainrot/`) en la nommant EXACTEMENT avec l'identifiant ci-dessous,
-suivi de `.png`, `.svg` ou `.jpg` (dans cet ordre de préférence si plusieurs
-formats existent pour le même identifiant).
+**Chaque personnage a maintenant un fichier `.svg` dans ce dépôt**
+(`assets/cats/catNN.svg`, `assets/brainrot/brNN.svg`) : c'est un export exact
+du dessin actuellement généré par le code pour ce personnage. Ce ne sont pas
+des images "en plus" à côté du dessin procédural — ce sont bien celles que le
+jeu affiche aujourd'hui, mises à disposition en fichiers pour pouvoir être
+remplacées facilement.
 
-Exemple : pour remplacer le dessin de "Mochi", ajoute un fichier
-`assets/cats/cat01.png`.
+Pour changer un personnage : ouvre/édite ou remplace le fichier `.svg`
+correspondant (ou dépose un `.png`/`.jpg` du même nom, voir l'ordre de
+priorité ci-dessous), en gardant EXACTEMENT le même nom de fichier.
+
+Priorité si plusieurs formats existent pour le même identifiant :
+`.png` > `.svg` > `.jpg`. Exemple : si `assets/cats/cat01.png` ET
+`assets/cats/cat01.svg` existent tous les deux, c'est le `.png` qui est
+utilisé.
 
 Aucune autre modification n'est nécessaire : le jeu détecte le fichier tout
-seul au chargement de la page et l'affiche à la place du dessin généré. Si le
-fichier n'existe pas (ou est supprimé), le dessin généré réapparaît
-automatiquement.
+seul au chargement de la page. Si un fichier est supprimé, le dessin généré
+par le code réapparaît automatiquement à sa place (le code de dessin reste
+présent, il n'est jamais perdu).
 
-Format conseillé : image carrée (par ex. 256x256), fond transparent de
-préférence (PNG ou SVG).
+Format conseillé pour une image de remplacement : carrée (par ex. 256x256),
+fond transparent de préférence (PNG ou SVG).
+
+Pour régénérer ces 40 fichiers `.svg` à partir du code (par exemple après
+avoir demandé à Claude de modifier l'apparence d'un personnage dans le
+code), il suffit de redemander l'export : Claude fait tourner le dessin
+généré dans un navigateur et réenregistre chaque `.svg` à jour.
 
 ## Chats (`assets/cats/`)
 

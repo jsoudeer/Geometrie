@@ -15,18 +15,21 @@ en un seul fichier HTML autonome (`index.html`), sans dépendance externe.
 
 ## Utiliser tes propres images de personnages
 
-Les 40 personnages (20 chats + 20 brainrots) sont dessinés par le code
-(SVG généré en JavaScript) — aucune image n'est incluse par défaut. Tu peux
-remplacer n'importe lequel par ta propre image :
+Les 40 personnages (20 chats + 20 brainrots) sont dessinés par le code (SVG
+généré en JavaScript), et **chacun a aussi son fichier `.svg` dans
+`assets/cats/` et `assets/brainrot/`** — un export exact de ce que le jeu
+affiche actuellement. Tu peux remplacer n'importe lequel par ta propre
+image :
 
 1. Regarde `assets/MANIFEST.md` pour trouver l'identifiant du personnage
-   (ex. `cat01` pour Mochi).
-2. Dépose ton image dans `assets/cats/` ou `assets/brainrot/` avec ce nom
-   exact (`cat01.png`, par exemple).
-3. Ouvre (ou recharge) `index.html` depuis ce dépôt — l'image apparaît
-   automatiquement à la place du dessin généré, sans toucher au code.
+   (ex. `cat01` pour Mochi) et l'ordre de priorité des formats.
+2. Remplace le fichier existant dans `assets/cats/` ou `assets/brainrot/`
+   (ou ajoute un `.png`/`.jpg` du même nom à côté, qui sera prioritaire).
+3. Ouvre (ou recharge) `index.html` depuis ce dépôt — la nouvelle image
+   apparaît automatiquement, sans toucher au code.
 
-Si le fichier est absent ou supprimé, le dessin généré réapparaît tout seul.
+Si le fichier est supprimé, le dessin généré par le code réapparaît tout
+seul (rien n'est perdu : le code de dessin original reste dans `index.html`).
 
 **Important** : ce mécanisme fonctionne quand `index.html` est ouvert depuis
 ce dépôt (en local, via GitHub Pages, ou une fois empaqueté en app
