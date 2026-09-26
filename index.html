@@ -1,0 +1,2933 @@
+<title>Géo Kawaii vs Brainrot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&family=Bungee&family=Rubik:wght@400;600;700;800&display=swap">
+<style>
+  /* ================= TOKENS ================= */
+  :root{
+    --bg:#FFF6F0; --surface:#FFFFFF; --surface2:#FFE7EF; --surface3:#FFF0DC;
+    --text:#5B4034; --text-soft:#9C7C6E;
+    --accent:#FF8FAE; --accent2:#B79CED; --accent3:#7FD8C4;
+    --good:#3FA672; --bad:#E85D5D;
+    --border:#F3D6DD; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
+    --font-display:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --font-body:'Nunito', system-ui, sans-serif;
+    --radius:20px;
+    color-scheme: light;
+  }
+  body[data-app-theme="cats"]{
+    --bg:#FFF6F0; --surface:#FFFFFF; --surface2:#FFE7EF; --surface3:#FFF0DC;
+    --text:#5B4034; --text-soft:#9C7C6E;
+    --accent:#FF8FAE; --accent2:#B79CED; --accent3:#7FD8C4;
+    --good:#3FA672; --bad:#E85D5D;
+    --border:#F3D6DD; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
+    --font-display:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --font-body:'Nunito', system-ui, sans-serif;
+    color-scheme: light;
+  }
+  body[data-app-theme="brainrot"]{
+    --bg:#120E1A; --surface:#1E1830; --surface2:#2A2043; --surface3:#241A38;
+    --text:#F5F0FF; --text-soft:#B9AEDB;
+    --accent:#C6FF3D; --accent2:#FF3EA5; --accent3:#FF7A1A;
+    --good:#63FF9E; --bad:#FF5A78;
+    --border:#3A2E58; --shadow:0 10px 28px -10px rgba(198,255,61,.18);
+    --font-display:'Bungee', 'Baloo 2', sans-serif;
+    --font-body:'Rubik', system-ui, sans-serif;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  html, body{ overflow-x:hidden; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    margin:0;
+    transition:background .35s ease, color .35s ease;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    padding:14px 16px calc(28px + env(safe-area-inset-bottom,0px));
+    min-height:100%;
+  }
+
+  h1,h2,h3{ font-family:var(--font-display); margin:0; text-wrap:balance; }
+
+  /* ============ TOP BAR ============ */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding:6px 4px 12px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .mascot{ font-size:30px; line-height:1; flex:none; }
+  .brand h1{ font-size:18px; letter-spacing:.2px; }
+  body[data-app-theme="brainrot"] .brand h1{ font-size:15px; letter-spacing:.4px; text-transform:uppercase; }
+  .stars{
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface2); color:var(--text);
+    border:1px solid var(--border);
+    padding:7px 12px; border-radius:999px;
+    font-weight:800; font-size:14px; flex:none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ============ THEME SWITCH ============ */
+  .theme-switch{
+    display:flex; gap:8px; padding:4px; margin-bottom:14px;
+    background:var(--surface2); border-radius:999px; border:1px solid var(--border);
+  }
+  .theme-btn{
+    flex:1; border:none; cursor:pointer; padding:9px 8px; border-radius:999px;
+    font-family:var(--font-display); font-size:13px; font-weight:700;
+    background:transparent; color:var(--text-soft);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:background .2s, color .2s, transform .15s;
+  }
+  .theme-btn.active{ background:var(--surface); color:var(--text); box-shadow:var(--shadow); }
+  .theme-btn:active{ transform:scale(.96); }
+
+  /* ============ TABS ============ */
+  /* flex-wrap + min-width:0 : même précaution que .level-row, pour que
+     l'ajout de nouveaux onglets ne fasse jamais déborder la barre. */
+  .tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .tab-btn{
+    flex:1 1 auto; min-width:70px; border:2px solid var(--border); background:var(--surface);
+    color:var(--text-soft); cursor:pointer; border-radius:14px;
+    padding:9px 4px; font-family:var(--font-body); font-weight:800; font-size:11.5px;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    transition:all .2s;
+  }
+  .tab-btn .ic{ font-size:18px; }
+  .tab-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  body[data-app-theme="brainrot"] .tab-btn.active{ color:#14121A; }
+
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:18px; box-shadow:var(--shadow);
+    margin-bottom:14px;
+  }
+  .card h2{ font-size:17px; margin-bottom:4px; }
+  .muted{ color:var(--text-soft); font-size:13.5px; line-height:1.5; margin:0 0 12px; }
+
+  .btn{
+    font-family:var(--font-display); font-weight:700; font-size:14px;
+    border:none; border-radius:14px; padding:12px 16px; cursor:pointer;
+    background:var(--accent2); color:#fff; transition:transform .12s, filter .15s;
+  }
+  .btn:active{ transform:scale(.96); }
+  .btn.primary{ background:var(--accent); }
+  body[data-app-theme="brainrot"] .btn{ color:#14121A; }
+  .btn.ghost{ background:var(--surface2); color:var(--text); }
+  .btn[disabled]{ opacity:.45; cursor:default; }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+
+  .feedback{
+    margin-top:12px; padding:11px 14px; border-radius:12px;
+    font-weight:800; font-size:14px; display:none; flex-direction:column; align-items:flex-start; gap:4px;
+  }
+  .feedback.show{ display:flex; }
+  .feedback.good{ background:color-mix(in srgb, var(--good) 18%, var(--surface)); color:var(--good); }
+  .feedback.bad{ background:color-mix(in srgb, var(--bad) 16%, var(--surface)); color:var(--bad); }
+  /* Les boîtes de feedback "tappable" peuvent être touchées pour relancer
+     une question, en plus du bouton dédié : plus besoin de viser un petit
+     bouton en bas de l'écran à chaque fois. */
+  .feedback.tappable{ cursor:pointer; }
+  .feedback.tappable.show::after{
+    content:'👉 Touche ici pour continuer'; display:block; margin-top:6px;
+    font-size:11.5px; font-weight:700; opacity:.7;
+  }
+
+  /* ============ LEVEL PILLS (shared) ============ */
+  /* flex-wrap laisse les pastilles retourner à la ligne plutôt que de
+     déborder hors de l'écran quand il y en a beaucoup (ex : les nombreux
+     types de QCM). min-width:0 empêche flexbox d'imposer une largeur
+     minimale basée sur le texte, qui est la cause habituelle du débordement. */
+  .level-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .level-btn{
+    flex:0 1 auto; min-width:0; max-width:100%;
+    border:1.5px solid var(--border); background:var(--surface2); color:var(--text-soft);
+    font-family:var(--font-body); font-weight:800; font-size:11.5px;
+    border-radius:10px; padding:8px 10px; cursor:pointer; transition:all .15s;
+    white-space:normal; line-height:1.25; text-align:center;
+  }
+  .level-row.level-row-even .level-btn{ flex:1 1 auto; }
+  .level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:#14121A; }
+
+  /* ============ MODULE 1 : MESURER ============ */
+  .ruler-wrap{ display:flex; justify-content:center; margin-bottom:6px; }
+  .ruler-wrap svg{ width:100%; max-width:340px; height:auto; }
+  .choices{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
+  .choice-btn{
+    font-family:var(--font-display); font-weight:800; font-size:15px;
+    border:2px solid var(--border); background:var(--surface2); color:var(--text);
+    border-radius:12px; padding:12px 2px; cursor:pointer; transition:all .15s;
+  }
+  .choice-btn:active{ transform:scale(.94); }
+  .choice-btn.correct{ background:var(--good); border-color:var(--good); color:#fff; }
+  .choice-btn.wrong{ background:var(--bad); border-color:var(--bad); color:#fff; }
+  .choice-btn[disabled]{ pointer-events:none; }
+
+  /* ============ MODULE 2 : DEFORMER ============ */
+  .deform-wrap{ display:flex; justify-content:center; }
+  .deform-wrap svg{ width:100%; max-width:280px; height:auto; touch-action:none; }
+  .deform-wrap circle.handle{ cursor:grab; }
+  .side-label{ font-family:var(--font-body); font-weight:800; font-size:11px; fill:var(--text); }
+  .side-label-bg{ fill:var(--surface); opacity:.85; }
+
+  /* ============ MODULE 3 : PATRON -> CUBE ============ */
+  .stage{
+    height:230px; display:flex; align-items:center; justify-content:center;
+    perspective:700px; perspective-origin:50% 40%;
+    touch-action:none;
+  }
+  .stage.spinnable{ cursor:grab; }
+  .stage.spinnable:active{ cursor:grabbing; }
+  .net-spin{ transform-style:preserve-3d; transition:transform .15s ease-out; }
+  .net{ position:relative; transform-style:preserve-3d; transition:transform 1.6s ease; }
+  .face{
+    position:absolute; top:0; left:0; display:flex; align-items:center; justify-content:center;
+    transform-style:preserve-3d; border-radius:6px;
+    border:2px solid rgba(0,0,0,.12);
+    font-family:var(--font-display); font-weight:800; font-size:15px; color:#3B2E22;
+    transition:transform 1.8s cubic-bezier(.65,0,.35,1);
+    backface-visibility:hidden;
+  }
+  .face.broken{ outline:3px solid var(--bad); outline-offset:-3px; animation:pulseBad 1.1s ease-in-out infinite; }
+  @keyframes pulseBad{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.35); } }
+  .yesno-row{ display:flex; gap:10px; margin-top:14px; }
+  .yesno-row .btn{ flex:1; }
+
+  /* ============ MODULE 4 : QCM FORMES ============ */
+  .shape-wrap{ display:flex; justify-content:center; margin-bottom:6px; }
+  .shape-wrap svg{ width:100%; max-width:220px; height:auto; }
+  .qcm-choices{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:14px; }
+  .qcm-choices.cols3{ grid-template-columns:repeat(3,1fr); }
+  .qtype-tag{
+    display:inline-block; font-size:11px; font-weight:800; letter-spacing:.3px;
+    color:var(--text-soft); background:var(--surface2); border-radius:8px;
+    padding:3px 9px; margin-bottom:8px; text-transform:uppercase;
+  }
+
+  /* ============ COACH (personnage qui pose la question) ============ */
+  .coach-row{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  .coach-avatar{
+    flex:none; width:44px; height:44px; border-radius:50%;
+    background:var(--surface2); border:2px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+    transition:transform .25s;
+  }
+  .coach-bubble{
+    position:relative; background:var(--surface2); border:1.5px solid var(--border);
+    border-radius:14px; padding:10px 13px; font-family:var(--font-display);
+    font-size:15.5px; font-weight:700; flex:1; text-wrap:balance;
+  }
+  .coach-bubble::before{
+    content:''; position:absolute; left:-7px; top:14px; width:0; height:0;
+    border-top:7px solid transparent; border-bottom:7px solid transparent;
+    border-right:8px solid var(--border);
+  }
+  .coach-bubble::after{
+    content:''; position:absolute; left:-5.5px; top:14px; width:0; height:0;
+    border-top:7px solid transparent; border-bottom:7px solid transparent;
+    border-right:8px solid var(--surface2);
+  }
+
+  /* ============ EFFETS : réussite / échec ============ */
+  .explain-line{ font-weight:600; font-size:12.5px; margin-top:4px; opacity:.85; }
+  .burst-particle{
+    position:fixed; pointer-events:none; font-size:20px; z-index:9999;
+    animation:burstUp .9s ease-out forwards;
+  }
+  @keyframes burstUp{
+    from{ transform:translate(0,0) scale(.6); opacity:1; }
+    to{ transform:translate(var(--dx,0px), -70px) scale(1.15); opacity:0; }
+  }
+  @keyframes shakeX{
+    10%,90%{ transform:translateX(-2px); } 20%,80%{ transform:translateX(4px); }
+    30%,50%,70%{ transform:translateX(-8px); } 40%,60%{ transform:translateX(8px); }
+  }
+  .shake{ animation:shakeX .4s; }
+  @media (prefers-reduced-motion: reduce){
+    .burst-particle{ animation:none; opacity:0; }
+    .shake{ animation:none; }
+  }
+
+  /* ============ MODULE 6 : BOUTIQUE + BATAILLE ============ */
+  .arena-star-note{
+    display:flex; align-items:center; gap:8px; background:var(--surface2);
+    border-radius:12px; padding:9px 13px; margin-bottom:14px; font-weight:700; font-size:13px;
+  }
+  .sprite-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(108px,1fr));
+    gap:10px; margin-top:4px;
+  }
+  .sprite-card{
+    background:var(--surface2); border:2px solid var(--border); border-radius:14px;
+    padding:8px 6px 10px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    cursor:pointer; transition:all .15s; text-align:center;
+  }
+  .sprite-card svg{ width:64px; height:64px; }
+  .sprite-card .sp-custom-img{ width:64px; height:64px; object-fit:contain; border-radius:12px; }
+  .sprite-card .sp-name{ font-family:var(--font-display); font-weight:800; font-size:11.5px; line-height:1.15; }
+  .sprite-card .rarity-pill{
+    font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.3px;
+    border-radius:7px; padding:2px 7px; color:#fff;
+  }
+  .sprite-card .sp-cost{ font-size:11px; font-weight:800; color:var(--text-soft); }
+  .sprite-card.locked{ opacity:.62; }
+  .sprite-card.locked svg{ filter:grayscale(.75); }
+  .sprite-card.owned{ border-color:var(--good); }
+  .sprite-card.selected{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 18%, var(--surface2)); transform:scale(1.03); }
+  .sprite-card.affordable:active{ transform:scale(.95); }
+  .sprite-card .sp-buy{
+    margin-top:2px; font-family:var(--font-display); font-weight:800; font-size:10.5px;
+    border:none; border-radius:8px; padding:5px 9px; cursor:pointer;
+    background:var(--accent); color:#fff;
+  }
+  body[data-app-theme="brainrot"] .sprite-card .sp-buy{ color:#14121A; }
+  .sprite-card .sp-buy[disabled]{ opacity:.4; cursor:default; }
+
+  .duel-wrap{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin:10px 0 4px; }
+  .duel-fighter{
+    flex:1 1 150px; max-width:220px; background:var(--surface2); border:2px solid var(--border);
+    border-radius:16px; padding:12px 10px; text-align:center;
+  }
+  .duel-fighter svg{ width:84px; height:84px; }
+  .duel-fighter .sp-custom-img{ width:84px; height:84px; object-fit:contain; border-radius:14px; }
+  .duel-fighter .sp-name{ font-family:var(--font-display); font-weight:800; font-size:13.5px; margin-top:2px; }
+  .duel-vs{ font-family:var(--font-display); font-weight:900; font-size:20px; color:var(--accent2); flex:none; }
+  .stat-row{
+    display:flex; align-items:center; justify-content:space-between; gap:6px;
+    background:var(--surface); border:1.5px solid var(--border); border-radius:10px;
+    padding:8px 12px; margin-top:6px; cursor:pointer; transition:all .15s; font-weight:800; font-size:13px;
+  }
+  .stat-row:active{ transform:scale(.97); }
+  .stat-row[disabled], .stat-row.disabled{ pointer-events:none; opacity:.55; }
+  .stat-row .stat-val{ font-family:var(--font-display); font-size:15px; }
+  .stat-row.win{ background:color-mix(in srgb, var(--good) 22%, var(--surface)); border-color:var(--good); }
+  .stat-row.lose{ background:color-mix(in srgb, var(--bad) 18%, var(--surface)); border-color:var(--bad); }
+  .duel-result{
+    text-align:center; font-family:var(--font-display); font-weight:900; font-size:19px;
+    margin-top:12px; min-height:26px;
+  }
+  .duel-fighter.winner{ border-color:var(--good); animation:popWin .5s ease-out; }
+  .duel-fighter.loser{ opacity:.55; animation:shakeX .4s; }
+  @keyframes popWin{
+    0%{ transform:scale(1); } 40%{ transform:scale(1.08); } 100%{ transform:scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .duel-fighter.winner{ animation:none; }
+  }
+</style>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="mascot" id="mascotIcon">🐱</span>
+      <h1 id="appTitle">Géo Miaou</h1>
+    </div>
+    <div class="stars">⭐ <span id="starCount">0</span></div>
+  </header>
+
+  <div class="theme-switch" role="tablist" aria-label="Choix de l'univers">
+    <button class="theme-btn active" data-theme="cats" type="button">🐱 Chats Kawaii</button>
+    <button class="theme-btn" data-theme="brainrot" type="button">👹 Brainrot</button>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="measure" type="button"><span class="ic">📏</span>Mesurer</button>
+    <button class="tab-btn" data-tab="deform" type="button"><span class="ic">🔷</span>Déformer</button>
+    <button class="tab-btn" data-tab="net" type="button"><span class="ic">📦</span>Patron→Cube</button>
+    <button class="tab-btn" data-tab="qcm" type="button"><span class="ic">❓</span>QCM Formes</button>
+    <button class="tab-btn" data-tab="clock" type="button"><span class="ic">🕐</span>Horloge</button>
+    <button class="tab-btn" data-tab="arena" type="button"><span class="ic">🎮</span>Boutique</button>
+  </nav>
+
+  <main id="tabContent">
+
+    <!-- MODULE 1 -->
+    <section class="tabpanel" id="tab-measure">
+      <div class="card">
+        <h2>Combien mesure ce segment ?</h2>
+        <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
+        <div class="level-row" id="m1-levels"></div>
+        <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100"></svg></div>
+        <div class="choices" id="m1-choices"></div>
+        <div class="feedback" id="m1-feedback"></div>
+        <div class="btn-row">
+          <button class="btn primary" id="m1-next" type="button">Nouveau segment ↻</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 2 -->
+    <section class="tabpanel" id="tab-deform" hidden>
+      <div class="card">
+        <h2>Une forme qui se transforme</h2>
+        <p class="muted" id="m2-instructions">Fais glisser les coins pour transformer le carré en losange : les 4 côtés doivent rester égaux.</p>
+        <div class="level-row" id="m2-levels"></div>
+        <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260"></svg></div>
+        <div class="feedback" id="m2-feedback"></div>
+        <div class="btn-row">
+          <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>
+          <button class="btn ghost" id="m2-reset" type="button">Recommencer ↺</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 3 -->
+    <section class="tabpanel" id="tab-net" hidden>
+      <div class="card">
+        <h2>Ce patron va-t-il former un cube ?</h2>
+        <p class="muted" id="m3-sub">Observe les 6 carrés à plat, puis donne ta réponse.</p>
+        <div class="level-row" id="m3-levels"></div>
+        <div class="stage" id="stage">
+          <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
+        </div>
+        <div class="yesno-row" id="m3-yesno">
+          <button class="btn primary" id="m3-yes" type="button">Oui, ça fait un cube</button>
+          <button class="btn ghost" id="m3-no" type="button">Non, pas un cube</button>
+        </div>
+        <div class="feedback" id="m3-feedback"></div>
+        <div class="btn-row">
+          <button class="btn ghost" id="m3-next" type="button" hidden>Autre patron ↻</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 4 -->
+    <section class="tabpanel" id="tab-qcm" hidden>
+      <div class="card">
+        <h2>QCM Formes</h2>
+        <p class="muted">Choisis d'abord le niveau, puis le type de question (ou "Aléatoire").</p>
+        <div class="level-row" id="m4-levels"></div>
+        <div class="level-row" id="m4-types"></div>
+        <!-- La question posée est affichée ICI, juste avant le dessin et les
+             réponses : comme il y a maintenant beaucoup de types possibles
+             ci-dessus, il ne faut pas que la question se perde tout en haut. -->
+        <span class="qtype-tag" id="m4-tag">Côtés</span>
+        <div class="coach-row">
+          <span class="coach-avatar" id="m4-avatar">🐱</span>
+          <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>
+        </div>
+        <p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>
+        <div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200"></svg></div>
+        <div class="qcm-choices" id="m4-choices"></div>
+        <div class="feedback" id="m4-feedback"></div>
+        <div class="btn-row">
+          <button class="btn primary" id="m4-next" type="button">Question suivante ↻</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 5 : HORLOGE -->
+    <section class="tabpanel" id="tab-clock" hidden>
+      <div class="card">
+        <h2 id="m5-title">Lire l'heure</h2>
+        <p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>
+        <div class="level-row" id="m5-modes"></div>
+
+        <div id="m5-lire-wrap">
+          <div class="coach-row">
+            <span class="coach-avatar" id="m5-avatar">🐱</span>
+            <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>
+          </div>
+          <div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200"></svg></div>
+          <div class="qcm-choices" id="m5-choices"></div>
+          <div class="feedback" id="m5-feedback"></div>
+          <div class="btn-row">
+            <button class="btn primary" id="m5-next" type="button">Nouvelle horloge ↻</button>
+          </div>
+        </div>
+
+        <div id="m5-regler-wrap" hidden>
+          <p class="muted">Place les aiguilles sur : <strong id="m5-target">3 h</strong></p>
+          <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200"></svg></div>
+          <div class="feedback" id="m5r-feedback"></div>
+          <div class="btn-row">
+            <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>
+            <button class="btn ghost" id="m5r-new" type="button">Nouvelle heure ↻</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 6 : BOUTIQUE + BATAILLE -->
+    <section class="tabpanel" id="tab-arena" hidden>
+      <div class="card">
+        <h2>Boutique &amp; Bataille</h2>
+        <p class="muted">Utilise tes étoiles ⭐ pour débloquer des personnages, puis fais s'affronter un chat et un brainrot pour voir qui gagne !</p>
+        <div class="level-row" id="arena-modes"></div>
+
+        <!-- ===== BOUTIQUE ===== -->
+        <div id="arena-shop-wrap">
+          <div class="level-row" id="shop-theme"></div>
+          <div class="arena-star-note"><span>⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
+          <div class="sprite-grid" id="shop-grid"></div>
+        </div>
+
+        <!-- ===== BATAILLE ===== -->
+        <div id="arena-battle-wrap" hidden>
+          <p class="muted" id="battle-instructions">Choisis un chat, puis un brainrot dans tes personnages débloqués.</p>
+          <p class="qtype-tag">Tes chats 🐱</p>
+          <div class="sprite-grid" id="battle-cat-grid"></div>
+          <p class="qtype-tag" style="margin-top:14px;">Tes brainrots 👹</p>
+          <div class="sprite-grid" id="battle-brain-grid"></div>
+
+          <div id="battle-duel-wrap" hidden>
+            <div class="duel-wrap">
+              <div class="duel-fighter" id="duel-cat"></div>
+              <div class="duel-vs">VS</div>
+              <div class="duel-fighter" id="duel-brain"></div>
+            </div>
+            <p class="muted" id="battle-pick-note" style="text-align:center;">Choisis une statistique de ton chat pour lancer le duel !</p>
+            <div id="battle-stats"></div>
+            <div class="duel-result" id="battle-result"></div>
+            <div class="btn-row" style="justify-content:center;">
+              <button class="btn primary" id="battle-again" type="button" hidden>Nouveau duel ↻</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===================== CORE : THEME + NAV ===================== */
+  var THEMES = {
+    cats:{ mascot:"🐱", title:"Géo Miaou" },
+    brainrot:{ mascot:"👹", title:"GEO CHAOS 9000" }
+  };
+
+  var stars = 0;
+  function addStar(n){
+    stars += n;
+    document.getElementById('starCount').textContent = stars;
+    try{ localStorage.setItem('geo_stars', String(stars)); }catch(e){}
+  }
+  try{
+    var saved = localStorage.getItem('geo_stars');
+    if(saved){ stars = parseInt(saved,10)||0; document.getElementById('starCount').textContent = stars; }
+  }catch(e){}
+
+  document.querySelectorAll('.theme-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var th = btn.getAttribute('data-theme');
+      document.body.setAttribute('data-app-theme', th);
+      var cfg = THEMES[th];
+      document.getElementById('mascotIcon').textContent = cfg.mascot;
+      document.getElementById('appTitle').textContent = cfg.title;
+      document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
+      try{ localStorage.setItem('geo_theme', th); }catch(e){}
+    });
+  });
+  (function initTheme(){
+    var th = 'cats';
+    try{ th = localStorage.getItem('geo_theme') || 'cats'; }catch(e){}
+    if(th !== 'cats' && th !== 'brainrot') th = 'cats';
+    document.body.setAttribute('data-app-theme', th);
+    document.querySelectorAll('.theme-btn').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-theme')===th);
+    });
+    var cfg = THEMES[th];
+    document.getElementById('mascotIcon').textContent = cfg.mascot;
+    document.getElementById('appTitle').textContent = cfg.title;
+    document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
+  })();
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var tab = btn.getAttribute('data-tab');
+      document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
+      document.getElementById('tab-'+tab).hidden = false;
+    });
+  });
+
+  var svgNS = "http://www.w3.org/2000/svg";
+  function el(name, attrs){
+    var e = document.createElementNS(svgNS, name);
+    for(var k in attrs){ e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
+    }
+    return arr;
+  }
+  function fmtNum(v){
+    // affiche "6" ou "6,5" (virgule française)
+    return (Math.round(v*2)/2).toString().replace('.', ',');
+  }
+
+  function buildLevelRow(container, levels, defaultIdx, onChange){
+    container.innerHTML = "";
+    // Peu de boutons (ex: Facile/Moyen/Difficile) : on garde le look
+    // "pastilles égales" d'origine. Beaucoup de boutons (ex: les types de
+    // QCM) : on les laisse prendre la largeur de leur texte et retourner
+    // à la ligne, plutôt que de les écraser ou de déborder de l'écran.
+    container.classList.toggle('level-row-even', levels.length <= 4);
+    var current = defaultIdx;
+    levels.forEach(function(label, idx){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'level-btn' + (idx===defaultIdx ? ' active' : '');
+      b.textContent = label;
+      b.addEventListener('click', function(){
+        if(current === idx) return;
+        current = idx;
+        container.querySelectorAll('.level-btn').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        onChange(idx);
+      });
+      container.appendChild(b);
+    });
+  }
+
+  /* ===================== EFFETS : son + confettis ===================== */
+  function playSound(kind){
+    try{
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      var ctx = new Ctx();
+      var t0 = ctx.currentTime;
+      if(kind==='good'){
+        [523.25, 783.99].forEach(function(freq, i){
+          var o=ctx.createOscillator(), g=ctx.createGain();
+          o.type='sine'; o.frequency.value=freq;
+          g.gain.setValueAtTime(0.0001, t0+i*0.09);
+          g.gain.exponentialRampToValueAtTime(0.25, t0+i*0.09+0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0+i*0.09+0.22);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(t0+i*0.09); o.stop(t0+i*0.09+0.25);
+        });
+      } else {
+        var o=ctx.createOscillator(), g=ctx.createGain();
+        o.type='sawtooth';
+        o.frequency.setValueAtTime(180,t0);
+        o.frequency.exponentialRampToValueAtTime(90, t0+0.28);
+        g.gain.setValueAtTime(0.22,t0);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0+0.3);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t0); o.stop(t0+0.32);
+      }
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 700);
+    }catch(e){ /* audio non disponible : on continue sans son */ }
+  }
+
+  function celebrate(kind, anchorEl){
+    if(!anchorEl) return;
+    if(kind==='good'){
+      var rect = anchorEl.getBoundingClientRect();
+      var emojis = ['✨','⭐','🎉','💫'];
+      for(var i=0;i<6;i++){
+        var s = document.createElement('span');
+        s.className = 'burst-particle';
+        s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+        s.style.left = (rect.left+rect.width/2+(Math.random()*80-40))+'px';
+        s.style.top = (rect.top+8)+'px';
+        s.style.setProperty('--dx',(Math.random()*80-40)+'px');
+        document.body.appendChild(s);
+        (function(el){ setTimeout(function(){ el.remove(); }, 950); })(s);
+      }
+    } else {
+      anchorEl.classList.remove('shake');
+      void anchorEl.offsetWidth; // relance l'animation si déjà jouée
+      anchorEl.classList.add('shake');
+      setTimeout(function(){ anchorEl.classList.remove('shake'); }, 420);
+    }
+  }
+
+  var REACTIONS = {
+    cats:{ neutral:'🐱', good:'😻', bad:'🙀' },
+    brainrot:{ neutral:'👹', good:'🤩', bad:'😵' }
+  };
+  function currentThemeKey(){
+    var th = document.body.getAttribute('data-app-theme');
+    return (th==='brainrot') ? 'brainrot' : 'cats';
+  }
+  function setCoachReaction(kind){
+    var face = REACTIONS[currentThemeKey()][kind] || REACTIONS[currentThemeKey()].neutral;
+    document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = face; });
+  }
+
+  // Permet de toucher n'importe où sur la boîte de feedback pour relancer
+  // une nouvelle question (en plus du bouton dédié) : plus pratique pour un
+  // enfant que de devoir viser un petit bouton après chaque réponse.
+  function enableTapToContinue(feedbackId, nextFn){
+    var fb = document.getElementById(feedbackId);
+    if(!fb) return;
+    fb.classList.add('tappable');
+    fb.addEventListener('click', function(){
+      if(fb.classList.contains('show')) nextFn();
+    });
+  }
+
+  /* ===================== MODULE 1 : MESURER =====================
+     Le 0 doit toujours être visible sur la règle (demande explicite) :
+     - Facile/Moyen : la règle commence à 0, seul le début du trait bouge.
+     - Difficile : la règle peut s'étendre dans les négatifs, mais son
+       étendue couvre toujours le 0 (startMin/visibleLen le garantissent).
+  */
+  var M1_LEVELS = [
+    { name:'Facile',    visibleLen:10, startMin:0,  startMax:0,  offsetMax:0, half:false, lenMin:1, lenMax:9 },
+    { name:'Moyen',     visibleLen:14, startMin:0,  startMax:0,  offsetMax:4, half:false, lenMin:2, lenMax:8 },
+    { name:'Difficile', visibleLen:15, startMin:-4, startMax:-1, offsetMax:5, half:true,  lenMin:2, lenMax:8 }
+  ];
+  var m1Level = 0;
+  var currentLen = 5, m1SegStart = 0, m1SegEnd = 5, m1RulerStart = 0;
+
+  function randInt(a,b){ return Math.floor(rand(a, b+1)); }
+
+  function drawRuler(segStart, segEnd, rulerStart, visibleLen, half){
+    var svg = document.getElementById('rulerSvg');
+    var scalePx = Math.floor(280/visibleLen);
+    var originX = 24;
+    var baseY = 46;
+    var viewW = originX + visibleLen*scalePx + 16;
+    svg.setAttribute('viewBox', '0 0 '+viewW+' 100');
+    svg.innerHTML = "";
+    function toX(v){ return originX + (v-rulerStart)*scalePx; }
+
+    for(var i=0;i<=visibleLen;i++){
+      var value = rulerStart + i;
+      var x = originX + i*scalePx;
+      var tick = el('line', {x1:x,y1:baseY,x2:x,y2: (value%5===0)? baseY+16 : baseY+10, stroke:'var(--text-soft)', 'stroke-width': value%5===0?2:1.4});
+      svg.appendChild(tick);
+      var lbl = el('text', {x:x, y:baseY+30, 'text-anchor':'middle', 'font-size':9.5, fill:'var(--text-soft)', 'font-family':'var(--font-body)'});
+      lbl.textContent = value;
+      svg.appendChild(lbl);
+      if(half && i<visibleLen){
+        var hx = x + scalePx/2;
+        svg.appendChild(el('line',{x1:hx,y1:baseY,x2:hx,y2:baseY+6,stroke:'var(--text-soft)','stroke-width':1}));
+      }
+    }
+    var baseline = el('line', {x1:originX, y1:baseY, x2:originX+visibleLen*scalePx, y2:baseY, stroke:'var(--text-soft)', 'stroke-width':2});
+    svg.appendChild(baseline);
+
+    var sx = toX(segStart), ex = toX(segEnd);
+    var segY = baseY - 18;
+    [sx, ex].forEach(function(x){
+      svg.appendChild(el('line',{x1:x,y1:segY-8,x2:x,y2:segY+8,stroke:'var(--accent)','stroke-width':3,'stroke-linecap':'round'}));
+    });
+    svg.appendChild(el('line',{x1:sx,y1:segY,x2:ex,y2:segY,stroke:'var(--accent)','stroke-width':5,'stroke-linecap':'round'}));
+  }
+
+  function newMeasureQuestion(){
+    var lv = M1_LEVELS[m1Level];
+    var span = (lv.lenMax - lv.lenMin);
+    if(lv.half){
+      var steps = span*2;
+      currentLen = lv.lenMin + Math.floor(Math.random()*(steps+1))/2;
+    } else {
+      currentLen = lv.lenMin + Math.floor(Math.random()*(span+1));
+    }
+    m1RulerStart = randInt(lv.startMin, lv.startMax);
+    var offset = lv.offsetMax>0 ? randInt(0, lv.offsetMax) : 0;
+    m1SegStart = m1RulerStart + offset;
+    m1SegEnd = m1SegStart + currentLen;
+    drawRuler(m1SegStart, m1SegEnd, m1RulerStart, lv.visibleLen, lv.half);
+
+    // Génère 3 distracteurs distincts sans boucle infinie : on construit
+    // un pool de valeurs candidates puis on en tire 3 au hasard.
+    var pool = [];
+    var stepUnit = lv.half ? 0.5 : 1;
+    for(var k=-4; k<=4; k++){
+      if(k===0) continue;
+      var v = Math.round((currentLen + k*stepUnit)*2)/2;
+      if(v>=lv.lenMin && v<=lv.lenMax && pool.indexOf(v)===-1) pool.push(v);
+    }
+    shuffle(pool);
+    var picks = pool.slice(0, Math.min(3, pool.length));
+    while(picks.length<3){
+      // filet de sécurité si la plage est très étroite : complète avec des valeurs proches
+      var extra = Math.round((currentLen + (Math.random()<0.5?-1:1)*stepUnit*(picks.length+1))*2)/2;
+      extra = Math.max(lv.lenMin, Math.min(lv.lenMax, extra));
+      if(picks.indexOf(extra)===-1 && extra!==currentLen) picks.push(extra);
+      else break; // évite toute boucle infinie, quitte à avoir moins de 4 choix
+    }
+    var list = shuffle([currentLen].concat(picks));
+    var wrap = document.getElementById('m1-choices');
+    wrap.innerHTML = "";
+    list.forEach(function(v){
+      var b = document.createElement('button');
+      b.className = 'choice-btn';
+      b.type = 'button';
+      b.textContent = fmtNum(v) + ' cm';
+      b.addEventListener('click', function(){ checkMeasure(v, b); });
+      wrap.appendChild(b);
+    });
+    var fb = document.getElementById('m1-feedback');
+    fb.className = 'feedback'; fb.innerHTML = '';
+  }
+
+  function measureExplain(){
+    if(m1SegStart===0){
+      return 'Compte le nombre de carreaux entre le début et la fin du trait.';
+    }
+    return 'Le trait va de ' + fmtNum(m1SegStart) + ' à ' + fmtNum(m1SegEnd) + ' : '
+      + fmtNum(m1SegEnd) + ' − ' + fmtNum(m1SegStart) + ' = ' + fmtNum(currentLen) + ' cm.';
+  }
+
+  function checkMeasure(v, btn){
+    var buttons = document.querySelectorAll('#m1-choices .choice-btn');
+    buttons.forEach(function(b){ b.disabled = true; });
+    var fb = document.getElementById('m1-feedback');
+    var ok = Math.abs(v-currentLen)<0.001;
+    if(ok){
+      btn.classList.add('correct');
+      fb.className = 'feedback good show';
+      fb.innerHTML = '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>';
+    } else {
+      btn.classList.add('wrong');
+      buttons.forEach(function(b){ if(b.textContent === (fmtNum(currentLen)+' cm')) b.classList.add('correct'); });
+      fb.className = 'feedback bad show';
+      fb.innerHTML = '<div>✘ Pas tout à fait. La bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>';
+    }
+    playSound(ok?'good':'bad');
+    celebrate(ok?'good':'bad', fb);
+    if(ok) addStar(1);
+  }
+
+  buildLevelRow(document.getElementById('m1-levels'), M1_LEVELS.map(function(l){return l.name;}), 0, function(idx){
+    m1Level = idx; newMeasureQuestion();
+  });
+  document.getElementById('m1-next').addEventListener('click', newMeasureQuestion);
+  enableTapToContinue('m1-feedback', newMeasureQuestion);
+  newMeasureQuestion();
+
+  /* ===================== MODULE 2 : DEFORMER ===================== */
+  var SCALE2 = 20; // px per cm
+  var basePts = [[70,70],[190,70],[190,190],[70,190]];
+  var pts = basePts.map(function(p){ return p.slice(); });
+
+  // Deux niveaux de tolérance par exercice : "great" = assez précis pour la
+  // meilleure remarque, "ok" = plus large, encore réussi mais avec une
+  // remarque qui encourage à être un peu plus précis la prochaine fois.
+  // On ne demande jamais une précision au centimètre/degré près.
+  var M2_LEVELS = [
+    { name:'Losange',      instr:"Fais glisser les coins pour transformer le carré en losange : les 4 côtés doivent rester à peu près égaux.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
+    { name:'Rectangle',    instr:"Transforme le carré en rectangle : les côtés opposés doivent être à peu près égaux, et les 4 angles doivent rester à peu près droits.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
+    { name:'Parallélogramme', instr:"Transforme le carré en parallélogramme : les côtés opposés doivent rester à peu près égaux, mais les angles ne doivent plus être droits.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} }
+  ];
+  var m2Level = 0;
+
+  function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
+  function angleAtDeg(prev,curr,next){
+    var v1=[prev[0]-curr[0],prev[1]-curr[1]], v2=[next[0]-curr[0],next[1]-curr[1]];
+    var dot=v1[0]*v2[0]+v1[1]*v2[1];
+    var m1=Math.hypot(v1[0],v1[1]), m2=Math.hypot(v2[0],v2[1]);
+    if(m1<1e-6||m2<1e-6) return 90;
+    var c = Math.max(-1, Math.min(1, dot/(m1*m2)));
+    return Math.acos(c)*180/Math.PI;
+  }
+
+  function sidesAndAngles(){
+    var lens = [0,1,2,3].map(function(i){ return dist(pts[i], pts[(i+1)%4]); });
+    var angles = [0,1,2,3].map(function(i){
+      var prev = pts[(i+3)%4], curr = pts[i], next = pts[(i+1)%4];
+      return angleAtDeg(prev,curr,next);
+    });
+    return {lens:lens, angles:angles};
+  }
+
+  function checkRhombus(tolGreat, tolOk){
+    var s = sidesAndAngles();
+    var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
+    var maxDev = Math.max.apply(null, s.lens.map(function(l){ return Math.abs(l-avg); }));
+    var rel = maxDev/avg;
+    if(rel <= tolGreat) return {ok:true, msg:'✔ Super, les 4 côtés sont égaux : bravo pour ce losange !'};
+    if(rel <= tolOk) return {ok:true, msg:'✔ Réussi ! Les côtés sont à peu près égaux, c\'est un losange. Tu peux essayer d\'être encore plus précis la prochaine fois.'};
+    return {ok:false, msg:'✘ Pas encore : les 4 côtés doivent avoir à peu près la même longueur.'};
+  }
+
+  function checkRectangle(tolGreat, tolOk){
+    var s = sidesAndAngles();
+    var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
+    var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
+    var angleDevMax = Math.max.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
+    if(sideDevRel<=tolGreat.side && angleDevMax<=tolGreat.angle) return {ok:true, msg:'✔ Bravo, les côtés opposés sont égaux et les angles sont bien droits : c\'est un rectangle !'};
+    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, msg:'✔ Réussi ! C\'est globalement un rectangle, même si ce n\'est pas parfaitement précis. Essaie d\'ajuster encore un peu la prochaine fois.'};
+    if(angleDevMax>tolOk.angle) return {ok:false, msg:'✘ Presque : les 4 angles doivent redevenir à peu près droits.'};
+    return {ok:false, msg:'✘ Pas encore : les côtés opposés doivent être à peu près de la même longueur.'};
+  }
+
+  function checkParallelogram(tolGreat, tolOk){
+    var s = sidesAndAngles();
+    var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
+    var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
+    var angleDevMin = Math.min.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
+    if(sideDevRel<=tolGreat.side && angleDevMin>=tolGreat.tilt) return {ok:true, msg:'✔ Bien joué, c\'est un vrai parallélogramme penché !'};
+    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, msg:'✔ Réussi ! C\'est un parallélogramme, même si ce n\'est pas parfaitement précis.'};
+    if(sideDevRel>tolOk.side) return {ok:false, msg:'✘ Pas encore : les côtés opposés doivent rester à peu près de la même longueur.'};
+    return {ok:false, msg:'✘ Il faut incliner un peu plus la forme pour que les angles ne soient plus droits.'};
+  }
+
+  function drawDeform(){
+    var svg = document.getElementById('deformSvg');
+    svg.innerHTML = "";
+    var poly = el('polygon', {
+      points: pts.map(function(p){return p[0]+','+p[1];}).join(' '),
+      fill:'var(--accent2)', 'fill-opacity':'0.35', stroke:'var(--accent)', 'stroke-width':3
+    });
+    svg.appendChild(poly);
+
+    for(var i=0;i<4;i++){
+      var a = pts[i], b = pts[(i+1)%4];
+      var mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
+      var len = (dist(a,b)/SCALE2).toFixed(1);
+      svg.appendChild(el('rect',{x:mx-16,y:my-9,width:32,height:16,rx:6,class:'side-label-bg'}));
+      var t = el('text',{x:mx,y:my+4,'text-anchor':'middle',class:'side-label'});
+      t.textContent = len+' cm';
+      svg.appendChild(t);
+    }
+
+    pts.forEach(function(p, idx){
+      var c = el('circle',{cx:p[0],cy:p[1],r:13,fill:'var(--accent)',stroke:'#fff','stroke-width':3,class:'handle'});
+      c.style.touchAction = 'none';
+      c.addEventListener('pointerdown', function(ev){
+        c.setPointerCapture(ev.pointerId);
+        function toSvgPoint(clientX, clientY){
+          var pt = svg.createSVGPoint();
+          pt.x = clientX; pt.y = clientY;
+          var m = svg.getScreenCTM().inverse();
+          return pt.matrixTransform(m);
+        }
+        function move(mv){
+          var sp = toSvgPoint(mv.clientX, mv.clientY);
+          pts[idx][0] = Math.max(20, Math.min(240, sp.x));
+          pts[idx][1] = Math.max(20, Math.min(240, sp.y));
+          drawDeform();
+        }
+        function up(){
+          c.removeEventListener('pointermove', move);
+          c.removeEventListener('pointerup', up);
+        }
+        c.addEventListener('pointermove', move);
+        c.addEventListener('pointerup', up);
+      });
+      svg.appendChild(c);
+    });
+  }
+
+  function resetDeform(){
+    pts = basePts.map(function(p){ return p.slice(); });
+    drawDeform();
+    var fb = document.getElementById('m2-feedback');
+    fb.className='feedback'; fb.textContent='';
+  }
+
+  buildLevelRow(document.getElementById('m2-levels'), M2_LEVELS.map(function(l){return l.name;}), 0, function(idx){
+    m2Level = idx;
+    document.getElementById('m2-instructions').textContent = M2_LEVELS[idx].instr;
+    resetDeform();
+  });
+  document.getElementById('m2-instructions').textContent = M2_LEVELS[0].instr;
+  drawDeform();
+
+  document.getElementById('m2-reset').addEventListener('click', resetDeform);
+
+  document.getElementById('m2-check').addEventListener('click', function(){
+    var lv = M2_LEVELS[m2Level];
+    var res = lv.check(lv.tolGreat, lv.tolOk);
+    var fb = document.getElementById('m2-feedback');
+    fb.className = 'feedback ' + (res.ok ? 'good' : 'bad') + ' show';
+    fb.textContent = res.msg;
+    playSound(res.ok ? 'good' : 'bad');
+    celebrate(res.ok ? 'good' : 'bad', fb);
+    if(res.ok) addStar(1);
+  });
+
+  /* ===================== MODULE 3 : PATRON -> CUBE ===================== */
+  var S3 = 44;
+
+  function faceChain(rootNum, steps){
+    // steps: liste de {dx,dy} décrivant une chaîne parent -> enfant -> enfant...
+    var faces = [];
+    var prevId = 'r';
+    for(var i=0;i<steps.length;i++){
+      var id = 'n'+i;
+      faces.push({id:id, parent:prevId, dx:steps[i][0], dy:steps[i][1], num:rootNum+1+i});
+      prevId = id;
+    }
+    return faces;
+  }
+
+  var NET_CROSS = {
+    valid:true, gridW:4, gridH:3,
+    root:{ id:'r', dx:1, dy:1, num:1 },
+    faces:[
+      {id:'n0', parent:'r',  dx:0, dy:-1, num:2},
+      {id:'n1', parent:'r',  dx:0, dy:1,  num:3},
+      {id:'n2', parent:'r',  dx:-1,dy:0,  num:4},
+      {id:'n3', parent:'r',  dx:1, dy:0,  num:5},
+      {id:'n4', parent:'n3', dx:1, dy:0,  num:6}
+    ]
+  };
+  var NET_STRIP = {
+    valid:false, gridW:6, gridH:1,
+    root:{ id:'r', dx:0, dy:0, num:1 },
+    faces: faceChain(1, [[1,0],[1,0],[1,0],[1,0],[1,0]])
+  };
+  var NET_STAIRCASE = {
+    valid:true, gridW:4, gridH:3,
+    root:{ id:'r', dx:0, dy:0, num:1 },
+    faces: faceChain(1, [[1,0],[0,1],[1,0],[0,1],[1,0]])
+  };
+  var NET_BLOCK2X3 = {
+    valid:false, gridW:2, gridH:3,
+    root:{ id:'r', dx:0, dy:0, num:1 },
+    faces:[
+      {id:'n0', parent:'r',  dx:1, dy:0, num:2},
+      {id:'n1', parent:'r',  dx:0, dy:1, num:3},
+      {id:'n2', parent:'n1', dx:1, dy:0, num:4},
+      {id:'n3', parent:'n1', dx:0, dy:1, num:5},
+      {id:'n4', parent:'n3', dx:1, dy:0, num:6}
+    ]
+  };
+  // Un patron de pavé droit (parallélépipède) : il SE REFERME bien en 3D,
+  // mais ses faces ne sont pas toutes des carrés identiques -> ce n'est
+  // pas un cube. C'est le piège demandé : "ça se plie, mais en boîte
+  // rectangulaire, pas en cube".
+  var NET_CUBOID = {
+    valid:false, closesAsBox:true, gridAbsolute:true, stageW:272, stageH:168,
+    root:{ id:'r', left:52, top:52, w:84, h:64, num:1 },
+    faces:[
+      {id:'n0', parent:'r',  dx:0, dy:-1, left:0,  top:-52, w:84, h:52, num:2}, // dessus
+      {id:'n1', parent:'r',  dx:0, dy:1,  left:0,  top:64,  w:84, h:52, num:3}, // dessous
+      {id:'n2', parent:'r',  dx:-1,dy:0,  left:-52,top:0,   w:52, h:64, num:4}, // côté
+      {id:'n3', parent:'r',  dx:1, dy:0,  left:84, top:0,   w:52, h:64, num:5}, // côté
+      {id:'n4', parent:'n3', dx:1, dy:0,  left:52, top:0,   w:84, h:64, num:6}  // arrière
+    ]
+  };
+
+  var M3_LEVELS = [
+    { name:'Facile',    valid:[NET_CROSS],               invalid:[NET_STRIP] },
+    { name:'Moyen',     valid:[NET_STAIRCASE, NET_CROSS], invalid:[NET_STRIP, NET_CUBOID] },
+    { name:'Difficile', valid:[NET_CROSS, NET_STAIRCASE], invalid:[NET_BLOCK2X3, NET_CUBOID] }
+  ];
+  var m3Level = 0;
+
+  function foldRule(dx,dy){
+    if(dx===1 && dy===0)  return {origin:'0% 50%',   axis:'Y', angle:-90};
+    if(dx===-1&& dy===0)  return {origin:'100% 50%', axis:'Y', angle:90};
+    if(dx===0 && dy===-1) return {origin:'50% 100%', axis:'X', angle:-90};
+    if(dx===0 && dy===1)  return {origin:'50% 0%',    axis:'X', angle:90};
+    return {origin:'50% 50%', axis:'Y', angle:0};
+  }
+
+  var palette = ['var(--accent2)','var(--accent3)','var(--accent)','var(--accent2)','var(--accent3)'];
+  // Palette fixe (indépendante du thème) pour le patron 3D : une couleur
+  // par face numérotée (1 à 6), pour bien voir quel petit carré devient
+  // quelle face du solide une fois le pliage terminé.
+  var NET_PALETTE = ['#FF8FAE','#FFC168','#FFE985','#8FE3A6','#8FC5FF','#C6A8FF'];
+
+  function buildNet(net){
+    var stage = document.getElementById('netEl');
+    stage.innerHTML = "";
+    var elems = {};
+
+    if(net.gridAbsolute){
+      stage.style.width = net.stageW+'px';
+      stage.style.height = net.stageH+'px';
+    } else {
+      stage.style.width = (net.gridW*S3)+'px';
+      stage.style.height = (net.gridH*S3)+'px';
+    }
+
+    var rootDiv = document.createElement('div');
+    rootDiv.className = 'face';
+    var rw = net.gridAbsolute ? net.root.w : S3;
+    var rh = net.gridAbsolute ? net.root.h : S3;
+    rootDiv.style.width = rw+'px'; rootDiv.style.height = rh+'px';
+    rootDiv.style.left = (net.gridAbsolute ? net.root.left : net.root.dx*S3)+'px';
+    rootDiv.style.top  = (net.gridAbsolute ? net.root.top  : net.root.dy*S3)+'px';
+    rootDiv.style.background = NET_PALETTE[(net.root.num-1) % NET_PALETTE.length];
+    rootDiv.textContent = net.root.num;
+    stage.appendChild(rootDiv);
+    elems[net.root.id] = rootDiv;
+
+    // Les faces sont toujours listées dans un ordre où le parent existe déjà
+    // (chaque face suit son parent dans le tableau), donc une seule passe suffit.
+    net.faces.forEach(function(f){
+      var parentEl = elems[f.parent] || rootDiv;
+      var div = document.createElement('div');
+      div.className = 'face';
+      var fw = net.gridAbsolute ? f.w : S3;
+      var fh = net.gridAbsolute ? f.h : S3;
+      div.style.width = fw+'px'; div.style.height = fh+'px';
+      div.style.left = (net.gridAbsolute ? f.left : f.dx*S3)+'px';
+      div.style.top  = (net.gridAbsolute ? f.top  : f.dy*S3)+'px';
+      div.style.background = NET_PALETTE[(f.num-1) % NET_PALETTE.length];
+      div.textContent = f.num;
+      var rule = foldRule(f.dx,f.dy);
+      div.dataset.axis = rule.axis;
+      div.dataset.angle = rule.angle;
+      div.dataset.flatOrigin = rule.origin;
+      parentEl.appendChild(div);
+      elems[f.id] = div;
+    });
+    return elems;
+  }
+
+  function depthOf(node){
+    var d=0, p=node.parentElement;
+    while(p && p.classList && p.classList.contains('face')){ d++; p=p.parentElement; }
+    return d;
+  }
+
+  function foldNet(elems, rootId, fold){
+    var maxDepth = 0;
+    Object.keys(elems).forEach(function(id){
+      var d = elems[id];
+      if(id === rootId || !d.dataset.axis) return;
+      var depth = depthOf(d);
+      maxDepth = Math.max(maxDepth, depth);
+      d.style.transformOrigin = d.dataset.flatOrigin;
+      if(fold){
+        d.style.transitionDelay = (0.22*depth)+'s';
+        d.style.transform = d.dataset.axis==='Y'
+          ? 'rotateY('+d.dataset.angle+'deg)'
+          : 'rotateX('+d.dataset.angle+'deg)';
+      } else {
+        d.style.transitionDelay = '0s';
+        d.style.transform = 'none';
+        d.classList.remove('broken');
+      }
+    });
+    var netEl = document.getElementById('netEl');
+    var cx = netEl.offsetWidth * 0.35, cy = netEl.offsetHeight * 0.35;
+    // Seul le centrage (translation) vit ici ; l'inclinaison de vue est
+    // gérée séparément par #netSpin, que l'enfant peut ensuite tourner
+    // au doigt (voir setSpin / le gestionnaire de pointer plus bas).
+    netEl.style.transform = fold
+      ? 'translate3d(-'+cx+'px,-'+cy+'px,0)'
+      : 'none';
+    return maxDepth;
+  }
+
+  var currentNet = null, currentElems = null, currentRootId = null, answered = false;
+
+  /* ---- rotation manuelle au doigt, une fois le pliage terminé ---- */
+  var m3Spin = { x:0, y:0 };
+  var m3CanSpin = false;
+  var m3Dragging = false;
+  var m3DragStart = null;
+  var m3Gen = 0;
+
+  function applySpin(){
+    document.getElementById('netSpin').style.transform =
+      'rotateX(' + m3Spin.x + 'deg) rotateY(' + m3Spin.y + 'deg)';
+  }
+  function setSpinEnabled(on){
+    m3CanSpin = on;
+    document.getElementById('stage').classList.toggle('spinnable', on);
+  }
+
+  (function initSpinDrag(){
+    var stageEl = document.getElementById('stage');
+    stageEl.addEventListener('pointerdown', function(ev){
+      if(!m3CanSpin) return;
+      m3Dragging = true;
+      stageEl.setPointerCapture(ev.pointerId);
+      m3DragStart = { x:ev.clientX, y:ev.clientY, sx:m3Spin.x, sy:m3Spin.y };
+    });
+    stageEl.addEventListener('pointermove', function(ev){
+      if(!m3Dragging || !m3DragStart) return;
+      var dx = ev.clientX - m3DragStart.x;
+      var dy = ev.clientY - m3DragStart.y;
+      m3Spin.y = m3DragStart.sy + dx * 0.5;
+      m3Spin.x = Math.max(-80, Math.min(80, m3DragStart.sx - dy * 0.5));
+      applySpin();
+    });
+    function endDrag(){ m3Dragging = false; m3DragStart = null; }
+    stageEl.addEventListener('pointerup', endDrag);
+    stageEl.addEventListener('pointercancel', endDrag);
+  })();
+
+  function loadNet(net){
+    currentNet = net;
+    currentRootId = net.root.id;
+    answered = false;
+    m3Gen++;
+    setSpinEnabled(false);
+    m3Spin = { x:0, y:0 };
+    applySpin();
+    currentElems = buildNet(net);
+    document.getElementById('m3-yesno').style.display = 'flex';
+    document.getElementById('m3-yes').disabled = false;
+    document.getElementById('m3-no').disabled = false;
+    document.getElementById('m3-next').hidden = true;
+    var fb = document.getElementById('m3-feedback');
+    fb.className='feedback'; fb.textContent='';
+    document.getElementById('m3-sub').textContent = 'Observe les 6 carrés à plat, puis donne ta réponse.';
+  }
+
+  function pickNetForLevel(idx){
+    var lv = M3_LEVELS[idx];
+    var pool = Math.random()<0.5 ? lv.valid : lv.invalid;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+
+  function netExplain(net){
+    if(net.valid) return 'Un cube a 6 faces carrées identiques, qui se referment sans trou ni chevauchement.';
+    if(net.closesAsBox) return 'Ici, le patron se referme bien, mais ses faces ne sont pas toutes des carrés identiques (regarde les rectangles) : c\'est un pavé droit, pas un cube.';
+    return 'Pour former un cube, il faut exactement 6 faces bien placées, sans trou ni face en trop.';
+  }
+
+  function answerNet(userSaysCube){
+    if(answered) return;
+    answered = true;
+    document.getElementById('m3-yes').disabled = true;
+    document.getElementById('m3-no').disabled = true;
+    var correct = (userSaysCube === currentNet.valid);
+    var fb = document.getElementById('m3-feedback');
+    var headline;
+    if(correct){
+      headline = currentNet.valid ? '✔ Exact, ce patron se referme en cube !'
+        : (currentNet.closesAsBox ? '✔ Bien vu : il se referme, mais en pavé droit, pas en cube !' : '✔ Bien vu, ce patron ne forme pas un cube fermé.');
+    } else {
+      headline = currentNet.valid ? '✘ Regarde bien : il se referme en cube.'
+        : (currentNet.closesAsBox ? '✘ Regarde bien : il se referme, mais ce n\'est pas un cube.' : '✘ Regarde bien : il reste des trous, ce n\'est pas un cube.');
+    }
+    fb.className = 'feedback ' + (correct?'good':'bad') + ' show';
+    fb.innerHTML = '<div>'+headline+'</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
+    playSound(correct?'good':'bad');
+    celebrate(correct?'good':'bad', fb);
+    if(correct) addStar(1);
+
+    var maxDepth = foldNet(currentElems, currentRootId, true);
+    var genAtAnswer = m3Gen;
+    if(currentNet.valid){
+      document.getElementById('m3-sub').textContent = 'Regarde-le se refermer en cube, doucement...';
+    } else if(currentNet.closesAsBox){
+      document.getElementById('m3-sub').textContent = 'Regarde bien : il se referme en boîte, mais ses faces ne sont pas toutes carrées.';
+    } else {
+      document.getElementById('m3-sub').textContent = 'Regarde bien : une face (en rouge) ne se pose pas au bon endroit, il manque une vraie face pour fermer le cube.';
+    }
+    document.getElementById('m3-next').hidden = false;
+
+    var totalMs = 220*maxDepth + 1800 + 300;
+    setTimeout(function(){
+      if(genAtAnswer !== m3Gen) return; // un autre patron a été chargé entre-temps
+      if(!currentNet.valid && !currentNet.closesAsBox){
+        var deepestId = null, deepestDepth = -1;
+        Object.keys(currentElems).forEach(function(id){
+          var d = depthOf(currentElems[id]);
+          if(d>deepestDepth){ deepestDepth=d; deepestId=id; }
+        });
+        if(deepestId) currentElems[deepestId].classList.add('broken');
+      }
+      // Le pliage est fini : on laisse maintenant l'enfant tourner l'objet
+      // lui-même au doigt, plutôt qu'une rotation automatique.
+      m3Spin = { x:-16, y:-24 };
+      applySpin();
+      setSpinEnabled(true);
+      document.getElementById('m3-sub').textContent += ' Fais glisser ton doigt sur la forme pour la tourner !';
+    }, totalMs);
+  }
+
+  document.getElementById('m3-yes').addEventListener('click', function(){ answerNet(true); });
+  document.getElementById('m3-no').addEventListener('click', function(){ answerNet(false); });
+  document.getElementById('m3-next').addEventListener('click', function(){
+    loadNet(pickNetForLevel(m3Level));
+  });
+
+  buildLevelRow(document.getElementById('m3-levels'), M3_LEVELS.map(function(l){return l.name;}), 0, function(idx){
+    m3Level = idx;
+    loadNet(pickNetForLevel(idx));
+  });
+  loadNet(NET_CROSS);
+
+  /* ===================== MODULE 4 : QCM FORMES =====================
+     Deux familles de questions, comme discuté :
+     - "procédural" : la forme est dessinée par le code (SVG), à l'infini,
+       aucune image stockée nécessaire.
+     - "image" : s'appuie sur une illustration fixe (ici une petite scène
+       dessinée à la main en SVG, qui tient lieu de prototype pour une
+       vraie image stockée plus tard — voir la réponse ci-dessous).
+  */
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function rand(a,b){ return a+Math.random()*(b-a); }
+
+  function regularPoly(n, rot){
+    var pts=[];
+    for(var i=0;i<n;i++){
+      var a = rot + i*2*Math.PI/n;
+      pts.push([100+72*Math.cos(a), 100+72*Math.sin(a)]);
+    }
+    return pts;
+  }
+  function rectPoly(w,h,rot){
+    var hw=w/2, hh=h/2;
+    var corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];
+    return corners.map(function(p){
+      var x=p[0]*Math.cos(rot)-p[1]*Math.sin(rot);
+      var y=p[0]*Math.sin(rot)+p[1]*Math.cos(rot);
+      return [100+x,100+y];
+    });
+  }
+
+  var SHAPE_META = {
+    triangle:  { sides:3, vertices:3, label:'triangle',  note:'Le triangle est la seule forme ici avec 3 côtés et 3 sommets : c\'est la forme qui en a le moins.', gen:function(){ return regularPoly(3, rand(0,2*Math.PI)); } },
+    // Rotation volontairement limitée pour le carré et le rectangle : une
+    // rotation proche de 45° ferait ressembler un carré à un losange à
+    // l'oeil, ce qui entretiendrait exactement la confusion qu'on veut lever.
+    carre:     { sides:4, vertices:4, label:'carré',     note:'Le carré a 4 côtés ÉGAUX et 4 angles droits. C\'est ce qui le différencie du losange (angles pas droits) et du rectangle (côtés pas tous égaux).', gen:function(){ return rectPoly(112,112, rand(-0.18,0.18)); } },
+    rectangle: { sides:4, vertices:4, label:'rectangle', note:'Le rectangle a 4 angles droits comme le carré, mais ses côtés ne sont pas tous égaux : 2 côtés longs et 2 côtés courts.', gen:function(){ var w=95+Math.random()*35; return rectPoly(w, w*0.55, rand(-0.18,0.18)); } },
+    pentagone: { sides:5, vertices:5, label:'pentagone', note:'Le pentagone a 5 côtés et 5 sommets.', gen:function(){ return regularPoly(5, rand(0,2*Math.PI)); } },
+    hexagone:  { sides:6, vertices:6, label:'hexagone',  note:'L\'hexagone a 6 côtés et 6 sommets.', gen:function(){ return regularPoly(6, rand(0,2*Math.PI)); } },
+    cercle:    { sides:0, vertices:0, label:'cercle', isCircle:true, note:'Le cercle est tout rond : contrairement aux autres formes, il n\'a ni côté droit, ni sommet.', gen:function(){ return { r: 55+Math.random()*20 }; } },
+    losange:   { sides:4, vertices:4, label:'losange',   note:'Le losange a 4 côtés ÉGAUX, comme le carré, mais ses angles ne sont pas droits : il a l\'air "penché".', gen:function(){
+      var rx=38+Math.random()*16, ry=58+Math.random()*16, rot=rand(0,Math.PI/2);
+      var base=[[0,-ry],[rx,0],[0,ry],[-rx,0]];
+      return base.map(function(p){
+        var x=p[0]*Math.cos(rot)-p[1]*Math.sin(rot);
+        var y=p[0]*Math.sin(rot)+p[1]*Math.cos(rot);
+        return [100+x,100+y];
+      });
+    } }
+  };
+  var NAME_POOL = ['triangle','carré','rectangle','pentagone','hexagone','cercle','losange'];
+  var TYPE_LABELS = {
+    sides:'Côtés', vertices:'Sommets', name:'Nom', angle:'Angles', image:'Image', calc:'Calcul',
+    align:'Alignement', milieu:'Milieu', coord:'Coordonnées', coordFind:'Repérage', codage:'Déplacement',
+    decodage:'Trajet', chasse:'Chasse aux formes', symAxe:'Symétrie', symVrai:'Symétrie (vrai/faux)',
+    solideNom:'Solides', solideCompte:'Compter les solides', monnaie:'Monnaie', heure:'Lire l\'heure',
+    enigme:'Énigme', vie:'Maths de la vie'
+  };
+
+  var M4_LEVELS = [
+    { name:'Facile',
+      shapes:['triangle','carre','rectangle'],
+      types:['sides','vertices','name','calc','align','milieu','coord','solideNom','monnaie','heure'],
+      angleGap:20, calcModes:['add'], calcMax:10 },
+    { name:'Moyen',
+      shapes:['triangle','carre','rectangle','pentagone','hexagone','cercle'],
+      types:['sides','vertices','name','angle','image','calc','align','milieu','coord','coordFind','codage','chasse','symAxe','solideNom','solideCompte','monnaie','heure','vie'],
+      angleGap:14, calcModes:['add'], calcMax:20 },
+    { name:'Difficile',
+      shapes:['triangle','carre','rectangle','pentagone','hexagone','cercle','losange'],
+      types:['sides','vertices','name','angle','image','calc','align','milieu','coord','coordFind','codage','decodage','chasse','symAxe','symVrai','solideNom','solideCompte','monnaie','heure','enigme','vie'],
+      angleGap:7, calcModes:['add','missing'], calcMax:20 }
+  ];
+  var m4Level = 0;
+  var m4TypeFilter = 'random';
+  var m4Current = null;
+
+  function numChoiceSet(correct, poolVals){
+    var opts = [correct];
+    var seen = {}; seen[correct] = true;
+    var uniquePool = poolVals.filter(function(v){
+      if(v===correct || seen[v]) return false;
+      seen[v] = true; return true;
+    });
+    var pool = shuffle(uniquePool);
+    var i=0;
+    while(opts.length<4 && i<pool.length){ opts.push(pool[i]); i++; }
+    return shuffle(opts);
+  }
+
+  function drawPolygon(pts){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    svg.appendChild(el('polygon', {
+      points: pts.map(function(p){return p[0]+','+p[1];}).join(' '),
+      fill:'var(--accent2)', 'fill-opacity':'0.5', stroke:'var(--accent)', 'stroke-width':4, 'stroke-linejoin':'round'
+    }));
+  }
+
+  function drawShapeGeneric(meta){
+    if(meta.isCircle){
+      var svg = document.getElementById('m4Svg');
+      svg.setAttribute('viewBox','0 0 200 200');
+      svg.innerHTML = "";
+      var g = meta.gen();
+      svg.appendChild(el('circle',{cx:100,cy:100,r:g.r, fill:'var(--accent2)','fill-opacity':'0.5',stroke:'var(--accent)','stroke-width':4}));
+    } else {
+      drawPolygon(meta.gen());
+    }
+  }
+
+  function drawAngle(angleDeg){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    var vx=36, vy=164, len=140;
+    var p1 = [vx+len, vy];
+    var rad = angleDeg*Math.PI/180;
+    var p2 = [vx+len*Math.cos(rad), vy-len*Math.sin(rad)];
+    svg.appendChild(el('line',{x1:vx,y1:vy,x2:p1[0],y2:p1[1],stroke:'var(--accent)','stroke-width':6,'stroke-linecap':'round'}));
+    svg.appendChild(el('line',{x1:vx,y1:vy,x2:p2[0],y2:p2[1],stroke:'var(--accent2)','stroke-width':6,'stroke-linecap':'round'}));
+    svg.appendChild(el('circle',{cx:vx,cy:vy,r:5,fill:'var(--text)'}));
+  }
+
+  function svgText(x,y,size,txt){
+    var t = el('text',{x:x,y:y,'text-anchor':'middle','font-size':size,'font-family':"'Baloo 2', sans-serif",'font-weight':'700',fill:'var(--text)'});
+    t.textContent = txt;
+    return t;
+  }
+
+  function drawEquation(txt){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    svg.appendChild(svgText(100,112,34,txt));
+  }
+
+  // Petit "musée" d'illustrations stockées (dessinées en SVG, donc légères,
+  // mais toujours les mêmes formes) : chaque scène a sa propre question et
+  // se randomise un peu (nombre d'éléments) pour éviter de répéter toujours
+  // le même compte. Voir la note sur le stockage d'images à côté du code.
+  function drawHouseScene(withWindow){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    // corps carré de la maison (4 angles droits)
+    svg.appendChild(el('rect',{x:40,y:90,width:120,height:90,fill:'var(--accent2)','fill-opacity':'0.55',stroke:'var(--accent)','stroke-width':4}));
+    // toit triangulaire (aucun angle droit)
+    svg.appendChild(el('polygon',{points:'30,90 100,30 170,90', fill:'var(--accent3)','fill-opacity':'0.7', stroke:'var(--accent)','stroke-width':4,'stroke-linejoin':'round'}));
+    // porte rectangulaire (4 angles droits)
+    svg.appendChild(el('rect',{x:88,y:135,width:26,height:45,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':3}));
+    if(withWindow){
+      // fenêtre rectangulaire (4 angles droits de plus)
+      svg.appendChild(el('rect',{x:52,y:105,width:28,height:28,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':3}));
+    }
+  }
+
+  function genHouseQuestion(){
+    var withWindow = Math.random()<0.5;
+    var correct = withWindow ? 12 : 8;
+    return {
+      tag: 'Photo / illustration',
+      question: 'Combien d\'angles droits vois-tu sur cette maison ?',
+      sub: withWindow
+        ? 'Compte les coins bien carrés du corps de la maison, de la porte et de la fenêtre (pas le toit).'
+        : 'Compte les coins bien carrés du corps de la maison et de la porte (pas le toit).',
+      explain: withWindow
+        ? 'Le corps a 4 angles droits, la porte 4 et la fenêtre 4 : 4 + 4 + 4 = 12.'
+        : 'Le corps de la maison a 4 angles droits et la porte en a 4 aussi : 4 + 4 = 8.',
+      draw: function(){ drawHouseScene(withWindow); },
+      cols3: false,
+      choices: numChoiceSet(correct, [4,6,7,9,10,12,16]).map(function(v){ return { label:String(v), ok: v===correct }; })
+    };
+  }
+
+  function drawFenceScene(count){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    var margin = 20, gap = 8;
+    var totalGap = gap*(count-1);
+    var w = (200 - 2*margin - totalGap)/count;
+    for(var i=0;i<count;i++){
+      var x = margin + i*(w+gap);
+      svg.appendChild(el('rect',{x:x,y:70,width:w,height:100,fill:'var(--accent2)','fill-opacity':'0.6',stroke:'var(--accent)','stroke-width':3}));
+    }
+    // sol
+    svg.appendChild(el('line',{x1:10,y1:172,x2:190,y2:172,stroke:'var(--accent)','stroke-width':4,'stroke-linecap':'round'}));
+  }
+
+  function genFenceQuestion(){
+    var count = 3 + Math.floor(Math.random()*4); // 3 à 6
+    return {
+      tag: 'Photo / illustration',
+      question: 'Combien de planches (rectangles) compte cette clôture ?',
+      sub: 'Compte une par une les planches verticales.',
+      explain: 'Il y a ' + count + ' planches, donc ' + count + ' rectangles.',
+      draw: function(){ drawFenceScene(count); },
+      cols3: false,
+      choices: numChoiceSet(count, [2,3,4,5,6,7,8]).map(function(v){ return { label:String(v), ok: v===count }; })
+    };
+  }
+
+  function drawCastleScene(towers){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    // mur central
+    svg.appendChild(el('rect',{x:60,y:100,width:80,height:80,fill:'var(--accent2)','fill-opacity':'0.55',stroke:'var(--accent)','stroke-width':4}));
+    svg.appendChild(el('rect',{x:90,y:140,width:20,height:40,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':3}));
+    var positions = towers===2 ? [30,140] : [22,88,154];
+    positions.forEach(function(tx){
+      svg.appendChild(el('rect',{x:tx,y:80,width:28,height:100,fill:'var(--accent2)','fill-opacity':'0.55',stroke:'var(--accent)','stroke-width':4}));
+      // fanion triangulaire au sommet de la tour
+      svg.appendChild(el('polygon',{points:(tx+14)+',48 '+tx+',80 '+(tx+28)+',80', fill:'var(--accent3)','fill-opacity':'0.8', stroke:'var(--accent)','stroke-width':3,'stroke-linejoin':'round'}));
+    });
+  }
+
+  function genCastleQuestion(){
+    var towers = Math.random()<0.5 ? 2 : 3;
+    return {
+      tag: 'Photo / illustration',
+      question: 'Combien de fanions triangulaires vois-tu sur ce château ?',
+      sub: 'Regarde le sommet de chaque tour.',
+      explain: 'Chaque tour porte un fanion triangulaire, et il y a ' + towers + ' tours : donc ' + towers + ' fanions.',
+      draw: function(){ drawCastleScene(towers); },
+      cols3: false,
+      choices: numChoiceSet(towers, [1,2,3,4]).map(function(v){ return { label:String(v), ok:v===towers }; })
+    };
+  }
+
+  function drawRobotScene(arms){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    // tête + corps
+    svg.appendChild(el('rect',{x:75,y:30,width:50,height:44,fill:'var(--accent2)','fill-opacity':'0.6',stroke:'var(--accent)','stroke-width':4}));
+    svg.appendChild(el('rect',{x:65,y:80,width:70,height:70,fill:'var(--accent3)','fill-opacity':'0.6',stroke:'var(--accent)','stroke-width':4}));
+    // jambes
+    svg.appendChild(el('rect',{x:72,y:155,width:20,height:34,fill:'var(--accent2)','fill-opacity':'0.6',stroke:'var(--accent)','stroke-width':3}));
+    svg.appendChild(el('rect',{x:108,y:155,width:20,height:34,fill:'var(--accent2)','fill-opacity':'0.6',stroke:'var(--accent)','stroke-width':3}));
+    // bras (2 ou 4, thème brainrot oblige : un robot rigolo peut avoir plusieurs bras)
+    var armY = [88, 112];
+    for(var i=0;i<arms/2;i++){
+      var y = armY[i] || (88+i*24);
+      svg.appendChild(el('rect',{x:38,y:y,width:24,height:18,fill:'var(--accent2)','fill-opacity':'0.6',stroke:'var(--accent)','stroke-width':3}));
+      svg.appendChild(el('rect',{x:138,y:y,width:24,height:18,fill:'var(--accent2)','fill-opacity':'0.6',stroke:'var(--accent)','stroke-width':3}));
+    }
+  }
+
+  function genRobotQuestion(){
+    var arms = Math.random()<0.5 ? 2 : 4;
+    var correct = 2 /*tête+corps*/ + 2 /*jambes*/ + arms;
+    return {
+      tag: 'Photo / illustration',
+      question: 'Combien de carrés ou rectangles composent ce robot ?',
+      sub: 'Compte la tête, le corps, les jambes et les bras.',
+      explain: 'Tête (1) + corps (1) + jambes (2) + bras (' + arms + ') = ' + correct + '.',
+      draw: function(){ drawRobotScene(arms); },
+      cols3: false,
+      choices: numChoiceSet(correct, [4,5,6,7,8,9,10]).map(function(v){ return { label:String(v), ok: v===correct }; })
+    };
+  }
+
+  function drawTrainScene(wagons){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+    // locomotive
+    svg.appendChild(el('rect',{x:15,y:110,width:40,height:38,fill:'var(--accent3)','fill-opacity':0.6,stroke:'var(--accent)','stroke-width':3}));
+    svg.appendChild(el('rect',{x:20,y:90,width:20,height:22,fill:'var(--accent3)','fill-opacity':0.6,stroke:'var(--accent)','stroke-width':3}));
+    svg.appendChild(el('circle',{cx:25,cy:150,r:8,fill:'var(--text)','fill-opacity':0.7}));
+    svg.appendChild(el('circle',{cx:45,cy:150,r:8,fill:'var(--text)','fill-opacity':0.7}));
+    var x = 62;
+    for(var i=0;i<wagons;i++){
+      svg.appendChild(el('rect',{x:x,y:118,width:34,height:30,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--accent)','stroke-width':3}));
+      svg.appendChild(el('circle',{cx:x+8,cy:150,r:7,fill:'var(--text)','fill-opacity':0.7}));
+      svg.appendChild(el('circle',{cx:x+26,cy:150,r:7,fill:'var(--text)','fill-opacity':0.7}));
+      x += 40;
+    }
+  }
+  function genTrainQuestion(){
+    var wagons = 2+Math.floor(Math.random()*3); // 2 à 4
+    var correct = wagons;
+    return {
+      tag: 'Photo / illustration',
+      question: 'Combien de wagons rectangulaires vois-tu derrière la locomotive ?',
+      sub: 'Ne compte pas la locomotive, seulement les wagons qui la suivent.',
+      explain: 'Il y a ' + wagons + ' wagons accrochés à la locomotive.',
+      draw: function(){ drawTrainScene(wagons); },
+      cols3: false,
+      choices: numChoiceSet(correct, [1,2,3,4,5,6]).map(function(v){ return { label:String(v), ok: v===correct }; })
+    };
+  }
+
+  var IMAGE_QUESTIONS = [genHouseQuestion, genFenceQuestion, genCastleQuestion, genRobotQuestion, genTrainQuestion];
+
+  // ===================== Quadrillage / repérage =====================
+  var GRID_N = 5, GRID_CELL = 30, GRID_MARGIN = 25;
+  var COL_LETTERS = ['A','B','C','D','E'];
+  function gridX(col){ return GRID_MARGIN + col*GRID_CELL; }
+  function gridY(row){ return GRID_MARGIN + row*GRID_CELL; }
+  function gridCenterX(col){ return gridX(col) + GRID_CELL/2; }
+  function gridCenterY(row){ return gridY(row) + GRID_CELL/2; }
+  function coordLabel(col,row){ return COL_LETTERS[col] + (row+1); }
+
+  function drawGridBase(svg){
+    for(var i=0;i<=GRID_N;i++){
+      svg.appendChild(el('line',{x1:gridX(i),y1:gridY(0),x2:gridX(i),y2:gridY(GRID_N),stroke:'var(--text-soft)','stroke-width':1.5}));
+      svg.appendChild(el('line',{x1:gridX(0),y1:gridY(i),x2:gridX(GRID_N),y2:gridY(i),stroke:'var(--text-soft)','stroke-width':1.5}));
+    }
+    for(var c=0;c<GRID_N;c++){ svg.appendChild(svgText(gridCenterX(c), gridY(GRID_N)+14, 11, COL_LETTERS[c])); }
+    for(var r=0;r<GRID_N;r++){ svg.appendChild(svgText(gridX(0)-11, gridCenterY(r)+4, 11, String(r+1))); }
+  }
+  function drawPointMarker(svg,col,row,label,color){
+    svg.appendChild(el('circle',{cx:gridCenterX(col),cy:gridCenterY(row),r:7,fill:color||'var(--accent)',stroke:'var(--surface)','stroke-width':2}));
+    if(label) svg.appendChild(svgText(gridCenterX(col), gridY(row)-6, 12, label));
+  }
+  function isColinear(pts){
+    var dx1=pts[1].col-pts[0].col, dy1=pts[1].row-pts[0].row;
+    var dx2=pts[2].col-pts[0].col, dy2=pts[2].row-pts[0].row;
+    return (dx1*dy2 - dy1*dx2) === 0;
+  }
+
+  function genAlignQuestion(){
+    var aligned = Math.random()<0.5;
+    var pts;
+    if(aligned){
+      var mode = pick(['h','v','d']);
+      if(mode==='h'){
+        var row = randInt(0,4);
+        pts = shuffle([0,1,2,3,4]).slice(0,3).sort(function(a,b){return a-b;}).map(function(c){return {col:c,row:row};});
+      } else if(mode==='v'){
+        var col = randInt(0,4);
+        pts = shuffle([0,1,2,3,4]).slice(0,3).sort(function(a,b){return a-b;}).map(function(r){return {col:col,row:r};});
+      } else {
+        var dir = pick([1,-1]);
+        var startCol = dir===1 ? 0 : 4;
+        var startRow = randInt(0,2);
+        pts = [0,1,2].map(function(i){ return {col:startCol+dir*i, row:startRow+i}; });
+      }
+    } else {
+      var tries=0;
+      do{
+        pts = [0,1,2].map(function(){ return {col:randInt(0,4), row:randInt(0,4)}; });
+        tries++;
+      } while(tries<30 && isColinear(pts));
+      if(isColinear(pts)) pts = [{col:0,row:0},{col:1,row:0},{col:0,row:2}];
+    }
+    return {
+      tag:'Alignement',
+      question:'Ces 3 points sont-ils alignés (sur une même droite) ?',
+      sub:'Imagine une règle : peux-tu la poser pour toucher les 3 points en même temps ?',
+      explain: aligned ? 'Oui, une seule droite passe par les 3 points.' : 'Non, une droite ne peut pas passer par les 3 points en même temps.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        pts.forEach(function(p){ drawPointMarker(svg,p.col,p.row,null,'var(--accent)'); });
+      },
+      cols3:false,
+      choices: shuffle([{label:'Oui, alignés', ok:aligned},{label:'Non, pas alignés', ok:!aligned}])
+    };
+  }
+
+  function genMilieuQuestion(){
+    var horizontal = Math.random()<0.5;
+    var fixedIdx = randInt(0,4);
+    // 3 formes bien distinctes plutôt que des lettres A/B/C, qui se
+    // confondaient visuellement avec les lettres des colonnes du quadrillage.
+    var shapeKeys = shuffle(MARKER_SHAPES.slice()).slice(0,3);
+    var positions = [1,2,3];
+    var pts = positions.map(function(p,i){
+      var base = horizontal ? {col:p,row:fixedIdx} : {col:fixedIdx,row:p};
+      base.shape = shapeKeys[i];
+      return base;
+    });
+    var correctShape = pts[1].shape;
+    var correctName = MARKER_LABELS[correctShape];
+    return {
+      tag:'Milieu',
+      question:'Quelle forme se trouve au milieu du segment ?',
+      sub:'Le milieu est à égale distance des deux extrémités du segment.',
+      explain:'Le ' + correctName + ' est à égale distance des deux bouts du segment : c\'est lui qui est au milieu.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        var x1,y1,x2,y2;
+        if(horizontal){ x1=gridCenterX(0); y1=gridCenterY(fixedIdx); x2=gridCenterX(4); y2=y1; }
+        else { x1=gridCenterX(fixedIdx); y1=gridCenterY(0); x2=x1; y2=gridCenterY(4); }
+        svg.appendChild(el('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:'var(--accent)','stroke-width':4,'stroke-linecap':'round'}));
+        pts.forEach(function(p,i){ drawShapeMarkerOnGrid(svg,p.col,p.row,p.shape,palette[i%palette.length]); });
+      },
+      cols3:true,
+      choices: shapeKeys.map(function(sh){ return { label:MARKER_LABELS[sh], ok: sh===correctShape }; })
+    };
+  }
+
+  function genCoordQuestion(){
+    var col=randInt(0,4), row=randInt(0,4);
+    var correct = coordLabel(col,row);
+    var candidates=[];
+    for(var dc=-1;dc<=1;dc++){ for(var dr=-1;dr<=1;dr++){
+      if(dc===0&&dr===0) continue;
+      var nc=col+dc, nr=row+dr;
+      if(nc>=0&&nc<=4&&nr>=0&&nr<=4) candidates.push(coordLabel(nc,nr));
+    }}
+    candidates = shuffle(candidates);
+    var seen={}; seen[correct]=true;
+    var choiceLabels=[correct];
+    for(var i=0;i<candidates.length && choiceLabels.length<4;i++){
+      if(!seen[candidates[i]]){ choiceLabels.push(candidates[i]); seen[candidates[i]]=true; }
+    }
+    choiceLabels = shuffle(choiceLabels);
+    return {
+      tag:'Coordonnées',
+      question:'Quelles sont les coordonnées du point marqué ?',
+      sub:'Lis d\'abord la lettre de la colonne, puis le numéro de la ligne.',
+      explain:'Le point est dans la colonne ' + COL_LETTERS[col] + ' et sur la ligne ' + (row+1) + ' : ses coordonnées sont ' + correct + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        drawShapeMarkerOnGrid(svg,col,row,'etoile','var(--accent)');
+      },
+      cols3:false,
+      choices: choiceLabels.map(function(l){ return { label:l, ok:l===correct }; })
+    };
+  }
+
+  function genCoordFindQuestion(){
+    // On pose des formes (pas des lettres, qui se confondaient avec les
+    // lettres des colonnes) sur quelques cases, et on demande quelle forme
+    // se trouve à des coordonnées données.
+    var cells=[]; var usedKeys={};
+    var shapesForCells = shuffle(MARKER_SHAPES.slice()).slice(0,4);
+    while(cells.length<4){
+      var c=randInt(0,4), r=randInt(0,4), key=c+'_'+r;
+      if(usedKeys[key]) continue;
+      usedKeys[key]=true;
+      cells.push({col:c,row:r,shape:shapesForCells[cells.length]});
+    }
+    var targetIdx=randInt(0,3);
+    var target=cells[targetIdx];
+    var targetCoord=coordLabel(target.col,target.row);
+    var correctName = MARKER_LABELS[target.shape];
+    return {
+      tag:'Coordonnées',
+      question:'Quelle forme se trouve en ' + targetCoord + ' ?',
+      sub:'Retrouve la bonne colonne, puis la bonne ligne.',
+      explain:'En ' + targetCoord + ', on trouve un(e) ' + correctName + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        cells.forEach(function(p,i){ drawShapeMarkerOnGrid(svg,p.col,p.row,p.shape,palette[i%palette.length]); });
+      },
+      cols3:false,
+      choices: shuffle(cells.map(function(p,i){ return { label:MARKER_LABELS[p.shape], ok:i===targetIdx }; }))
+    };
+  }
+
+  var ARROW_CHAR = {up:'⬆',down:'⬇',left:'⬅',right:'➡'};
+
+  function genCodageQuestion(){
+    var startCol, startRow, moves, endCol, endRow;
+    for(var attempt=0; attempt<50; attempt++){
+      var sc=randInt(0,4), sr=randInt(0,4);
+      var steps = 2+Math.floor(Math.random()*2);
+      var mv=[], c=sc, r=sr, ok=true;
+      for(var i=0;i<steps;i++){
+        var dir=pick(['up','down','left','right']);
+        var nc=c, nr=r;
+        if(dir==='up') nr-=1; else if(dir==='down') nr+=1; else if(dir==='left') nc-=1; else nc+=1;
+        if(nc<0||nc>4||nr<0||nr>4){ ok=false; break; }
+        mv.push(dir); c=nc; r=nr;
+      }
+      if(ok){ startCol=sc; startRow=sr; moves=mv; endCol=c; endRow=r; break; }
+    }
+    if(moves===undefined){ startCol=0; startRow=0; moves=['right','right','down']; endCol=2; endRow=1; }
+    var seqStr = moves.map(function(d){ return ARROW_CHAR[d]; }).join(' ');
+    var correct = coordLabel(endCol,endRow);
+    var candidates=[];
+    for(var dc=-2; dc<=2; dc++){ for(var dr=-2; dr<=2; dr++){
+      var ncc=startCol+dc, nrr=startRow+dr;
+      if(ncc<0||ncc>4||nrr<0||nrr>4) continue;
+      var lbl=coordLabel(ncc,nrr);
+      if(lbl!==correct) candidates.push(lbl);
+    }}
+    candidates = shuffle(candidates);
+    var seen={}; seen[correct]=true;
+    var choiceLabels=[correct];
+    for(var j=0;j<candidates.length && choiceLabels.length<4;j++){
+      if(!seen[candidates[j]]){ choiceLabels.push(candidates[j]); seen[candidates[j]]=true; }
+    }
+    choiceLabels = shuffle(choiceLabels);
+    return {
+      tag:'Déplacement',
+      question:'Le personnage part du point "Départ" et suit ces flèches : ' + seqStr + '. Où arrive-t-il ?',
+      sub:'Suis chaque flèche une par une à partir du point de départ.',
+      explain:'En suivant les flèches depuis le départ, on arrive en ' + correct + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        drawPointMarker(svg,startCol,startRow,'Départ','var(--accent)');
+      },
+      cols3:false,
+      choices: choiceLabels.map(function(l){ return { label:l, ok:l===correct }; })
+    };
+  }
+
+  function buildMoves(dx,dy){
+    var mv=[], i;
+    for(i=0;i<Math.abs(dx);i++) mv.push(dx>0?'right':'left');
+    for(i=0;i<Math.abs(dy);i++) mv.push(dy>0?'down':'up');
+    return mv;
+  }
+  function seqToStr(moves){ return moves.map(function(d){ return ARROW_CHAR[d]; }).join(' '); }
+
+  function genDecodageQuestion(){
+    var sc,sr,ec,er,dx,dy;
+    do{
+      sc=randInt(0,4); sr=randInt(0,4); ec=randInt(0,4); er=randInt(0,4);
+      dx=ec-sc; dy=er-sr;
+    } while(dx===0 && dy===0);
+    var correctMoves = buildMoves(dx,dy);
+    var correctStr = seqToStr(correctMoves);
+    var wrongCandidates=[];
+    if(dx!==0) wrongCandidates.push(buildMoves(-dx,dy));
+    if(dy!==0) wrongCandidates.push(buildMoves(dx,-dy));
+    wrongCandidates.push(buildMoves(dx + (dx>=0?1:-1), dy));
+    wrongCandidates.push(buildMoves(dx, dy + (dy>=0?1:-1)));
+    var seen={}; seen[correctStr]=true;
+    var wrongStrs=[];
+    wrongCandidates.forEach(function(mv){
+      var s=seqToStr(mv);
+      if(s && !seen[s]){ seen[s]=true; wrongStrs.push(s); }
+    });
+    wrongStrs = shuffle(wrongStrs).slice(0,2);
+    var options = shuffle([correctStr].concat(wrongStrs));
+    return {
+      tag:'Trajet',
+      question:'Quel trajet permet d\'aller du point de départ au point d\'arrivée ?',
+      sub:'Compare le nombre de cases à droite/gauche puis en haut/bas entre les deux points.',
+      explain:'Il faut suivre : ' + correctStr + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        drawPointMarker(svg,sc,sr,'Départ','var(--accent2)');
+        drawPointMarker(svg,ec,er,'Arrivée','var(--accent)');
+      },
+      cols3:false,
+      choices: options.map(function(s){ return { label:s, ok:s===correctStr }; })
+    };
+  }
+
+  // ===================== Chasse aux formes =====================
+  var CHASSE_SLOTS = [[38,44],[100,38],[162,44],[32,105],[100,100],[168,105],[45,162],[100,166],[155,162]];
+  function drawMiniShape(svg,cx,cy,type,color){
+    var s=14;
+    if(type==='cercle'){
+      svg.appendChild(el('circle',{cx:cx,cy:cy,r:s,fill:color,'fill-opacity':0.65,stroke:'var(--text)','stroke-width':2}));
+    } else if(type==='carre'){
+      svg.appendChild(el('rect',{x:cx-s,y:cy-s,width:2*s,height:2*s,fill:color,'fill-opacity':0.65,stroke:'var(--text)','stroke-width':2}));
+    } else if(type==='rectangle'){
+      svg.appendChild(el('rect',{x:cx-s*1.3,y:cy-s*0.7,width:2.6*s,height:1.4*s,fill:color,'fill-opacity':0.65,stroke:'var(--text)','stroke-width':2}));
+    } else if(type==='triangle'){
+      var pts=[[cx,cy-s],[cx+s,cy+s],[cx-s,cy+s]];
+      svg.appendChild(el('polygon',{points:pts.map(function(p){return p[0]+','+p[1];}).join(' '),fill:color,'fill-opacity':0.65,stroke:'var(--text)','stroke-width':2,'stroke-linejoin':'round'}));
+    } else if(type==='losange'){
+      var pts2=[[cx,cy-s*1.15],[cx+s*0.85,cy],[cx,cy+s*1.15],[cx-s*0.85,cy]];
+      svg.appendChild(el('polygon',{points:pts2.map(function(p){return p[0]+','+p[1];}).join(' '),fill:color,'fill-opacity':0.65,stroke:'var(--text)','stroke-width':2,'stroke-linejoin':'round'}));
+    } else if(type==='etoile'){
+      var spikes=5, outerR=s*1.15, innerR=s*0.5, starPts=[];
+      for(var k=0;k<spikes*2;k++){
+        var r = (k%2===0) ? outerR : innerR;
+        var ang = (Math.PI/spikes)*k - Math.PI/2;
+        starPts.push([cx+r*Math.cos(ang), cy+r*Math.sin(ang)]);
+      }
+      svg.appendChild(el('polygon',{points:starPts.map(function(p){return p[0]+','+p[1];}).join(' '),fill:color,'fill-opacity':0.65,stroke:'var(--text)','stroke-width':2,'stroke-linejoin':'round'}));
+    }
+  }
+  // Formes-repères pour le quadrillage : bien plus distinctives visuellement
+  // que des lettres (qui se confondent avec les lettres des colonnes A-E).
+  var MARKER_SHAPES = ['triangle','carre','cercle','losange','etoile'];
+  var MARKER_LABELS = { triangle:'triangle', carre:'carré', cercle:'cercle', losange:'losange', etoile:'étoile' };
+  function drawShapeMarkerOnGrid(svg,col,row,shapeKey,color){
+    drawMiniShape(svg, gridCenterX(col), gridCenterY(row), shapeKey, color || 'var(--accent)');
+  }
+  function genChasseQuestion(){
+    var pool=['triangle','carre','rectangle','cercle'];
+    var target=pick(pool);
+    var assignments, tries=0;
+    do{
+      assignments = CHASSE_SLOTS.map(function(){ return Math.random()<0.85 ? pick(pool) : null; });
+      tries++;
+    } while(tries<20 && assignments.filter(function(t){return t===target;}).length===0);
+    if(assignments.filter(function(t){return t===target;}).length===0) assignments[0]=target;
+    var count = assignments.filter(function(t){return t===target;}).length;
+    var plural = { triangle:'triangles', carre:'carrés', rectangle:'rectangles', cercle:'cercles' }[target];
+    return {
+      tag:'Chasse aux formes',
+      question:'Combien de ' + plural + ' vois-tu dans cette image ?',
+      sub:'Compte bien toutes les formes, elles ne sont pas toutes pareilles !',
+      explain:'Il y a ' + count + ' ' + plural + ' dans l\'image.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        CHASSE_SLOTS.forEach(function(pos,i){
+          var t=assignments[i];
+          if(!t) return;
+          drawMiniShape(svg,pos[0],pos[1],t,palette[i%palette.length]);
+        });
+      },
+      cols3:false,
+      choices: numChoiceSet(count, [0,1,2,3,4,5,6]).map(function(v){ return { label:String(v), ok:v===count }; })
+    };
+  }
+
+  // ===================== Symétrie =====================
+  function genSymAxeQuestion(){
+    var offset = 20+Math.floor(Math.random()*11);
+    var xs = [100-offset, 100, 100+offset];
+    var labels = shuffle(['1','2','3']);
+    var correctIdx = xs.indexOf(100);
+    var correctLabel = labels[correctIdx];
+    return {
+      tag:'Symétrie',
+      question:'Quelle droite (1, 2 ou 3) est un axe de symétrie de cette figure ?',
+      sub:'Une seule droite partage la figure en deux parties identiques, comme un miroir.',
+      explain:'La droite ' + correctLabel + ' passe par la pointe et le milieu de la base : elle partage le triangle en deux parties identiques.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(el('polygon',{points:'100,40 150,165 50,165', fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4,'stroke-linejoin':'round'}));
+        xs.forEach(function(x,i){
+          svg.appendChild(el('line',{x1:x,y1:22,x2:x,y2:182,stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'6,5'}));
+          svg.appendChild(svgText(x,15,13,labels[i]));
+        });
+      },
+      cols3:true,
+      choices: ['1','2','3'].map(function(l){ return { label:l, ok:l===correctLabel }; })
+    };
+  }
+  function genSymVraiQuestion(){
+    var isAxis = Math.random()<0.5;
+    var lc;
+    if(isAxis){ lc = Math.random()<0.5 ? {x1:100,y1:55,x2:100,y2:145} : {x1:30,y1:100,x2:170,y2:100}; }
+    else { lc = Math.random()<0.5 ? {x1:40,y1:70,x2:160,y2:130} : {x1:160,y1:70,x2:40,y2:130}; }
+    return {
+      tag:'Symétrie',
+      question:'Cette droite est-elle un axe de symétrie du rectangle ?',
+      sub:'Imagine que tu plies la figure le long de la droite : les deux côtés se superposent-ils exactement ?',
+      explain: isAxis ? 'Oui : en pliant le long de cette droite, les deux moitiés du rectangle se superposent.' : 'Non : cette droite ne partage pas le rectangle en deux parties identiques.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(el('rect',{x:40,y:70,width:120,height:60, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4}));
+        svg.appendChild(el('line',{x1:lc.x1,y1:lc.y1,x2:lc.x2,y2:lc.y2, stroke:'var(--text)','stroke-width':3,'stroke-dasharray':'6,5'}));
+      },
+      cols3:false,
+      choices: shuffle([{label:'Oui',ok:isAxis},{label:'Non',ok:!isAxis}])
+    };
+  }
+
+  // ===================== Solides =====================
+  // Représentation "perspective cavalière", comme dans les cahiers : les
+  // arêtes visibles sont des traits pleins, les arêtes cachées (derrière le
+  // solide) sont en pointillés, et les faces visibles sont translucides.
+  // Ça permet à l'enfant de voir ET de compter les arêtes/sommets cachés,
+  // au lieu d'avoir à "deviner" ce qu'il y a derrière.
+  function isoPoly(pts){ return pts.map(function(p){return p[0]+','+p[1];}).join(' '); }
+  function solidFace(svg,pts,color){
+    svg.appendChild(el('polygon',{points:isoPoly(pts), fill:color, 'fill-opacity':0.5, stroke:'none'}));
+  }
+  function solidEdge(svg,p1,p2,hidden){
+    var attrs = {x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1], stroke:'var(--text)','stroke-width':2.2,'stroke-linecap':'round'};
+    if(hidden) attrs['stroke-dasharray'] = '5,4';
+    svg.appendChild(el('line',attrs));
+  }
+  function drawCavalierBox(svg,c){
+    // c = coins Front(TL,TR,BR,BL) et Back(TL,TR,BR,BL). Seul le coin
+    // Back-Bas-Gauche (BBL) est caché, avec les 3 arêtes qui y mènent.
+    solidFace(svg, [c.FTL,c.FTR,c.FBR,c.FBL], 'var(--accent)');   // face avant
+    solidFace(svg, [c.FTL,c.FTR,c.BTR,c.BTL], 'var(--accent3)');  // face du dessus
+    solidFace(svg, [c.FTR,c.FBR,c.BBR,c.BTR], 'var(--accent2)');  // face de droite
+    // arêtes cachées (le coin arrière-bas-gauche, invisible depuis l'extérieur)
+    solidEdge(svg,c.FBL,c.BBL,true);
+    solidEdge(svg,c.BTL,c.BBL,true);
+    solidEdge(svg,c.BBL,c.BBR,true);
+    // arêtes visibles
+    solidEdge(svg,c.FTL,c.FTR,false); solidEdge(svg,c.FTR,c.FBR,false);
+    solidEdge(svg,c.FBR,c.FBL,false); solidEdge(svg,c.FBL,c.FTL,false);
+    solidEdge(svg,c.FTL,c.BTL,false); solidEdge(svg,c.FTR,c.BTR,false); solidEdge(svg,c.FBR,c.BBR,false);
+    solidEdge(svg,c.BTL,c.BTR,false); solidEdge(svg,c.BTR,c.BBR,false);
+  }
+  function drawSolidCube(svg){
+    // Base carrée ET profondeur cohérente avec la largeur : ça se voit
+    // clairement comme un cube, pas comme une boîte allongée.
+    drawCavalierBox(svg, {
+      FTL:[55,70], FTR:[145,70], FBR:[145,160], FBL:[55,160],
+      BTL:[90,42], BTR:[180,42], BBR:[180,132], BBL:[90,132]
+    });
+  }
+  function drawSolidPave(svg){
+    // Volontairement bien plus large que haut, et moins profond : la
+    // silhouette "boîte allongée" doit sauter aux yeux à côté du cube.
+    drawCavalierBox(svg, {
+      FTL:[30,92], FTR:[160,92], FBR:[160,145], FBL:[30,145],
+      BTL:[58,68], BTR:[188,68], BBR:[188,121], BBL:[58,121]
+    });
+  }
+  function drawSolidPyramide(svg){
+    // Base carrée en losange (F=devant, Bk=caché derrière, L/R=côtés) +
+    // sommet. Seuls le sommet arrière du carré de base et les 3 arêtes qui
+    // y mènent sont cachés (pointillés) ; le reste est visible.
+    var Apex=[100,38], Bk=[100,116], R=[153,142], F=[100,168], L=[47,142];
+    solidFace(svg, [Apex,L,F], 'var(--accent2)');
+    solidFace(svg, [Apex,F,R], 'var(--accent)');
+    solidEdge(svg,Apex,Bk,true); solidEdge(svg,L,Bk,true); solidEdge(svg,R,Bk,true);
+    solidEdge(svg,Apex,F,false); solidEdge(svg,Apex,L,false); solidEdge(svg,Apex,R,false);
+    solidEdge(svg,F,L,false); solidEdge(svg,F,R,false);
+  }
+  function drawSolidCylindre(svg){
+    var cx=100, topCy=62, botCy=150, rx=46, ry=16;
+    svg.appendChild(el('rect',{x:cx-rx,y:topCy,width:2*rx,height:botCy-topCy,fill:'var(--accent2)'}));
+    svg.appendChild(el('line',{x1:cx-rx,y1:topCy,x2:cx-rx,y2:botCy,stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('line',{x1:cx+rx,y1:topCy,x2:cx+rx,y2:botCy,stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('path',{d:'M '+(cx-rx)+' '+botCy+' A '+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+botCy, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('ellipse',{cx:cx,cy:topCy,rx:rx,ry:ry,fill:'var(--accent3)',stroke:'var(--text)','stroke-width':2}));
+  }
+  function drawSolidCone(svg){
+    var rx=48, ry=16, baseCy=150, apex=[100,40];
+    svg.appendChild(el('polygon',{points:isoPoly([apex,[100-rx,baseCy],[100+rx,baseCy]]),fill:'var(--accent2)'}));
+    svg.appendChild(el('ellipse',{cx:100,cy:baseCy,rx:rx,ry:ry,fill:'var(--accent3)',stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('line',{x1:apex[0],y1:apex[1],x2:100-rx,y2:baseCy,stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('line',{x1:apex[0],y1:apex[1],x2:100+rx,y2:baseCy,stroke:'var(--text)','stroke-width':2}));
+  }
+  function drawSolidBoule(svg){
+    svg.appendChild(el('circle',{cx:100,cy:100,r:60,fill:'var(--accent2)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('ellipse',{cx:100,cy:128,rx:38,ry:13,fill:'var(--text)','fill-opacity':0.12}));
+  }
+  var SOLID_META = {
+    cube:     { faces:6, aretes:12, sommets:8, label:'cube', draw:drawSolidCube },
+    pave:     { faces:6, aretes:12, sommets:8, label:'pavé droit', draw:drawSolidPave },
+    pyramide: { faces:5, aretes:8,  sommets:5, label:'pyramide à base carrée', draw:drawSolidPyramide },
+    cylindre: { label:'cylindre', draw:drawSolidCylindre },
+    cone:     { label:'cône', draw:drawSolidCone },
+    boule:    { label:'boule', draw:drawSolidBoule }
+  };
+  var SOLID_NAME_POOL = ['cube','pavé droit','pyramide à base carrée','cylindre','cône','boule'];
+
+  function genSolideNomQuestion(){
+    var keys = Object.keys(SOLID_META);
+    var key = pick(keys);
+    var meta = SOLID_META[key];
+    var poolLabels = shuffle(SOLID_NAME_POOL.filter(function(l){return l!==meta.label;})).slice(0,3);
+    var labels = shuffle([meta.label].concat(poolLabels));
+    return {
+      tag:'Solides',
+      question:'Quel est le nom de ce solide ?',
+      sub:'Observe bien sa forme en 3D.',
+      explain:'C\'est un(e) ' + meta.label + '.',
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; meta.draw(svg); },
+      cols3:false,
+      choices: labels.map(function(l){ return { label:l, ok:l===meta.label }; })
+    };
+  }
+  function genSolideCompteQuestion(){
+    var key = pick(['cube','pave','pyramide']);
+    var meta = SOLID_META[key];
+    var attr = pick(['faces','sommets','aretes']);
+    var correct = meta[attr];
+    var attrLabel = attr==='faces'?'faces' : attr==='sommets'?'sommets' : 'arêtes';
+    return {
+      tag:'Solides',
+      question:'Combien de ' + attrLabel + ' a ce solide (' + meta.label + ') ?',
+      sub:'Essaie de bien visualiser toutes les faces, même celles qu\'on ne voit pas directement.',
+      explain:'Un ' + meta.label + ' a ' + meta.faces + ' faces, ' + meta.aretes + ' arêtes et ' + meta.sommets + ' sommets.',
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; meta.draw(svg); },
+      cols3:false,
+      choices: numChoiceSet(correct, [2,3,4,5,6,7,8,9,10,11,12]).map(function(v){ return { label:String(v), ok:v===correct }; })
+    };
+  }
+
+  // ===================== Monnaie =====================
+  function drawMoneyItem(svg,cx,cy,value,isCoin){
+    if(isCoin) svg.appendChild(el('circle',{cx:cx,cy:cy,r:26, fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2.5}));
+    else svg.appendChild(el('rect',{x:cx-34,y:cy-20,width:68,height:40,rx:4, fill:'var(--accent2)', stroke:'var(--text)','stroke-width':2.5}));
+    svg.appendChild(svgText(cx,cy+6,16,value+'€'));
+  }
+  function genMonnaieQuestion(){
+    var pool=[1,2,5,10,20];
+    var count = 2+Math.floor(Math.random()*2);
+    var items=[], sum=0;
+    for(var i=0;i<count;i++){ var v=pick(pool); items.push(v); sum+=v; }
+    var positions=[[55,100],[100,65],[145,100],[100,140]];
+    return {
+      tag:'Monnaie',
+      question:'Combien d\'argent y a-t-il en tout ?',
+      sub:'Additionne la valeur de chaque pièce ou billet.',
+      explain: items.join('€ + ') + '€ = ' + sum + '€.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        items.forEach(function(v,i){ drawMoneyItem(svg, positions[i][0], positions[i][1], v, v<5); });
+      },
+      cols3:false,
+      choices: numChoiceSet(sum, [sum-5,sum-2,sum-1,sum+1,sum+2,sum+5].filter(function(v){return v>0;})).map(function(v){ return { label:String(v)+'€', ok:v===sum }; })
+    };
+  }
+
+  // ===================== Lire l'heure =====================
+  function angleToXY(deg,len,cx,cy){ var rad=deg*Math.PI/180; return [(cx||100)+len*Math.cos(rad), (cy||100)+len*Math.sin(rad)]; }
+  function drawClockFace(svg, hourTip, minTip){
+    svg.appendChild(el('circle',{cx:100,cy:100,r:70, fill:'var(--surface)', stroke:'var(--accent)','stroke-width':4}));
+    for(var i=0;i<12;i++){
+      var a=(i*30-90)*Math.PI/180;
+      svg.appendChild(el('line',{x1:100+60*Math.cos(a),y1:100+60*Math.sin(a),x2:100+68*Math.cos(a),y2:100+68*Math.sin(a), stroke:'var(--text)','stroke-width':2}));
+    }
+    svg.appendChild(el('line',{x1:100,y1:100,x2:hourTip[0],y2:hourTip[1], stroke:'var(--text)','stroke-width':5,'stroke-linecap':'round'}));
+    svg.appendChild(el('line',{x1:100,y1:100,x2:minTip[0],y2:minTip[1], stroke:'var(--accent)','stroke-width':3,'stroke-linecap':'round'}));
+    svg.appendChild(el('circle',{cx:100,cy:100,r:4, fill:'var(--text)'}));
+  }
+
+  function genHeureQuestion(svgId){
+    svgId = svgId || 'm4Svg';
+    var hour = 1+randInt(0,11);
+    var half = Math.random()<0.5;
+    var minuteVal = half?30:0;
+    var hourAngleDeg = ((hour%12) + minuteVal/60) * 30 - 90;
+    var minuteAngleDeg = (minuteVal/60)*360 - 90;
+    var hourTip = angleToXY(hourAngleDeg, 42);
+    var minTip = angleToXY(minuteAngleDeg, 62);
+    var correctLabel = half ? (hour + ' h 30') : (hour + ' h');
+    var distractPool=[];
+    [hour-1,hour,hour+1].forEach(function(h){
+      var hh = ((h-1+12)%12)+1;
+      distractPool.push(hh + ' h'); distractPool.push(hh + ' h 30');
+    });
+    var seen={}; seen[correctLabel]=true;
+    var uniq = distractPool.filter(function(l){ if(l===correctLabel||seen[l]) return false; seen[l]=true; return true; });
+    uniq = shuffle(uniq);
+    var choiceLabels = shuffle([correctLabel].concat(uniq.slice(0,3)));
+    return {
+      tag:'Lire l\'heure',
+      question:'Quelle heure indique cette horloge ?',
+      sub:'Regarde bien la petite aiguille (les heures) et la grande (les minutes).',
+      explain:'La petite aiguille est sur ' + hour + ' et la grande est sur ' + (half?'6 (30 minutes)':'12 (0 minute)') + ' : il est ' + correctLabel + '.',
+      draw:function(){
+        var svg=document.getElementById(svgId); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawClockFace(svg, hourTip, minTip);
+      },
+      cols3:false,
+      choices: choiceLabels.map(function(l){ return { label:l, ok:l===correctLabel }; })
+    };
+  }
+
+  // ===================== Énigmes =====================
+  var ENIGME_POOL = [
+    { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
+    { text:'J\'ai 3 côtés et 3 sommets, ni plus ni moins. Qui suis-je ?', answer:'triangle', pool:['triangle','carré','pentagone','losange'] },
+    { text:'J\'ai 4 côtés égaux et 4 angles droits. Qui suis-je ?', answer:'carré', pool:['carré','rectangle','losange','pentagone'] },
+    { text:'J\'ai 6 faces carrées, 8 sommets et 12 arêtes. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] },
+    { text:'J\'ai une pointe et une base carrée, avec 4 faces triangulaires. Qui suis-je ?', answer:'pyramide à base carrée', pool:['pyramide à base carrée','cube','cône','pavé droit'] },
+    { text:'Je suis tout rond et je n\'ai ni côté ni sommet. Qui suis-je ?', answer:'cercle', pool:['cercle','boule','losange','triangle'] },
+    { text:'J\'ai 4 côtés égaux, mais mes angles ne sont pas droits : je suis un peu penché. Qui suis-je ?', answer:'losange', pool:['losange','carré','rectangle','pentagone'] },
+    { text:'J\'ai 4 angles droits, mais mes côtés ne sont pas tous égaux. Qui suis-je ?', answer:'rectangle', pool:['rectangle','carré','losange','triangle'] },
+    { text:'J\'ai 5 côtés, ni plus ni moins. Qui suis-je ?', answer:'pentagone', pool:['pentagone','hexagone','carré','triangle'] },
+    { text:'J\'ai deux cercles identiques reliés par une surface qui s\'enroule. Qui suis-je ?', answer:'cylindre', pool:['cylindre','cône','cube','boule'] },
+    { text:'J\'ai une seule pointe et une base ronde. Qui suis-je ?', answer:'cône', pool:['cône','pyramide à base carrée','cylindre','boule'] },
+    { text:'J\'ai 6 faces qui sont toutes des rectangles, mais pas toutes des carrés. Qui suis-je ?', answer:'pavé droit', pool:['pavé droit','cube','pyramide à base carrée','cylindre'] },
+    { text:'On me trouve souvent sous la forme d\'un dé à jouer. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','boule'] },
+    { text:'On me trouve souvent sous la forme d\'un ballon de football. Qui suis-je ?', answer:'boule', pool:['boule','cercle','cylindre','cône'] },
+    { text:'On me trouve souvent sous la forme d\'une canette de soda. Qui suis-je ?', answer:'cylindre', pool:['cylindre','cube','cône','pavé droit'] },
+    { text:'On me trouve souvent sous la forme d\'un chapeau de sorcière. Qui suis-je ?', answer:'cône', pool:['cône','pyramide à base carrée','cylindre','triangle'] },
+    { text:'J\'ai 6 côtés et 6 sommets, comme les alvéoles d\'une ruche d\'abeilles. Qui suis-je ?', answer:'hexagone', pool:['hexagone','pentagone','carré','cercle'] },
+    { text:'Je n\'ai que des angles droits, et si tous mes côtés étaient égaux, on m\'appellerait un carré. Qui suis-je ?', answer:'rectangle', pool:['rectangle','carré','losange','pentagone'] },
+    { text:'J\'ai deux faces planes qui sont des cercles identiques, reliées par une surface qui s\'enroule. Qui suis-je ?', answer:'cylindre', pool:['cylindre','cône','boule','cube'] },
+    { text:'Je n\'ai aucun angle : impossible de me confondre avec un carré ou un triangle. Qui suis-je ?', answer:'cercle', pool:['cercle','losange','triangle','carré'] },
+    { text:'J\'ai 8 sommets et 12 arêtes, mais toutes mes faces ne sont pas des carrés. Qui suis-je ?', answer:'pavé droit', pool:['pavé droit','cube','pyramide à base carrée','cylindre'] },
+    { text:'Je ressemble à un carré, mais si on me penche un peu, mes angles ne sont plus droits. Qui suis-je devenu ?', answer:'losange', pool:['losange','rectangle','carré','pentagone'] },
+    { text:'Mes 3 côtés ont tous la même longueur. Qui suis-je ?', answer:'triangle', pool:['triangle','losange','pentagone','carré'] },
+    { text:'J\'ai 8 sommets, 12 arêtes et 6 faces, toutes identiques et carrées. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] }
+  ];
+  function genEnigmeQuestion(){
+    var r = pick(ENIGME_POOL);
+    var poolOthers = shuffle(r.pool.filter(function(p){return p!==r.answer;})).slice(0,3);
+    var labels = shuffle([r.answer].concat(poolOthers));
+    return {
+      tag:'Énigme',
+      question: r.text,
+      sub:'Lis bien l\'énigme et retrouve la bonne réponse.',
+      explain:'La réponse est : ' + r.answer + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,120,64,'?'));
+      },
+      cols3:false,
+      choices: labels.map(function(l){ return { label:l, ok:l===r.answer }; })
+    };
+  }
+
+  // ===================== Maths de la vie courante =====================
+  function genVieQuestion(){
+    var templates = [
+      function(){
+        var a=randInt(1,10), b=randInt(1,10), sum=a+b;
+        return { icon:'🎒', question:'Léa a ' + a + ' billes rouges et ' + b + ' billes bleues. Combien de billes a-t-elle en tout ?', explain: a + ' + ' + b + ' = ' + sum + ' billes.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
+      },
+      function(){
+        var a=randInt(2,15), b=randInt(1,a-1), diff=a-b;
+        return { icon:'📏', question:'Un crayon mesure ' + a + ' cm. Un autre mesure ' + b + ' cm. Quelle est la différence de longueur ?', explain: a + ' - ' + b + ' = ' + diff + ' cm.', correct:diff, pool:[diff-2,diff-1,diff+1,diff+2,diff+3] };
+      },
+      function(){
+        var p1=randInt(1,10), p2=randInt(1,10), sum=p1+p2;
+        return { icon:'💶', question:'Au marché, une pomme coûte ' + p1 + '€ et une poire coûte ' + p2 + '€. Combien coûtent les deux fruits ensemble ?', explain: p1 + '€ + ' + p2 + '€ = ' + sum + '€.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
+      },
+      function(){
+        var total=randInt(10,20), done=randInt(1,total-1), remain=total-done;
+        return { icon:'🚶', question:'Sur le chemin de l\'école, il y a ' + total + ' arbres. Léo en a déjà compté ' + done + '. Combien lui en reste-t-il à compter ?', explain: total + ' - ' + done + ' = ' + remain + '.', correct:remain, pool:[remain-2,remain-1,remain+1,remain+2,remain+3] };
+      },
+      function(){
+        var boxes=randInt(2,6), perBox=randInt(2,5), total2=boxes*perBox;
+        return { icon:'🍪', question:'Il y a ' + boxes + ' boîtes de gâteaux. Chaque boîte contient ' + perBox + ' gâteaux. Combien de gâteaux y a-t-il en tout ?', explain: boxes + ' × ' + perBox + ' = ' + total2 + ' gâteaux.', correct:total2, pool:[total2-4,total2-2,total2+2,total2+4,total2+6] };
+      },
+      function(){
+        var paid=randInt(10,20), cost=randInt(1,paid-1), change=paid-cost;
+        return { icon:'💰', question:'Tom paie avec un billet de ' + paid + '€ un jouet qui coûte ' + cost + '€. Combien de monnaie va-t-on lui rendre ?', explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
+      }
+    ];
+    var t = pick(templates)();
+    var pool = t.pool.filter(function(v){ return v>=0; });
+    return {
+      tag:'Maths de la vie',
+      question: t.question,
+      sub:'Lis bien l\'énoncé avant de calculer.',
+      explain: t.explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,120,54,t.icon));
+      },
+      cols3:false,
+      choices: numChoiceSet(t.correct, pool).map(function(v){ return { label:String(v), ok:v===t.correct }; })
+    };
+  }
+
+  function genQuestion(){
+    var lv = M4_LEVELS[m4Level];
+    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pick(lv.types);
+
+    if(type==='sides' || type==='vertices'){
+      var shapeKey = pick(lv.shapes);
+      var meta = SHAPE_META[shapeKey];
+      var correct = (type==='sides') ? meta.sides : meta.vertices;
+      var choices = numChoiceSet(correct, [0,1,2,3,4,5,6,7,8]);
+      return {
+        tag: type==='sides' ? 'Côtés' : 'Sommets',
+        question: type==='sides' ? 'Combien de côtés a cette forme ?' : 'Combien de sommets (angles) a cette forme ?',
+        sub: meta.isCircle ? 'Regarde bien : cette forme est-elle vraiment pointue quelque part ?' : 'Observe bien la forme, puis choisis la bonne réponse.',
+        explain: 'Un ' + meta.label + ' a ' + meta.sides + ' côtés et ' + meta.vertices + ' sommets. ' + meta.note,
+        draw: function(){ drawShapeGeneric(meta); },
+        cols3: false,
+        choices: choices.map(function(v){ return { label:String(v), ok: v===correct }; })
+      };
+    }
+
+    if(type==='name'){
+      var shapeKey2 = pick(lv.shapes);
+      var meta2 = SHAPE_META[shapeKey2];
+      var pool = shuffle(NAME_POOL.filter(function(n){return n!==meta2.label;})).slice(0,3);
+      var labels = shuffle([meta2.label].concat(pool));
+      return {
+        tag: 'Nom de la forme',
+        question: 'Quel est le nom de cette forme ?',
+        sub: 'Observe bien la forme, puis choisis son nom.',
+        explain: 'C\'est un ' + meta2.label + '. ' + meta2.note,
+        draw: function(){ drawShapeGeneric(meta2); },
+        cols3: false,
+        choices: labels.map(function(l){ return { label:l, ok: l===meta2.label }; })
+      };
+    }
+
+    if(type==='angle'){
+      var cat = pick(['droit','aigu','obtus']);
+      var gap = lv.angleGap;
+      var angleDeg;
+      if(cat==='droit') angleDeg = 90;
+      else if(cat==='aigu') angleDeg = Math.round(rand(20, 90-gap));
+      else angleDeg = Math.round(rand(90+gap, 165));
+      var angleExplain = {
+        droit: 'Un angle droit correspond exactement au coin d\'un carré (90°).',
+        aigu: 'Un angle aigu est plus fermé (plus petit) qu\'un angle droit.',
+        obtus: 'Un angle obtus est plus ouvert (plus grand) qu\'un angle droit.'
+      };
+      return {
+        tag: 'Angles',
+        question: 'Cet angle est-il droit, aigu ou obtus ?',
+        sub: 'Regarde bien l\'écart entre les deux traits.',
+        explain: angleExplain[cat],
+        draw: function(){ drawAngle(angleDeg); },
+        cols3: true,
+        choices: shuffle(['droit','aigu','obtus']).map(function(c){ return { label:c, ok: c===cat }; })
+      };
+    }
+
+    if(type==='calc'){
+      var mode = pick(lv.calcModes || ['add']);
+      var maxV = lv.calcMax || 10;
+      if(mode==='missing'){
+        // a + x = c : l'enfant retrouve x
+        var a = randInt(0, maxV);
+        var x = randInt(0, maxV - a);
+        var c = a + x;
+        return {
+          tag: 'Calcul',
+          question: 'Trouve x : ' + a + ' + x = ' + c,
+          sub: 'Cherche le nombre qui manque pour que l\'égalité soit vraie.',
+          explain: 'x = ' + c + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + c + '.',
+          draw: function(){ drawEquation(a + ' + x = ' + c); },
+          cols3: false,
+          choices: numChoiceSet(x, [0,1,2,3,4,5,6,7,8,9,10,x+1,x+2,Math.max(0,x-1),Math.max(0,x-2)]).map(function(v){ return { label:String(v), ok: v===x }; })
+        };
+      }
+      // addition simple : a + b
+      var a2 = randInt(0, maxV);
+      var b2 = randInt(0, maxV - a2);
+      var sum = a2 + b2;
+      return {
+        tag: 'Calcul',
+        question: 'Combien font ' + a2 + ' + ' + b2 + ' ?',
+        sub: 'Calcule le résultat de cette addition.',
+        explain: a2 + ' + ' + b2 + ' = ' + sum + '.',
+        draw: function(){ drawEquation(a2 + ' + ' + b2 + ' = ?'); },
+        cols3: false,
+        choices: numChoiceSet(sum, [sum-2,sum-1,sum+1,sum+2,sum+3,Math.max(0,sum-3)].filter(function(v){return v>=0;})).map(function(v){ return { label:String(v), ok: v===sum }; })
+      };
+    }
+
+    if(type==='align')      return genAlignQuestion();
+    if(type==='milieu')     return genMilieuQuestion();
+    if(type==='coord')      return genCoordQuestion();
+    if(type==='coordFind')  return genCoordFindQuestion();
+    if(type==='codage')     return genCodageQuestion();
+    if(type==='decodage')   return genDecodageQuestion();
+    if(type==='chasse')     return genChasseQuestion();
+    if(type==='symAxe')     return genSymAxeQuestion();
+    if(type==='symVrai')    return genSymVraiQuestion();
+    if(type==='solideNom')  return genSolideNomQuestion();
+    if(type==='solideCompte') return genSolideCompteQuestion();
+    if(type==='monnaie')    return genMonnaieQuestion();
+    if(type==='heure')      return genHeureQuestion();
+    if(type==='enigme')     return genEnigmeQuestion();
+    if(type==='vie')        return genVieQuestion();
+
+    // type === 'image' : question basée sur une illustration fixe, tirée
+    // d'un petit pool de scènes (prototype du circuit "images stockées",
+    // voir la note sur le stockage d'images à côté du code)
+    return pick(IMAGE_QUESTIONS)();
+  }
+
+  function buildTypeRow(){
+    var lv = M4_LEVELS[m4Level];
+    var keys = ['random'].concat(lv.types);
+    var labels = keys.map(function(k){ return k==='random' ? 'Aléatoire' : TYPE_LABELS[k]; });
+    m4TypeFilter = 'random';
+    buildLevelRow(document.getElementById('m4-types'), labels, 0, function(idx){
+      m4TypeFilter = keys[idx];
+      newQCM();
+    });
+  }
+
+  function newQCM(){
+    m4Current = genQuestion();
+    document.getElementById('m4-tag').textContent = m4Current.tag;
+    document.getElementById('m4-question').textContent = m4Current.question;
+    document.getElementById('m4-sub').textContent = m4Current.sub;
+    m4Current.draw();
+    setCoachReaction('neutral');
+    var wrap = document.getElementById('m4-choices');
+    wrap.className = 'qcm-choices' + (m4Current.cols3 ? ' cols3' : '');
+    wrap.innerHTML = "";
+    m4Current.choices.forEach(function(c){
+      var b = document.createElement('button');
+      b.className = 'choice-btn';
+      b.type = 'button';
+      b.textContent = c.label.charAt(0).toUpperCase()+c.label.slice(1);
+      b.addEventListener('click', function(){ checkQCM(c, b); });
+      wrap.appendChild(b);
+    });
+    var fb = document.getElementById('m4-feedback');
+    fb.className='feedback'; fb.innerHTML='';
+  }
+
+  function checkQCM(choice, btn){
+    var buttons = document.querySelectorAll('#m4-choices .choice-btn');
+    buttons.forEach(function(b){ b.disabled = true; });
+    var fb = document.getElementById('m4-feedback');
+    if(choice.ok){
+      btn.classList.add('correct');
+      fb.className = 'feedback good show';
+      fb.innerHTML = '<div>✔ Bravo, c\'est la bonne réponse !</div><div class="explain-line">'+m4Current.explain+'</div>';
+      addStar(1);
+      setCoachReaction('good');
+    } else {
+      btn.classList.add('wrong');
+      var okLabel = m4Current.choices.filter(function(c){return c.ok;})[0].label;
+      buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
+      fb.className = 'feedback bad show';
+      fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m4Current.explain+'</div>';
+      setCoachReaction('bad');
+    }
+    playSound(choice.ok?'good':'bad');
+    celebrate(choice.ok?'good':'bad', fb);
+  }
+
+  buildLevelRow(document.getElementById('m4-levels'), M4_LEVELS.map(function(l){return l.name;}), 0, function(idx){
+    m4Level = idx; buildTypeRow(); newQCM();
+  });
+  buildTypeRow();
+  document.getElementById('m4-next').addEventListener('click', newQCM);
+  enableTapToContinue('m4-feedback', newQCM);
+  newQCM();
+
+  /* ===================== MODULE 5 : HORLOGE (à part entière) =====================
+     Deux modes : "Lire l'heure" (QCM, réutilise genHeureQuestion) et
+     "Régler l'heure" (l'enfant fait glisser les aiguilles au doigt). */
+  function svgPointFromEvent(svg, evt){
+    var rect = svg.getBoundingClientRect();
+    var vb = svg.viewBox.baseVal;
+    var scaleX = vb.width/rect.width, scaleY = vb.height/rect.height;
+    return { x:(evt.clientX-rect.left)*scaleX+vb.x, y:(evt.clientY-rect.top)*scaleY+vb.y };
+  }
+
+  // ---- Mode "Lire l'heure" (même moteur que le QCM, ciblé sur m5Svg) ----
+  var m5Current = null;
+  function newM5Lire(){
+    m5Current = genHeureQuestion('m5Svg');
+    document.getElementById('m5-question').textContent = m5Current.question;
+    document.getElementById('m5-sub').textContent = m5Current.sub;
+    m5Current.draw();
+    setCoachReaction('neutral');
+    var wrap = document.getElementById('m5-choices');
+    wrap.className = 'qcm-choices' + (m5Current.cols3 ? ' cols3' : '');
+    wrap.innerHTML = "";
+    m5Current.choices.forEach(function(c){
+      var b = document.createElement('button');
+      b.className = 'choice-btn'; b.type = 'button';
+      b.textContent = c.label.charAt(0).toUpperCase()+c.label.slice(1);
+      b.addEventListener('click', function(){ checkM5Lire(c, b); });
+      wrap.appendChild(b);
+    });
+    var fb = document.getElementById('m5-feedback'); fb.className='feedback'; fb.innerHTML='';
+  }
+  function checkM5Lire(choice, btn){
+    var buttons = document.querySelectorAll('#m5-choices .choice-btn');
+    buttons.forEach(function(b){ b.disabled = true; });
+    var fb = document.getElementById('m5-feedback');
+    if(choice.ok){
+      btn.classList.add('correct');
+      fb.className = 'feedback good show';
+      fb.innerHTML = '<div>✔ Bravo, c\'est la bonne heure !</div><div class="explain-line">'+m5Current.explain+'</div>';
+      addStar(1);
+      setCoachReaction('good');
+    } else {
+      btn.classList.add('wrong');
+      var okLabel = m5Current.choices.filter(function(c){return c.ok;})[0].label;
+      buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
+      fb.className = 'feedback bad show';
+      fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m5Current.explain+'</div>';
+      setCoachReaction('bad');
+    }
+    playSound(choice.ok?'good':'bad');
+    celebrate(choice.ok?'good':'bad', fb);
+  }
+  document.getElementById('m5-next').addEventListener('click', newM5Lire);
+
+  // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
+  // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
+  // les positions valides pour le CE1 : heure pile ou demi-heure (24 crans
+  // de 15° pour la petite aiguille, 2 positions pour la grande).
+  var m5Target = { hour:3, half:false };
+  var m5rHourTick = 0, m5rMinTick = 0, m5rDragWhich = null;
+
+  function m5rHourTip(){ return angleToXY(m5rHourTick*15 - 90, 42); }
+  function m5rMinTip(){ return angleToXY(m5rMinTick*180 - 90, 62); }
+
+  function drawSettableClock(){
+    var svg = document.getElementById('m5ClockSvg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    var ht = m5rHourTip(), mt = m5rMinTip();
+    drawClockFace(svg, ht, mt);
+    // Poignées invisibles, plus grosses que le trait, pour un glisser confortable au doigt.
+    var hHandle = el('circle',{cx:ht[0],cy:ht[1],r:20,fill:'rgba(0,0,0,0.001)'});
+    hHandle.setAttribute('data-hand','hour');
+    svg.appendChild(hHandle);
+    var mHandle = el('circle',{cx:mt[0],cy:mt[1],r:20,fill:'rgba(0,0,0,0.001)'});
+    mHandle.setAttribute('data-hand','minute');
+    svg.appendChild(mHandle);
+  }
+
+  function m5rGenTarget(){
+    m5Target.hour = 1+randInt(0,11);
+    m5Target.half = Math.random()<0.5;
+    m5rHourTick = 0; m5rMinTick = 0; // les aiguilles repartent de midi bien net
+    document.getElementById('m5-target').textContent = m5Target.hour + ' h' + (m5Target.half ? ' 30' : '');
+    drawSettableClock();
+    var fb = document.getElementById('m5r-feedback'); fb.className='feedback'; fb.innerHTML='';
+  }
+
+  (function initClockDrag(){
+    var svg = document.getElementById('m5ClockSvg');
+    svg.style.touchAction = 'none';
+    svg.addEventListener('pointerdown', function(evt){
+      var which = evt.target && evt.target.getAttribute && evt.target.getAttribute('data-hand');
+      if(!which) return;
+      m5rDragWhich = which;
+      svg.setPointerCapture(evt.pointerId);
+    });
+    svg.addEventListener('pointermove', function(evt){
+      if(!m5rDragWhich) return;
+      var p = svgPointFromEvent(svg, evt);
+      var raw = Math.atan2(p.y-100, p.x-100)*180/Math.PI;
+      var clockDeg = ((raw+90)%360+360)%360;
+      if(m5rDragWhich==='hour') m5rHourTick = Math.round(clockDeg/15) % 24;
+      else m5rMinTick = Math.round(clockDeg/180) % 2;
+      drawSettableClock();
+    });
+    function endDrag(){ m5rDragWhich = null; }
+    svg.addEventListener('pointerup', endDrag);
+    svg.addEventListener('pointercancel', endDrag);
+  })();
+
+  document.getElementById('m5r-new').addEventListener('click', m5rGenTarget);
+  document.getElementById('m5r-check').addEventListener('click', function(){
+    var targetTick = (m5Target.hour % 12) * 2 + (m5Target.half ? 1 : 0);
+    var hourOk = m5rHourTick === targetTick;
+    var minOk = m5rMinTick === (m5Target.half ? 1 : 0);
+    var fb = document.getElementById('m5r-feedback');
+    if(hourOk && minOk){
+      fb.className = 'feedback good show';
+      fb.innerHTML = '<div>✔ Bravo, les aiguilles sont bien placées !</div>';
+      addStar(1);
+      setCoachReaction('good');
+    } else {
+      fb.className = 'feedback bad show';
+      var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
+        : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée.'
+        : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
+      fb.innerHTML = '<div>✘ ' + msg + '</div>';
+      setCoachReaction('bad');
+    }
+    playSound(hourOk && minOk ? 'good' : 'bad');
+    celebrate(hourOk && minOk ? 'good' : 'bad', fb);
+  });
+
+  var m5Mode = 0;
+  buildLevelRow(document.getElementById('m5-modes'), ['Lire l\'heure','Régler l\'heure'], 0, function(idx){
+    m5Mode = idx;
+    document.getElementById('m5-lire-wrap').hidden = idx!==0;
+    document.getElementById('m5-regler-wrap').hidden = idx!==1;
+    document.getElementById('m5-title').textContent = idx===0 ? 'Lire l\'heure' : 'Régler l\'heure';
+    document.getElementById('m5-sub').textContent = idx===0
+      ? 'Regarde bien la petite et la grande aiguille.'
+      : 'Fais glisser chaque aiguille avec ton doigt pour placer la bonne heure.';
+    if(idx===1) drawSettableClock();
+  });
+  enableTapToContinue('m5-feedback', newM5Lire);
+  newM5Lire();
+  m5rGenTarget();
+
+  /* ===================== MODULE 6 : BOUTIQUE + BATAILLE =====================
+     Personnages 100% originaux et procéduraux (dessinés en SVG, comme le
+     reste de l'appli) : pas d'images téléchargées. Les créatures "brainrot"
+     s'inspirent de l'esprit absurde/italien du mème mais n'en reprennent
+     AUCUN personnage précis (ceux-ci sont des personnages protégés/reconnaissables,
+     pas des images libres de droit) — noms, couleurs et accessoires inventés. */
+
+  var STAT_KEYS = ['pow','spd','chaos','charm'];
+  var STAT_LABELS = { pow:'💪 Puissance', spd:'⚡ Vitesse', chaos:'🌀 Chaos', charm:'✨ Charme' };
+  var RARITY_META = {
+    commun:     { label:'Commun',     cost:8,  color:'#9C9C9C' },
+    rare:       { label:'Rare',       cost:15, color:'#4FA8E8' },
+    epique:     { label:'Épique',     cost:28, color:'#B073E8' },
+    legendaire: { label:'Légendaire', cost:45, color:'#F5B32A' }
+  };
+  var CAT_COLORS   = ['#FFC2D1','#FFE29A','#C9F2C6','#BFE3FF','#E4C9FF','#FFD6B0','#C6FFF2','#F2C6E0'];
+  var BRAIN_COLORS = ['#B7E85D','#5DE8C7','#F0857D','#7DA9F0','#F0CB5D','#C08DF0','#F07DC0','#8DF08D'];
+
+  function mkSprite(id, name, rarity, colorIdx, accessory, statArr, starter){
+    return {
+      id:id, name:name, rarity:rarity, colorIdx:colorIdx, accessory:accessory,
+      cost: starter ? 0 : RARITY_META[rarity].cost, starter: !!starter,
+      stats:{ pow:statArr[0], spd:statArr[1], chaos:statArr[2], charm:statArr[3] }
+    };
+  }
+
+  var CAT_SPRITES = [
+    mkSprite('cat01','Mochi','commun',0,'none',[4,5,3,6],true),
+    mkSprite('cat02','Fraise','commun',1,'bow',[3,6,4,5]),
+    mkSprite('cat03','Nuage','commun',2,'none',[5,4,3,5]),
+    mkSprite('cat04','Biscuit','commun',3,'bell',[4,4,4,6]),
+    mkSprite('cat05','Praline','commun',4,'flower',[3,5,5,4]),
+    mkSprite('cat06','Câlin','commun',5,'heart',[5,3,4,5]),
+    mkSprite('cat07','Doudou','commun',6,'none',[4,4,5,5]),
+    mkSprite('cat08','Pompon','commun',7,'bow',[3,5,4,5]),
+    mkSprite('cat09','Cannelle','rare',0,'star',[6,6,5,7]),
+    mkSprite('cat10','Réglisse','rare',1,'glasses',[7,5,6,5]),
+    mkSprite('cat11','Framboise','rare',2,'crown',[5,7,6,6]),
+    mkSprite('cat12','Sushi','rare',3,'bell',[6,6,7,5]),
+    mkSprite('cat13','Velours','rare',4,'flower',[7,6,5,6]),
+    mkSprite('cat14','Chamallow','rare',5,'bow',[6,7,5,6]),
+    mkSprite('cat15','Pixel','epique',6,'star',[8,8,6,7]),
+    mkSprite('cat16','Étincelle','epique',7,'crown',[7,7,8,8]),
+    mkSprite('cat17','Câline','epique',0,'heart',[8,7,7,8]),
+    mkSprite('cat18','Nougat','epique',1,'glasses',[7,8,8,7]),
+    mkSprite('cat19','Impériale','legendaire',2,'crown',[9,9,8,9]),
+    mkSprite('cat20','Céleste','legendaire',3,'star',[9,8,9,10])
+  ];
+
+  var BRAINROT_SPRITES = [
+    mkSprite('br01','Tarallino Turbo','commun',0,'spiky',[5,4,3,4],true),
+    mkSprite('br02','Fettuccino Furioso','commun',1,'mustache',[4,3,5,3]),
+    mkSprite('br03','Broccolino Bang','commun',2,'legs',[4,5,4,3]),
+    mkSprite('br04','Salamino Sprint','commun',3,'drill',[3,6,4,4]),
+    mkSprite('br05','Peperoncino Pazzo','commun',4,'oneeye',[5,4,4,4]),
+    mkSprite('br06','Lasagnone Lampo','commun',5,'antenna',[6,3,4,3]),
+    mkSprite('br07','Grissino Ghost','commun',6,'propeller',[3,5,5,4]),
+    mkSprite('br08','Cannolotto Caos','commun',7,'horns',[4,4,5,4]),
+    mkSprite('br09','Raviolone Rex','rare',0,'propeller',[6,6,5,6]),
+    mkSprite('br10','Basilico Boom','rare',1,'legs',[7,5,6,5]),
+    mkSprite('br11','Tortellino Tornado','rare',2,'antenna',[5,7,7,5]),
+    mkSprite('br12','Focacciotto Fury','rare',3,'horns',[6,6,6,7]),
+    mkSprite('br13','Zeppolino Zap','rare',4,'drill',[7,7,5,6]),
+    mkSprite('br14','Panettonio Punch','rare',5,'spiky',[6,5,7,6]),
+    mkSprite('br15','Mortadellone Max','epique',6,'antenna',[8,7,7,6]),
+    mkSprite('br16','Caprese Comet','epique',7,'propeller',[7,8,6,8]),
+    mkSprite('br17','Arancino Alieno','epique',0,'oneeye',[8,8,6,7]),
+    mkSprite('br18','Struzzolino Strike','epique',1,'horns',[7,7,8,8]),
+    mkSprite('br19','Gnoccotto Gigante','legendaire',2,'mustache',[9,8,9,8]),
+    mkSprite('br20','Biscottino Blitz','legendaire',3,'propeller',[10,9,8,9])
+  ];
+
+  function starPolygonPoints(cx,cy,outerR,innerR,spikes){
+    spikes = spikes || 5;
+    var pts = [];
+    for(var k=0;k<spikes*2;k++){
+      var r = (k%2===0) ? outerR : innerR;
+      var ang = (Math.PI/spikes)*k - Math.PI/2;
+      pts.push((cx+r*Math.cos(ang))+','+(cy+r*Math.sin(ang)));
+    }
+    return pts.join(' ');
+  }
+
+  function drawCatSprite(svg, sprite){
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox','0 0 140 140');
+    var color = CAT_COLORS[sprite.colorIdx % CAT_COLORS.length];
+    svg.appendChild(el('polygon',{points:'35,45 25,10 55,35', fill:color, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+    svg.appendChild(el('polygon',{points:'105,45 115,10 85,35', fill:color, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+    svg.appendChild(el('polygon',{points:'37,38 32,20 47,33', fill:'#FFD9E6'}));
+    svg.appendChild(el('polygon',{points:'103,38 108,20 93,33', fill:'#FFD9E6'}));
+    svg.appendChild(el('circle',{cx:70,cy:78,r:48, fill:color, stroke:'var(--text)','stroke-width':2.5}));
+    svg.appendChild(el('circle',{cx:38,cy:88,r:9, fill:'#FF9EB8','fill-opacity':0.7}));
+    svg.appendChild(el('circle',{cx:102,cy:88,r:9, fill:'#FF9EB8','fill-opacity':0.7}));
+    svg.appendChild(el('circle',{cx:53,cy:75,r:5.5, fill:'#2B2B2B'}));
+    svg.appendChild(el('circle',{cx:87,cy:75,r:5.5, fill:'#2B2B2B'}));
+    svg.appendChild(el('circle',{cx:55,cy:73,r:1.6, fill:'#fff'}));
+    svg.appendChild(el('circle',{cx:89,cy:73,r:1.6, fill:'#fff'}));
+    svg.appendChild(el('polygon',{points:'70,86 65,92 75,92', fill:'#D9607A'}));
+    svg.appendChild(el('path',{d:'M70,92 Q64,98 58,93', fill:'none', stroke:'var(--text)','stroke-width':2,'stroke-linecap':'round'}));
+    svg.appendChild(el('path',{d:'M70,92 Q76,98 82,93', fill:'none', stroke:'var(--text)','stroke-width':2,'stroke-linecap':'round'}));
+    [-1,1].forEach(function(side){
+      for(var i=0;i<3;i++){
+        var y = 84+i*6;
+        svg.appendChild(el('line',{x1:70+side*36, y1:y, x2:70+side*58, y2:y-3+i*3, stroke:'var(--text)','stroke-width':1.4,'stroke-linecap':'round','stroke-opacity':0.55}));
+      }
+    });
+    applyCatAccessory(svg, sprite.accessory);
+  }
+
+  function applyCatAccessory(svg, kind){
+    if(kind==='bow'){
+      svg.appendChild(el('polygon',{points:'95,30 112,20 112,40', fill:'#E85D9A', stroke:'var(--text)','stroke-width':1.8}));
+      svg.appendChild(el('polygon',{points:'95,30 78,20 78,40', fill:'#E85D9A', stroke:'var(--text)','stroke-width':1.8}));
+      svg.appendChild(el('circle',{cx:95,cy:30,r:5, fill:'#C43C79'}));
+    } else if(kind==='bell'){
+      svg.appendChild(el('circle',{cx:70,cy:118,r:8, fill:'#FFD24C', stroke:'var(--text)','stroke-width':1.8}));
+      svg.appendChild(el('circle',{cx:70,cy:120,r:1.6, fill:'var(--text)'}));
+    } else if(kind==='flower'){
+      [0,72,144,216,288].forEach(function(a){
+        var rad = a*Math.PI/180;
+        svg.appendChild(el('circle',{cx:108+Math.cos(rad)*7, cy:22+Math.sin(rad)*7, r:5, fill:'#FF8FAE'}));
+      });
+      svg.appendChild(el('circle',{cx:108,cy:22,r:4, fill:'#FFD24C'}));
+    } else if(kind==='heart'){
+      svg.appendChild(el('path',{d:'M30,84 C26,78 34,74 38,80 C42,74 50,78 46,84 L38,92 Z', fill:'#FF5D8F'}));
+      svg.appendChild(el('path',{d:'M102,84 C98,78 106,74 110,80 C114,74 122,78 118,84 L110,92 Z', fill:'#FF5D8F'}));
+    } else if(kind==='star'){
+      svg.appendChild(el('polygon',{points:starPolygonPoints(28,92,9,4), fill:'#FFD24C', stroke:'var(--text)','stroke-width':1.6,'stroke-linejoin':'round'}));
+    } else if(kind==='glasses'){
+      svg.appendChild(el('circle',{cx:53,cy:75,r:11, fill:'none', stroke:'#2B2B2B','stroke-width':3}));
+      svg.appendChild(el('circle',{cx:87,cy:75,r:11, fill:'none', stroke:'#2B2B2B','stroke-width':3}));
+      svg.appendChild(el('line',{x1:64,y1:75,x2:76,y2:75, stroke:'#2B2B2B','stroke-width':3}));
+    } else if(kind==='crown'){
+      svg.appendChild(el('polygon',{points:'52,32 58,12 70,26 82,12 88,32', fill:'#FFD24C', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+    }
+  }
+
+  function drawBrainrotSprite(svg, sprite){
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox','0 0 140 140');
+    var color = BRAIN_COLORS[sprite.colorIdx % BRAIN_COLORS.length];
+    var bodyPts = [[70,20],[88,32],[110,28],[118,50],[112,72],[122,90],[104,104],[96,124],[70,132],
+      [44,124],[36,104],[18,90],[28,72],[22,50],[30,28],[52,32]];
+    svg.appendChild(el('polygon',{points:bodyPts.map(function(p){return p[0]+','+p[1];}).join(' '), fill:color, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+    if(sprite.accessory !== 'oneeye'){
+      svg.appendChild(el('circle',{cx:56,cy:72,r:12, fill:'#fff', stroke:'var(--text)','stroke-width':2}));
+      svg.appendChild(el('circle',{cx:59,cy:74,r:5.5, fill:'#2B2B2B'}));
+      svg.appendChild(el('circle',{cx:88,cy:76,r:7, fill:'#fff', stroke:'var(--text)','stroke-width':2}));
+      svg.appendChild(el('circle',{cx:89,cy:77,r:3, fill:'#2B2B2B'}));
+    }
+    if(sprite.accessory !== 'mustache'){
+      svg.appendChild(el('path',{d:'M42,98 L52,108 L60,96 L70,110 L80,96 L88,108 L98,98', fill:'none', stroke:'var(--text)','stroke-width':2.5,'stroke-linecap':'round','stroke-linejoin':'round'}));
+    }
+    applyBrainrotFeature(svg, sprite.accessory, color);
+  }
+
+  function applyBrainrotFeature(svg, kind, color){
+    if(kind==='spiky'){
+      [30,50,70,90,110].forEach(function(x,i){
+        var h = (i%2===0) ? 18 : 26;
+        svg.appendChild(el('polygon',{points:[x+','+(38-h), (x-7)+',40', (x+7)+',40'].join(' '), fill:color, stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+      });
+    } else if(kind==='mustache'){
+      svg.appendChild(el('path',{d:'M40,100 Q50,88 62,98 Q70,92 78,98 Q90,88 100,100 Q90,96 78,102 Q70,96 62,102 Q50,96 40,100 Z', fill:'#3A2A1E', stroke:'var(--text)','stroke-width':1.5}));
+    } else if(kind==='legs'){
+      svg.appendChild(el('line',{x1:55,y1:128,x2:50,y2:138, stroke:color,'stroke-width':6,'stroke-linecap':'round'}));
+      svg.appendChild(el('line',{x1:85,y1:128,x2:90,y2:138, stroke:color,'stroke-width':6,'stroke-linecap':'round'}));
+      svg.appendChild(el('circle',{cx:50,cy:139,r:4, fill:'var(--text)'}));
+      svg.appendChild(el('circle',{cx:90,cy:139,r:4, fill:'var(--text)'}));
+    } else if(kind==='drill'){
+      svg.appendChild(el('polygon',{points:'70,6 60,26 80,26', fill:'#C6C6C6', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+      svg.appendChild(el('line',{x1:63,y1:12,x2:77,y2:20, stroke:'var(--text)','stroke-width':1.5}));
+      svg.appendChild(el('line',{x1:65,y1:18,x2:79,y2:24, stroke:'var(--text)','stroke-width':1.5}));
+    } else if(kind==='oneeye'){
+      svg.appendChild(el('circle',{cx:70,cy:72,r:22, fill:'#fff', stroke:'var(--text)','stroke-width':2.5}));
+      svg.appendChild(el('circle',{cx:70,cy:72,r:9, fill:'#2B2B2B'}));
+      svg.appendChild(el('circle',{cx:74,cy:68,r:3, fill:'#fff'}));
+    } else if(kind==='antenna'){
+      svg.appendChild(el('line',{x1:70,y1:20,x2:70,y2:2, stroke:'var(--text)','stroke-width':2.5}));
+      svg.appendChild(el('circle',{cx:70,cy:2,r:6, fill:'#FFD24C', stroke:'var(--text)','stroke-width':1.8}));
+    } else if(kind==='propeller'){
+      svg.appendChild(el('line',{x1:70,y1:22,x2:70,y2:6, stroke:'var(--text)','stroke-width':2.5}));
+      svg.appendChild(el('ellipse',{cx:70,cy:4,rx:18,ry:4.5, fill:color, stroke:'var(--text)','stroke-width':1.6}));
+      svg.appendChild(el('circle',{cx:70,cy:4,r:2.5, fill:'var(--text)'}));
+    } else if(kind==='horns'){
+      svg.appendChild(el('polygon',{points:'44,26 36,4 54,20', fill:'#E8D65D', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+      svg.appendChild(el('polygon',{points:'96,26 104,4 86,20', fill:'#E8D65D', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+    }
+  }
+
+  function drawSpriteInto(svg, sprite){
+    if(CAT_SPRITES.indexOf(sprite) >= 0) drawCatSprite(svg, sprite);
+    else drawBrainrotSprite(svg, sprite);
+  }
+  function spriteSide(sprite){ return CAT_SPRITES.indexOf(sprite) >= 0 ? 'cats' : 'brainrot'; }
+
+  /* ---- Image perso en remplacement du dessin procédural -----------------
+     Si un fichier assets/cats/<id>.png (ou .svg / .jpg) existe, il remplace
+     automatiquement le dessin généré, sans rien à changer dans le code :
+     il suffit de déposer le fichier au bon endroit avec le bon nom (voir
+     assets/MANIFEST.md). Si le fichier n'existe pas (ex : aperçu publié
+     seul, sans le reste du dépôt), le dessin procédural reste affiché. */
+  function tryLoadCustomImage(container, svg, sprite){
+    var exts = ['png','svg','jpg'];
+    var side = spriteSide(sprite);
+    var i = 0;
+    function attempt(){
+      if(i >= exts.length) return;
+      var img = new Image();
+      img.className = 'sp-custom-img';
+      img.alt = sprite.name;
+      img.onload = function(){
+        svg.style.display = 'none';
+        container.insertBefore(img, svg);
+      };
+      img.onerror = function(){ i++; attempt(); };
+      img.src = 'assets/' + side + '/' + sprite.id + '.' + exts[i];
+    }
+    attempt();
+  }
+  function renderSpriteVisual(container, sprite){
+    var svg = document.createElementNS(svgNS,'svg');
+    container.appendChild(svg);
+    drawSpriteInto(svg, sprite);
+    tryLoadCustomImage(container, svg, sprite);
+    return svg;
+  }
+
+  /* ---- Persistance des personnages débloqués ---- */
+  var ownedCats = {}, ownedBrain = {};
+  (function loadOwned(){
+    try{
+      JSON.parse(localStorage.getItem('geo_owned_cats')||'[]').forEach(function(id){ ownedCats[id]=true; });
+      JSON.parse(localStorage.getItem('geo_owned_brain')||'[]').forEach(function(id){ ownedBrain[id]=true; });
+    }catch(e){}
+    CAT_SPRITES.forEach(function(s){ if(s.starter) ownedCats[s.id]=true; });
+    BRAINROT_SPRITES.forEach(function(s){ if(s.starter) ownedBrain[s.id]=true; });
+  })();
+  function saveOwned(){
+    try{
+      localStorage.setItem('geo_owned_cats', JSON.stringify(Object.keys(ownedCats)));
+      localStorage.setItem('geo_owned_brain', JSON.stringify(Object.keys(ownedBrain)));
+    }catch(e){}
+  }
+  function trySpendStars(n){
+    if(stars < n) return false;
+    stars -= n;
+    document.getElementById('starCount').textContent = stars;
+    try{ localStorage.setItem('geo_stars', String(stars)); }catch(e){}
+    return true;
+  }
+
+  /* ---- Boutique ---- */
+  var shopTheme = 0; // 0 = chats, 1 = brainrots
+  function currentShopList(){ return shopTheme===0 ? CAT_SPRITES : BRAINROT_SPRITES; }
+  function currentOwnedMap(){ return shopTheme===0 ? ownedCats : ownedBrain; }
+  function renderShop(){
+    document.getElementById('shop-star-count').textContent = stars;
+    var grid = document.getElementById('shop-grid');
+    grid.innerHTML = '';
+    var list = currentShopList(), owned = currentOwnedMap();
+    list.forEach(function(sprite){
+      var isOwned = !!owned[sprite.id];
+      var card = document.createElement('div');
+      card.className = 'sprite-card ' + (isOwned ? 'owned' : 'locked');
+      renderSpriteVisual(card, sprite);
+      var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
+      card.appendChild(nameEl);
+      var rarity = document.createElement('div'); rarity.className='rarity-pill';
+      rarity.textContent = RARITY_META[sprite.rarity].label;
+      rarity.style.background = RARITY_META[sprite.rarity].color;
+      card.appendChild(rarity);
+      if(isOwned){
+        var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
+        card.appendChild(tag);
+      } else {
+        var costTag = document.createElement('div'); costTag.className='sp-cost'; costTag.textContent = sprite.cost + ' ⭐';
+        card.appendChild(costTag);
+        var buyBtn = document.createElement('button');
+        buyBtn.type = 'button'; buyBtn.className = 'sp-buy'; buyBtn.textContent = 'Acheter';
+        if(stars < sprite.cost) buyBtn.disabled = true;
+        buyBtn.addEventListener('click', function(){
+          if(trySpendStars(sprite.cost)){
+            owned[sprite.id] = true;
+            saveOwned();
+            playSound('good');
+            celebrate('good', card);
+            renderShop();
+          }
+        });
+        card.appendChild(buyBtn);
+      }
+      grid.appendChild(card);
+    });
+  }
+  buildLevelRow(document.getElementById('shop-theme'), ['Chats kawaii 🐱','Brainrots 👹'], 0, function(idx){
+    shopTheme = idx;
+    renderShop();
+  });
+
+  /* ---- Bataille (façon "bataille de cartes" : une statistique choisie l'emporte) ---- */
+  var selectedCatId = null, selectedBrainId = null;
+  function findSprite(list, id){
+    for(var i=0;i<list.length;i++){ if(list[i].id===id) return list[i]; }
+    return null;
+  }
+  function renderPickGrid(container, list, ownedMap, selectedId, onPick){
+    container.innerHTML = '';
+    var ownedList = list.filter(function(s){ return ownedMap[s.id]; });
+    ownedList.forEach(function(sprite){
+      var card = document.createElement('div');
+      card.className = 'sprite-card owned' + (sprite.id===selectedId ? ' selected' : '');
+      renderSpriteVisual(card, sprite);
+      var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
+      card.appendChild(nameEl);
+      var rarity = document.createElement('div'); rarity.className='rarity-pill';
+      rarity.textContent = RARITY_META[sprite.rarity].label;
+      rarity.style.background = RARITY_META[sprite.rarity].color;
+      card.appendChild(rarity);
+      card.addEventListener('click', function(){ onPick(sprite.id); });
+      container.appendChild(card);
+    });
+    if(!ownedList.length){
+      var msg = document.createElement('p'); msg.className='muted';
+      msg.textContent = 'Rien débloqué pour le moment — va faire un tour à la boutique !';
+      container.appendChild(msg);
+    }
+  }
+  function renderBattleGrids(){
+    renderPickGrid(document.getElementById('battle-cat-grid'), CAT_SPRITES, ownedCats, selectedCatId, function(id){
+      selectedCatId = id; renderBattleGrids(); checkDuelReady();
+    });
+    renderPickGrid(document.getElementById('battle-brain-grid'), BRAINROT_SPRITES, ownedBrain, selectedBrainId, function(id){
+      selectedBrainId = id; renderBattleGrids(); checkDuelReady();
+    });
+  }
+  function checkDuelReady(){
+    var wrap = document.getElementById('battle-duel-wrap');
+    if(selectedCatId && selectedBrainId){ wrap.hidden = false; startDuel(); }
+    else { wrap.hidden = true; }
+  }
+  function renderFighterCard(container, sprite){
+    container.innerHTML = '';
+    renderSpriteVisual(container, sprite);
+    var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
+    container.appendChild(nameEl);
+    var rarity = document.createElement('div'); rarity.className='rarity-pill'; rarity.style.marginTop = '4px';
+    rarity.textContent = RARITY_META[sprite.rarity].label;
+    rarity.style.background = RARITY_META[sprite.rarity].color;
+    container.appendChild(rarity);
+  }
+  function renderBattleStats(cat, brain, active){
+    var wrap = document.getElementById('battle-stats');
+    wrap.innerHTML = '';
+    STAT_KEYS.forEach(function(key){
+      var row = document.createElement('div');
+      row.className = 'stat-row' + (active ? '' : ' disabled');
+      row.innerHTML = '<span>'+STAT_LABELS[key]+'</span><span class="stat-val">'+cat.stats[key]+'</span>';
+      if(active){
+        row.addEventListener('click', function(){ resolveDuel(cat, brain, key); });
+      }
+      wrap.appendChild(row);
+    });
+  }
+  function startDuel(){
+    var cat = findSprite(CAT_SPRITES, selectedCatId);
+    var brain = findSprite(BRAINROT_SPRITES, selectedBrainId);
+    if(!cat || !brain) return;
+    renderFighterCard(document.getElementById('duel-cat'), cat);
+    renderFighterCard(document.getElementById('duel-brain'), brain);
+    document.getElementById('duel-cat').className = 'duel-fighter';
+    document.getElementById('duel-brain').className = 'duel-fighter';
+    document.getElementById('battle-result').textContent = '';
+    document.getElementById('battle-pick-note').hidden = false;
+    document.getElementById('battle-again').hidden = true;
+    renderBattleStats(cat, brain, true);
+  }
+  function resolveDuel(cat, brain, key){
+    var catVal = cat.stats[key], brainVal = brain.stats[key];
+    document.getElementById('battle-pick-note').hidden = true;
+    renderBattleStats(cat, brain, false);
+    var idx = STAT_KEYS.indexOf(key);
+    var rows = document.querySelectorAll('#battle-stats .stat-row');
+    var chosenRow = rows[idx];
+    var resultEl = document.getElementById('battle-result');
+    var catEl = document.getElementById('duel-cat'), brainEl = document.getElementById('duel-brain');
+    if(catVal === brainVal){
+      resultEl.textContent = '🤝 Égalité ! (' + catVal + ' contre ' + brainVal + ')';
+      resultEl.style.color = 'var(--text)';
+      playSound('good');
+    } else if(catVal > brainVal){
+      if(chosenRow) chosenRow.classList.add('win');
+      catEl.classList.add('winner'); brainEl.classList.add('loser');
+      resultEl.textContent = '🎉 ' + cat.name + ' gagne ! (' + catVal + ' contre ' + brainVal + ')';
+      resultEl.style.color = 'var(--good)';
+      playSound('good'); celebrate('good', catEl);
+    } else {
+      if(chosenRow) chosenRow.classList.add('lose');
+      brainEl.classList.add('winner'); catEl.classList.add('loser');
+      resultEl.textContent = '💥 ' + brain.name + ' gagne ! (' + brainVal + ' contre ' + catVal + ')';
+      resultEl.style.color = 'var(--bad)';
+      playSound('bad'); celebrate('bad', brainEl);
+    }
+    document.getElementById('battle-again').hidden = false;
+  }
+  document.getElementById('battle-again').addEventListener('click', startDuel);
+
+  buildLevelRow(document.getElementById('arena-modes'), ['Boutique 🛒','Bataille ⚔️'], 0, function(idx){
+    document.getElementById('arena-shop-wrap').hidden = idx!==0;
+    document.getElementById('arena-battle-wrap').hidden = idx!==1;
+    if(idx===1) renderBattleGrids();
+  });
+  renderShop();
+  renderBattleGrids();
+
+})();
+</script>
