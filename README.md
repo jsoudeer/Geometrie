@@ -46,6 +46,24 @@ avec un visuel chat kawaii / brainrot face à face, dessiné par le code (voir
 export fixe de ce visuel vit dans `assets/branding/splash-cat-vs-brainrot.svg`
 pour réutilisation hors appli (icône, réseaux, packaging futur).
 
+### Remplacer l'écran de démarrage par ta propre image (ou vidéo/GIF animé)
+
+Comme pour les personnages, tu peux remplacer ce dessin par ton propre
+visuel, animé ou non, sans toucher au code :
+
+1. Dépose un fichier nommé **`splash`** dans `assets/branding/`, avec l'une
+   de ces extensions (ordre de priorité si plusieurs sont présents) :
+   `.mp4`, `.webm` (vidéo, lue automatiquement en boucle et sans son),
+   puis `.gif`, `.webp`, `.png`, `.jpg`/`.jpeg`, `.svg` (image, animée ou non).
+2. Ouvre (ou recharge) `index.html` depuis ce dépôt — le nouveau visuel
+   apparaît automatiquement au démarrage, à la place du dessin généré.
+
+Si le fichier est supprimé, le dessin procédural réapparaît tout seul.
+**Important** : comme pour les personnages, ce mécanisme fonctionne quand
+`index.html` est ouvert depuis ce dépôt ; le lien d'aperçu publié séparément
+sur claude.ai ne voit pas ce dépôt et affichera toujours le dessin généré,
+sauf à republier le fichier directement dans cette page-là (voir plus haut).
+
 ## Suite prévue
 
 - Empaquetage en application Windows (Tauri) et Android (Capacitor), pour un

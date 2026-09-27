@@ -329,6 +329,11 @@
     width:100%; max-width:300px; height:auto; border-radius:18px; overflow:hidden;
     display:block; margin:0 auto 14px; box-shadow:0 6px 18px -8px rgba(0,0,0,.3);
   }
+  /* Média perso (image/GIF/vidéo) en remplacement du SVG généré : même
+     cadre que .splash-art, mais un ratio fixe (au lieu de height:auto), car
+     une image/vidéo peut avoir n'importe quel ratio, contrairement au
+     viewBox 320x180 du dessin procédural. */
+  .splash-custom-media{ aspect-ratio:16/9; object-fit:cover; background:#00000010; }
   .splash-title{ font-size:18.5px; line-height:1.35; color:#5B4034; margin-bottom:8px; }
   .splash-vs-inline{
     display:inline-block; background:#FFD24C; color:#5B4034; font-size:12px; font-weight:900;
@@ -1070,6 +1075,45 @@
     svg.appendChild(vsText);
   }
   drawSplashArt(document.getElementById('splashSvg'));
+
+  /* ---- Splash perso en remplacement du dessin procédural -----------------
+     Même principe que pour les personnages (tryLoadCustomImage) : si un
+     fichier assets/branding/splash.<ext> existe, il remplace automatiquement
+     le dessin généré, sans rien à changer dans le code. Contrairement aux
+     personnages, une VIDÉO ou un GIF animé sont aussi acceptés ici (ordre de
+     priorité : vidéo mp4/webm d'abord, puis gif/webp/png/jpg/svg) — un écran
+     de démarrage se prête bien à une petite animation en boucle. Si aucun
+     fichier n'est trouvé (ex : aperçu publié seul, sans le reste du dépôt),
+     le dessin procédural (drawSplashArt ci-dessus) reste affiché tel quel. */
+  function trySplashCustomMedia(){
+    var svg = document.getElementById('splashSvg');
+    if(!svg) return;
+    var container = svg.parentNode;
+    var VIDEO_EXTS = ['mp4','webm'];
+    var IMAGE_EXTS = ['gif','webp','png','jpg','jpeg','svg'];
+    function tryImage(i){
+      if(i >= IMAGE_EXTS.length) return; // rien trouvé : on garde le SVG procédural
+      var img = new Image();
+      img.className = 'splash-art splash-custom-media';
+      img.alt = 'Écran de démarrage';
+      img.onload = function(){ svg.style.display = 'none'; container.insertBefore(img, svg); };
+      img.onerror = function(){ tryImage(i+1); };
+      img.src = 'assets/branding/splash.' + IMAGE_EXTS[i];
+    }
+    function tryVideo(i){
+      if(i >= VIDEO_EXTS.length){ tryImage(0); return; }
+      var v = document.createElement('video');
+      v.className = 'splash-art splash-custom-media';
+      v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+      v.setAttribute('aria-label','Écran de démarrage');
+      v.addEventListener('loadeddata', function(){ svg.style.display = 'none'; container.insertBefore(v, svg); });
+      v.addEventListener('error', function(){ tryVideo(i+1); });
+      v.src = 'assets/branding/splash.' + VIDEO_EXTS[i];
+    }
+    tryVideo(0);
+  }
+  trySplashCustomMedia();
+
   document.getElementById('splash-start-btn').addEventListener('click', function(){
     var overlay = document.getElementById('splash-overlay');
     overlay.classList.add('splash-hide');
