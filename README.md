@@ -38,6 +38,34 @@ page isolée qui ne voit pas ce dépôt : pour que les images choisies y
 apparaissent aussi, il faut les faire republier explicitement dans cette
 page-là.
 
+## Mascotte perso et affichage tête / plein pied en Bataille
+
+N'importe quel personnage débloqué (chat ou brainrot) peut devenir **la
+mascotte** de l'appli :
+
+1. Dans la **Boutique**, sur une carte de personnage débloquée, clique sur
+   **« ☆ Devenir mascotte »**. Elle apparaît alors en tête (petite icône)
+   dans la barre du haut, et en pied dans le coin bas-droit de l'écran, à
+   la place du buste générique. Reclique sur le même bouton (devenu
+   **« ★ Mascotte actuelle »**) pour revenir à la mascotte générique du
+   thème.
+2. Pour le visuel en bas de l'écran, deux niveaux d'assets perso sont
+   possibles, comme pour les personnages :
+   - S'il n'existe que le portrait habituel (ex. `assets/brainrot/br02.png`),
+     ce portrait est affiché comme « tête » posée sur le buste générique
+     déjà dessiné par le code.
+   - Si en plus un fichier **`<id>_full.png`** (ou `.svg`/`.jpg`) existe à
+     côté, par exemple `assets/brainrot/br02_full.png`, ce fichier est
+     utilisé tel quel : il doit représenter le personnage **en pied** (corps
+     entier), et remplace complètement le buste générique.
+
+Dans l'onglet **Bataille**, le réglage global **⚙️ Réglages → « Affichage
+des personnages en Bataille »** permet de choisir si les cartes des
+combattants (Duel rapide et Mode Équipe) montrent leur **tête** (portrait,
+comme aujourd'hui) ou leur **corps en pied** — avec la même logique de
+substitution en deux temps (asset `_full` si présent, sinon buste générique
++ tête du personnage).
+
 ## Écran de démarrage
 
 L'appli s'ouvre sur un écran de présentation ("Géo Miaou VS Geo Chaos 9000")

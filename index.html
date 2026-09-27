@@ -366,9 +366,19 @@
     width:auto; height:auto; background:none; border:none;
     font-size:min(15vw, 52px);
   }
-  .mascot-dock.talk svg{ animation:mascotBob .5s ease-in-out; }
-  .mascot-dock.good svg{ animation:mascotJump .55s ease-out; }
-  .mascot-dock.bad svg{ animation:mascotShake .4s; }
+  .mascot-dock .mascot-face svg, .mascot-dock .mascot-face img{
+    width:min(15vw,52px); height:min(15vw,52px); display:block;
+    border-radius:50%; object-fit:cover;
+  }
+  /* Mascotte perso (personnage débloqué choisi via le bouton "Mascotte") :
+     soit un asset "plein pied" (<id>_full.ext) affiché directement, soit,
+     à défaut, le buste inventé + le portrait du personnage à la place du
+     visage générique. */
+  .mascot-custom-visual{ width:100%; }
+  .mascot-custom-visual .sp-full-img{ width:100%; display:block; filter:drop-shadow(0 6px 10px rgba(0,0,0,.15)); object-fit:contain; }
+  .mascot-dock.talk svg, .mascot-dock.talk .mascot-custom-visual{ animation:mascotBob .5s ease-in-out; }
+  .mascot-dock.good svg, .mascot-dock.good .mascot-custom-visual{ animation:mascotJump .55s ease-out; }
+  .mascot-dock.bad svg, .mascot-dock.bad .mascot-custom-visual{ animation:mascotShake .4s; }
   @keyframes mascotBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
   @keyframes mascotJump{
     0%{ transform:translateY(0) scale(1); }
@@ -381,8 +391,29 @@
     30%,50%,70%{ transform:translateX(-11px); } 40%,60%{ transform:translateX(11px); }
   }
   @media (prefers-reduced-motion: reduce){
-    .mascot-dock.talk svg, .mascot-dock.good svg, .mascot-dock.bad svg{ animation:none; }
+    .mascot-dock.talk svg, .mascot-dock.good svg, .mascot-dock.bad svg,
+    .mascot-dock.talk .mascot-custom-visual, .mascot-dock.good .mascot-custom-visual, .mascot-dock.bad .mascot-custom-visual{ animation:none; }
   }
+
+  /* Composite "corps inventé + tête du personnage" (buste générique avec le
+     portrait du personnage choisi superposé), utilisé quand aucun asset
+     "plein pied" n'existe pour ce personnage. */
+  .fullbody-compose{ position:relative; width:100%; }
+  .fullbody-compose > svg{ width:100%; height:auto; display:block; }
+  .fullbody-compose .fb-face{
+    position:absolute; top:12%; left:50%; transform:translateX(-50%);
+    width:38%;
+  }
+  .fullbody-compose .fb-face svg, .fullbody-compose .fb-face img{
+    width:100%; height:auto; display:block; border-radius:50%; object-fit:cover;
+  }
+  /* Icône mascotte perso dans la barre du haut (à la place de l'emoji). */
+  #mascotIcon svg, #mascotIcon img{
+    width:30px; height:30px; display:block; border-radius:50%; object-fit:cover;
+  }
+  /* Tailles réduites quand ces composites servent de carte combattant en Bataille. */
+  .duel-fighter .fullbody-compose, .duel-fighter .sp-full-img{ width:84px; margin:0 auto; }
+  .sprite-card .fullbody-compose, .sprite-card .sp-full-img{ width:64px; margin:0 auto; }
 
   /* ============ MODE OVERLOAD (effets amplifiés, réglage dans ⚙️) ========= */
   .overload-pop{
@@ -460,6 +491,13 @@
   }
   body[data-app-theme="brainrot"] .sprite-card .sp-buy{ color:#14121A; }
   .sprite-card .sp-buy[disabled]{ opacity:.4; cursor:default; }
+  .sprite-card .sp-mascot-btn{
+    margin-top:2px; font-family:var(--font-display); font-weight:700; font-size:9.5px;
+    border:2px solid var(--border); border-radius:8px; padding:4px 7px; cursor:pointer;
+    background:var(--surface); color:var(--text-soft);
+  }
+  .sprite-card .sp-mascot-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  body[data-app-theme="brainrot"] .sprite-card .sp-mascot-btn.active{ color:#14121A; }
 
   .duel-wrap{ display:flex; align-items:center; justify-content:center; gap:10px; margin:10px 0 4px; }
   /* Portrait : les deux combattants l'un au-dessus de l'autre. Paysage :
@@ -564,6 +602,11 @@
         <p class="muted">Bonnes réponses d'affilée nécessaires :</p>
         <div class="level-row" id="auto-advance-count-row"></div>
       </div>
+
+      <hr class="settings-divider">
+
+      <p class="muted">Affichage des personnages en Bataille :</p>
+      <div class="level-row" id="fighter-display-row"></div>
 
       <hr class="settings-divider">
 
@@ -834,8 +877,10 @@
        tronc en bas de l'écran, qui "pose" les questions et réagit aux
        réponses (voir setCoachReaction / celebrate). -->
   <div class="mascot-dock" id="mascot-dock">
-    <svg id="mascotBigSvg" viewBox="0 0 200 240"></svg>
-    <span class="coach-avatar mascot-face" id="mascot-face">🐱</span>
+    <div id="mascot-visual">
+      <svg id="mascotBigSvg" viewBox="0 0 200 240"></svg>
+      <span class="coach-avatar mascot-face" id="mascot-face">🐱</span>
+    </div>
   </div>
 </div>
 
@@ -924,11 +969,16 @@
       var th = btn.getAttribute('data-theme');
       document.body.setAttribute('data-app-theme', th);
       var cfg = THEMES[th];
-      document.getElementById('mascotIcon').textContent = cfg.mascot;
       document.getElementById('appTitle').textContent = cfg.title;
-      document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
+      document.querySelectorAll('.coach-avatar').forEach(function(av){
+        // La mascotte perso (si choisie) garde son propre visage, pas
+        // l'emoji générique du thème (voir renderMascotDock plus bas).
+        if(av.id === 'mascot-face' && mascotSpriteId) return;
+        av.textContent = cfg.mascot;
+      });
       try{ localStorage.setItem('geo_theme', th); }catch(e){}
-      drawMascotBig();
+      renderTopMascotIcon();
+      renderMascotDock();
     });
   });
   (function initTheme(){
@@ -947,17 +997,16 @@
     // définis : el() en dépend, et ce IIFE s'exécute avant leur assignation)
   })();
 
-  /* ---- Mascotte géante (buste) fixée en bas de l'écran : dessine un
-     chat ou un brainrot selon le thème, jusqu'au torse. L'expression du
-     visage est gérée séparément par setCoachReaction (span .mascot-face,
-     qui partage la classe .coach-avatar avec les petits avatars des
-     familles Formes/Horloge). */
-  function drawMascotBig(){
-    var svg = document.getElementById('mascotBigSvg');
-    if(!svg) return;
+  /* ---- Buste générique (chat ou brainrot) jusqu'au torse, dessiné dans le
+     <svg> fourni. Utilisé pour la mascotte géante en bas de l'écran, et
+     comme corps de secours pour une mascotte perso sans asset "plein pied"
+     (voir renderCreatureVisual plus bas). L'expression du visage est gérée
+     séparément par setCoachReaction (span .mascot-face, qui partage la
+     classe .coach-avatar avec les petits avatars des familles Formes/Horloge). */
+  function paintMascotBody(svg, side){
     while(svg.firstChild) svg.removeChild(svg.firstChild);
     svg.setAttribute('viewBox','0 0 200 240');
-    if(currentThemeKey()==='cats'){
+    if(side==='cats'){
       svg.appendChild(el('path',{d:'M42,150 C42,108 158,108 158,150 L172,240 L28,240 Z', fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
       svg.appendChild(el('polygon',{points:'55,72 40,18 78,54', fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
       svg.appendChild(el('polygon',{points:'145,72 160,18 122,54', fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
@@ -978,6 +1027,13 @@
       svg.appendChild(el('path',{d:'M42,140 C42,108 158,108 158,140 L172,240 L28,240 Z', fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
       svg.appendChild(el('polygon',{points:pts.map(function(p){return p[0]+','+p[1];}).join(' '), fill:'var(--accent2)', stroke:'var(--text)','stroke-width':3,'stroke-linejoin':'round'}));
     }
+  }
+  /* ---- Mascotte géante (buste) fixée en bas de l'écran : dessine le buste
+     du thème courant (ou de `sideOverride` si fourni) dans #mascotBigSvg. */
+  function drawMascotBig(sideOverride){
+    var svg = document.getElementById('mascotBigSvg');
+    if(!svg) return;
+    paintMascotBody(svg, sideOverride || currentThemeKey());
   }
   function bounceMascotTalk(){
     var dock = document.getElementById('mascot-dock');
@@ -1282,7 +1338,12 @@
   }
   function setCoachReaction(kind){
     var face = REACTIONS[currentThemeKey()][kind] || REACTIONS[currentThemeKey()].neutral;
-    document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = face; });
+    document.querySelectorAll('.coach-avatar').forEach(function(av){
+      // La mascotte perso (si choisie) garde son propre visage au lieu de
+      // l'emoji de réaction générique (voir renderMascotDock plus bas).
+      if(av.id === 'mascot-face' && mascotSpriteId) return;
+      av.textContent = face;
+    });
   }
 
   // Permet de toucher n'importe où sur la boîte de feedback pour relancer
@@ -4009,6 +4070,49 @@
     return svg;
   }
 
+  /* ---- Rendu "tête" (portrait, comme aujourd'hui) ou "plein pied" -------
+     mode==='full' essaie d'abord un asset perso assets/<side>/<id>_full.ext
+     (photo/dessin en pied du personnage) ; s'il n'existe pas, compose le
+     portrait du personnage (tête) au-dessus du buste générique inventé
+     (voir paintMascotBody). mode==='head' (par défaut) garde le rendu
+     portrait habituel, inchangé. */
+  function tryLoadFullBodyImage(sprite, side, onFound, onNotFound){
+    var exts = ['png','svg','jpg'];
+    var i = 0;
+    function attempt(){
+      if(i >= exts.length){ onNotFound(); return; }
+      var img = new Image();
+      img.className = 'sp-full-img';
+      img.alt = sprite.name;
+      img.onload = function(){ onFound(img); };
+      img.onerror = function(){ i++; attempt(); };
+      img.src = 'assets/' + side + '/' + sprite.id + '_full.' + exts[i];
+    }
+    attempt();
+  }
+  function renderCreatureVisual(container, sprite, mode){
+    container.innerHTML = '';
+    if(mode !== 'full'){
+      renderSpriteVisual(container, sprite);
+      return;
+    }
+    var side = spriteSide(sprite);
+    tryLoadFullBodyImage(sprite, side, function(img){
+      container.appendChild(img);
+    }, function(){
+      var wrap = document.createElement('div');
+      wrap.className = 'fullbody-compose';
+      var svg = document.createElementNS(svgNS,'svg');
+      wrap.appendChild(svg);
+      paintMascotBody(svg, side);
+      var faceWrap = document.createElement('div');
+      faceWrap.className = 'fb-face';
+      wrap.appendChild(faceWrap);
+      renderSpriteVisual(faceWrap, sprite);
+      container.appendChild(wrap);
+    });
+  }
+
   /* ---- Persistance des personnages débloqués ---- */
   var ownedCats = {}, ownedBrain = {};
   (function loadOwned(){
@@ -4056,6 +4160,19 @@
       if(isOwned){
         var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
         card.appendChild(tag);
+        var isMascot = mascotSpriteId === sprite.id;
+        var mascotBtn = document.createElement('button');
+        mascotBtn.type = 'button';
+        mascotBtn.className = 'sp-mascot-btn' + (isMascot ? ' active' : '');
+        mascotBtn.textContent = isMascot ? '★ Mascotte actuelle' : '☆ Devenir mascotte';
+        mascotBtn.addEventListener('click', function(){
+          mascotSpriteId = isMascot ? null : sprite.id;
+          saveMascot();
+          renderMascotDock();
+          renderTopMascotIcon();
+          renderShop();
+        });
+        card.appendChild(mascotBtn);
       } else {
         var costTag = document.createElement('div'); costTag.className='sp-cost'; costTag.textContent = sprite.cost + ' ⭐';
         card.appendChild(costTag);
@@ -4088,6 +4205,81 @@
     for(var i=0;i<list.length;i++){ if(list[i].id===id) return list[i]; }
     return null;
   }
+  function findAnySprite(id){
+    return findSprite(CAT_SPRITES, id) || findSprite(BRAINROT_SPRITES, id);
+  }
+
+  /* ---- Mascotte perso : n'importe quel personnage débloqué peut devenir
+     "la mascotte", affichée en tête dans la barre du haut (#mascotIcon) et
+     en pied (ou buste+tête) dans le dock du bas (#mascot-dock). Réglée via
+     le bouton "Mascotte" sur les cartes débloquées de la Boutique. */
+  var mascotSpriteId = null;
+  (function loadMascot(){
+    try{ var m = localStorage.getItem('geo_mascot_id'); if(m) mascotSpriteId = m; }catch(e){}
+  })();
+  function saveMascot(){
+    try{ localStorage.setItem('geo_mascot_id', mascotSpriteId || ''); }catch(e){}
+  }
+  function renderTopMascotIcon(){
+    var iconEl = document.getElementById('mascotIcon');
+    if(!iconEl) return;
+    var sprite = mascotSpriteId ? findAnySprite(mascotSpriteId) : null;
+    iconEl.innerHTML = '';
+    if(sprite){
+      renderSpriteVisual(iconEl, sprite);
+    } else {
+      iconEl.textContent = THEMES[currentThemeKey()].mascot;
+    }
+  }
+  function renderMascotDock(){
+    var visualWrap = document.getElementById('mascot-visual');
+    var svgBig = document.getElementById('mascotBigSvg');
+    var faceEl = document.getElementById('mascot-face');
+    if(!visualWrap || !svgBig || !faceEl) return;
+    var prevCustom = visualWrap.querySelector('.mascot-custom-visual');
+    if(prevCustom) prevCustom.remove();
+    var sprite = mascotSpriteId ? findAnySprite(mascotSpriteId) : null;
+    if(!sprite){
+      svgBig.hidden = false;
+      faceEl.hidden = false;
+      drawMascotBig(currentThemeKey());
+      faceEl.textContent = REACTIONS[currentThemeKey()].neutral;
+      return;
+    }
+    svgBig.hidden = true;
+    faceEl.hidden = true;
+    var custom = document.createElement('div');
+    custom.className = 'mascot-custom-visual';
+    visualWrap.appendChild(custom);
+    renderCreatureVisual(custom, sprite, 'full');
+  }
+  /* ---- Réglage global "tête / plein pied" pour l'affichage des
+     combattants en Bataille (Duel rapide + Mode Équipe). ---- */
+  var fighterDisplayMode = 'head';
+  (function loadFighterDisplayMode(){
+    try{ if(localStorage.getItem('geo_fighter_display')==='full') fighterDisplayMode='full'; }catch(e){}
+  })();
+  function refreshBattleVisuals(){
+    // Re-rend les cartes combattants déjà affichées (si un duel est en
+    // cours) avec le nouveau réglage tête/plein pied, sans rien casser
+    // d'autre (stats, résultat en cours restent inchangés).
+    if(typeof selectedCatId !== 'undefined' && selectedCatId && typeof selectedBrainId !== 'undefined' && selectedBrainId){
+      var dc = document.getElementById('duel-cat'), db = document.getElementById('duel-brain');
+      if(dc && dc.childElementCount) renderFighterCard(dc, findSprite(CAT_SPRITES, selectedCatId));
+      if(db && db.childElementCount) renderFighterCard(db, findSprite(BRAINROT_SPRITES, selectedBrainId));
+    }
+    if(typeof currentTeamCat === 'function'){
+      var tdc = document.getElementById('team-duel-cat'), tdb = document.getElementById('team-duel-brain');
+      var tCat = currentTeamCat();
+      if(tdc && tdc.childElementCount && tCat) renderFighterCard(tdc, tCat);
+      if(tdb && tdb.childElementCount && typeof teamCurrentBrain !== 'undefined' && teamCurrentBrain) renderFighterCard(tdb, teamCurrentBrain);
+    }
+  }
+  buildLevelRow(document.getElementById('fighter-display-row'), ['Tête','Plein pied'], fighterDisplayMode==='full' ? 1 : 0, function(idx){
+    fighterDisplayMode = idx===1 ? 'full' : 'head';
+    try{ localStorage.setItem('geo_fighter_display', fighterDisplayMode); }catch(e){}
+    refreshBattleVisuals();
+  });
   function unlockAllSprites(){
     CAT_SPRITES.forEach(function(s){ ownedCats[s.id] = true; });
     BRAINROT_SPRITES.forEach(function(s){ ownedBrain[s.id] = true; });
@@ -4122,7 +4314,7 @@
   }
   function renderFighterCard(container, sprite){
     container.innerHTML = '';
-    renderSpriteVisual(container, sprite);
+    renderCreatureVisual(container, sprite, fighterDisplayMode);
     var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
     container.appendChild(nameEl);
     var rarity = document.createElement('div'); rarity.className='rarity-pill'; rarity.style.marginTop = '4px';
@@ -4355,6 +4547,8 @@
   });
   renderShop();
   renderBattleGrids();
+  renderMascotDock();
+  renderTopMascotIcon();
 
 })();
 </script>
