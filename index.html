@@ -3,6 +3,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&family=Bungee&family=Rubik:wght@400;600;700;800&display=swap">
 <style>
+  /* Filet de sécurité : le navigateur cache déjà nativement tout élément
+     avec l'attribut "hidden", mais certaines de nos propres règles plus
+     spécifiques (ex. ".mascot-dock svg{ display:block }") l'emportaient
+     sur cette règle native par simple spécificité CSS, laissant le SVG
+     générique visible même une fois "hidden" posé en JS (bug du buste
+     générique qui restait affiché derrière/à côté de la mascotte en pied).
+     Cette règle avec !important garantit que "hidden" gagne toujours. */
+  [hidden]{ display:none !important; }
+
   /* ================= TOKENS ================= */
   :root{
     --bg:#FFF6F0; --surface:#FFFFFF; --surface2:#FFE7EF; --surface3:#FFF0DC;
@@ -253,6 +262,13 @@
     backface-visibility:hidden;
   }
   .face.broken{ outline:3px solid var(--bad); outline-offset:-3px; animation:pulseBad 1.1s ease-in-out infinite; }
+  /* Les triangles de la pyramide se replient de plus de 90° (jusqu'à ce que
+     leur pointe rejoigne les autres devant le centre de la base) : passé ce
+     point, la FACE AVANT du triangle (celle qui affiche son numéro) finit
+     tournée à l'opposé de la caméra. Avec backface-visibility:hidden
+     (hérité de .face, utile pour le cube), elle deviendrait invisible une
+     fois pliée. Les triangles gardent donc leurs deux faces visibles. */
+  .face-tri{ backface-visibility:visible; }
   @keyframes pulseBad{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.35); } }
   .yesno-row{ display:flex; gap:10px; margin-top:14px; }
   .yesno-row .btn{ flex:1; }
@@ -1726,6 +1742,35 @@
       {id:'n4', parent:'n3', dx:1, dy:0, num:6}
     ]
   };
+  // Deux pièges qui portent sur le NOMBRE de faces plutôt que sur leur
+  // disposition (contrairement à NET_STRIP/NET_BLOCK2X3 ci-dessus, qui ont
+  // bien 6 faces mais mal arrangées) : ici, un cube "presque bon" auquel il
+  // manque carrément une face (5 au lieu de 6, un vrai trou une fois plié),
+  // et un cube avec une face EN TROP (7 au lieu de 6, qui se chevaucherait).
+  // Utile pour vérifier que l'enfant compte vraiment les faces plutôt que
+  // de reconnaître juste "une forme en croix" au premier coup d'oeil.
+  var NET_CUBE_5FACES = {
+    answer:'aucun', gridW:3, gridH:3,
+    root:{ id:'r', dx:1, dy:1, num:1 },
+    faces:[
+      {id:'n0', parent:'r',  dx:0, dy:-1, num:2},
+      {id:'n1', parent:'r',  dx:0, dy:1,  num:3},
+      {id:'n2', parent:'r',  dx:-1,dy:0,  num:4},
+      {id:'n3', parent:'r',  dx:1, dy:0,  num:5}
+    ]
+  };
+  var NET_CUBE_7FACES = {
+    answer:'aucun', gridW:4, gridH:4,
+    root:{ id:'r', dx:1, dy:1, num:1 },
+    faces:[
+      {id:'n0', parent:'r',  dx:0, dy:-1, num:2},
+      {id:'n1', parent:'r',  dx:0, dy:1,  num:3},
+      {id:'n2', parent:'r',  dx:-1,dy:0,  num:4},
+      {id:'n3', parent:'r',  dx:1, dy:0,  num:5},
+      {id:'n4', parent:'n3', dx:1, dy:0,  num:6},
+      {id:'n5', parent:'n1', dx:0, dy:1,  num:7}
+    ]
+  };
   // Un patron de pavé droit (parallélépipède) : il se referme bien en 3D,
   // mais ses faces ne sont pas toutes des carrés identiques comme sur un
   // cube -> "pave", une vraie 3e famille de solides à reconnaître.
@@ -1746,14 +1791,36 @@
   function pyramidFace(id, dir, dx, dy, left, top, w, h, num, angle){
     return { id:id, parent:'r', dx:dx, dy:dy, left:left, top:top, w:w, h:h, num:num, shape:'triangle', dir:dir, angle:angle };
   }
+  // IMPORTANT : les 4 triangles sont des enfants DOM de la base ('r'), donc
+  // leurs left/top (comme pour NET_PAVE plus haut) sont des coordonnées
+  // CSS relatives à la boîte de la base elle-même (0,0 = coin haut-gauche
+  // de la base), et NON des coordonnées absolues dans la scène — une
+  // confusion qui faisait naguère cascader les 4 triangles en diagonale
+  // au lieu de les coller sur les 4 côtés de la base (d'où le patron qui
+  // ne se refermait pas du tout en pyramide une fois "plié").
+  // L'angle de pliage (127,98°) n'est pas arbitraire, et n'est PAS le simple
+  // angle "au-dessus de 90°" qu'on imaginerait à l'oeil : la base reste à
+  // plat dans son plan d'origine, donc les 2 triangles haut/bas (qui
+  // pivotent autour d'un axe X) ET les 2 triangles gauche/droite (qui
+  // pivotent autour d'un axe Y) doivent amener leur pointe au MÊME point
+  // dans l'espace 3D, devant le centre de la base (perpendiculairement à
+  // son plan) — pas "au-dessus" comme on le dessinerait sur une feuille.
+  // Avec une base de 64 (demi-base 32) et des triangles de hauteur 52, la
+  // pointe ne revient exactement à la bonne distance qu'après une rotation
+  // de 180° - arccos(32/52) ≈ 127,98° depuis la position bien à plat
+  // (dépliée) — valeur retrouvée par calcul ET vérifiée en mesurant dans le
+  // navigateur que les 4 pointes se superposent bien sous toutes les
+  // rotations de caméra (voir historique : 52,02° tout seul, l'angle "au
+  // premier coup d'oeil", ne refermait pas du tout la pyramide).
+  var PYRAMID_FOLD_ANGLE = 127.98;
   var NET_PYRAMID = {
     answer:'pyramide', gridAbsolute:true, stageW:168, stageH:168,
     root:{ id:'r', left:52, top:52, w:64, h:64, num:1 },
     faces:[
-      pyramidFace('n0','up',    0,-1, 52, 0,   64, 52, 2, -62),
-      pyramidFace('n1','down',  0, 1, 52, 116, 64, 52, 3,  62),
-      pyramidFace('n2','left', -1, 0, 0,  52,  52, 64, 4,  62),
-      pyramidFace('n3','right', 1, 0, 116,52,  52, 64, 5, -62)
+      pyramidFace('n0','up',    0,-1, 0,  -52, 64, 52, 2, -PYRAMID_FOLD_ANGLE),
+      pyramidFace('n1','down',  0, 1, 0,  64,  64, 52, 3,  PYRAMID_FOLD_ANGLE),
+      pyramidFace('n2','left', -1, 0, -52,0,   52, 64, 4,  PYRAMID_FOLD_ANGLE),
+      pyramidFace('n3','right', 1, 0, 64, 0,   52, 64, 5, -PYRAMID_FOLD_ANGLE)
     ]
   };
   // Même patron de pyramide, mais avec un triangle manquant : un vrai trou,
@@ -1762,9 +1829,9 @@
     answer:'aucun', gridAbsolute:true, stageW:168, stageH:168,
     root:{ id:'r', left:52, top:52, w:64, h:64, num:1 },
     faces:[
-      pyramidFace('n0','up',    0,-1, 52, 0,   64, 52, 2, -62),
-      pyramidFace('n2','left', -1, 0, 0,  52,  52, 64, 3,  62),
-      pyramidFace('n3','right', 1, 0, 116,52,  52, 64, 4, -62)
+      pyramidFace('n0','up',    0,-1, 0,  -52, 64, 52, 2, -PYRAMID_FOLD_ANGLE),
+      pyramidFace('n2','left', -1, 0, -52,0,   52, 64, 3,  PYRAMID_FOLD_ANGLE),
+      pyramidFace('n3','right', 1, 0, 64, 0,   52, 64, 4, -PYRAMID_FOLD_ANGLE)
     ]
   };
 
@@ -1789,7 +1856,11 @@
     { id:'pyramid',      obj:NET_PYRAMID,      label:'Pyramide à base carrée',               defaultLevels:[0,1,2],
       randomNote:'Patron fixe (toujours le même dessin). Se déplie en : Pyramide.' },
     { id:'pyramid_trou', obj:NET_PYRAMID_TROU, label:'Pyramide avec un triangle manquant',   defaultLevels:[2],
-      randomNote:'Patron fixe (toujours le même dessin) ; c\'est un piège volontaire pour le niveau Difficile, il reste un trou. Se déplie en : Aucun solide.' }
+      randomNote:'Patron fixe (toujours le même dessin) ; c\'est un piège volontaire pour le niveau Difficile, il reste un trou. Se déplie en : Aucun solide.' },
+    { id:'cube_5faces',  obj:NET_CUBE_5FACES,  label:'Presque un cube, mais 5 faces',        defaultLevels:[1,2],
+      randomNote:'Patron fixe (toujours le même dessin) ; il manque carrément une face (5 au lieu de 6), pas juste une histoire de disposition. Se déplie en : Aucun solide.' },
+    { id:'cube_7faces',  obj:NET_CUBE_7FACES,  label:'Presque un cube, mais 7 faces',        defaultLevels:[2],
+      randomNote:'Patron fixe (toujours le même dessin) ; une face EN TROP (7 au lieu de 6) qui se chevaucherait au pliage. Se déplie en : Aucun solide.' }
   ];
   // pool rempli par rebuildM3Pools() (appelée après le chargement des
   // éventuelles surcharges manuelles, voir plus bas) — jamais laissé vide.
@@ -2890,15 +2961,111 @@
     svg.appendChild(el('circle',{cx:100,cy:100,r:60,fill:'var(--accent2)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':2}));
     svg.appendChild(el('ellipse',{cx:100,cy:128,rx:38,ry:13,fill:'var(--text)','fill-opacity':0.12}));
   }
+  // Tétraèdre : pyramide à base TRIANGULAIRE (3 sommets de base + 1 pointe,
+  // au lieu des 4 sommets de base de drawSolidPyramide). Même logique que
+  // la pyramide : les 2 faces avant sont visibles (remplies), et la seule
+  // arête du fond de la base (celle qu'on ne voit jamais de face) est en
+  // pointillés.
+  function drawSolidTetraedre(svg){
+    // L, R et F doivent rester GROUPÉS dans une bande basse étroite (comme
+    // dans drawSolidPyramide : L/R/F sont tous proches de y=142-168) pour
+    // que la base se lise comme une zone compacte, bien plus bas que la
+    // pointe (Apex tout en haut) — sinon, si F descend trop loin sous L/R,
+    // la silhouette devient un losange à 4 pointes (confondu avec un
+    // octaèdre) plutôt qu'une seule pointe au-dessus d'une base.
+    var Apex=[100,35], L=[45,140], R=[155,140], F=[100,163];
+    solidFace(svg, [Apex,F,L], 'var(--accent2)');
+    solidFace(svg, [Apex,F,R], 'var(--accent)');
+    solidEdge(svg,L,R,true);
+    solidEdge(svg,Apex,F,false); solidEdge(svg,Apex,L,false); solidEdge(svg,Apex,R,false);
+    solidEdge(svg,F,L,false); solidEdge(svg,F,R,false);
+  }
+  // Octaèdre : deux pyramides à base carrée collées base contre base — vu
+  // de face, la base carrée du milieu s'aplatit en un losange dont on ne
+  // voit que 2 des 4 sommets (Front, en bas ; le 4e, Back, est caché
+  // derrière, comme le sommet caché du patron de pyramide).
+  function drawSolidOctaedre(svg){
+    var Top=[100,30], Bot=[100,175], F=[100,128], L=[45,100], R=[155,100], Bk=[100,72];
+    solidFace(svg, [Top,F,L], 'var(--accent2)');
+    solidFace(svg, [Top,F,R], 'var(--accent)');
+    solidFace(svg, [Bot,F,L], 'var(--accent3)');
+    solidFace(svg, [Bot,F,R], 'var(--accent2)');
+    solidEdge(svg,Top,Bk,true); solidEdge(svg,Bot,Bk,true); solidEdge(svg,L,Bk,true); solidEdge(svg,R,Bk,true);
+    solidEdge(svg,Top,F,false); solidEdge(svg,Top,L,false); solidEdge(svg,Top,R,false);
+    solidEdge(svg,Bot,F,false); solidEdge(svg,Bot,L,false); solidEdge(svg,Bot,R,false);
+    solidEdge(svg,F,L,false); solidEdge(svg,F,R,false);
+  }
+  // Prismes à base polygonale régulière (triangle/pentagone/hexagone/
+  // octogone) : même langage visuel que le cylindre (drawSolidCylindre) —
+  // un "corps" plein (silhouette rectangulaire, comme si les faces
+  // latérales étaient fondues), un dessus entièrement visible, et un
+  // dessous dont seule la moitié avant (les sommets les plus bas) est
+  // tracée — plutôt que de gérer arête par arête laquelle des n faces
+  // latérales est visible ou cachée, inutilement complexe à cet âge.
+  function ngonPoints(n, cx, cy, rx, ry, rotDeg){
+    var pts=[];
+    for(var k=0;k<n;k++){
+      var ang=(rotDeg + k*360/n) * Math.PI/180;
+      pts.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
+    }
+    return pts;
+  }
+  function drawSolidPrismeN(svg, n){
+    var cx=100, rx=46, ry=17, topCy=62, botCy=148;
+    var top = ngonPoints(n,cx,topCy,rx,ry,-90);
+    var bot = ngonPoints(n,cx,botCy,rx,ry,-90);
+    svg.appendChild(el('rect',{x:cx-rx,y:topCy,width:2*rx,height:botCy-topCy,fill:'var(--accent2)'}));
+    svg.appendChild(el('line',{x1:cx-rx,y1:topCy,x2:cx-rx,y2:botCy, stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('line',{x1:cx+rx,y1:topCy,x2:cx+rx,y2:botCy, stroke:'var(--text)','stroke-width':2}));
+    var front = bot.filter(function(p){ return p[1] >= botCy - 0.01; }).sort(function(a,b){ return a[0]-b[0]; });
+    if(front.length>1){
+      var d = 'M '+front[0][0]+' '+front[0][1];
+      for(var i=1;i<front.length;i++) d += ' L '+front[i][0]+' '+front[i][1];
+      svg.appendChild(el('path',{d:d, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    }
+    svg.appendChild(el('polygon',{points:isoPoly(top), fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2}));
+  }
+  function drawSolidPrismeTri(svg){ drawSolidPrismeN(svg,3); }
+  function drawSolidPrismePenta(svg){ drawSolidPrismeN(svg,5); }
+  function drawSolidPrismeHexa(svg){ drawSolidPrismeN(svg,6); }
+  function drawSolidPrismeOcto(svg){ drawSolidPrismeN(svg,8); }
+  // Nombre de faces/arêtes/sommets d'un prisme à base n-gonale régulière :
+  // n+2 faces (2 bases + n côtés), 3n arêtes, 2n sommets.
+  function prismCounts(n){ return { faces:n+2, aretes:3*n, sommets:2*n }; }
   var SOLID_META = {
-    cube:     { faces:6, aretes:12, sommets:8, label:'cube', draw:drawSolidCube },
-    pave:     { faces:6, aretes:12, sommets:8, label:'pavé droit', draw:drawSolidPave },
-    pyramide: { faces:5, aretes:8,  sommets:5, label:'pyramide à base carrée', draw:drawSolidPyramide },
+    cube:          { faces:6, aretes:12, sommets:8,  label:'cube', draw:drawSolidCube },
+    pave:          { faces:6, aretes:12, sommets:8,  label:'pavé droit', draw:drawSolidPave },
+    pyramide:      { faces:5, aretes:8,  sommets:5,  label:'pyramide à base carrée', draw:drawSolidPyramide },
+    tetraedre:     { faces:4, aretes:6,  sommets:4,  label:'tétraèdre', draw:drawSolidTetraedre },
+    octaedre:      { faces:8, aretes:12, sommets:6,  label:'octaèdre', draw:drawSolidOctaedre },
+    prisme_tri:    { faces:prismCounts(3).faces, aretes:prismCounts(3).aretes, sommets:prismCounts(3).sommets,
+                     label:'prisme triangulaire', draw:drawSolidPrismeTri },
+    prisme_penta:  { faces:prismCounts(5).faces, aretes:prismCounts(5).aretes, sommets:prismCounts(5).sommets,
+                     label:'prisme pentagonal', draw:drawSolidPrismePenta },
+    prisme_hexa:   { faces:prismCounts(6).faces, aretes:prismCounts(6).aretes, sommets:prismCounts(6).sommets,
+                     label:'prisme hexagonal', draw:drawSolidPrismeHexa },
+    prisme_octo:   { faces:prismCounts(8).faces, aretes:prismCounts(8).aretes, sommets:prismCounts(8).sommets,
+                     label:'prisme octogonal', draw:drawSolidPrismeOcto },
     cylindre: { label:'cylindre', draw:drawSolidCylindre },
     cone:     { label:'cône', draw:drawSolidCone },
     boule:    { label:'boule', draw:drawSolidBoule }
   };
-  var SOLID_NAME_POOL = ['cube','pavé droit','pyramide à base carrée','cylindre','cône','boule'];
+  var SOLID_NAME_POOL = ['cube','pavé droit','pyramide à base carrée','cylindre','cône','boule',
+    'tétraèdre','octaèdre','prisme triangulaire','prisme pentagonal','prisme hexagonal','prisme octogonal'];
+
+  // Fait varier le "plan" (l'angle de vue) d'un solide : un miroir
+  // horizontal aléatoire (une chance sur deux), pour que l'enfant ne
+  // mémorise pas "LA" silhouette d'un solide donné mais le reconnaisse
+  // aussi vu sous un angle différent. Marche pour tous les solides sans
+  // toucher à chaque fonction de dessin : on dessine dans un <g> qu'on
+  // retourne éventuellement, plutôt que directement dans le <svg>.
+  function drawSolidVaried(svg, meta){
+    svg.innerHTML = "";
+    var g = document.createElementNS(svgNS,'g');
+    if(Math.random()<0.5) g.setAttribute('transform','translate(200,0) scale(-1,1)');
+    svg.appendChild(g);
+    meta.draw(g);
+  }
 
   function genSolideNomQuestion(){
     var keys = Object.keys(SOLID_META);
@@ -2911,13 +3078,17 @@
       question:'Quel est le nom de ce solide ?',
       sub:'Observe bien sa forme en 3D.',
       explain:'C\'est un(e) ' + meta.label + '.',
-      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; meta.draw(svg); },
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
       cols3:false,
       choices: labels.map(function(l){ return { label:l, ok:l===meta.label }; })
     };
   }
+  // Solides pour lesquels faces/arêtes/sommets ont un sens simple à compter
+  // (polyèdres) — cylindre/cône/boule en sont volontairement exclus, leurs
+  // "faces" courbes prêtant à débat à ce niveau.
+  var SOLID_COMPTE_KEYS = ['cube','pave','pyramide','tetraedre','octaedre','prisme_tri','prisme_penta','prisme_hexa','prisme_octo'];
   function genSolideCompteQuestion(){
-    var key = pick(['cube','pave','pyramide']);
+    var key = pick(SOLID_COMPTE_KEYS);
     var meta = SOLID_META[key];
     var attr = pick(['faces','sommets','aretes']);
     var correct = meta[attr];
@@ -2927,9 +3098,14 @@
       question:'Combien de ' + attrLabel + ' a ce solide (' + meta.label + ') ?',
       sub:'Essaie de bien visualiser toutes les faces, même celles qu\'on ne voit pas directement.',
       explain:'Un ' + meta.label + ' a ' + meta.faces + ' faces, ' + meta.aretes + ' arêtes et ' + meta.sommets + ' sommets.',
-      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; meta.draw(svg); },
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
       cols3:false,
-      choices: numChoiceSet(correct, [2,3,4,5,6,7,8,9,10,11,12]).map(function(v){ return { label:String(v), ok:v===correct }; })
+      // Les distracteurs sont pris AUTOUR de la vraie valeur (plutôt qu'un
+      // pool fixe 2-12) : nécessaire depuis l'ajout des prismes, dont le
+      // nombre d'arêtes/sommets peut largement dépasser 12 (24 arêtes pour
+      // le prisme octogonal, par ex.) — un pool fixe aurait alors proposé
+      // des distracteurs ridiculement éloignés, rendant la question trop facile.
+      choices: numChoiceSet(correct, [correct-4,correct-3,correct-2,correct-1,correct+1,correct+2,correct+3,correct+4].filter(function(v){return v>=1;})).map(function(v){ return { label:String(v), ok:v===correct }; })
     };
   }
 
@@ -3040,7 +3216,13 @@
     { text:'J\'ai 8 sommets et 12 arêtes, mais toutes mes faces ne sont pas des carrés. Qui suis-je ?', answer:'pavé droit', pool:['pavé droit','cube','pyramide à base carrée','cylindre'] },
     { text:'Je ressemble à un carré, mais si on me penche un peu, mes angles ne sont plus droits. Qui suis-je devenu ?', answer:'losange', pool:['losange','rectangle','carré','pentagone'] },
     { text:'Mes 3 côtés ont tous la même longueur. Qui suis-je ?', answer:'triangle', pool:['triangle','losange','pentagone','carré'] },
-    { text:'J\'ai 8 sommets, 12 arêtes et 6 faces, toutes identiques et carrées. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] }
+    { text:'J\'ai 8 sommets, 12 arêtes et 6 faces, toutes identiques et carrées. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] },
+    { text:'J\'ai seulement 4 faces, toutes triangulaires, et 4 sommets : je suis la plus simple des pyramides. Qui suis-je ?', answer:'tétraèdre', pool:['tétraèdre','pyramide à base carrée','cube','octaèdre'] },
+    { text:'Je suis formé de deux pyramides à base carrée collées par leur base : j\'ai 8 faces triangulaires. Qui suis-je ?', answer:'octaèdre', pool:['octaèdre','tétraèdre','cube','pyramide à base carrée'] },
+    { text:'J\'ai 2 faces triangulaires et 3 faces rectangulaires : on me trouve dans les cales de certaines tentes. Qui suis-je ?', answer:'prisme triangulaire', pool:['prisme triangulaire','pyramide à base carrée','tétraèdre','pavé droit'] },
+    { text:'J\'ai 2 faces pentagonales et 5 faces rectangulaires, comme la maison des enfants ou le Pentagone. Qui suis-je ?', answer:'prisme pentagonal', pool:['prisme pentagonal','prisme hexagonal','pyramide à base carrée','cube'] },
+    { text:'J\'ai 2 faces hexagonales et 6 faces rectangulaires : ma base a la même forme qu\'une alvéole d\'abeille. Qui suis-je ?', answer:'prisme hexagonal', pool:['prisme hexagonal','prisme pentagonal','prisme octogonal','cylindre'] },
+    { text:'J\'ai 2 faces à 8 côtés et 8 faces rectangulaires : ma base ressemble à un panneau "stop". Qui suis-je ?', answer:'prisme octogonal', pool:['prisme octogonal','prisme hexagonal','cylindre','prisme pentagonal'] }
   ];
   function genEnigmeQuestion(){
     var r = pick(ENIGME_POOL);
@@ -4231,6 +4413,15 @@
       iconEl.textContent = THEMES[currentThemeKey()].mascot;
     }
   }
+  // Bascule "hidden" en posant/retirant explicitement l'attribut DOM. La
+  // propriété IDL .hidden (el.hidden = true/false) n'existe QUE sur les
+  // éléments HTML : sur un <svg> (namespace SVG, comme #mascotBigSvg), lui
+  // affecter .hidden ne fait rien du tout — l'attribut "hidden" n'est
+  // jamais posé, l'élément reste visible en douce, et le buste générique
+  // restait donc affiché EN PLUS du personnage en pied (le bug remonté).
+  function setHiddenAttr(el, hide){
+    if(hide) el.setAttribute('hidden',''); else el.removeAttribute('hidden');
+  }
   function renderMascotDock(){
     var visualWrap = document.getElementById('mascot-visual');
     var svgBig = document.getElementById('mascotBigSvg');
@@ -4240,14 +4431,14 @@
     if(prevCustom) prevCustom.remove();
     var sprite = mascotSpriteId ? findAnySprite(mascotSpriteId) : null;
     if(!sprite){
-      svgBig.hidden = false;
-      faceEl.hidden = false;
+      setHiddenAttr(svgBig, false);
+      setHiddenAttr(faceEl, false);
       drawMascotBig(currentThemeKey());
       faceEl.textContent = REACTIONS[currentThemeKey()].neutral;
       return;
     }
-    svgBig.hidden = true;
-    faceEl.hidden = true;
+    setHiddenAttr(svgBig, true);
+    setHiddenAttr(faceEl, true);
     var custom = document.createElement('div');
     custom.className = 'mascot-custom-visual';
     visualWrap.appendChild(custom);
