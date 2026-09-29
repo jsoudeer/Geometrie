@@ -358,9 +358,23 @@
     void exWrap.offsetWidth;
     exWrap.classList.add('qenter');
   }
-  function nextPracticeQuestion(){
-    var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
-    lastFamily = key;
+  // ---- Pas deux fois la même question dans une série ----
+  // On garde l'empreinte des ~80 dernières questions (de quoi couvrir une série
+  // de 20 ou un chrono) ; une question déjà vue est retirée jusqu'à 15 fois.
+  // La mémoire est remise à zéro au changement de niveau, de mode, ou au départ
+  // d'un chrono.
+  var SEEN_MAX = 80;
+  var seenSigs = [];
+  function resetSeenQuestions(){ seenSigs = []; }
+  function questionSignature(key){
+    if(key==='measure') return 'measure|' + globalLevel + '|' + currentLen + '|' + m1RulerStart + '|' + m1SegStart;
+    if(key==='deform') return 'deform|' + m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';');
+    if(key==='net') return 'net|' + NET_DEFS.map(function(n){ return n.obj; }).indexOf(currentNet);
+    if(key==='clock-regler') return 'regler|' + m5Target.hour + ':' + m5Target.minute;
+    var q = key==='qcm' ? m4Current : m5Current;
+    return key + '|' + q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
+  }
+  function generateFamilyQuestion(key){
     showFamily(key);
     if(key==='measure') newMeasureQuestion();
     else if(key==='deform') newDeformQuestion();
@@ -369,7 +383,20 @@
     else if(key==='clock-lire') newM5Lire();
     else if(key==='clock-regler') m5rGenTarget();
   }
+  function nextPracticeQuestion(){
+    var sig = null;
+    for(var tries=0; tries<15; tries++){
+      var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
+      lastFamily = key;
+      generateFamilyQuestion(key);
+      sig = questionSignature(key);
+      if(seenSigs.indexOf(sig) === -1) break;
+    }
+    seenSigs.push(sig);
+    if(seenSigs.length > SEEN_MAX) seenSigs.shift();
+  }
   function setGlobalLevel(idx){
+    resetSeenQuestions();
     globalLevel = idx;
     resetFreeStreak();
     if(appMode!=='auto') return;
@@ -380,6 +407,7 @@
     }
   }
   function setAppMode(mode){
+    resetSeenQuestions();
     appMode = mode;
     resetFreeStreak();
     var isManual = (mode==='manual');
@@ -490,6 +518,7 @@
   }
   var countdownLevel = 0; // niveau (0/1/2) sur lequel le défi en cours a été lancé
   function startCountdown(){
+    resetSeenQuestions();
     countdownScore = { correct:0, total:0 };
     countdownRunning = true;
     countdownLevel = globalLevel;
