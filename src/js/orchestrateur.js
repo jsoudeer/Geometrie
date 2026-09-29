@@ -31,6 +31,7 @@
     { name:'Difficile', types:[] }
   ];
   var m4TypeFilter = 'random';
+  var m4CategoryFilter = 'all';   // mode Manuel : « Aléatoire » se limite à cette sous-catégorie
   var m4Current = null;
 
   // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
@@ -45,7 +46,12 @@
   }
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
-    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pickOther(lv.types, lastQcmType);
+    var poolTypes = lv.types;
+    if(m4CategoryFilter!=='all'){
+      var inCat = lv.types.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===m4CategoryFilter; });
+      if(inCat.length) poolTypes = inCat;
+    }
+    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pickOther(poolTypes, lastQcmType);
     lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     return (quizTypeById(type) || quizTypeById('image')).generate(globalLevel);
@@ -180,6 +186,7 @@
   };
   var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
   var currentAconfFamily = 'qcm';
+  var aconfOpenCats = {};
   function flashAconfWarning(){
     var wrap = document.getElementById('activity-config-list');
     wrap.classList.remove('shake');
@@ -233,7 +240,19 @@
     var wrap = document.getElementById('activity-config-list');
     wrap.innerHTML = '';
     if(familyKey === 'qcm'){
-      QCM_TYPE_DEFS.forEach(function(def){ wrap.appendChild(buildAconfItem(def, 'qcm')); });
+      // regroupé par sous-catégorie, chaque groupe repliable (le premier ouvert)
+      QCM_CATEGORIES.forEach(function(cat, ci){
+        var defs = QCM_TYPE_DEFS.filter(function(d){ return quizCategoryId(d)===cat.id; });
+        if(!defs.length) return;
+        var det = document.createElement('details'); det.className = 'aconf-cat';
+        if(aconfOpenCats[cat.id] === undefined ? ci===0 : aconfOpenCats[cat.id]) det.open = true;
+        var sum = document.createElement('summary');
+        sum.textContent = cat.icon + ' ' + cat.label + ' (' + defs.length + ')';
+        det.appendChild(sum);
+        det.addEventListener('toggle', function(){ aconfOpenCats[cat.id] = det.open; });
+        defs.forEach(function(def){ det.appendChild(buildAconfItem(def, 'qcm')); });
+        wrap.appendChild(det);
+      });
     } else if(familyKey === 'net'){
       NET_DEFS.forEach(function(def){ wrap.appendChild(buildAconfItem(def, 'net')); });
     } else {
@@ -295,6 +314,7 @@
   }
   function refreshManualQcmTypes(){
     var wrap = document.getElementById('manual-qcm-type-wrap');
+    m4CategoryFilter = 'all';
     if(manualFamily !== 'qcm'){ wrap.hidden = true; m4TypeFilter = 'random'; return; }
     wrap.hidden = false;
     // Union de tous les types sur tous les niveaux, pour qu'une activité ne
@@ -303,14 +323,31 @@
     M4_LEVELS.forEach(function(lv){
       lv.types.forEach(function(t){ if(allTypes.indexOf(t)===-1) allTypes.push(t); });
     });
-    var labels = ['Aléatoire'].concat(allTypes.map(function(t){ return (quizTypeById(t) && quizTypeById(t).longLabel) || t; }));
-    m4TypeFilter = 'random';
-    buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
-      m4TypeFilter = idx===0 ? 'random' : allTypes[idx-1];
-      rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));
+    var cats = QCM_CATEGORIES.filter(function(c){
+      return allTypes.some(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===c.id; });
+    });
+    function typesOf(catId){
+      return catId==='all' ? allTypes : allTypes.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===catId; });
+    }
+    function buildTypeRow(catId){
+      var list = typesOf(catId);
+      var labels = ['Aléatoire'].concat(list.map(function(t){ return (quizTypeById(t) && quizTypeById(t).longLabel) || t; }));
+      m4TypeFilter = 'random';
+      buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
+        m4TypeFilter = idx===0 ? 'random' : list[idx-1];
+        rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));
+        nextPracticeQuestion();
+        armManualCollapse();
+      });
+    }
+    buildLevelRow(document.getElementById('manual-qcm-cat-row'), ['Toutes'].concat(cats.map(function(c){ return c.icon + ' ' + c.label; })), 0, function(idx){
+      m4CategoryFilter = idx===0 ? 'all' : cats[idx-1].id;
+      buildTypeRow(m4CategoryFilter);
+      rebuildManualLevelRow(qcmTypeLevels('random'));
       nextPracticeQuestion();
       armManualCollapse();
     });
+    buildTypeRow('all');
     rebuildManualLevelRow(qcmTypeLevels('random'));
   }
   // ---- Repli automatique de la liste d'activités après 5s d'inactivité ----
@@ -358,9 +395,23 @@
     void exWrap.offsetWidth;
     exWrap.classList.add('qenter');
   }
-  function nextPracticeQuestion(){
-    var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
-    lastFamily = key;
+  // ---- Pas deux fois la même question dans une série ----
+  // On garde l'empreinte des ~80 dernières questions (de quoi couvrir une série
+  // de 20 ou un chrono) ; une question déjà vue est retirée jusqu'à 15 fois.
+  // La mémoire est remise à zéro au changement de niveau, de mode, ou au départ
+  // d'un chrono.
+  var SEEN_MAX = 80;
+  var seenSigs = [];
+  function resetSeenQuestions(){ seenSigs = []; }
+  function questionSignature(key){
+    if(key==='measure') return 'measure|' + globalLevel + '|' + currentLen + '|' + m1RulerStart + '|' + m1SegStart;
+    if(key==='deform') return 'deform|' + m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';');
+    if(key==='net') return 'net|' + NET_DEFS.map(function(n){ return n.obj; }).indexOf(currentNet);
+    if(key==='clock-regler') return 'regler|' + m5Target.hour + ':' + m5Target.minute;
+    var q = key==='qcm' ? m4Current : m5Current;
+    return key + '|' + q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
+  }
+  function generateFamilyQuestion(key){
     showFamily(key);
     if(key==='measure') newMeasureQuestion();
     else if(key==='deform') newDeformQuestion();
@@ -369,7 +420,20 @@
     else if(key==='clock-lire') newM5Lire();
     else if(key==='clock-regler') m5rGenTarget();
   }
+  function nextPracticeQuestion(){
+    var sig = null;
+    for(var tries=0; tries<15; tries++){
+      var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
+      lastFamily = key;
+      generateFamilyQuestion(key);
+      sig = questionSignature(key);
+      if(seenSigs.indexOf(sig) === -1) break;
+    }
+    seenSigs.push(sig);
+    if(seenSigs.length > SEEN_MAX) seenSigs.shift();
+  }
   function setGlobalLevel(idx){
+    resetSeenQuestions();
     globalLevel = idx;
     resetFreeStreak();
     if(appMode!=='auto') return;
@@ -380,6 +444,7 @@
     }
   }
   function setAppMode(mode){
+    resetSeenQuestions();
     appMode = mode;
     resetFreeStreak();
     var isManual = (mode==='manual');
@@ -490,6 +555,7 @@
   }
   var countdownLevel = 0; // niveau (0/1/2) sur lequel le défi en cours a été lancé
   function startCountdown(){
+    resetSeenQuestions();
     countdownScore = { correct:0, total:0 };
     countdownRunning = true;
     countdownLevel = globalLevel;

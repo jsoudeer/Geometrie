@@ -272,6 +272,13 @@
   .level-row.level-row-even .level-btn{ flex:1 1 auto; }
   .level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:var(--on-accent); }
 
+
+  .aconf-cat{ margin:0 0 8px; }
+  .aconf-cat > summary{ cursor:pointer; font-family:var(--font-display); font-weight:800; font-size:14px; padding:8px 10px; border-radius:12px; background:var(--surface2); border:2px solid var(--border); list-style:none; }
+  .aconf-cat > summary::-webkit-details-marker{ display:none; }
+  .aconf-cat > summary::after{ content:'▸'; float:right; transition:transform .15s; }
+  .aconf-cat[open] > summary::after{ transform:rotate(90deg); }
+  .aconf-cat[open] > summary{ margin-bottom:8px; }
   /* ============ MODULE 1 : MESURER ============ */
   .ruler-wrap{ display:flex; justify-content:center; margin-bottom:6px; }
   .ruler-wrap svg{ width:100%; max-width:340px; height:auto; }
@@ -667,6 +674,16 @@
   .choice-btn, .level-btn, .tab-btn, .menu-btn, .theme-toggle, .settings-btn, .home-btn,
   .bcard, .sprite-card, .settings-close, .aconf-level-btn, .sp-mascot-btn, .btn.ghost{ border-color:var(--control-border); }
   .btn.ghost{ border:1.5px solid var(--control-border); }
+
+  /* Boutique : mascotte du clan en pied + aperçu plein pied d'un personnage */
+  .shop-mascot{ display:flex; align-items:center; gap:12px; background:var(--surface2); border:2px solid var(--border); border-radius:14px; padding:8px 12px; margin:4px 0 10px; }
+  .shop-mascot[hidden]{ display:none; }
+  .shop-mascot .sm-art{ width:96px; flex:none; }
+  .shop-mascot .sm-art .sp-full-img, .shop-mascot .sm-art .fullbody-compose{ width:100%; display:block; object-fit:contain; }
+  .shop-mascot .sm-txt{ font-size:13px; line-height:1.35; }
+  .shop-mascot .sm-txt strong{ font-family:var(--font-display); font-size:15px; display:block; }
+  .info-art.full{ width:160px; }
+  .info-art.full .sp-full-img, .info-art.full .fullbody-compose{ width:160px; height:auto; max-height:260px; object-fit:contain; }
 </style>
 
 <div class="app" id="app" lang="fr">
@@ -814,7 +831,9 @@
                  de s'entraîner sur un type précis plutôt que de tous les
                  mélanger au hasard. -->
             <div id="manual-qcm-type-wrap" hidden>
-              <p class="muted">Type de question (Quizz) :</p>
+              <p class="muted">Thème (Quizz) :</p>
+              <div class="level-row" id="manual-qcm-cat-row"></div>
+              <p class="muted">Type de question :</p>
               <div class="level-row" id="manual-qcm-type-row"></div>
             </div>
           </div>
@@ -939,6 +958,7 @@
         <div id="arena-shop-wrap">
           <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
           <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
+          <div class="shop-mascot" id="shop-mascot-panel"></div>
           <div class="sprite-grid" id="shop-grid"></div>
         </div>
 
@@ -1119,7 +1139,7 @@
     document.querySelectorAll('.coach-avatar').forEach(function(av){
       // La mascotte perso (si choisie) garde son propre visage, pas
       // l'emoji générique du thème (voir renderMascotDock plus bas).
-      if(av.id === 'mascot-face' && mascotSpriteId) return;
+      if(av.id === 'mascot-face' && activeMascotId()) return;
       av.textContent = cfg.mascot;
     });
     try{ localStorage.setItem('geo_theme', th); }catch(e){}
@@ -1523,7 +1543,7 @@
     document.querySelectorAll('.coach-avatar').forEach(function(av){
       // La mascotte perso (si choisie) garde son propre visage au lieu de
       // l'emoji de réaction générique (voir renderMascotDock plus bas).
-      if(av.id === 'mascot-face' && mascotSpriteId) return;
+      if(av.id === 'mascot-face' && activeMascotId()) return;
       av.textContent = face;
     });
   }
@@ -1583,6 +1603,26 @@
   //   generate(level)  renvoie la question :
   //     { tag, question, sub, explain, draw:function(){…}, cols3:bool, choices:[{label, ok}] }
   var QCM_TYPE_DEFS = [];
+  // Sous-catégories d'affichage (panneau « Activités & difficulté » et mode Manuel).
+  // Un thème peut en ajouter avec registerQuizCategory ; un type sans catégorie
+  // connue tombe dans « Autres ».
+  var QCM_CATEGORIES = [
+    { id:'formes',    label:'Formes', icon:'🔷' },
+    { id:'repere',    label:'Repérage', icon:'🧭' },
+    { id:'solides',   label:'Solides & énigmes', icon:'🧊' },
+    { id:'temps',     label:'Heure & calendrier', icon:'🕒' },
+    { id:'mesures',   label:'Mesures', icon:'📏' },
+    { id:'nombres',   label:'Nombres', icon:'🔢' },
+    { id:'calcul',    label:'Calcul', icon:'➕' },
+    { id:'problemes', label:'Problèmes & monnaie', icon:'🪙' },
+    { id:'logique',   label:'Suites logiques', icon:'🧩' },
+    { id:'autres',    label:'Autres', icon:'✨' }
+  ];
+  function registerQuizCategory(cat){ QCM_CATEGORIES.splice(QCM_CATEGORIES.length-1, 0, cat); }
+  function quizCategoryId(def){
+    for(var i=0;i<QCM_CATEGORIES.length;i++){ if(QCM_CATEGORIES[i].id===def.category) return def.category; }
+    return 'autres';
+  }
   function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
   function quizTypeById(id){
     for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }
@@ -2620,6 +2660,140 @@
   }
   function unique(a){ return a.filter(function(v,i){ return a.indexOf(v)===i; }); }
 
+  // ===================== Mesures : unités de longueur =====================
+  var UNITE_SCENES = [
+    ['la longueur d\'un crayon','cm'],['la longueur d\'une gomme','cm'],['la largeur de ton cahier','cm'],['la taille d\'un timbre-poste','cm'],
+    ['la hauteur d\'une maison','m'],['la longueur d\'une cour d\'école','m'],['la longueur d\'un terrain de football','m'],['la hauteur d\'un arbre','m'],
+    ['la distance entre deux villes','km'],['la longueur d\'une route de campagne','km'],['un trajet en train jusqu\'à une autre ville','km'],
+    ['l\'épaisseur d\'une pièce de monnaie','mm'],['l\'épaisseur d\'une feuille de papier','mm'],['la longueur d\'une fourmi','mm']
+  ];
+  var UNITE_NOMS = { mm:'le millimètre (mm)', cm:'le centimètre (cm)', m:'le mètre (m)', km:'le kilomètre (km)' };
+  function genMesuresQuestion(level){
+    var kind = level===0 ? 'unite' : level===1 ? pick(['unite','plusLong']) : pick(['conv','conv','plusLong','conv2']);
+    if(kind==='unite'){
+      var sc = pick(UNITE_SCENES), u = sc[1];
+      return {
+        tag:'Mesures', question:'Avec quelle unité mesure-t-on ' + sc[0] + ' ?', sub:'Pense à la taille : petit, moyen ou très grand.',
+        explain:'Pour ' + sc[0] + ', on utilise ' + UNITE_NOMS[u] + '.',
+        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'📏')); },
+        cols3:false,
+        choices: shuffle(['mm','cm','m','km']).map(function(l){ return { label:l, ok:l===u }; })
+      };
+    }
+    if(kind==='plusLong'){
+      var cands = shuffle([20,30,40,50,60,70,80,90,100,120,150,200,250,300]), vals = cands.slice(0,4);
+      var max = Math.max.apply(null, vals);
+      function fmt(v){ return v>=100 && v%100===0 ? (v/100) + ' m' : v>=100 ? Math.floor(v/100) + ' m ' + (v%100) + ' cm' : v + ' cm'; }
+      return {
+        tag:'Mesures', question:'Quelle est la plus grande longueur ?', sub:'Attention aux unités : 1 m = 100 cm.',
+        explain:fmt(max) + ' est la plus grande : ' + vals.slice().sort(function(a,b){ return a-b; }).map(function(v){ return v + ' cm'; }).join(' < ') + '.',
+        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'📐')); },
+        cols3:false,
+        choices: vals.map(function(v){ return { label:fmt(v), ok:v===max }; })
+      };
+    }
+    // conversions
+    var q, ans, extra;
+    if(kind==='conv'){ var mm = randInt(1,5); q = mm + ' m = ? cm'; ans = mm*100; extra = [mm*10, mm*1000, mm+100, mm*100+10]; }
+    else { var km = randInt(1,5); q = km + ' km = ? m'; ans = km*1000; extra = [km*100, km*10000, km*100+1000, km+1000]; }
+    return {
+      tag:'Mesures', question:'Convertis : ' + q, sub:'1 m = 100 cm et 1 km = 1 000 m.',
+      explain: q.replace('?', String(ans)) + '.',
+      draw:function(){ drawEquation(q); },
+      cols3:false,
+      choices: numChoiceSet(ans, extra).map(function(v){ return { label:String(v), ok:v===ans }; })
+    };
+  }
+
+  // ===================== Périmètre =====================
+  function genPerimetreQuestion(level){
+    var w, h, ans, explain, question, drawFn;
+    if(level===0){
+      w = randInt(2,5); h = randInt(1,4); if(w===h) h = h===1 ? 2 : h-1;
+      ans = 2*(w+h);
+      question = 'Chaque carreau a un côté de 1 cm. Quel est le périmètre du rectangle (le tour) ?';
+      explain = 'Le tour : ' + w + ' + ' + h + ' + ' + w + ' + ' + h + ' = ' + ans + ' cm.';
+      drawFn = function(svg){
+        var c = 22, x0 = (200 - w*c)/2, y0 = (200 - h*c)/2;
+        for(var i=0;i<w;i++) for(var j=0;j<h;j++)
+          svg.appendChild(el('rect',{x:x0+i*c,y:y0+j*c,width:c,height:c,fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':1}));
+        svg.appendChild(el('rect',{x:x0,y:y0,width:w*c,height:h*c,fill:'none',stroke:'var(--text)','stroke-width':3}));
+      };
+    } else if(level===1){
+      var sq = Math.random()<0.4;
+      w = randInt(3,12); h = sq ? w : randInt(2,10); if(!sq && w===h) h = h+1;
+      ans = 2*(w+h);
+      question = sq ? 'Un carré a des côtés de ' + w + ' cm. Quel est son périmètre ?' : 'Un rectangle mesure ' + w + ' cm de long et ' + h + ' cm de large. Quel est son périmètre ?';
+      explain = sq ? 'Le carré a 4 côtés égaux : 4 × ' + w + ' = ' + ans + ' cm.' : 'Le tour : ' + w + ' + ' + h + ' + ' + w + ' + ' + h + ' = ' + ans + ' cm.';
+      drawFn = function(svg){
+        var W = sq ? 90 : 120, H = sq ? 90 : Math.max(50, Math.min(100, 120*h/w));
+        var x0 = (200-W)/2, y0 = (200-H)/2;
+        svg.appendChild(el('rect',{x:x0,y:y0,width:W,height:H,fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':3}));
+        svg.appendChild(svgText(100,y0-8,16,w + ' cm'));
+        svg.appendChild(svgText(x0+W+24,100+5,16,h + ' cm'));
+      };
+    } else {
+      var n = pick([3,5,6]), side = randInt(2,9);
+      ans = n*side;
+      var nm = { 3:'un triangle équilatéral', 5:'un pentagone régulier', 6:'un hexagone régulier' }[n];
+      question = 'C\'est ' + nm + ' : tous ses côtés mesurent ' + side + ' cm. Quel est son périmètre ?';
+      explain = nm.charAt(0).toUpperCase() + nm.slice(1) + ' a ' + n + ' côtés égaux : ' + n + ' × ' + side + ' = ' + ans + ' cm.';
+      drawFn = function(svg){
+        var pts = ngonPoints(n, 100, 108, 62, 62, -90);
+        svg.appendChild(el('polygon',{points:isoPoly(pts),fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':3}));
+        svg.appendChild(svgText(100,24,16,side + ' cm'));
+      };
+    }
+    return {
+      tag:'Périmètre', question:question, sub:'Le périmètre, c\'est la longueur du tour de la figure.', explain:explain,
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; drawFn(svg); },
+      cols3:false,
+      choices: numChoiceSet(ans, [ans+2, ans-2, ans+4, ans-4, w*h, ans+1, ans-1].filter(function(v){ return v>0; })).map(function(v){ return { label:v + ' cm', ok:v===ans }; })
+    };
+  }
+
+  // ===================== Trouve l'intrus =====================
+  function genIntrusQuestion(level){
+    var maj, mino, rotFixed = false, kind;
+    if(level===0){ var t = shuffle([3,4,0]); maj = t[0]; mino = t[1]; }
+    else if(level===1){ var t2 = shuffle([3,4,5,6]); maj = t2[0]; mino = t2[1]; }
+    else if(Math.random()<0.5){ kind = 'carreRect'; rotFixed = true; }
+    else { var t3 = shuffle([5,6,8]); maj = t3[0]; mino = t3[1]; }
+    var pos = randInt(0,3), letters = ['A','B','C','D'], colors = ['var(--accent)','var(--accent2)','var(--accent3)'];
+    function drawOne(svg, k, isIntrus, cx, cy){
+      var fill = colors[randInt(0,2)], r = randInt(24,32);
+      var rot = rotFixed ? -90 : randInt(0,359);
+      var node;
+      if(kind==='carreRect'){
+        if(isIntrus) node = el('rect',{x:cx-r*1.15,y:cy-r*0.62,width:r*2.3,height:r*1.24});
+        else node = el('rect',{x:cx-r*0.8,y:cy-r*0.8,width:r*1.6,height:r*1.6});
+        node.setAttribute('fill',fill);
+      } else {
+        var n = isIntrus ? mino : maj;
+        if(n===0) node = el('circle',{cx:cx,cy:cy,r:r});
+        else node = el('polygon',{points:isoPoly(ngonPoints(n,cx,cy,r,r,rot))});
+        node.setAttribute('fill',fill);
+      }
+      node.setAttribute('fill-opacity','0.55'); node.setAttribute('stroke','var(--text)'); node.setAttribute('stroke-width','2.5');
+      svg.appendChild(node);
+      svg.appendChild(svgText(cx-40,cy-30,16,letters[k]));
+    }
+    var name = kind==='carreRect' ? 'le rectangle qui n\'est pas un carré' : 'la forme qui n\'a pas le même nombre de côtés que les autres';
+    var explain = kind==='carreRect' ? 'Les trois autres sont des carrés (4 côtés égaux). La forme ' + letters[pos] + ' est un rectangle : ses côtés ne sont pas tous égaux.'
+      : (maj===0 ? 'Trois formes sont des cercles (aucun côté)' : 'Trois formes ont ' + maj + ' côtés') + ', mais la forme ' + letters[pos] + ' ' + (mino===0 ? 'est un cercle (aucun côté)' : 'a ' + mino + ' côtés') + '.';
+    return {
+      tag:'Intrus', question:'Trouve l\'intrus : quelle forme est différente des trois autres ?', sub:'Compte les côtés et regarde bien chaque forme.',
+      explain:explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var centers = [[52,52],[148,52],[52,148],[148,148]];
+        for(var k=0;k<4;k++) drawOne(svg, k, k===pos, centers[k][0], centers[k][1]);
+      },
+      cols3:false,
+      choices: letters.map(function(l, k){ return { label:l, ok:k===pos }; })
+    };
+  }
+
   // ===================== Énigmes =====================
   var ENIGME_POOL = [
     { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
@@ -2751,54 +2925,63 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Géométrie ----
-  registerQuizType({ id:'sides', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
+  registerQuizType({ id:'sides', category:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
     randomNote:'La forme est tirée au hasard parmi celles autorisées à ce niveau ; son nombre de côtés en découle de façon fixe (ce n\'est pas lui qui est tiré, seule la forme l\'est).',
     generate:function(level){ return genSidesVerticesQuestion('sides', level); } });
-  registerQuizType({ id:'vertices', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
+  registerQuizType({ id:'vertices', category:'formes', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
     randomNote:'Même principe que "Côtés" : la forme est tirée au hasard, son nombre de sommets en découle de façon fixe.',
     generate:function(level){ return genSidesVerticesQuestion('vertices', level); } });
-  registerQuizType({ id:'name', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
+  registerQuizType({ id:'name', category:'formes', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
     randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.',
     generate:genNameQuestion });
-  registerQuizType({ id:'align', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
+  registerQuizType({ id:'align', category:'formes', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
     randomNote:'Les 3 points (alignés ou non) et leur disposition sont tirés au hasard à chaque question.',
     generate:genAlignQuestion });
-  registerQuizType({ id:'milieu', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
+  registerQuizType({ id:'milieu', category:'formes', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
     randomNote:'La position du segment et les formes-repères sont tirées au hasard à chaque question.',
     generate:genMilieuQuestion });
-  registerQuizType({ id:'coord', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
+  registerQuizType({ id:'coord', category:'repere', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
     randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.',
     generate:genCoordQuestion });
-  registerQuizType({ id:'angle', label:'Angles', longLabel:'Angles (droit/aigu/obtus)', defaultLevels:[1,2],
+  registerQuizType({ id:'angle', category:'formes', label:'Angles', longLabel:'Angles (droit/aigu/obtus)', defaultLevels:[1,2],
     randomNote:'La catégorie (droit/aigu/obtus) et la valeur en degrés sont tirées au hasard. C\'est le NIVEAU qui resserre l\'écart minimum autour de 90° (14° en Moyen, 7° en Difficile), rendant la distinction plus fine à l\'œil.',
     generate:genAngleQuestion });
-  registerQuizType({ id:'image', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
+  registerQuizType({ id:'image', category:'formes', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
     randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.',
     generate:function(){ return pickFresh('image', IMAGE_QUESTIONS)(); } });
-  registerQuizType({ id:'coordFind', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
+  registerQuizType({ id:'coordFind', category:'repere', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
     randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.',
     generate:genCoordFindQuestion });
-  registerQuizType({ id:'codage', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
+  registerQuizType({ id:'codage', category:'repere', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
     randomNote:'Le point de départ et la suite de flèches (2 à 3 déplacements) sont tirés au hasard.',
     generate:genCodageQuestion });
-  registerQuizType({ id:'chasse', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
+  registerQuizType({ id:'chasse', category:'formes', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
     randomNote:'Le nombre et la disposition des formes affichées sont tirés au hasard à chaque question.',
     generate:genChasseQuestion });
-  registerQuizType({ id:'symAxe', label:'Symétrie', longLabel:'Axe de symétrie', defaultLevels:[1,2],
+  registerQuizType({ id:'symAxe', category:'formes', label:'Symétrie', longLabel:'Axe de symétrie', defaultLevels:[1,2],
     randomNote:'La position des 3 droites candidates est tirée au hasard ; le triangle est toujours isocèle, donc il y a toujours exactement un vrai axe de symétrie parmi elles (règle fixe).',
     generate:genSymAxeQuestion });
-  registerQuizType({ id:'decodage', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
+  registerQuizType({ id:'decodage', category:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
     randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.',
     generate:genDecodageQuestion });
-  registerQuizType({ id:'symVrai', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
+  registerQuizType({ id:'symVrai', category:'formes', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
     randomNote:'La droite proposée est parallèle à un côté (jamais une diagonale, qui prêtait à confusion) : soit exactement au milieu (vrai axe), soit décalée d\'un pourcentage variable (10 à 90%, jamais 50%) tiré au hasard.',
     generate:genSymVraiQuestion });
-  registerQuizType({ id:'enigme', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
+  registerQuizType({ id:'enigme', category:'solides', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
     randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
-  registerQuizType({ id:'suiteFormes', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
+  registerQuizType({ id:'suiteFormes', category:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
     randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
     generate:genSuiteFormesQuestion });
+  registerQuizType({ id:'mesures', category:'mesures', label:'Unités de longueur', longLabel:'Mesures : unités et conversions', defaultLevels:[0,1,2],
+    randomNote:'Facile : choisir l\'unité (mm, cm, m, km). Moyen : + comparer des longueurs en cm et en m. Difficile : conversions (m → cm, km → m) et comparaisons.',
+    generate:genMesuresQuestion });
+  registerQuizType({ id:'perimetre', category:'mesures', label:'Périmètre', longLabel:'Périmètre (le tour d\'une figure)', defaultLevels:[1,2],
+    randomNote:'Facile : rectangle sur quadrillage (on compte les carreaux du tour). Moyen : rectangle ou carré aux côtés donnés. Difficile : triangle équilatéral, pentagone ou hexagone régulier.',
+    generate:genPerimetreQuestion });
+  registerQuizType({ id:'intrus', category:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
+    randomNote:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.',
+    generate:genIntrusQuestion });
   /* ===================== THÈME HORLOGE =====================
      Lire l'heure, Régler l'heure, et la question de Quizz « Lire l'heure ».
   */
@@ -3182,13 +3365,57 @@
     };
   }
 
+  // ---- Calendrier : jours de la semaine et mois ----
+  var JOURS = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+  var MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  function textChoices(correct, pool){
+    var others = shuffle(pool.filter(function(x){ return x!==correct; })).slice(0,3);
+    return shuffle([correct].concat(others)).map(function(l){ return { label:String(l), ok:l===correct }; });
+  }
+  function genCalendrierQuestion(level){
+    var kinds = level===0 ? ['jourApres','jourAvant','semaine'] : level===1 ? ['jourApres','jourAvant','moisApres','moisAvant','annee'] : ['decalage','decalage','moisApres','moisAvant','entreJours'];
+    var kind = pick(kinds), q, explain, correct, pool, sub = 'Réfléchis à l\'ordre des jours ou des mois.';
+    var i = randInt(0,6), m = randInt(0,11);
+    if(kind==='jourApres'){ correct = JOURS[(i+1)%7]; pool = JOURS; q = 'Quel jour vient juste après ' + JOURS[i] + ' ?'; explain = 'Après ' + JOURS[i] + ' vient ' + correct + '.'; }
+    else if(kind==='jourAvant'){ correct = JOURS[(i+6)%7]; pool = JOURS; q = 'Quel jour vient juste avant ' + JOURS[i] + ' ?'; explain = 'Avant ' + JOURS[i] + ' il y a ' + correct + '.'; }
+    else if(kind==='semaine'){ correct = '7 jours'; pool = ['5 jours','6 jours','7 jours','8 jours','10 jours']; q = 'Combien y a-t-il de jours dans une semaine ?'; explain = 'La semaine a 7 jours : lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche.'; }
+    else if(kind==='annee'){ correct = '12 mois'; pool = ['10 mois','11 mois','12 mois','13 mois','52 mois']; q = 'Combien y a-t-il de mois dans une année ?'; explain = 'L\'année a 12 mois, de janvier à décembre.'; }
+    else if(kind==='moisApres'){ correct = MOIS[(m+1)%12]; pool = MOIS; q = 'Quel mois vient juste après ' + MOIS[m] + ' ?'; explain = 'Après ' + MOIS[m] + ' vient ' + correct + '.'; }
+    else if(kind==='moisAvant'){ correct = MOIS[(m+11)%12]; pool = MOIS; q = 'Quel mois vient juste avant ' + MOIS[m] + ' ?'; explain = 'Avant ' + MOIS[m] + ' il y a ' + correct + '.'; }
+    else if(kind==='entreJours'){
+      var a = randInt(0,6), gap = randInt(2,5), b = (a+gap)%7;
+      correct = gap + ' jours'; pool = [2,3,4,5,6].map(function(k){ return k + ' jours'; });
+      q = 'Combien de jours passent de ' + JOURS[a] + ' à ' + JOURS[b] + ' ?';
+      explain = 'De ' + JOURS[a] + ' à ' + JOURS[b] + ', on avance de ' + gap + ' jours.';
+      sub = 'Compte les jours qui passent, un par un.';
+    }
+    else { // decalage : dans N jours / il y a N jours
+      var n = randInt(2,6), fwd = Math.random()<0.6;
+      correct = JOURS[((i + (fwd ? n : -n)) % 7 + 7) % 7]; pool = JOURS;
+      q = 'Aujourd\'hui, c\'est ' + JOURS[i] + '. Quel jour ' + (fwd ? 'sera-t-on dans ' + n + ' jours ?' : 'était-on il y a ' + n + ' jours ?');
+      explain = 'À partir de ' + JOURS[i] + ', on ' + (fwd ? 'avance' : 'recule') + ' de ' + n + ' jours : on arrive à ' + correct + '.';
+      sub = 'Compte les jours un par un, en ' + (fwd ? 'avançant' : 'reculant') + '.';
+    }
+    return {
+      tag:'Calendrier', question:q, sub:sub, explain:explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,125,72,'📅'));
+      },
+      cols3:false, choices: textChoices(correct, pool)
+    };
+  }
+
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
-  registerQuizType({ id:'heure', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'heure', category:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
     generate:function(level){ return genHeureQuestion('m4Svg', level); } });
-  registerQuizType({ id:'duree', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'duree', category:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
     randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
     generate:function(level){ return genDureeQuestion(level); } });
+  registerQuizType({ id:'calendrier', category:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
+    randomNote:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.',
+    generate:genCalendrierQuestion });
   /* ===================== THÈME CALCUL =====================
      Questions de Quizz de calcul : opérations, monnaie, maths de la vie.
   */
@@ -3197,7 +3424,7 @@
     var svg = document.getElementById('m4Svg');
     svg.setAttribute('viewBox','0 0 200 200');
     svg.innerHTML = "";
-    svg.appendChild(svgText(100,112,34,txt));
+    svg.appendChild(svgText(100,112,txt.length>11 ? 24 : 34,txt));
   }
 
   // ===================== Monnaie =====================
@@ -3440,34 +3667,112 @@
     };
   }
 
+  // ===================== Nombres : numération et ordre =====================
+  function bigNumQuestion(tag, question, sub, explain, txt, correct, extra){
+    return {
+      tag:tag, question:question, sub:sub, explain:explain,
+      draw:function(){ drawEquation(txt); },
+      cols3:false,
+      choices: numChoices(correct, extra)
+    };
+  }
+  // -- Numération : dizaines, unités, centaines ; composer un nombre --
+  function genNumerationQuestion(level){
+    var hi = level===0 ? 59 : level===1 ? 99 : 999;
+    var n = level===2 ? randInt(101, hi) : randInt(11, hi);
+    var c = Math.floor(n/100), d = Math.floor(n/10)%10, u = n%10;
+    var kinds = level===0 ? ['chiffreD','chiffreU','compose'] : level===1 ? ['chiffreD','chiffreU','compose','nbDiz'] : ['chiffreC','chiffreD','chiffreU','compose','nbDiz'];
+    var kind = pick(kinds);
+    if(kind==='chiffreD') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des dizaines ?','Le chiffre des dizaines est l\'avant-dernier chiffre.',
+      'Dans ' + n + ', le chiffre des dizaines est ' + d + ' (' + d + ' dizaine' + (d>1?'s':'') + ').', String(n), d, [c, u, d+1, d-1]);
+    if(kind==='chiffreU') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des unités ?','Le chiffre des unités est le dernier chiffre.',
+      'Dans ' + n + ', le chiffre des unités est ' + u + '.', String(n), u, [c, d, u+1, u-1]);
+    if(kind==='chiffreC') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des centaines ?','Le chiffre des centaines est le premier chiffre.',
+      'Dans ' + n + ', le chiffre des centaines est ' + c + '.', String(n), c, [d, u, c+1, c-1]);
+    if(kind==='nbDiz'){
+      var t = randInt(2, 9) * 10 + (level===2 ? randInt(0,9)*100 : 0);
+      var nd = t/10;
+      return bigNumQuestion('Nombres','Combien y a-t-il de dizaines dans ' + t + ' ?','Une dizaine = 10.',
+        t + ' = ' + nd + ' × 10, donc il y a ' + nd + ' dizaines.', String(t), nd, [nd+1, nd-1, t, nd*10, nd+10]);
+    }
+    // composition : 30 + 4 = ?  /  300 + 40 + 7 = ?
+    var txt = level===2 ? (c*100 + ' + ' + d*10 + ' + ' + u) : (d*10 + ' + ' + u);
+    if(level===2 && d===0) txt = c*100 + ' + ' + u;
+    return bigNumQuestion('Nombres','Quel nombre obtient-on ?','Additionne les centaines, dizaines et unités.',
+      txt + ' = ' + n + '.', txt + ' = ?', n, [n+10, n-10, n+1, n-1, n+100, d*10+u]);
+  }
+  // -- Ordre : suivant, précédent, entre, plus grand, plus petit, pair --
+  function genOrdreQuestion(level){
+    var hi = level===0 ? 20 : level===1 ? 100 : 1000;
+    var kinds = level===0 ? ['suivant','precedent','grand','petit'] : ['suivant','precedent','entre','grand','petit','pair'];
+    var kind = pick(kinds);
+    var n = randInt(3, hi-2);
+    if(level>0 && Math.random()<0.4) n = Math.round(n/10)*10 + pick([-1,0,9]);   // frontières de dizaines
+    n = Math.max(3, Math.min(hi-2, n));
+    if(kind==='suivant') return bigNumQuestion('Nombres','Quel nombre vient juste après ' + n + ' ?','Ajoute 1.',(n+1) + ' vient juste après ' + n + ' : ' + n + ' + 1 = ' + (n+1) + '.', n + ' → ?', n+1, [n+2, n-1, n+10, n]);
+    if(kind==='precedent') return bigNumQuestion('Nombres','Quel nombre vient juste avant ' + n + ' ?','Retire 1.',(n-1) + ' vient juste avant ' + n + ' : ' + n + ' - 1 = ' + (n-1) + '.', '? → ' + n, n-1, [n-2, n+1, n-10, n]);
+    if(kind==='entre') return bigNumQuestion('Nombres','Quel nombre est entre ' + (n-1) + ' et ' + (n+1) + ' ?','Cherche le nombre qui est juste au milieu.',(n-1) + ' < ' + n + ' < ' + (n+1) + '.', (n-1) + ' … ' + (n+1), n, [n-2, n+2, n+10, n-10]);
+    if(kind==='pair'){
+      var ev = 2*randInt(1, Math.floor(hi/2)-1);
+      var opts = [], guard2 = 0;
+      while(opts.length<3 && guard2++<200){
+        var od = 2*randInt(0, Math.floor(hi/2)-1) + 1;
+        if(opts.indexOf(od)===-1) opts.push(od);
+      }
+      return {
+        tag:'Nombres', question:'Quel est le nombre pair ?', sub:'Un nombre pair se termine par 0, 2, 4, 6 ou 8.',
+        explain: ev + ' est pair (il se termine par ' + (ev%10) + ') ; les autres sont impairs.',
+        draw:function(){ drawEquation('pair ou impair ?'); }, cols3:false,
+        choices: shuffle([ev].concat(opts)).map(function(v){ return { label:String(v), ok:v===ev }; })
+      };
+    }
+    // plus grand / plus petit parmi 4 nombres
+    var vals = [n], guard = 0;
+    while(vals.length<4 && guard++<50){ var v = randInt(1, hi); if(vals.indexOf(v)===-1) vals.push(v); }
+    var target = kind==='grand' ? Math.max.apply(null, vals) : Math.min.apply(null, vals);
+    return {
+      tag:'Nombres', question: kind==='grand' ? 'Quel est le plus grand de ces nombres ?' : 'Quel est le plus petit de ces nombres ?',
+      sub:'Compare-les un par un.',
+      explain: target + ' est le ' + (kind==='grand' ? 'plus grand' : 'plus petit') + ' : ' + vals.slice().sort(function(a,b){ return a-b; }).join(' < ') + '.',
+      draw:function(){ drawEquation(kind==='grand' ? 'le plus grand ?' : 'le plus petit ?'); }, cols3:false,
+      choices: shuffle(vals.slice()).map(function(v){ return { label:String(v), ok:v===target }; })
+    };
+  }
+
   // ---- Déclaration des types de Quizz du thème Calcul ----
-  registerQuizType({ id:'calc', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
+  registerQuizType({ id:'calc', category:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
     generate:genCalcQuestion });
-  registerQuizType({ id:'monnaie', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
+  registerQuizType({ id:'monnaie', category:'problemes', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
     generate:genMonnaieQuestion });
-  registerQuizType({ id:'vie', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
+  registerQuizType({ id:'vie', category:'problemes', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
-  registerQuizType({ id:'soustraction', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
+  registerQuizType({ id:'soustraction', category:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
     randomNote:'a - b avec b plus petit que a. Facile : nombres jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 60 (avec retenues).',
     generate:genSoustractionQuestion });
-  registerQuizType({ id:'doubleMoitie', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
+  registerQuizType({ id:'doubleMoitie', category:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
     randomNote:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 50.',
     generate:genDoubleMoitieQuestion });
-  registerQuizType({ id:'complement', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'complement', category:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
     randomNote:'« a + ? = cible ». Facile : compléments à 10 ; Moyen : à 20 ; Difficile : à 100 (multiples de 5).',
     generate:genComplementQuestion });
-  registerQuizType({ id:'tables', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
+  registerQuizType({ id:'tables', category:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
     randomNote:'Facile : tables de 2 et de 10 ; Moyen : 2, 5 et 10 ; Difficile : 2, 3, 4, 5, 10, avec parfois le facteur manquant (5 × ? = 35).',
     generate:genTableQuestion });
-  registerQuizType({ id:'compare', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'compare', category:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
     randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
     generate:genCompareQuestion });
-  registerQuizType({ id:'suiteNombres', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
+  registerQuizType({ id:'suiteNombres', category:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
     randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
     generate:genSuiteNombresQuestion });
+  registerQuizType({ id:'numeration', category:'nombres', label:'Dizaines et unités', longLabel:'Dizaines et unités (numération)', defaultLevels:[0,1,2],
+    randomNote:'Chiffre des dizaines/unités (centaines en Difficile), nombre de dizaines, ou composer un nombre (30 + 4). Facile : jusqu\'à 59 ; Moyen : jusqu\'à 99 ; Difficile : jusqu\'à 999.',
+    generate:genNumerationQuestion });
+  registerQuizType({ id:'ordre', category:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
+    randomNote:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à 20 ; Moyen : jusqu\'à 100 ; Difficile : jusqu\'à 1000, souvent autour des changements de dizaine.',
+    generate:genOrdreQuestion });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */
@@ -3992,15 +4297,19 @@
   function drawSolidCylindre(svg){
     var cx=100, topCy=62, botCy=150, rx=46, ry=16;
     svg.appendChild(el('rect',{x:cx-rx,y:topCy,width:2*rx,height:botCy-topCy,fill:'var(--accent2)'}));
+    svg.appendChild(el('path',{d:'M '+(cx-rx)+' '+botCy+' A '+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+botCy+' Z', fill:'var(--accent2)'}));
     svg.appendChild(el('line',{x1:cx-rx,y1:topCy,x2:cx-rx,y2:botCy,stroke:'var(--text)','stroke-width':2}));
     svg.appendChild(el('line',{x1:cx+rx,y1:topCy,x2:cx+rx,y2:botCy,stroke:'var(--text)','stroke-width':2}));
     svg.appendChild(el('path',{d:'M '+(cx-rx)+' '+botCy+' A '+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+botCy, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('path',{d:'M '+(cx-rx)+' '+botCy+' A '+rx+' '+ry+' 0 0 1 '+(cx+rx)+' '+botCy, fill:'none', stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'5,4'}));
     svg.appendChild(el('ellipse',{cx:cx,cy:topCy,rx:rx,ry:ry,fill:'var(--accent3)',stroke:'var(--text)','stroke-width':2}));
   }
   function drawSolidCone(svg){
     var rx=48, ry=16, baseCy=150, apex=[100,40];
     svg.appendChild(el('polygon',{points:isoPoly([apex,[100-rx,baseCy],[100+rx,baseCy]]),fill:'var(--accent2)'}));
-    svg.appendChild(el('ellipse',{cx:100,cy:baseCy,rx:rx,ry:ry,fill:'var(--accent3)',stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('path',{d:'M '+(100-rx)+' '+baseCy+' A '+rx+' '+ry+' 0 0 0 '+(100+rx)+' '+baseCy+' Z', fill:'var(--accent2)'}));
+    svg.appendChild(el('path',{d:'M '+(100-rx)+' '+baseCy+' A '+rx+' '+ry+' 0 0 0 '+(100+rx)+' '+baseCy, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('path',{d:'M '+(100-rx)+' '+baseCy+' A '+rx+' '+ry+' 0 0 1 '+(100+rx)+' '+baseCy, fill:'none', stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'5,4'}));
     svg.appendChild(el('line',{x1:apex[0],y1:apex[1],x2:100-rx,y2:baseCy,stroke:'var(--text)','stroke-width':2}));
     svg.appendChild(el('line',{x1:apex[0],y1:apex[1],x2:100+rx,y2:baseCy,stroke:'var(--text)','stroke-width':2}));
   }
@@ -4057,20 +4366,40 @@
     }
     return pts;
   }
+  // Prisme droit à base régulière à n côtés, en perspective : on le dessine EN
+  // ENTIER, comme les autres solides (cube, pyramide…) — les arêtes cachées
+  // sont en pointillés. Vue de dessus légère : une face rectangulaire est
+  // toujours bien en face ; une face latérale est visible si son milieu est du
+  // côté « avant » (sinus > 0) ; une arête est cachée si toutes les faces qui la
+  // touchent sont cachées.
   function drawSolidPrismeN(svg, n){
-    var cx=100, rx=46, ry=17, topCy=62, botCy=148;
-    var top = ngonPoints(n,cx,topCy,rx,ry,-90);
-    var bot = ngonPoints(n,cx,botCy,rx,ry,-90);
-    svg.appendChild(el('rect',{x:cx-rx,y:topCy,width:2*rx,height:botCy-topCy,fill:'var(--accent2)'}));
-    svg.appendChild(el('line',{x1:cx-rx,y1:topCy,x2:cx-rx,y2:botCy, stroke:'var(--text)','stroke-width':2}));
-    svg.appendChild(el('line',{x1:cx+rx,y1:topCy,x2:cx+rx,y2:botCy, stroke:'var(--text)','stroke-width':2}));
-    var front = bot.filter(function(p){ return p[1] >= botCy - 0.01; }).sort(function(a,b){ return a[0]-b[0]; });
-    if(front.length>1){
-      var d = 'M '+front[0][0]+' '+front[0][1];
-      for(var i=1;i<front.length;i++) d += ' L '+front[i][0]+' '+front[i][1];
-      svg.appendChild(el('path',{d:d, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    var cx=100, rx=52, ry=20, topCy=58, botCy=146;
+    var rot = n===3 ? 90 : 90 - 180/n;   // triangle : une arête (sommet) en face, pour bien voir 2 faces latérales
+    var top = ngonPoints(n,cx,topCy,rx,ry,rot);
+    var bot = ngonPoints(n,cx,botCy,rx,ry,rot);
+    var front = [];                                    // face k = entre les sommets k et k+1
+    for(var k=0;k<n;k++){
+      var mid = (rot + (k+0.5)*360/n) * Math.PI/180;
+      front.push(Math.sin(mid) > 0.01);
     }
-    svg.appendChild(el('polygon',{points:isoPoly(top), fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2}));
+    var colors = ['var(--accent)','var(--accent2)','var(--accent3)'];
+    for(k=0;k<n;k++){
+      if(front[k]) solidFace(svg, [top[k], top[(k+1)%n], bot[(k+1)%n], bot[k]], colors[k%3]);
+    }
+    solidFace(svg, top, 'var(--accent3)');
+    // arêtes cachées d'abord (pointillés)
+    for(k=0;k<n;k++){
+      var prev = (k+n-1)%n;
+      if(!front[k] && !front[prev]) solidEdge(svg, top[k], bot[k], true);   // arête verticale
+      if(!front[k]) solidEdge(svg, bot[k], bot[(k+1)%n], true);            // arête du bas, au fond
+    }
+    // arêtes visibles
+    for(k=0;k<n;k++){
+      var prev2 = (k+n-1)%n;
+      solidEdge(svg, top[k], top[(k+1)%n], false);
+      if(front[k] || front[prev2]) solidEdge(svg, top[k], bot[k], false);
+      if(front[k]) solidEdge(svg, bot[k], bot[(k+1)%n], false);
+    }
   }
   function drawSolidPrismeTri(svg){ drawSolidPrismeN(svg,3); }
   function drawSolidPrismePenta(svg){ drawSolidPrismeN(svg,5); }
@@ -4203,10 +4532,10 @@
   }
 
   // ---- Déclaration des types de Quizz sur les solides ----
-  registerQuizType({ id:'solideNom', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
+  registerQuizType({ id:'solideNom', category:'solides', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
     randomNote:'Le solide est tiré au hasard parmi les 6 solides connus ; son nom (la réponse) en découle de façon fixe.',
     generate:genSolideNomQuestion });
-  registerQuizType({ id:'solideCompte', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
+  registerQuizType({ id:'solideCompte', category:'solides', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
     randomNote:'Le solide (cube/pavé/pyramide) et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant est ensuite fixe pour ce solide.',
     generate:genSolideCompteQuestion });
   /* ===================== QUIZZ (moteur) + ORCHESTRATEUR + CONFIGURATION DES ACTIVITÉS =====================
@@ -4242,6 +4571,7 @@
     { name:'Difficile', types:[] }
   ];
   var m4TypeFilter = 'random';
+  var m4CategoryFilter = 'all';   // mode Manuel : « Aléatoire » se limite à cette sous-catégorie
   var m4Current = null;
 
   // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
@@ -4256,7 +4586,12 @@
   }
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
-    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pickOther(lv.types, lastQcmType);
+    var poolTypes = lv.types;
+    if(m4CategoryFilter!=='all'){
+      var inCat = lv.types.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===m4CategoryFilter; });
+      if(inCat.length) poolTypes = inCat;
+    }
+    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pickOther(poolTypes, lastQcmType);
     lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     return (quizTypeById(type) || quizTypeById('image')).generate(globalLevel);
@@ -4391,6 +4726,7 @@
   };
   var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
   var currentAconfFamily = 'qcm';
+  var aconfOpenCats = {};
   function flashAconfWarning(){
     var wrap = document.getElementById('activity-config-list');
     wrap.classList.remove('shake');
@@ -4444,7 +4780,19 @@
     var wrap = document.getElementById('activity-config-list');
     wrap.innerHTML = '';
     if(familyKey === 'qcm'){
-      QCM_TYPE_DEFS.forEach(function(def){ wrap.appendChild(buildAconfItem(def, 'qcm')); });
+      // regroupé par sous-catégorie, chaque groupe repliable (le premier ouvert)
+      QCM_CATEGORIES.forEach(function(cat, ci){
+        var defs = QCM_TYPE_DEFS.filter(function(d){ return quizCategoryId(d)===cat.id; });
+        if(!defs.length) return;
+        var det = document.createElement('details'); det.className = 'aconf-cat';
+        if(aconfOpenCats[cat.id] === undefined ? ci===0 : aconfOpenCats[cat.id]) det.open = true;
+        var sum = document.createElement('summary');
+        sum.textContent = cat.icon + ' ' + cat.label + ' (' + defs.length + ')';
+        det.appendChild(sum);
+        det.addEventListener('toggle', function(){ aconfOpenCats[cat.id] = det.open; });
+        defs.forEach(function(def){ det.appendChild(buildAconfItem(def, 'qcm')); });
+        wrap.appendChild(det);
+      });
     } else if(familyKey === 'net'){
       NET_DEFS.forEach(function(def){ wrap.appendChild(buildAconfItem(def, 'net')); });
     } else {
@@ -4506,6 +4854,7 @@
   }
   function refreshManualQcmTypes(){
     var wrap = document.getElementById('manual-qcm-type-wrap');
+    m4CategoryFilter = 'all';
     if(manualFamily !== 'qcm'){ wrap.hidden = true; m4TypeFilter = 'random'; return; }
     wrap.hidden = false;
     // Union de tous les types sur tous les niveaux, pour qu'une activité ne
@@ -4514,14 +4863,31 @@
     M4_LEVELS.forEach(function(lv){
       lv.types.forEach(function(t){ if(allTypes.indexOf(t)===-1) allTypes.push(t); });
     });
-    var labels = ['Aléatoire'].concat(allTypes.map(function(t){ return (quizTypeById(t) && quizTypeById(t).longLabel) || t; }));
-    m4TypeFilter = 'random';
-    buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
-      m4TypeFilter = idx===0 ? 'random' : allTypes[idx-1];
-      rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));
+    var cats = QCM_CATEGORIES.filter(function(c){
+      return allTypes.some(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===c.id; });
+    });
+    function typesOf(catId){
+      return catId==='all' ? allTypes : allTypes.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===catId; });
+    }
+    function buildTypeRow(catId){
+      var list = typesOf(catId);
+      var labels = ['Aléatoire'].concat(list.map(function(t){ return (quizTypeById(t) && quizTypeById(t).longLabel) || t; }));
+      m4TypeFilter = 'random';
+      buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
+        m4TypeFilter = idx===0 ? 'random' : list[idx-1];
+        rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));
+        nextPracticeQuestion();
+        armManualCollapse();
+      });
+    }
+    buildLevelRow(document.getElementById('manual-qcm-cat-row'), ['Toutes'].concat(cats.map(function(c){ return c.icon + ' ' + c.label; })), 0, function(idx){
+      m4CategoryFilter = idx===0 ? 'all' : cats[idx-1].id;
+      buildTypeRow(m4CategoryFilter);
+      rebuildManualLevelRow(qcmTypeLevels('random'));
       nextPracticeQuestion();
       armManualCollapse();
     });
+    buildTypeRow('all');
     rebuildManualLevelRow(qcmTypeLevels('random'));
   }
   // ---- Repli automatique de la liste d'activités après 5s d'inactivité ----
@@ -4569,9 +4935,23 @@
     void exWrap.offsetWidth;
     exWrap.classList.add('qenter');
   }
-  function nextPracticeQuestion(){
-    var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
-    lastFamily = key;
+  // ---- Pas deux fois la même question dans une série ----
+  // On garde l'empreinte des ~80 dernières questions (de quoi couvrir une série
+  // de 20 ou un chrono) ; une question déjà vue est retirée jusqu'à 15 fois.
+  // La mémoire est remise à zéro au changement de niveau, de mode, ou au départ
+  // d'un chrono.
+  var SEEN_MAX = 80;
+  var seenSigs = [];
+  function resetSeenQuestions(){ seenSigs = []; }
+  function questionSignature(key){
+    if(key==='measure') return 'measure|' + globalLevel + '|' + currentLen + '|' + m1RulerStart + '|' + m1SegStart;
+    if(key==='deform') return 'deform|' + m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';');
+    if(key==='net') return 'net|' + NET_DEFS.map(function(n){ return n.obj; }).indexOf(currentNet);
+    if(key==='clock-regler') return 'regler|' + m5Target.hour + ':' + m5Target.minute;
+    var q = key==='qcm' ? m4Current : m5Current;
+    return key + '|' + q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
+  }
+  function generateFamilyQuestion(key){
     showFamily(key);
     if(key==='measure') newMeasureQuestion();
     else if(key==='deform') newDeformQuestion();
@@ -4580,7 +4960,20 @@
     else if(key==='clock-lire') newM5Lire();
     else if(key==='clock-regler') m5rGenTarget();
   }
+  function nextPracticeQuestion(){
+    var sig = null;
+    for(var tries=0; tries<15; tries++){
+      var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
+      lastFamily = key;
+      generateFamilyQuestion(key);
+      sig = questionSignature(key);
+      if(seenSigs.indexOf(sig) === -1) break;
+    }
+    seenSigs.push(sig);
+    if(seenSigs.length > SEEN_MAX) seenSigs.shift();
+  }
   function setGlobalLevel(idx){
+    resetSeenQuestions();
     globalLevel = idx;
     resetFreeStreak();
     if(appMode!=='auto') return;
@@ -4591,6 +4984,7 @@
     }
   }
   function setAppMode(mode){
+    resetSeenQuestions();
     appMode = mode;
     resetFreeStreak();
     var isManual = (mode==='manual');
@@ -4701,6 +5095,7 @@
   }
   var countdownLevel = 0; // niveau (0/1/2) sur lequel le défi en cours a été lancé
   function startCountdown(){
+    resetSeenQuestions();
     countdownScore = { correct:0, total:0 };
     countdownRunning = true;
     countdownLevel = globalLevel;
@@ -4929,7 +5324,7 @@
 
   // 15 personnages par clan à débloquer en relevant des défis (12 défis
   // chronométrés + 3 séries sans faute). Le n° "challenge" (0..14) est le même
-  // pour le chat et le brainrot : un défi réussi débloque LES DEUX.
+  // pour le chat et le brainrot : un défi réussi débloque celui du clan actif.
   var REWARD_ROLES = ['classic','support','classic','archer','classic'];
   var CAT_REWARD_DEFS = [
     ['Flocon',9,'halo'],['Muffin',8,'headphones'],['Caramel',10,'scarf'],['Zéphyr',11,'wizard'],
@@ -5226,8 +5621,8 @@
 
   /* ---- Défis : les 15 personnages "récompense" de chaque clan ----
      Ils ne s'achètent pas : on les débloque en relevant un défi. Chaque
-     défi débloque DEUX personnages d'un coup (le chat ET le brainrot du même
-     numéro), pour que les deux clans progressent ensemble.
+     défi débloque UN personnage, dans le clan actif au moment où on le relève
+     (le chat ou le brainrot du même numéro) : chaque clan a sa propre progression.
        - 12 défis chronométrés (3 niveaux x 4 durées) : réussir au moins N
          bonnes réponses avant la fin du temps.
        - 3 séries sans faute (un par niveau) : 20 bonnes réponses d'affilée,
@@ -5253,15 +5648,16 @@
     return 'Défi ' + lvl + ' · série sans faute : ouvre le menu, choisis « ' + lvl + ' » et reste en mode « Aléatoire ». ' +
       'Réponds correctement à ' + c.target + ' questions d\'affilée, sans aucune erreur !';
   }
+  function isBrainClan(){ return currentThemeKey()==='brainrot'; }
   function isChallengeDone(k){
-    return !!ownedCats[CAT_REWARDS[k].id] && !!ownedBrain[BRAIN_REWARDS[k].id];
+    return isBrainClan() ? !!ownedBrain[BRAIN_REWARDS[k].id] : !!ownedCats[CAT_REWARDS[k].id];
   }
-  // Débloque les deux personnages du défi k ; renvoie ceux qui sont NOUVEAUX
-  // (liste vide si le défi était déjà réussi).
+  // Débloque le personnage du défi k dans le clan ACTIF ; renvoie la liste des
+  // NOUVEAUX personnages (vide si ce défi était déjà réussi dans ce clan).
   function completeChallenge(k){
-    var fresh = [], c = CAT_REWARDS[k], b = BRAIN_REWARDS[k];
-    if(!ownedCats[c.id]){ ownedCats[c.id] = true; fresh.push(c); }
-    if(!ownedBrain[b.id]){ ownedBrain[b.id] = true; fresh.push(b); }
+    var fresh = [];
+    if(isBrainClan()){ var b = BRAIN_REWARDS[k]; if(!ownedBrain[b.id]){ ownedBrain[b.id] = true; fresh.push(b); } }
+    else { var c = CAT_REWARDS[k]; if(!ownedCats[c.id]){ ownedCats[c.id] = true; fresh.push(c); } }
     if(fresh.length){
       saveOwned();
       renderShop();
@@ -5328,6 +5724,19 @@
       body.appendChild(p);
     });
   }
+  // Aperçu en pied d'un personnage (touche sur sa carte dans la Boutique).
+  function showSpritePreview(sprite){
+    openInfoDialog(sprite.name, function(body){
+      var art = document.createElement('div');
+      art.className = 'info-art full';
+      renderCreatureVisual(art, sprite, 'full');
+      body.appendChild(art);
+      var role = document.createElement('p');
+      role.className = 'muted';
+      role.textContent = roleLine(sprite) + ' · ' + RARITY_META[sprite.rarity].label;
+      body.appendChild(role);
+    });
+  }
   function showUnlockAnnouncement(fresh, headline){
     openInfoDialog('🎉 ' + (headline || 'Nouveaux personnages !'), function(body){
       var row = document.createElement('div');
@@ -5374,6 +5783,7 @@
     renderSpriteVisual(card, sprite);
     var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
     card.appendChild(nameEl);
+    if(!isReward || isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showSpritePreview(sprite); });
     var rarity = document.createElement('div'); rarity.className='rarity-pill';
     rarity.textContent = RARITY_META[sprite.rarity].label;
     rarity.style.background = RARITY_META[sprite.rarity].color;
@@ -5383,14 +5793,14 @@
     if(isOwned){
       var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
       card.appendChild(tag);
-      var isMascot = mascotSpriteId === sprite.id;
+      var isMascot = activeMascotId() === sprite.id;
       var mascotBtn = document.createElement('button');
       mascotBtn.type = 'button';
       mascotBtn.className = 'sp-mascot-btn' + (isMascot ? ' active' : '');
       mascotBtn.setAttribute('aria-pressed', isMascot ? 'true' : 'false');
       mascotBtn.textContent = isMascot ? '★ Mascotte actuelle' : '☆ Devenir mascotte';
       mascotBtn.addEventListener('click', function(){
-        mascotSpriteId = isMascot ? null : sprite.id;
+        mascotIds[currentThemeKey()] = isMascot ? null : sprite.id;
         saveMascot();
         renderMascotDock();
         renderTopMascotIcon();
@@ -5428,8 +5838,24 @@
     }
     return card;
   }
+  function renderShopMascot(){
+    var panel = document.getElementById('shop-mascot-panel');
+    if(!panel) return;
+    var sprite = activeMascotId() ? findAnySprite(activeMascotId()) : null;
+    panel.innerHTML = '';
+    panel.hidden = !sprite;
+    if(!sprite) return;
+    var art = document.createElement('div'); art.className = 'sm-art';
+    renderCreatureVisual(art, sprite, 'full');
+    var txt = document.createElement('div'); txt.className = 'sm-txt';
+    txt.innerHTML = '<span>Mascotte du clan</span><strong></strong><span></span>';
+    txt.querySelector('strong').textContent = sprite.name;
+    txt.lastChild.textContent = roleLine(sprite);
+    panel.appendChild(art); panel.appendChild(txt);
+  }
   function renderShop(){
     syncShopThemeToAppTheme();
+    renderShopMascot();
     document.getElementById('shop-star-count').textContent = stars;
     var list = currentShopList(), owned = currentOwnedMap();
     var grid = document.getElementById('shop-grid');
@@ -5452,17 +5878,29 @@
      "la mascotte", affichée en tête dans la barre du haut (#mascotIcon) et
      en pied (ou buste+tête) dans le dock du bas (#mascot-dock). Réglée via
      le bouton "Mascotte" sur les cartes débloquées de la Boutique. */
-  var mascotSpriteId = null;
+  // Une mascotte PAR CLAN : en changeant de clan, on retrouve celle de l'autre clan.
+  var mascotIds = { cats:null, brainrot:null };
   (function loadMascot(){
-    try{ var m = localStorage.getItem('geo_mascot_id'); if(m) mascotSpriteId = m; }catch(e){}
+    try{
+      ['cats','brainrot'].forEach(function(k){ var m = localStorage.getItem('geo_mascot_'+k); if(m) mascotIds[k] = m; });
+      // ancienne sauvegarde (une seule mascotte pour tout) : rangée dans son clan
+      var old = localStorage.getItem('geo_mascot_id');
+      if(old){
+        var side = findSprite(BRAINROT_SPRITES, old) ? 'brainrot' : 'cats';
+        if(!mascotIds[side]) mascotIds[side] = old;
+        localStorage.removeItem('geo_mascot_id');
+        localStorage.setItem('geo_mascot_'+side, mascotIds[side]);
+      }
+    }catch(e){}
   })();
+  function activeMascotId(){ return mascotIds ? mascotIds[currentThemeKey()] : null; }
   function saveMascot(){
-    try{ localStorage.setItem('geo_mascot_id', mascotSpriteId || ''); }catch(e){}
+    try{ ['cats','brainrot'].forEach(function(k){ localStorage.setItem('geo_mascot_'+k, mascotIds[k] || ''); }); }catch(e){}
   }
   function renderTopMascotIcon(){
     var iconEl = document.getElementById('mascotIcon');
     if(!iconEl) return;
-    var sprite = mascotSpriteId ? findAnySprite(mascotSpriteId) : null;
+    var sprite = activeMascotId() ? findAnySprite(activeMascotId()) : null;
     iconEl.innerHTML = '';
     if(sprite){
       renderSpriteVisual(iconEl, sprite);
@@ -5486,7 +5924,7 @@
     if(!visualWrap || !svgBig || !faceEl) return;
     var prevCustom = visualWrap.querySelector('.mascot-custom-visual');
     if(prevCustom) prevCustom.remove();
-    var sprite = mascotSpriteId ? findAnySprite(mascotSpriteId) : null;
+    var sprite = activeMascotId() ? findAnySprite(activeMascotId()) : null;
     if(!sprite){
       setHiddenAttr(svgBig, false);
       setHiddenAttr(faceEl, false);
@@ -5525,7 +5963,7 @@
      débloqués, mascotte, équipes de bataille et série en cours. Les
      réglages (thème, effets, affichage) sont conservés. ---- */
   function resetProgress(){
-    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_bt_team_cats','geo_bt_team_brainrot'].forEach(function(k){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot'].forEach(function(k){
       try{ localStorage.removeItem(k); }catch(e){}
     });
     stars = 0;
@@ -5534,7 +5972,7 @@
     Object.keys(ownedBrain).forEach(function(k){ delete ownedBrain[k]; });
     CAT_SPRITES.forEach(function(sp){ if(sp.starter) ownedCats[sp.id] = true; });
     BRAINROT_SPRITES.forEach(function(sp){ if(sp.starter) ownedBrain[sp.id] = true; });
-    mascotSpriteId = null;
+    mascotIds = { cats:null, brainrot:null };
     btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
     if(typeof resetFreeStreak === 'function') resetFreeStreak();
     saveOwned();

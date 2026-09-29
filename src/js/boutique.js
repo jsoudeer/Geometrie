@@ -108,7 +108,7 @@
 
   // 15 personnages par clan à débloquer en relevant des défis (12 défis
   // chronométrés + 3 séries sans faute). Le n° "challenge" (0..14) est le même
-  // pour le chat et le brainrot : un défi réussi débloque LES DEUX.
+  // pour le chat et le brainrot : un défi réussi débloque celui du clan actif.
   var REWARD_ROLES = ['classic','support','classic','archer','classic'];
   var CAT_REWARD_DEFS = [
     ['Flocon',9,'halo'],['Muffin',8,'headphones'],['Caramel',10,'scarf'],['Zéphyr',11,'wizard'],
@@ -405,8 +405,8 @@
 
   /* ---- Défis : les 15 personnages "récompense" de chaque clan ----
      Ils ne s'achètent pas : on les débloque en relevant un défi. Chaque
-     défi débloque DEUX personnages d'un coup (le chat ET le brainrot du même
-     numéro), pour que les deux clans progressent ensemble.
+     défi débloque UN personnage, dans le clan actif au moment où on le relève
+     (le chat ou le brainrot du même numéro) : chaque clan a sa propre progression.
        - 12 défis chronométrés (3 niveaux x 4 durées) : réussir au moins N
          bonnes réponses avant la fin du temps.
        - 3 séries sans faute (un par niveau) : 20 bonnes réponses d'affilée,
@@ -432,15 +432,16 @@
     return 'Défi ' + lvl + ' · série sans faute : ouvre le menu, choisis « ' + lvl + ' » et reste en mode « Aléatoire ». ' +
       'Réponds correctement à ' + c.target + ' questions d\'affilée, sans aucune erreur !';
   }
+  function isBrainClan(){ return currentThemeKey()==='brainrot'; }
   function isChallengeDone(k){
-    return !!ownedCats[CAT_REWARDS[k].id] && !!ownedBrain[BRAIN_REWARDS[k].id];
+    return isBrainClan() ? !!ownedBrain[BRAIN_REWARDS[k].id] : !!ownedCats[CAT_REWARDS[k].id];
   }
-  // Débloque les deux personnages du défi k ; renvoie ceux qui sont NOUVEAUX
-  // (liste vide si le défi était déjà réussi).
+  // Débloque le personnage du défi k dans le clan ACTIF ; renvoie la liste des
+  // NOUVEAUX personnages (vide si ce défi était déjà réussi dans ce clan).
   function completeChallenge(k){
-    var fresh = [], c = CAT_REWARDS[k], b = BRAIN_REWARDS[k];
-    if(!ownedCats[c.id]){ ownedCats[c.id] = true; fresh.push(c); }
-    if(!ownedBrain[b.id]){ ownedBrain[b.id] = true; fresh.push(b); }
+    var fresh = [];
+    if(isBrainClan()){ var b = BRAIN_REWARDS[k]; if(!ownedBrain[b.id]){ ownedBrain[b.id] = true; fresh.push(b); } }
+    else { var c = CAT_REWARDS[k]; if(!ownedCats[c.id]){ ownedCats[c.id] = true; fresh.push(c); } }
     if(fresh.length){
       saveOwned();
       renderShop();
@@ -507,6 +508,19 @@
       body.appendChild(p);
     });
   }
+  // Aperçu en pied d'un personnage (touche sur sa carte dans la Boutique).
+  function showSpritePreview(sprite){
+    openInfoDialog(sprite.name, function(body){
+      var art = document.createElement('div');
+      art.className = 'info-art full';
+      renderCreatureVisual(art, sprite, 'full');
+      body.appendChild(art);
+      var role = document.createElement('p');
+      role.className = 'muted';
+      role.textContent = roleLine(sprite) + ' · ' + RARITY_META[sprite.rarity].label;
+      body.appendChild(role);
+    });
+  }
   function showUnlockAnnouncement(fresh, headline){
     openInfoDialog('🎉 ' + (headline || 'Nouveaux personnages !'), function(body){
       var row = document.createElement('div');
@@ -553,6 +567,7 @@
     renderSpriteVisual(card, sprite);
     var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
     card.appendChild(nameEl);
+    if(!isReward || isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showSpritePreview(sprite); });
     var rarity = document.createElement('div'); rarity.className='rarity-pill';
     rarity.textContent = RARITY_META[sprite.rarity].label;
     rarity.style.background = RARITY_META[sprite.rarity].color;
@@ -562,14 +577,14 @@
     if(isOwned){
       var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
       card.appendChild(tag);
-      var isMascot = mascotSpriteId === sprite.id;
+      var isMascot = activeMascotId() === sprite.id;
       var mascotBtn = document.createElement('button');
       mascotBtn.type = 'button';
       mascotBtn.className = 'sp-mascot-btn' + (isMascot ? ' active' : '');
       mascotBtn.setAttribute('aria-pressed', isMascot ? 'true' : 'false');
       mascotBtn.textContent = isMascot ? '★ Mascotte actuelle' : '☆ Devenir mascotte';
       mascotBtn.addEventListener('click', function(){
-        mascotSpriteId = isMascot ? null : sprite.id;
+        mascotIds[currentThemeKey()] = isMascot ? null : sprite.id;
         saveMascot();
         renderMascotDock();
         renderTopMascotIcon();
@@ -607,8 +622,24 @@
     }
     return card;
   }
+  function renderShopMascot(){
+    var panel = document.getElementById('shop-mascot-panel');
+    if(!panel) return;
+    var sprite = activeMascotId() ? findAnySprite(activeMascotId()) : null;
+    panel.innerHTML = '';
+    panel.hidden = !sprite;
+    if(!sprite) return;
+    var art = document.createElement('div'); art.className = 'sm-art';
+    renderCreatureVisual(art, sprite, 'full');
+    var txt = document.createElement('div'); txt.className = 'sm-txt';
+    txt.innerHTML = '<span>Mascotte du clan</span><strong></strong><span></span>';
+    txt.querySelector('strong').textContent = sprite.name;
+    txt.lastChild.textContent = roleLine(sprite);
+    panel.appendChild(art); panel.appendChild(txt);
+  }
   function renderShop(){
     syncShopThemeToAppTheme();
+    renderShopMascot();
     document.getElementById('shop-star-count').textContent = stars;
     var list = currentShopList(), owned = currentOwnedMap();
     var grid = document.getElementById('shop-grid');
@@ -631,17 +662,29 @@
      "la mascotte", affichée en tête dans la barre du haut (#mascotIcon) et
      en pied (ou buste+tête) dans le dock du bas (#mascot-dock). Réglée via
      le bouton "Mascotte" sur les cartes débloquées de la Boutique. */
-  var mascotSpriteId = null;
+  // Une mascotte PAR CLAN : en changeant de clan, on retrouve celle de l'autre clan.
+  var mascotIds = { cats:null, brainrot:null };
   (function loadMascot(){
-    try{ var m = localStorage.getItem('geo_mascot_id'); if(m) mascotSpriteId = m; }catch(e){}
+    try{
+      ['cats','brainrot'].forEach(function(k){ var m = localStorage.getItem('geo_mascot_'+k); if(m) mascotIds[k] = m; });
+      // ancienne sauvegarde (une seule mascotte pour tout) : rangée dans son clan
+      var old = localStorage.getItem('geo_mascot_id');
+      if(old){
+        var side = findSprite(BRAINROT_SPRITES, old) ? 'brainrot' : 'cats';
+        if(!mascotIds[side]) mascotIds[side] = old;
+        localStorage.removeItem('geo_mascot_id');
+        localStorage.setItem('geo_mascot_'+side, mascotIds[side]);
+      }
+    }catch(e){}
   })();
+  function activeMascotId(){ return mascotIds ? mascotIds[currentThemeKey()] : null; }
   function saveMascot(){
-    try{ localStorage.setItem('geo_mascot_id', mascotSpriteId || ''); }catch(e){}
+    try{ ['cats','brainrot'].forEach(function(k){ localStorage.setItem('geo_mascot_'+k, mascotIds[k] || ''); }); }catch(e){}
   }
   function renderTopMascotIcon(){
     var iconEl = document.getElementById('mascotIcon');
     if(!iconEl) return;
-    var sprite = mascotSpriteId ? findAnySprite(mascotSpriteId) : null;
+    var sprite = activeMascotId() ? findAnySprite(activeMascotId()) : null;
     iconEl.innerHTML = '';
     if(sprite){
       renderSpriteVisual(iconEl, sprite);
@@ -665,7 +708,7 @@
     if(!visualWrap || !svgBig || !faceEl) return;
     var prevCustom = visualWrap.querySelector('.mascot-custom-visual');
     if(prevCustom) prevCustom.remove();
-    var sprite = mascotSpriteId ? findAnySprite(mascotSpriteId) : null;
+    var sprite = activeMascotId() ? findAnySprite(activeMascotId()) : null;
     if(!sprite){
       setHiddenAttr(svgBig, false);
       setHiddenAttr(faceEl, false);
@@ -704,7 +747,7 @@
      débloqués, mascotte, équipes de bataille et série en cours. Les
      réglages (thème, effets, affichage) sont conservés. ---- */
   function resetProgress(){
-    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_bt_team_cats','geo_bt_team_brainrot'].forEach(function(k){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot'].forEach(function(k){
       try{ localStorage.removeItem(k); }catch(e){}
     });
     stars = 0;
@@ -713,7 +756,7 @@
     Object.keys(ownedBrain).forEach(function(k){ delete ownedBrain[k]; });
     CAT_SPRITES.forEach(function(sp){ if(sp.starter) ownedCats[sp.id] = true; });
     BRAINROT_SPRITES.forEach(function(sp){ if(sp.starter) ownedBrain[sp.id] = true; });
-    mascotSpriteId = null;
+    mascotIds = { cats:null, brainrot:null };
     btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
     if(typeof resetFreeStreak === 'function') resetFreeStreak();
     saveOwned();

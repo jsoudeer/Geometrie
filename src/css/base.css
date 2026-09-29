@@ -267,3 +267,10 @@
   .level-row.level-row-even .level-btn{ flex:1 1 auto; }
   .level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:var(--on-accent); }
 
+
+  .aconf-cat{ margin:0 0 8px; }
+  .aconf-cat > summary{ cursor:pointer; font-family:var(--font-display); font-weight:800; font-size:14px; padding:8px 10px; border-radius:12px; background:var(--surface2); border:2px solid var(--border); list-style:none; }
+  .aconf-cat > summary::-webkit-details-marker{ display:none; }
+  .aconf-cat > summary::after{ content:'▸'; float:right; transition:transform .15s; }
+  .aconf-cat[open] > summary::after{ transform:rotate(90deg); }
+  .aconf-cat[open] > summary{ margin-bottom:8px; }

@@ -94,7 +94,7 @@
     document.querySelectorAll('.coach-avatar').forEach(function(av){
       // La mascotte perso (si choisie) garde son propre visage, pas
       // l'emoji générique du thème (voir renderMascotDock plus bas).
-      if(av.id === 'mascot-face' && mascotSpriteId) return;
+      if(av.id === 'mascot-face' && activeMascotId()) return;
       av.textContent = cfg.mascot;
     });
     try{ localStorage.setItem('geo_theme', th); }catch(e){}
@@ -498,7 +498,7 @@
     document.querySelectorAll('.coach-avatar').forEach(function(av){
       // La mascotte perso (si choisie) garde son propre visage au lieu de
       // l'emoji de réaction générique (voir renderMascotDock plus bas).
-      if(av.id === 'mascot-face' && mascotSpriteId) return;
+      if(av.id === 'mascot-face' && activeMascotId()) return;
       av.textContent = face;
     });
   }
@@ -558,6 +558,26 @@
   //   generate(level)  renvoie la question :
   //     { tag, question, sub, explain, draw:function(){…}, cols3:bool, choices:[{label, ok}] }
   var QCM_TYPE_DEFS = [];
+  // Sous-catégories d'affichage (panneau « Activités & difficulté » et mode Manuel).
+  // Un thème peut en ajouter avec registerQuizCategory ; un type sans catégorie
+  // connue tombe dans « Autres ».
+  var QCM_CATEGORIES = [
+    { id:'formes',    label:'Formes', icon:'🔷' },
+    { id:'repere',    label:'Repérage', icon:'🧭' },
+    { id:'solides',   label:'Solides & énigmes', icon:'🧊' },
+    { id:'temps',     label:'Heure & calendrier', icon:'🕒' },
+    { id:'mesures',   label:'Mesures', icon:'📏' },
+    { id:'nombres',   label:'Nombres', icon:'🔢' },
+    { id:'calcul',    label:'Calcul', icon:'➕' },
+    { id:'problemes', label:'Problèmes & monnaie', icon:'🪙' },
+    { id:'logique',   label:'Suites logiques', icon:'🧩' },
+    { id:'autres',    label:'Autres', icon:'✨' }
+  ];
+  function registerQuizCategory(cat){ QCM_CATEGORIES.splice(QCM_CATEGORIES.length-1, 0, cat); }
+  function quizCategoryId(def){
+    for(var i=0;i<QCM_CATEGORIES.length;i++){ if(QCM_CATEGORIES[i].id===def.category) return def.category; }
+    return 'autres';
+  }
   function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
   function quizTypeById(id){
     for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }

@@ -381,10 +381,54 @@
     };
   }
 
+  // ---- Calendrier : jours de la semaine et mois ----
+  var JOURS = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+  var MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  function textChoices(correct, pool){
+    var others = shuffle(pool.filter(function(x){ return x!==correct; })).slice(0,3);
+    return shuffle([correct].concat(others)).map(function(l){ return { label:String(l), ok:l===correct }; });
+  }
+  function genCalendrierQuestion(level){
+    var kinds = level===0 ? ['jourApres','jourAvant','semaine'] : level===1 ? ['jourApres','jourAvant','moisApres','moisAvant','annee'] : ['decalage','decalage','moisApres','moisAvant','entreJours'];
+    var kind = pick(kinds), q, explain, correct, pool, sub = 'Réfléchis à l\'ordre des jours ou des mois.';
+    var i = randInt(0,6), m = randInt(0,11);
+    if(kind==='jourApres'){ correct = JOURS[(i+1)%7]; pool = JOURS; q = 'Quel jour vient juste après ' + JOURS[i] + ' ?'; explain = 'Après ' + JOURS[i] + ' vient ' + correct + '.'; }
+    else if(kind==='jourAvant'){ correct = JOURS[(i+6)%7]; pool = JOURS; q = 'Quel jour vient juste avant ' + JOURS[i] + ' ?'; explain = 'Avant ' + JOURS[i] + ' il y a ' + correct + '.'; }
+    else if(kind==='semaine'){ correct = '7 jours'; pool = ['5 jours','6 jours','7 jours','8 jours','10 jours']; q = 'Combien y a-t-il de jours dans une semaine ?'; explain = 'La semaine a 7 jours : lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche.'; }
+    else if(kind==='annee'){ correct = '12 mois'; pool = ['10 mois','11 mois','12 mois','13 mois','52 mois']; q = 'Combien y a-t-il de mois dans une année ?'; explain = 'L\'année a 12 mois, de janvier à décembre.'; }
+    else if(kind==='moisApres'){ correct = MOIS[(m+1)%12]; pool = MOIS; q = 'Quel mois vient juste après ' + MOIS[m] + ' ?'; explain = 'Après ' + MOIS[m] + ' vient ' + correct + '.'; }
+    else if(kind==='moisAvant'){ correct = MOIS[(m+11)%12]; pool = MOIS; q = 'Quel mois vient juste avant ' + MOIS[m] + ' ?'; explain = 'Avant ' + MOIS[m] + ' il y a ' + correct + '.'; }
+    else if(kind==='entreJours'){
+      var a = randInt(0,6), gap = randInt(2,5), b = (a+gap)%7;
+      correct = gap + ' jours'; pool = [2,3,4,5,6].map(function(k){ return k + ' jours'; });
+      q = 'Combien de jours passent de ' + JOURS[a] + ' à ' + JOURS[b] + ' ?';
+      explain = 'De ' + JOURS[a] + ' à ' + JOURS[b] + ', on avance de ' + gap + ' jours.';
+      sub = 'Compte les jours qui passent, un par un.';
+    }
+    else { // decalage : dans N jours / il y a N jours
+      var n = randInt(2,6), fwd = Math.random()<0.6;
+      correct = JOURS[((i + (fwd ? n : -n)) % 7 + 7) % 7]; pool = JOURS;
+      q = 'Aujourd\'hui, c\'est ' + JOURS[i] + '. Quel jour ' + (fwd ? 'sera-t-on dans ' + n + ' jours ?' : 'était-on il y a ' + n + ' jours ?');
+      explain = 'À partir de ' + JOURS[i] + ', on ' + (fwd ? 'avance' : 'recule') + ' de ' + n + ' jours : on arrive à ' + correct + '.';
+      sub = 'Compte les jours un par un, en ' + (fwd ? 'avançant' : 'reculant') + '.';
+    }
+    return {
+      tag:'Calendrier', question:q, sub:sub, explain:explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,125,72,'📅'));
+      },
+      cols3:false, choices: textChoices(correct, pool)
+    };
+  }
+
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
-  registerQuizType({ id:'heure', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'heure', category:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
     generate:function(level){ return genHeureQuestion('m4Svg', level); } });
-  registerQuizType({ id:'duree', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'duree', category:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
     randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
     generate:function(level){ return genDureeQuestion(level); } });
+  registerQuizType({ id:'calendrier', category:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
+    randomNote:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.',
+    generate:genCalendrierQuestion });

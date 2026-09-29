@@ -83,3 +83,7 @@ Du fichier unique éditable à `src/` + `tools/build.py`, en trois étapes véri
 
 ## 10. Variété des exercices (29/09/2026)
 Branche `variete-exercices` : horloge 24 h en Difficile ; Régler l'heure à 3 niveaux ; tirage sans remise (`pickFresh` dans `noyau.js`) pour énigmes, illustrations et Maths de la vie ; jamais deux fois le même type de Quizz ni la même famille de suite ; +16 énigmes (46) ; 8 nouveaux types de Quizz (Durées, Suite de formes, Suite de nombres, Soustraction, Doubles et moitiés, Compléments, Tables, Comparer). Vérifié par `golden.js` (seules les clés attendues changent), les tests existants et ~1000 questions tirées par type et par niveau (4 choix distincts, une seule bonne réponse).
+
+## 11. Clans, séries sans répétition, catégories (29/09/2026)
+Branche `evolutions-clans` : mémoire des questions déjà posées (`questionSignature`, `seenSigs` dans l'orchestrateur) ; mascotte par clan (`mascotIds`, clés `geo_mascot_cats` / `geo_mascot_brainrot`, l'ancienne clé `geo_mascot_id` est migrée) ; défis limités au clan actif (`completeChallenge`) ; mascotte en pied et aperçu dans la Boutique ; prismes redessinés en 3D complète avec pointillés (`drawSolidPrismeN`) ; sous-catégories de Quizz (`category` dans `registerQuizType`, `QCM_CATEGORIES` dans `noyau.js`) ; 6 nouveaux types (Dizaines et unités, Ordre des nombres, Calendrier, Mesures, Périmètre, Trouve l'intrus). Nouveaux tests : `clan_check.js`, `repeat_check.js`.
+

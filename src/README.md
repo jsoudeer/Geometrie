@@ -53,6 +53,7 @@ function genMaQuestion(level){          // level : 0 Facile, 1 Moyen, 2 Difficil
 }
 registerQuizType({
   id: 'maQuestion',                      // identifiant unique
+  category: 'calcul',                    // sous-catégorie (voir QCM_CATEGORIES dans noyau.js)
   label: 'Ma question',                  // nom court (panneau de configuration)
   longLabel: 'Ma question, en détail',   // nom dans la liste du mode Manuel
   defaultLevels: [0,1,2],                // niveaux où elle apparaît par défaut
