@@ -23,8 +23,8 @@ src/
     noyau.js            outils partagés (el, shuffle, pick, rand…), thème, sons, effets,
                         mascotte, registre des types de Quizz
     geometrie.js        Mesurer, Déformer + questions de Quizz de géométrie
-    horloge.js          Lire l'heure, Régler l'heure + question « Lire l'heure »
-    calcul.js           Calcul, Monnaie, Maths de la vie
+    horloge.js          Lire l'heure, Régler l'heure + questions « Lire l'heure » et « Durées »
+    calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
     images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py)

@@ -80,3 +80,6 @@ Playwright + Chromium (`/opt/pw-browsers/chromium`). `lib.js` sert le dépôt en
 
 ## 9. Refonte modulaire (29/09/2026)
 Du fichier unique éditable à `src/` + `tools/build.py`, en trois étapes vérifiées par `tools/tests/golden.js` (résultat identique à l'avant sur 1650 éléments) : (A) découpe sans changement, `index.html` identique octet pour octet ; (B1) regroupement du JS par thème ; (B2) registre des types de Quizz (`registerQuizType`). Les scripts de migration jetables ont été retirés (voir l'historique git : commits « Découpe index.html… », « Regroupe le JS… », « Registre des types de Quizz… »).
+
+## 10. Variété des exercices (29/09/2026)
+Branche `variete-exercices` : horloge 24 h en Difficile ; Régler l'heure à 3 niveaux ; tirage sans remise (`pickFresh` dans `noyau.js`) pour énigmes, illustrations et Maths de la vie ; jamais deux fois le même type de Quizz ni la même famille de suite ; +16 énigmes (46) ; 8 nouveaux types de Quizz (Durées, Suite de formes, Suite de nombres, Soustraction, Doubles et moitiés, Compléments, Tables, Comparer). Vérifié par `golden.js` (seules les clés attendues changent), les tests existants et ~1000 questions tirées par type et par niveau (4 choix distincts, une seule bonne réponse).
