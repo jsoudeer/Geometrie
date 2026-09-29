@@ -1,0 +1,269 @@
+  /* Filet de sécurité : le navigateur cache déjà nativement tout élément
+     avec l'attribut "hidden", mais certaines de nos propres règles plus
+     spécifiques (ex. ".mascot-dock svg{ display:block }") l'emportaient
+     sur cette règle native par simple spécificité CSS, laissant le SVG
+     générique visible même une fois "hidden" posé en JS (bug du buste
+     générique qui restait affiché derrière/à côté de la mascotte en pied).
+     Cette règle avec !important garantit que "hidden" gagne toujours. */
+  [hidden]{ display:none !important; }
+
+  /* ================= TOKENS ================= */
+  /* Accessibilité (RGAA 3.2 / WCAG AA) : tous les couples texte/fond
+     ci-dessous ont été mesurés (≥ 4,5:1 pour le texte normal). Le texte
+     posé sur une couleur d'accent utilise --on-accent (sombre dans les deux
+     thèmes) plutôt que du blanc, qui n'était pas assez contrasté sur les
+     accents pastel. Les états correct/incorrect s'appuient aussi sur un
+     symbole (✔ / ✘) et pas seulement sur la couleur. */
+  :root{
+    --bg:#FFF6F0; --surface:#FFFFFF; --surface2:#FFE7EF; --surface3:#FFF0DC;
+    --text:#4A3228; --text-soft:#6F5244; --on-accent:#3B2A20;
+    --accent:#FF8FAE; --accent2:#B79CED; --accent3:#7FD8C4;
+    --good:#17683F; --bad:#B02A2A; --on-good:#FFFFFF; --on-bad:#FFFFFF;
+    --border:#E9C4CE; --control-border:#B9728A; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
+    --focus:#1B4FD8;
+    --font-display:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --font-title:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --font-body:'Nunito', system-ui, sans-serif;
+    --radius:20px;
+    color-scheme: light;
+  }
+  body[data-app-theme="cats"]{
+    --bg:#FFF6F0; --surface:#FFFFFF; --surface2:#FFE7EF; --surface3:#FFF0DC;
+    --text:#4A3228; --text-soft:#6F5244; --on-accent:#3B2A20;
+    --accent:#FF8FAE; --accent2:#B79CED; --accent3:#7FD8C4;
+    --good:#17683F; --bad:#B02A2A; --on-good:#FFFFFF; --on-bad:#FFFFFF;
+    --border:#E9C4CE; --control-border:#B9728A; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
+    --focus:#1B4FD8;
+    --font-display:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --font-title:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --font-body:'Nunito', system-ui, sans-serif;
+    color-scheme: light;
+  }
+  /* Brainrot : la police décorative "Bungee" (majuscules épaisses) n'est
+     plus utilisée que pour le titre court ; les questions, boutons et
+     consignes passent en Rubik gras, bien plus lisible (le principal
+     reproche fait à ce thème). Fond un peu moins sombre/saturé, texte
+     blanc franc, accents lime/rose/orange réservés aux fonds de boutons
+     (avec texte sombre par-dessus) et jamais aux petits textes. */
+  body[data-app-theme="brainrot"]{
+    --bg:#15101F; --surface:#221B36; --surface2:#31274D; --surface3:#2A2140;
+    --text:#FFFFFF; --text-soft:#D9D0F2; --on-accent:#120E1A;
+    --accent:#C6FF3D; --accent2:#FF6BBE; --accent3:#FF9A47;
+    --good:#7BFFAE; --bad:#FF8DA1; --on-good:#0B2A1A; --on-bad:#2B0A12;
+    --border:#5B4A8A; --control-border:#8F7BD0; --shadow:0 10px 28px -10px rgba(198,255,61,.18);
+    --focus:#FFE94D;
+    --font-display:'Rubik', system-ui, sans-serif;
+    --font-title:'Bungee', 'Rubik', sans-serif;
+    --font-body:'Rubik', system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  /* Focus clavier bien visible partout (RGAA 10.7). */
+  :focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+  button:focus-visible, [role="button"]:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+
+  *{box-sizing:border-box;}
+  html, body{ overflow-x:hidden; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    margin:0;
+    transition:background .35s ease, color .35s ease;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    padding:14px 16px calc(130px + env(safe-area-inset-bottom,0px));
+    min-height:100%;
+  }
+
+  h1,h2,h3{ font-family:var(--font-display); margin:0; text-wrap:balance; }
+  .brand h1, .splash-title{ font-family:var(--font-title); }
+
+  /* ============ TOP BAR ============ */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding:6px 4px 12px;
+  }
+  .brand{ display:flex; align-items:flex-start; gap:10px; min-width:0; }
+  /* Colonne de gauche : l'image de la mascotte (ou son emoji) et, juste en
+     dessous, le bouton Menu qui fait apparaître/disparaître la ligne
+     Facile / Moyen / Difficile / Manuel / Boutique. */
+  .brand-left{ display:flex; flex-direction:column; align-items:center; gap:4px; flex:none; }
+  .mascot{ font-size:34px; line-height:1; flex:none; width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+  .brand h1{ font-size:18px; letter-spacing:.2px; margin-top:8px; }
+  .menu-btn{
+    border:1.5px solid var(--border); background:var(--surface2); color:var(--text);
+    border-radius:10px; padding:4px 8px; min-height:28px; cursor:pointer;
+    font-family:var(--font-body); font-weight:800; font-size:12px; line-height:1;
+  }
+  .menu-btn[aria-expanded="true"]{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  /* Bouton de bascule Chats Kawaii <-> Brainrot, à gauche des étoiles. */
+  .theme-toggle{
+    flex:none; width:40px; height:40px; border-radius:50%;
+    background:var(--surface2); border:1.5px solid var(--border);
+    font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  .theme-toggle:active{ transform:scale(.9); }
+  body[data-app-theme="brainrot"] .brand h1{ font-size:15px; letter-spacing:.4px; text-transform:uppercase; }
+  .stars{
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface2); color:var(--text);
+    border:1px solid var(--border);
+    padding:7px 12px; border-radius:999px;
+    font-weight:800; font-size:14px; flex:none;
+    font-variant-numeric: tabular-nums;
+  }
+  .topbar-right{ display:flex; align-items:center; gap:8px; flex:none; }
+  .settings-btn{
+    flex:none; width:38px; height:38px; border-radius:50%;
+    background:var(--surface2); border:1px solid var(--border);
+    font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  .settings-btn:active{ transform:scale(.9) rotate(25deg); }
+
+  /* ============ RÉGLAGES ============ */
+  .settings-overlay{
+    position:fixed; inset:0; background:rgba(20,15,10,.45);
+    display:flex; align-items:center; justify-content:center;
+    z-index:80; padding:16px;
+  }
+  .settings-overlay[hidden]{ display:none; }
+  .settings-panel{
+    max-height:92vh; overflow-y:auto;
+    background:var(--surface); border:1.5px solid var(--border); border-radius:16px;
+    box-shadow:var(--shadow); padding:16px 18px; width:100%; max-width:360px;
+  }
+  .settings-panel-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;
+  }
+  .settings-close{
+    background:var(--surface2); border:1px solid var(--border); border-radius:50%;
+    width:44px; height:44px; font-size:16px; cursor:pointer;
+  }
+  .settings-hint{ font-size:12px; margin-top:8px; }
+  .settings-divider{ border:none; border-top:1px solid var(--border); margin:14px 0; }
+  .settings-checkbox-row{
+    display:flex; align-items:center; gap:8px; font-weight:800; font-size:13.5px;
+    cursor:pointer;
+  }
+  .settings-checkbox-row input{ width:18px; height:18px; accent-color:var(--accent); flex:none; }
+
+  /* ============ CONFIGURATION DES ACTIVITÉS (settings avancés) ============ */
+  .activity-config-panel{ max-width:520px; max-height:88vh; overflow-y:auto; }
+  .aconf-item{
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:12px;
+    padding:10px 12px; margin-bottom:8px;
+  }
+  .aconf-item-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    font-family:var(--font-display); font-weight:800; font-size:13.5px; margin-bottom:6px;
+  }
+  .aconf-level-toggles{ display:flex; gap:5px; flex:none; }
+  .aconf-level-btn{
+    border:1.5px solid var(--border); background:var(--surface); color:var(--text-soft);
+    font-family:var(--font-body); font-weight:800; font-size:11px;
+    border-radius:8px; padding:5px 8px; cursor:pointer; transition:all .15s;
+  }
+  .aconf-level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:var(--on-accent); }
+  .aconf-note{ font-size:11.5px; color:var(--text-soft); line-height:1.45; margin:0; }
+  .aconf-static-card{
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:12px;
+    padding:12px 14px;
+  }
+  .aconf-static-card h3{ font-size:14px; margin-bottom:6px; }
+  .aconf-static-card p{ font-size:12.5px; color:var(--text-soft); line-height:1.55; margin:0; }
+
+  /* ============ TABS ============ */
+  /* flex-wrap + min-width:0 : même précaution que .level-row, pour que
+     l'ajout de nouveaux onglets ne fasse jamais déborder la barre.
+     La barre est repliée par défaut (attribut hidden) : on la fait
+     apparaître avec le bouton Menu de la barre du haut. */
+  .tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .tab-btn{
+    flex:1 1 auto; min-width:60px; min-height:44px; border:2px solid var(--border); background:var(--surface);
+    color:var(--text); cursor:pointer; border-radius:14px;
+    padding:8px 4px; font-family:var(--font-body); font-weight:800; font-size:12.5px;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    transition:all .2s;
+  }
+  .tab-btn .ic{ font-size:18px; }
+  .tab-btn.active{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:18px; box-shadow:var(--shadow);
+    margin-bottom:14px;
+  }
+  .card h2{ font-size:17px; margin-bottom:4px; }
+  .muted{ color:var(--text-soft); font-size:13.5px; line-height:1.5; margin:0 0 12px; }
+
+  /* ============ MODE CHRONO COMPACT ============
+     Pendant un défi chronométré, on veut ne JAMAIS avoir à scroller entre
+     deux questions : la topbar, le sélecteur de thème, les onglets de
+     niveau et le titre "Entraînement" disparaissent, et les espacements
+     sont resserrés. Le bandeau ⏱️/score (#countdown-hud) remplace la
+     topbar comme seul repère du haut pendant le défi. */
+  body.chrono-compact .topbar,
+  body.chrono-compact .tabs,
+  body.chrono-compact #practice-mode,
+  body.chrono-compact #mascot-dock,
+  body.chrono-compact #tab-practice > .card > h2{ display:none; }
+  /* La mascotte fixe en bas de l'écran est masquée pendant le défi, donc
+     l'espace qui lui était réservé en bas de .app ne l'est plus non plus. */
+  body.chrono-compact .app{ padding-top:8px; padding-bottom:16px; }
+  body.chrono-compact #tab-practice > .card{ padding:10px 14px; margin-bottom:0; }
+  body.chrono-compact #countdown-hud{ margin-bottom:8px; }
+  .home-btn{
+    flex:none; width:44px; height:44px; border-radius:50%;
+    background:var(--surface); border:2px solid var(--border); font-size:20px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .home-btn:active{ transform:scale(.92); }
+  body.chrono-compact .muted{ margin-bottom:8px; }
+
+  .btn{
+    font-family:var(--font-display); font-weight:700; font-size:14px;
+    border:none; border-radius:14px; padding:12px 16px; cursor:pointer;
+    background:var(--accent2); color:var(--on-accent); transition:transform .12s, filter .15s;
+  }
+  .btn:active{ transform:scale(.96); }
+  .btn.primary{ background:var(--accent); }
+  .btn.ghost{ background:var(--surface2); color:var(--text); }
+  .btn[disabled]{ opacity:.45; cursor:default; }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+
+  .feedback{
+    margin-top:12px; padding:11px 14px; border-radius:12px;
+    font-weight:800; font-size:14px; display:none; flex-direction:column; align-items:flex-start; gap:4px;
+  }
+  .feedback.show{ display:flex; }
+  .feedback.good{ background:color-mix(in srgb, var(--good) 18%, var(--surface)); color:var(--good); }
+  .feedback.bad{ background:color-mix(in srgb, var(--bad) 16%, var(--surface)); color:var(--bad); }
+  /* Les boîtes de feedback "tappable" peuvent être touchées pour relancer
+     une question, en plus du bouton dédié : plus besoin de viser un petit
+     bouton en bas de l'écran à chaque fois. */
+  .feedback.tappable{ cursor:pointer; }
+  .feedback.tappable.show::after{
+    content:'👉 Touche ici pour continuer'; display:block; margin-top:6px;
+    font-size:11.5px; font-weight:700; opacity:.7;
+  }
+
+  /* ============ LEVEL PILLS (shared) ============ */
+  /* flex-wrap laisse les pastilles retourner à la ligne plutôt que de
+     déborder hors de l'écran quand il y en a beaucoup (ex : les nombreux
+     types de QCM). min-width:0 empêche flexbox d'imposer une largeur
+     minimale basée sur le texte, qui est la cause habituelle du débordement. */
+  .level-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .level-btn{
+    flex:0 1 auto; min-width:0; max-width:100%;
+    border:1.5px solid var(--border); background:var(--surface2); color:var(--text-soft);
+    font-family:var(--font-body); font-weight:800; font-size:11.5px;
+    border-radius:10px; padding:8px 10px; cursor:pointer; transition:all .15s;
+    white-space:normal; line-height:1.25; text-align:center;
+  }
+  .level-row.level-row-even .level-btn{ flex:1 1 auto; }
+  .level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:var(--on-accent); }
+

@@ -1,0 +1,187 @@
+  /* ============ COACH (personnage qui pose la question) ============ */
+  .coach-row{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  .coach-avatar{
+    flex:none; width:44px; height:44px; border-radius:50%;
+    background:var(--surface2); border:2px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+    transition:transform .25s;
+  }
+  .coach-bubble{
+    position:relative; background:var(--surface2); border:1.5px solid var(--border);
+    border-radius:14px; padding:10px 13px; font-family:var(--font-display);
+    font-size:15.5px; font-weight:700; flex:1; text-wrap:balance;
+  }
+  /* Plus de petit visage à côté de la question : c'est le personnage plein
+     pied, en bas à droite de l'écran, qui "pose" les questions. */
+
+  /* ============ EFFETS : réussite / échec ============ */
+  .explain-line{ font-weight:600; font-size:12.5px; margin-top:4px; opacity:.85; }
+  .burst-particle{
+    position:fixed; pointer-events:none; font-size:20px; z-index:9999;
+    animation:burstUp .9s ease-out forwards;
+  }
+  @keyframes burstUp{
+    from{ transform:translate(0,0) scale(.6); opacity:1; }
+    to{ transform:translate(var(--dx,0px), -70px) scale(1.15); opacity:0; }
+  }
+  @keyframes shakeX{
+    10%,90%{ transform:translateX(-2px); } 20%,80%{ transform:translateX(4px); }
+    30%,50%,70%{ transform:translateX(-8px); } 40%,60%{ transform:translateX(8px); }
+  }
+  .shake{ animation:shakeX .4s; }
+  @media (prefers-reduced-motion: reduce){
+    .burst-particle{ animation:none; opacity:0; }
+    .shake{ animation:none; }
+  }
+
+  /* ============ ÉCRAN DE DÉMARRAGE (splash) ============ */
+  .splash-overlay{
+    position:fixed; inset:0; z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    background:linear-gradient(160deg, #FFF6F0 0%, #FFE7EF 55%, #E9E1FF 100%);
+    transition:opacity .35s ease, visibility .35s ease;
+  }
+  .splash-overlay.splash-hide{ opacity:0; visibility:hidden; pointer-events:none; }
+  .splash-card{
+    background:#FFFFFF; border-radius:24px; box-shadow:0 24px 60px -20px rgba(91,64,52,.35);
+    padding:20px 22px 24px; max-width:360px; width:100%; text-align:center;
+    animation:splashPop .55s cubic-bezier(.2,1.2,.4,1);
+  }
+  .splash-art{
+    width:100%; max-width:300px; height:auto; border-radius:18px; overflow:hidden;
+    display:block; margin:0 auto 14px; box-shadow:0 6px 18px -8px rgba(0,0,0,.3);
+  }
+  /* Média perso (image/GIF/vidéo) en remplacement du SVG généré : même
+     cadre que .splash-art, mais un ratio fixe (au lieu de height:auto), car
+     une image/vidéo peut avoir n'importe quel ratio, contrairement au
+     viewBox 320x180 du dessin procédural. */
+  .splash-custom-media{ aspect-ratio:16/9; object-fit:cover; background:#00000010; }
+  .splash-title{ font-size:18.5px; line-height:1.35; color:#5B4034; margin-bottom:8px; }
+  .splash-vs-inline{
+    display:inline-block; background:#FFD24C; color:#5B4034; font-size:12px; font-weight:900;
+    border-radius:8px; padding:2px 7px; margin:0 3px; vertical-align:middle;
+  }
+  .splash-sub{ color:#9C7C6E; font-size:13px; line-height:1.55; margin:0 0 18px; }
+  .splash-start-btn{ width:100%; font-size:15.5px; padding:14px; }
+  @keyframes splashPop{
+    0%{ transform:scale(.86) translateY(14px); opacity:0; }
+    100%{ transform:scale(1) translateY(0); opacity:1; }
+  }
+  @media (prefers-reduced-motion: reduce){ .splash-card{ animation:none; } }
+
+  /* ============ TRANSITION D'ENTRÉE D'UNE NOUVELLE QUESTION ============ */
+  .qenter{ animation:qFadeIn .35s ease; }
+  @keyframes qFadeIn{
+    0%{ opacity:0; transform:translateY(6px); }
+    100%{ opacity:1; transform:translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){ .qenter{ animation:none; } }
+
+  /* ============ MASCOTTE (buste en bas de l'écran) ============ */
+  /* Le plein pied passe SOUS les choix et les textes : le dock est en
+     z-index:1, et tout ce qui se trouve dans une carte (.card > *) est en
+     z-index:2 (voir plus bas). Il reste visible sur le fond de la carte,
+     mais un bouton ou une réponse passe toujours par-dessus, et il est
+     légèrement transparent pour ne jamais gêner la lecture. */
+  .mascot-dock{
+    position:fixed; right:2vw; bottom:0;
+    width:130px; max-width:30vw; z-index:1; pointer-events:none; opacity:.88;
+  }
+  .card > *{ position:relative; z-index:2; }
+  .mascot-dock svg{ width:100%; height:auto; display:block; filter:drop-shadow(0 6px 10px rgba(0,0,0,.15)); }
+  .mascot-dock .mascot-face{
+    position:absolute; top:16%; left:50%; transform:translateX(-50%);
+    width:auto; height:auto; background:none; border:none;
+    font-size:min(15vw, 52px);
+  }
+  .mascot-dock .mascot-face svg, .mascot-dock .mascot-face img{
+    width:min(15vw,52px); height:min(15vw,52px); display:block;
+    border-radius:50%; object-fit:cover;
+  }
+  /* Mascotte perso (personnage débloqué choisi via le bouton "Mascotte") :
+     soit un asset "plein pied" (<id>_full.ext) affiché directement, soit,
+     à défaut, le buste inventé + le portrait du personnage à la place du
+     visage générique. */
+  .mascot-custom-visual{ width:100%; }
+  .mascot-custom-visual .sp-full-img{ width:100%; display:block; filter:drop-shadow(0 6px 10px rgba(0,0,0,.15)); object-fit:contain; }
+  .mascot-dock.talk svg, .mascot-dock.talk .mascot-custom-visual{ animation:mascotBob .5s ease-in-out; }
+  .mascot-dock.good svg, .mascot-dock.good .mascot-custom-visual{ animation:mascotJump .55s ease-out; }
+  .mascot-dock.bad svg, .mascot-dock.bad .mascot-custom-visual{ animation:mascotShake .4s; }
+  @keyframes mascotBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
+  @keyframes mascotJump{
+    0%{ transform:translateY(0) scale(1); }
+    30%{ transform:translateY(-26px) scale(1.06); }
+    60%{ transform:translateY(0) scale(.97); }
+    100%{ transform:translateY(0) scale(1); }
+  }
+  @keyframes mascotShake{
+    10%,90%{ transform:translateX(-3px); } 20%,80%{ transform:translateX(6px); }
+    30%,50%,70%{ transform:translateX(-11px); } 40%,60%{ transform:translateX(11px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .mascot-dock.talk svg, .mascot-dock.good svg, .mascot-dock.bad svg,
+    .mascot-dock.talk .mascot-custom-visual, .mascot-dock.good .mascot-custom-visual, .mascot-dock.bad .mascot-custom-visual{ animation:none; }
+  }
+
+  /* Composite "corps inventé + tête du personnage" (buste générique avec le
+     portrait du personnage choisi superposé), utilisé quand aucun asset
+     "plein pied" n'existe pour ce personnage. */
+  .fullbody-compose{ position:relative; width:100%; }
+  .fullbody-compose > svg{ width:100%; height:auto; display:block; }
+  .fullbody-compose .fb-face{
+    position:absolute; top:12%; left:50%; transform:translateX(-50%);
+    width:38%;
+  }
+  .fullbody-compose .fb-face svg, .fullbody-compose .fb-face img{
+    width:100%; height:auto; display:block; border-radius:50%; object-fit:cover;
+  }
+  /* Icône mascotte perso dans la barre du haut (à la place de l'emoji). */
+  #mascotIcon svg, #mascotIcon img{
+    width:44px; height:44px; display:block; border-radius:50%; object-fit:cover;
+  }
+  /* Tailles réduites quand ces composites servent de carte combattant en Bataille. */
+  .duel-fighter .fullbody-compose, .duel-fighter .sp-full-img{ width:84px; margin:0 auto; }
+  .sprite-card .fullbody-compose, .sprite-card .sp-full-img{ width:64px; margin:0 auto; }
+
+  /* ============ MODE OVERLOAD (effets amplifiés, réglage dans ⚙️) ========= */
+  .overload-pop{
+    position:fixed; top:38%; left:50%; transform:translate(-50%,-50%) scale(.4);
+    font-family:var(--font-display); font-weight:900; font-size:44px;
+    z-index:9999; pointer-events:none; text-shadow:0 3px 0 rgba(0,0,0,.15);
+    animation:overloadPop .9s cubic-bezier(.2,1.6,.4,1) forwards;
+  }
+  .overload-pop.good{ color:var(--good); }
+  .overload-pop.bad{ color:var(--bad); }
+  @keyframes overloadPop{
+    0%{ transform:translate(-50%,-50%) scale(.3) rotate(-8deg); opacity:0; }
+    25%{ transform:translate(-50%,-50%) scale(1.15) rotate(4deg); opacity:1; }
+    45%{ transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; }
+    100%{ transform:translate(-50%,-60%) scale(1) rotate(0deg); opacity:0; }
+  }
+  body.overload-shake{ animation:overloadShakeBody .5s; }
+  @keyframes overloadShakeBody{
+    10%,90%{ transform:translateX(-4px); } 20%,80%{ transform:translateX(8px); }
+    30%,50%,70%{ transform:translateX(-14px); } 40%,60%{ transform:translateX(14px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .overload-pop{ animation:none; opacity:0; }
+    body.overload-shake{ animation:none; }
+  }
+
+  .auto-advance-toast{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%);
+    background:var(--good); color:var(--on-good); font-family:var(--font-display); font-weight:800;
+    font-size:14px; padding:10px 18px; border-radius:999px; box-shadow:var(--shadow);
+    z-index:9999; pointer-events:none;
+    animation:toastPop 2.2s ease-in-out forwards;
+  }
+  @keyframes toastPop{
+    0%{ transform:translateX(-50%) translateY(-16px); opacity:0; }
+    12%{ transform:translateX(-50%) translateY(0); opacity:1; }
+    85%{ transform:translateX(-50%) translateY(0); opacity:1; }
+    100%{ transform:translateX(-50%) translateY(-10px); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .auto-advance-toast{ animation:none; }
+  }
+

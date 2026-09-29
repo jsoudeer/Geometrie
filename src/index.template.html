@@ -1,0 +1,365 @@
+<title>Géo Kawaii vs Brainrot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&family=Bungee&family=Rubik:wght@400;600;700;800&display=swap">
+<style>
+@@CSS@@
+</style>
+
+<div class="app" id="app" lang="fr">
+  <!-- Écran de démarrage : présente le duo Chat kawaii / Brainrot avant
+       d'entrer dans l'appli (voir drawSplashArt). Un export fixe de ce
+       visuel vit aussi dans assets/branding/ pour réutilisation (icône,
+       README, packaging futur). -->
+  <div class="splash-overlay" id="splash-overlay">
+    <div class="splash-card">
+      <svg id="splashSvg" class="splash-art" viewBox="0 0 320 180" role="img" aria-label="Un chat kawaii et un personnage brainrot face à face"></svg>
+      <h1 class="splash-title">Géo Miaou <span class="splash-vs-inline">VS</span> Geo Chaos 9000</h1>
+      <p class="splash-sub">La géométrie CE1 comme un jeu : mesure, formes, quiz et bataille de personnages !</p>
+      <button class="btn primary splash-start-btn" id="splash-start-btn" type="button">Commencer à jouer ▶</button>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-left">
+        <span class="mascot" id="mascotIcon" role="img" aria-label="Ta mascotte">🐱</span>
+        <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="main-nav">☰ Menu</button>
+      </div>
+      <h1 id="appTitle">Géo Miaou</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Passer en mode Brainrot" title="Changer de clan">👹</button>
+      <div class="stars" role="status" aria-label="Tes étoiles">⭐ <span id="starCount">0</span></div>
+      <button class="settings-btn" id="settings-btn" type="button" aria-label="Réglages">⚙️</button>
+    </div>
+  </header>
+
+  <!-- Réglages : intensité des effets (son + confettis) sur les réponses -->
+  <div class="settings-overlay" id="settings-overlay" hidden>
+    <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="settings-panel-head">
+        <h2 id="settings-title">Réglages</h2>
+        <button class="settings-close" id="settings-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <p class="muted">Effets sur les bonnes/mauvaises réponses :</p>
+      <div class="level-row" id="sfx-mode-row"></div>
+      <p class="muted settings-hint" id="sfx-mode-hint"></p>
+
+      <hr class="settings-divider">
+
+      <label class="settings-checkbox-row" for="auto-advance-toggle">
+        <input type="checkbox" id="auto-advance-toggle">
+        <span>Avancement automatique (mode Manuel)</span>
+      </label>
+      <p class="muted settings-hint">En mode Manuel, monte automatiquement au niveau supérieur après plusieurs bonnes réponses d'affilée.</p>
+      <div id="auto-advance-count-wrap" hidden>
+        <p class="muted">Bonnes réponses d'affilée nécessaires :</p>
+        <div class="level-row" id="auto-advance-count-row"></div>
+      </div>
+
+      <hr class="settings-divider">
+
+      <p class="muted">Affichage des personnages en Bataille :</p>
+      <div class="level-row" id="fighter-display-row"></div>
+
+      <hr class="settings-divider">
+
+      <button class="btn ghost" id="open-activity-config-btn" type="button" style="width:100%;">🎚️ Configurer les activités et leur difficulté</button>
+
+      <hr class="settings-divider">
+
+      <!-- Effacer la progression : étoiles, personnages débloqués, mascotte.
+           Les réglages (thème, effets, affichage...) sont conservés. Deux
+           étapes pour éviter un effacement par erreur. -->
+      <button class="btn ghost" id="reset-progress-btn" type="button" style="width:100%;">🗑️ Effacer ma progression</button>
+      <div id="reset-confirm" hidden>
+        <p class="muted settings-hint" role="alert">Tout effacer ? Tes étoiles, tes personnages débloqués et ta mascotte reviendront à zéro. Cette action est définitive.</p>
+        <div class="btn-row">
+          <button class="btn primary" id="reset-yes" type="button">Oui, tout effacer</button>
+          <button class="btn ghost" id="reset-no" type="button">Non, je garde</button>
+        </div>
+      </div>
+      <p class="muted settings-hint" id="reset-done" role="status" hidden>Progression effacée.</p>
+
+      <hr class="settings-divider">
+      <button class="btn ghost" id="unlock-all-btn" type="button" style="width:100%;">🔓 Tout débloquer (pour tester)</button>
+    </div>
+  </div>
+
+  <!-- Fenêtre d'information (explication d'un personnage à débloquer, ou
+       annonce d'un personnage tout juste débloqué). -->
+  <div class="settings-overlay" id="info-overlay" hidden>
+    <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="info-title">
+      <div class="settings-panel-head">
+        <h2 id="info-title">Information</h2>
+        <button class="settings-close" id="info-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <div id="info-body"></div>
+    </div>
+  </div>
+
+  <!-- Configuration avancée : liste de toutes les activités (et, pour Quizz
+       et Patron→Solide, leurs sous-types) avec les niveaux où chacune
+       apparaît actuellement, modifiables à la main, et une note expliquant
+       ce qui est tiré au hasard vs fixe pour chaque épreuve. -->
+  <div class="settings-overlay" id="activity-config-overlay" hidden>
+    <div class="settings-panel activity-config-panel" role="dialog" aria-modal="true" aria-labelledby="aconf-title">
+      <div class="settings-panel-head">
+        <h2 id="aconf-title">Activités &amp; difficulté</h2>
+        <button class="settings-close" id="activity-config-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <p class="muted">Pour Quizz et Patron→Solide, coche les niveaux où chaque épreuve doit apparaître (décoche pour la retirer d'un niveau, coche pour l'y ajouter). Les autres activités n'ont pas de sous-types : une note explique comment leur difficulté fonctionne.</p>
+      <div class="level-row" id="activity-config-family-row"></div>
+      <div id="activity-config-list"></div>
+    </div>
+  </div>
+
+  <nav class="tabs" id="main-nav" aria-label="Choix de l'activité" hidden>
+    <button class="tab-btn active" data-tab="facile" type="button" aria-pressed="true"><span class="ic" aria-hidden="true">🙂</span>Facile</button>
+    <button class="tab-btn" data-tab="moyen" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🤔</span>Moyen</button>
+    <button class="tab-btn" data-tab="difficile" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🔥</span>Difficile</button>
+    <button class="tab-btn" data-tab="manuel" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎯</span>Manuel</button>
+    <button class="tab-btn" data-tab="arena" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎮</span>Boutique</button>
+  </nav>
+
+  <main id="tabContent">
+
+    <!-- ENTRAINEMENT : fusion de tous les anciens onglets (Mesurer,
+         Déformer, Patron->Solide, QCM Formes, Horloge). Le niveau
+         (Facile/Moyen/Difficile) est choisi tout en haut et détermine à la
+         fois la difficulté ET le mélange d'exercices tirés au hasard, pour
+         qu'il n'y ait plus qu'un seul menu à trois entrées. -->
+    <section class="tabpanel" id="tab-practice">
+      <div class="card">
+        <h2>Entraînement</h2>
+        <div class="level-row" id="practice-mode"></div>
+
+        <!-- Mode "Manuel" : choix d'une activité précise, à travailler en
+             boucle (au lieu d'un tirage aléatoire parmi toutes les familles).
+             La liste des activités se replie toute seule au bout de 5s
+             d'inactivité (voir armManualCollapse) pour laisser plus de place
+             à l'exercice ; "Afficher les activités" la fait revenir. -->
+        <div id="manual-picker" hidden>
+          <button class="btn ghost" id="manual-show-activities-btn" type="button" hidden>👁 Afficher les activités</button>
+          <div id="manual-activity-picker">
+            <p class="muted">Choisis une activité à travailler :</p>
+            <div class="level-row" id="manual-family-row"></div>
+            <!-- La famille "Quizz" contient à elle seule une vingtaine de
+                 types de questions différents (côtés, angles, coordonnées,
+                 symétrie, solides, énigmes, calcul...) : ce sélecteur permet
+                 de s'entraîner sur un type précis plutôt que de tous les
+                 mélanger au hasard. -->
+            <div id="manual-qcm-type-wrap" hidden>
+              <p class="muted">Type de question (Quizz) :</p>
+              <div class="level-row" id="manual-qcm-type-row"></div>
+            </div>
+          </div>
+          <div id="manual-level-wrap" hidden>
+            <p class="muted">Niveau :</p>
+            <div class="level-row" id="manual-level-row"></div>
+          </div>
+        </div>
+
+        <!-- Mode "compte à rebours" : réglages avant de démarrer -->
+        <div id="countdown-setup" hidden>
+          <p class="muted">Choisis la durée du défi : réponds à un maximum de questions avant la fin du temps !</p>
+          <div class="level-row" id="countdown-time-row"></div>
+          <div class="btn-row">
+            <button class="btn primary" id="countdown-start-btn" type="button">Démarrer ! ⏱️</button>
+          </div>
+        </div>
+
+        <!-- Mode "compte à rebours" : pendant le défi -->
+        <div id="countdown-hud" class="arena-star-note countdown-hud" hidden>
+          <button class="home-btn" id="countdown-home-btn" type="button" aria-label="Quitter le chronomètre et revenir à l'accueil">🏠</button>
+          <span role="timer" aria-live="off"><span aria-hidden="true">⏱️</span> Temps restant : <strong id="countdown-time-left">60 s</strong> — Bonnes réponses : <strong id="countdown-score-live">0 / 0</strong></span>
+        </div>
+
+        <!-- Mode "compte à rebours" : résultats -->
+        <div id="countdown-results" hidden>
+          <p class="muted" id="countdown-results-text"></p>
+          <div class="btn-row">
+            <button class="btn primary" id="countdown-restart-btn" type="button">Recommencer ↻</button>
+          </div>
+        </div>
+
+        <!-- Zone d'exercice partagée : un seul des blocs "fam-*" ci-dessous
+             est visible à la fois, choisi au hasard par nextPracticeQuestion(). -->
+        <div id="practice-exercise">
+          <span class="qtype-tag" id="practice-family-tag">Mesurer</span>
+          <span class="qtype-tag streak-pill" id="streak-pill" hidden></span>
+
+          <div id="fam-measure" hidden>
+            <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
+            <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>
+            <div class="choices" id="m1-choices"></div>
+            <div class="feedback" id="m1-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m1-next" type="button">Nouvelle activité ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-deform" hidden>
+            <p class="muted" id="m2-instructions">Fais glisser les coins pour transformer la forme.</p>
+            <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>
+            <div class="feedback" id="m2-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>
+              <button class="btn ghost" id="m2-next" type="button">Nouvelle activité ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-net" hidden>
+            <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
+            <div class="stage" id="stage" role="img" aria-label="Patron à plat qui se plie pour former un solide">
+              <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
+            </div>
+            <div class="qcm-choices" id="m3-choices"></div>
+            <div class="feedback" id="m3-feedback"></div>
+            <div class="btn-row">
+              <button class="btn ghost" id="m3-next" type="button" hidden>Nouvelle activité ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-qcm" hidden>
+            <div class="coach-row">
+              <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>
+            </div>
+            <p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>
+            <div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200" role="img" aria-label="Illustration de la question"></svg></div>
+            <div class="qcm-choices" id="m4-choices"></div>
+            <div class="feedback" id="m4-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m4-next" type="button">Nouvelle activité ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-clock-lire" hidden>
+            <div class="coach-row">
+              <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>
+            </div>
+            <p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>
+            <div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200" role="img" aria-label="Horloge à lire"></svg></div>
+            <div class="qcm-choices" id="m5-choices"></div>
+            <div class="feedback" id="m5-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m5-next" type="button">Nouvelle activité ↻</button>
+            </div>
+          </div>
+
+          <div id="fam-clock-regler" hidden>
+            <p class="muted">Place les aiguilles sur : <strong id="m5-target">3 h</strong></p>
+            <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>
+            <div class="feedback" id="m5r-feedback"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>
+              <button class="btn ghost" id="m5r-new" type="button">Nouvelle activité ↻</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 6 : BOUTIQUE + BATAILLE -->
+    <section class="tabpanel" id="tab-arena" hidden>
+      <div class="card">
+        <h2>Boutique &amp; Bataille</h2>
+        <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis, puis forme une équipe pour affronter l'autre clan !</p>
+        <div class="level-row" id="arena-modes"></div>
+
+        <!-- ===== BOUTIQUE =====
+             Le clan affiché suit le clan actif (bouton à gauche des
+             étoiles). Personnages débloqués et à obtenir sont côte à côte
+             dans la même grille. -->
+        <div id="arena-shop-wrap">
+          <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
+          <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
+          <div class="sprite-grid" id="shop-grid"></div>
+        </div>
+
+        <!-- ===== BATAILLE (équipes de cartes) =====
+             Tu joues avec le clan actif (celui du bouton en haut : Chats
+             Kawaii ou Brainrot) et tu affrontes l'autre clan. Une seule
+             caractéristique par personnage : ses points, qui servent à la
+             fois d'attaque et d'énergie. Équipe : 3 classiques, 1 soutien
+             et 1 archer ; 3 cartes sont posées au hasard sur le terrain, et
+             une nouvelle carte entre quand l'une est battue. -->
+        <div id="arena-battle-wrap" hidden>
+
+          <!-- ----- Choix de l'équipe ----- -->
+          <div id="bt-setup">
+            <details class="bt-rules">
+              <summary>📖 Comment ça marche ?</summary>
+              <ul>
+                <li>Chaque personnage a des <strong>points ❤️</strong> : c'est sa force d'attaque <em>et</em> son énergie.</li>
+                <li>Quand tu attaques, la carte visée perd autant de points que ton attaquant en a, et ton attaquant perd autant de points que la carte adverse en avait. Une carte à 0 est battue.</li>
+                <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain.</li>
+                <li>🏹 L'<strong>Archer</strong> attaque de loin : il n'est jamais blessé en retour.</li>
+                <li>Ton équipe : 3 classiques, 1 soutien, 1 archer. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
+              </ul>
+            </details>
+            <p class="muted" id="bt-intro">Forme ton équipe : 3 classiques, 1 soutien et 1 archer.</p>
+            <p class="qtype-tag" id="bt-tag-classic">⚔️ Classiques : <span id="bt-count-classic">0/3</span></p>
+            <div class="sprite-grid" id="bt-grid-classic"></div>
+            <p class="qtype-tag" id="bt-tag-support" style="margin-top:14px;">💖 Soutien : <span id="bt-count-support">0/1</span></p>
+            <div class="sprite-grid" id="bt-grid-support"></div>
+            <p class="qtype-tag" id="bt-tag-archer" style="margin-top:14px;">🏹 Archer : <span id="bt-count-archer">0/1</span></p>
+            <div class="sprite-grid" id="bt-grid-archer"></div>
+            <p class="muted" id="bt-missing" hidden></p>
+            <div class="btn-row" style="justify-content:center;">
+              <button class="btn primary" id="bt-start" type="button" disabled>Commencer le combat ⚔️</button>
+            </div>
+          </div>
+
+          <!-- ----- Terrain ----- -->
+          <div id="bt-arena" hidden>
+            <p class="bt-status" id="bt-status" role="status" aria-live="polite"></p>
+            <div class="bt-side">
+              <p class="bt-side-title" id="bt-enemy-title">Adversaires</p>
+              <div class="bt-field" id="bt-enemy-field"></div>
+              <p class="bt-reserve" id="bt-enemy-reserve"></p>
+            </div>
+            <div class="bt-log" id="bt-log" role="log" aria-live="polite"></div>
+            <div class="bt-side">
+              <p class="bt-side-title">Ton équipe</p>
+              <div class="bt-field" id="bt-player-field"></div>
+              <p class="bt-reserve" id="bt-player-reserve"></p>
+            </div>
+            <div class="btn-row" style="justify-content:center;">
+              <button class="btn ghost" id="bt-quit" type="button">↩️ Abandonner</button>
+            </div>
+          </div>
+
+          <!-- ----- Fin du combat ----- -->
+          <div id="bt-over" hidden>
+            <p class="bt-result" id="bt-over-text" role="status"></p>
+            <div class="btn-row" style="justify-content:center;">
+              <button class="btn primary" id="bt-again" type="button">Rejouer ↻</button>
+              <button class="btn ghost" id="bt-change-team" type="button">Changer d'équipe</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Mascotte : personnage (chat ou brainrot selon le thème) visible jusqu'au
+       tronc en bas de l'écran, qui "pose" les questions et réagit aux
+       réponses (voir setCoachReaction / celebrate). -->
+  <div class="mascot-dock" id="mascot-dock" aria-hidden="true">
+    <div id="mascot-visual">
+      <svg id="mascotBigSvg" viewBox="0 0 200 240"></svg>
+      <span class="coach-avatar mascot-face" id="mascot-face">🐱</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+@@JS@@
+})();
+</script>
