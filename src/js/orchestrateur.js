@@ -115,11 +115,10 @@
     qcm:'fam-qcm', 'clock-lire':'fam-clock-lire', 'clock-regler':'fam-clock-regler'
   };
   var MANUAL_FAMILY_LIST = ['measure','deform','net','qcm','clock-lire','clock-regler'];
-  // "Régler l'heure" est la seule activité qui n'a pas de vrais paliers de
-  // difficulté (voir m5rGenTarget) : en mode Manuel, on masque alors le
-  // sélecteur de niveau pour cette activité-là.
+  // Activités qui ont de vrais paliers de difficulté : en mode Manuel, le
+  // sélecteur de niveau est masqué pour les autres (aucune à ce jour).
   var FAMILIES_WITH_LEVELS = {
-    measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':false
+    measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':true
   };
   // La famille "Quizz" (QCM) regroupe à elle seule ~20 types de questions
   // (M4_LEVELS[*].types) qui étaient auparavant sélectionnables un par un.
@@ -166,7 +165,7 @@
     measure:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
     deform:'Une seule épreuve avec 3 formes cibles (losange, rectangle, parallélogramme) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins en Moyen, les 4 coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
     'clock-lire':'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
-    'clock-regler':'Une seule épreuve, sans paliers de difficulté (identique quel que soit l\'onglet Facile/Moyen/Difficile). L\'heure cible à reproduire est tirée au hasard à chaque question ; c\'est pour ça qu\'elle n\'apparaît pas dans la liste de niveaux du mode Manuel.'
+    'clock-regler':'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h).'
   };
   var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
   var currentAconfFamily = 'qcm';
