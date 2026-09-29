@@ -59,7 +59,9 @@ Un patron à plat se plie en 3D, il faut dire quel solide il forme : **Cube, Pav
 
 *Explication :* chaque patron a sa propre explication (par exemple « 5 carrés, il en faut 6 : il manque une face »). Le dessin est toujours le même pour un patron donné ; seul le choix du patron est tiré au hasard.
 
-### 🧠 Quizz (29 types de questions)
+### 🧠 Quizz (35 types de questions)
+Les types sont regroupés en **sous-catégories** : 🔷 Formes, 🧭 Repérage, 🧊 Solides & énigmes, 🕒 Heure & calendrier, 📏 Mesures, 🔢 Nombres, ➕ Calcul, 🪙 Problèmes & monnaie, 🧩 Suites logiques. Dans « Activités & difficulté » chaque groupe est repliable ; en mode Manuel, on choisit d'abord un thème, puis un type.
+
 Question à choix multiples, avec illustration. Le tableau montre les niveaux où chaque type apparaît.
 
 | Type de question | F | M | D | Ce qui est tiré au hasard |
@@ -92,6 +94,12 @@ Question à choix multiples, avec illustration. Le tableau montre les niveaux o�
 | Compléments | ✔ | ✔ | ✔ | « a + ? = 10 » (F), « … = 20 » (M), « … = 100 » avec multiples de 5 (D) |
 | Tables | | ✔ | ✔ | M : tables de 2, 5, 10 ; D : + 3 et 4, et facteur manquant (5 × ? = 35) |
 | Comparer (<, >, =) | ✔ | ✔ | ✔ | Deux nombres (jusqu'à 20 / 30 / 99) ; en M/D parfois deux additions |
+| Dizaines et unités | ✔ | ✔ | ✔ | Chiffre des dizaines/unités (centaines en D), nombre de dizaines, composer 30 + 4. Jusqu'à 59 / 99 / 999 |
+| Ordre des nombres | ✔ | ✔ | ✔ | Avant / après, entre deux nombres, plus grand / plus petit sur 4, nombre pair (dès M). Jusqu'à 20 / 100 / 1000 |
+| Calendrier | ✔ | ✔ | ✔ | Jour d'avant/d'après (F) ; + mois (M) ; « dans 4 jours », jours qui passent (D) |
+| Mesures : unités | ✔ | ✔ | ✔ | Choisir mm/cm/m/km (F) ; + comparer des longueurs (M) ; conversions m → cm, km → m (D) |
+| Périmètre | | ✔ | ✔ | M : rectangle ou carré aux côtés donnés ; D : triangle, pentagone, hexagone réguliers (F : quadrillage, si activé) |
+| Trouve l'intrus | ✔ | ✔ | ✔ | 4 formes dont une différente (nombre de côtés ; carrés contre rectangle en D) |
 | Suite de nombres | | ✔ | ✔ | Nombre manquant : de 1, 2, 5, 10 (F) ; 2, 3, 5, 10, parfois en descendant (M) ; 3, 4, 6, 7, 9, 11, 20, 25 (D) |
 
 **Formes par niveau (côtés, sommets, nom) :** F triangle, carré, rectangle ; M + pentagone, hexagone, cercle ; D + losange.
@@ -161,3 +169,11 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 - **Affichage des personnages en Bataille** : tête ou plein pied.
 - **Configurer les activités** : chaque type de Quizz et chaque patron peut être ajouté ou retiré d'un niveau.
 - **Effacer ma progression** : remet étoiles, personnages débloqués et mascotte à zéro (en deux étapes).
+
+
+## 5. Un clan = sa propre progression
+- **Une mascotte par clan** : en changeant de clan on retrouve la mascotte de l'autre clan.
+- **Un défi réussi ne débloque que le personnage du clan dans lequel on joue** (il faut le refaire de l'autre côté pour l'autre personnage).
+- La **Boutique** affiche la mascotte du clan en pied ; toucher une carte ouvre l'aperçu plein pied du personnage.
+- **Pas de question répétée** dans une série : l'appli retient les ~80 dernières questions (aléatoire comme chronomètre) ; la mémoire repart à zéro au changement de niveau, de mode ou au départ d'un chrono.
+- Les **solides** sont dessinés en entier, arêtes cachées en pointillés (cube, pavé, pyramides, prismes, cylindre, cône).

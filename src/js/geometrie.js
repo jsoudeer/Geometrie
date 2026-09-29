@@ -1030,6 +1030,140 @@
   }
   function unique(a){ return a.filter(function(v,i){ return a.indexOf(v)===i; }); }
 
+  // ===================== Mesures : unités de longueur =====================
+  var UNITE_SCENES = [
+    ['la longueur d\'un crayon','cm'],['la longueur d\'une gomme','cm'],['la largeur de ton cahier','cm'],['la taille d\'un timbre-poste','cm'],
+    ['la hauteur d\'une maison','m'],['la longueur d\'une cour d\'école','m'],['la longueur d\'un terrain de football','m'],['la hauteur d\'un arbre','m'],
+    ['la distance entre deux villes','km'],['la longueur d\'une route de campagne','km'],['un trajet en train jusqu\'à une autre ville','km'],
+    ['l\'épaisseur d\'une pièce de monnaie','mm'],['l\'épaisseur d\'une feuille de papier','mm'],['la longueur d\'une fourmi','mm']
+  ];
+  var UNITE_NOMS = { mm:'le millimètre (mm)', cm:'le centimètre (cm)', m:'le mètre (m)', km:'le kilomètre (km)' };
+  function genMesuresQuestion(level){
+    var kind = level===0 ? 'unite' : level===1 ? pick(['unite','plusLong']) : pick(['conv','conv','plusLong','conv2']);
+    if(kind==='unite'){
+      var sc = pick(UNITE_SCENES), u = sc[1];
+      return {
+        tag:'Mesures', question:'Avec quelle unité mesure-t-on ' + sc[0] + ' ?', sub:'Pense à la taille : petit, moyen ou très grand.',
+        explain:'Pour ' + sc[0] + ', on utilise ' + UNITE_NOMS[u] + '.',
+        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'📏')); },
+        cols3:false,
+        choices: shuffle(['mm','cm','m','km']).map(function(l){ return { label:l, ok:l===u }; })
+      };
+    }
+    if(kind==='plusLong'){
+      var cands = shuffle([20,30,40,50,60,70,80,90,100,120,150,200,250,300]), vals = cands.slice(0,4);
+      var max = Math.max.apply(null, vals);
+      function fmt(v){ return v>=100 && v%100===0 ? (v/100) + ' m' : v>=100 ? Math.floor(v/100) + ' m ' + (v%100) + ' cm' : v + ' cm'; }
+      return {
+        tag:'Mesures', question:'Quelle est la plus grande longueur ?', sub:'Attention aux unités : 1 m = 100 cm.',
+        explain:fmt(max) + ' est la plus grande : ' + vals.slice().sort(function(a,b){ return a-b; }).map(function(v){ return v + ' cm'; }).join(' < ') + '.',
+        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'📐')); },
+        cols3:false,
+        choices: vals.map(function(v){ return { label:fmt(v), ok:v===max }; })
+      };
+    }
+    // conversions
+    var q, ans, extra;
+    if(kind==='conv'){ var mm = randInt(1,5); q = mm + ' m = ? cm'; ans = mm*100; extra = [mm*10, mm*1000, mm+100, mm*100+10]; }
+    else { var km = randInt(1,5); q = km + ' km = ? m'; ans = km*1000; extra = [km*100, km*10000, km*100+1000, km+1000]; }
+    return {
+      tag:'Mesures', question:'Convertis : ' + q, sub:'1 m = 100 cm et 1 km = 1 000 m.',
+      explain: q.replace('?', String(ans)) + '.',
+      draw:function(){ drawEquation(q); },
+      cols3:false,
+      choices: numChoiceSet(ans, extra).map(function(v){ return { label:String(v), ok:v===ans }; })
+    };
+  }
+
+  // ===================== Périmètre =====================
+  function genPerimetreQuestion(level){
+    var w, h, ans, explain, question, drawFn;
+    if(level===0){
+      w = randInt(2,5); h = randInt(1,4); if(w===h) h = h===1 ? 2 : h-1;
+      ans = 2*(w+h);
+      question = 'Chaque carreau a un côté de 1 cm. Quel est le périmètre du rectangle (le tour) ?';
+      explain = 'Le tour : ' + w + ' + ' + h + ' + ' + w + ' + ' + h + ' = ' + ans + ' cm.';
+      drawFn = function(svg){
+        var c = 22, x0 = (200 - w*c)/2, y0 = (200 - h*c)/2;
+        for(var i=0;i<w;i++) for(var j=0;j<h;j++)
+          svg.appendChild(el('rect',{x:x0+i*c,y:y0+j*c,width:c,height:c,fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':1}));
+        svg.appendChild(el('rect',{x:x0,y:y0,width:w*c,height:h*c,fill:'none',stroke:'var(--text)','stroke-width':3}));
+      };
+    } else if(level===1){
+      var sq = Math.random()<0.4;
+      w = randInt(3,12); h = sq ? w : randInt(2,10); if(!sq && w===h) h = h+1;
+      ans = 2*(w+h);
+      question = sq ? 'Un carré a des côtés de ' + w + ' cm. Quel est son périmètre ?' : 'Un rectangle mesure ' + w + ' cm de long et ' + h + ' cm de large. Quel est son périmètre ?';
+      explain = sq ? 'Le carré a 4 côtés égaux : 4 × ' + w + ' = ' + ans + ' cm.' : 'Le tour : ' + w + ' + ' + h + ' + ' + w + ' + ' + h + ' = ' + ans + ' cm.';
+      drawFn = function(svg){
+        var W = sq ? 90 : 120, H = sq ? 90 : Math.max(50, Math.min(100, 120*h/w));
+        var x0 = (200-W)/2, y0 = (200-H)/2;
+        svg.appendChild(el('rect',{x:x0,y:y0,width:W,height:H,fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':3}));
+        svg.appendChild(svgText(100,y0-8,16,w + ' cm'));
+        svg.appendChild(svgText(x0+W+24,100+5,16,h + ' cm'));
+      };
+    } else {
+      var n = pick([3,5,6]), side = randInt(2,9);
+      ans = n*side;
+      var nm = { 3:'un triangle équilatéral', 5:'un pentagone régulier', 6:'un hexagone régulier' }[n];
+      question = 'C\'est ' + nm + ' : tous ses côtés mesurent ' + side + ' cm. Quel est son périmètre ?';
+      explain = nm.charAt(0).toUpperCase() + nm.slice(1) + ' a ' + n + ' côtés égaux : ' + n + ' × ' + side + ' = ' + ans + ' cm.';
+      drawFn = function(svg){
+        var pts = ngonPoints(n, 100, 108, 62, 62, -90);
+        svg.appendChild(el('polygon',{points:isoPoly(pts),fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':3}));
+        svg.appendChild(svgText(100,24,16,side + ' cm'));
+      };
+    }
+    return {
+      tag:'Périmètre', question:question, sub:'Le périmètre, c\'est la longueur du tour de la figure.', explain:explain,
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; drawFn(svg); },
+      cols3:false,
+      choices: numChoiceSet(ans, [ans+2, ans-2, ans+4, ans-4, w*h, ans+1, ans-1].filter(function(v){ return v>0; })).map(function(v){ return { label:v + ' cm', ok:v===ans }; })
+    };
+  }
+
+  // ===================== Trouve l'intrus =====================
+  function genIntrusQuestion(level){
+    var maj, mino, rotFixed = false, kind;
+    if(level===0){ var t = shuffle([3,4,0]); maj = t[0]; mino = t[1]; }
+    else if(level===1){ var t2 = shuffle([3,4,5,6]); maj = t2[0]; mino = t2[1]; }
+    else if(Math.random()<0.5){ kind = 'carreRect'; rotFixed = true; }
+    else { var t3 = shuffle([5,6,8]); maj = t3[0]; mino = t3[1]; }
+    var pos = randInt(0,3), letters = ['A','B','C','D'], colors = ['var(--accent)','var(--accent2)','var(--accent3)'];
+    function drawOne(svg, k, isIntrus, cx, cy){
+      var fill = colors[randInt(0,2)], r = randInt(24,32);
+      var rot = rotFixed ? -90 : randInt(0,359);
+      var node;
+      if(kind==='carreRect'){
+        if(isIntrus) node = el('rect',{x:cx-r*1.15,y:cy-r*0.62,width:r*2.3,height:r*1.24});
+        else node = el('rect',{x:cx-r*0.8,y:cy-r*0.8,width:r*1.6,height:r*1.6});
+        node.setAttribute('fill',fill);
+      } else {
+        var n = isIntrus ? mino : maj;
+        if(n===0) node = el('circle',{cx:cx,cy:cy,r:r});
+        else node = el('polygon',{points:isoPoly(ngonPoints(n,cx,cy,r,r,rot))});
+        node.setAttribute('fill',fill);
+      }
+      node.setAttribute('fill-opacity','0.55'); node.setAttribute('stroke','var(--text)'); node.setAttribute('stroke-width','2.5');
+      svg.appendChild(node);
+      svg.appendChild(svgText(cx-40,cy-30,16,letters[k]));
+    }
+    var name = kind==='carreRect' ? 'le rectangle qui n\'est pas un carré' : 'la forme qui n\'a pas le même nombre de côtés que les autres';
+    var explain = kind==='carreRect' ? 'Les trois autres sont des carrés (4 côtés égaux). La forme ' + letters[pos] + ' est un rectangle : ses côtés ne sont pas tous égaux.'
+      : (maj===0 ? 'Trois formes sont des cercles (aucun côté)' : 'Trois formes ont ' + maj + ' côtés') + ', mais la forme ' + letters[pos] + ' ' + (mino===0 ? 'est un cercle (aucun côté)' : 'a ' + mino + ' côtés') + '.';
+    return {
+      tag:'Intrus', question:'Trouve l\'intrus : quelle forme est différente des trois autres ?', sub:'Compte les côtés et regarde bien chaque forme.',
+      explain:explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var centers = [[52,52],[148,52],[52,148],[148,148]];
+        for(var k=0;k<4;k++) drawOne(svg, k, k===pos, centers[k][0], centers[k][1]);
+      },
+      cols3:false,
+      choices: letters.map(function(l, k){ return { label:l, ok:k===pos }; })
+    };
+  }
+
   // ===================== Énigmes =====================
   var ENIGME_POOL = [
     { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
@@ -1209,3 +1343,12 @@
   registerQuizType({ id:'suiteFormes', category:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
     randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
     generate:genSuiteFormesQuestion });
+  registerQuizType({ id:'mesures', category:'mesures', label:'Unités de longueur', longLabel:'Mesures : unités et conversions', defaultLevels:[0,1,2],
+    randomNote:'Facile : choisir l\'unité (mm, cm, m, km). Moyen : + comparer des longueurs en cm et en m. Difficile : conversions (m → cm, km → m) et comparaisons.',
+    generate:genMesuresQuestion });
+  registerQuizType({ id:'perimetre', category:'mesures', label:'Périmètre', longLabel:'Périmètre (le tour d\'une figure)', defaultLevels:[1,2],
+    randomNote:'Facile : rectangle sur quadrillage (on compte les carreaux du tour). Moyen : rectangle ou carré aux côtés donnés. Difficile : triangle équilatéral, pentagone ou hexagone régulier.',
+    generate:genPerimetreQuestion });
+  registerQuizType({ id:'intrus', category:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
+    randomNote:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.',
+    generate:genIntrusQuestion });

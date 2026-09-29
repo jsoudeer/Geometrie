@@ -6,7 +6,7 @@
     var svg = document.getElementById('m4Svg');
     svg.setAttribute('viewBox','0 0 200 200');
     svg.innerHTML = "";
-    svg.appendChild(svgText(100,112,34,txt));
+    svg.appendChild(svgText(100,112,txt.length>11 ? 24 : 34,txt));
   }
 
   // ===================== Monnaie =====================
@@ -249,6 +249,78 @@
     };
   }
 
+  // ===================== Nombres : numération et ordre =====================
+  function bigNumQuestion(tag, question, sub, explain, txt, correct, extra){
+    return {
+      tag:tag, question:question, sub:sub, explain:explain,
+      draw:function(){ drawEquation(txt); },
+      cols3:false,
+      choices: numChoices(correct, extra)
+    };
+  }
+  // -- Numération : dizaines, unités, centaines ; composer un nombre --
+  function genNumerationQuestion(level){
+    var hi = level===0 ? 59 : level===1 ? 99 : 999;
+    var n = level===2 ? randInt(101, hi) : randInt(11, hi);
+    var c = Math.floor(n/100), d = Math.floor(n/10)%10, u = n%10;
+    var kinds = level===0 ? ['chiffreD','chiffreU','compose'] : level===1 ? ['chiffreD','chiffreU','compose','nbDiz'] : ['chiffreC','chiffreD','chiffreU','compose','nbDiz'];
+    var kind = pick(kinds);
+    if(kind==='chiffreD') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des dizaines ?','Le chiffre des dizaines est l\'avant-dernier chiffre.',
+      'Dans ' + n + ', le chiffre des dizaines est ' + d + ' (' + d + ' dizaine' + (d>1?'s':'') + ').', String(n), d, [c, u, d+1, d-1]);
+    if(kind==='chiffreU') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des unités ?','Le chiffre des unités est le dernier chiffre.',
+      'Dans ' + n + ', le chiffre des unités est ' + u + '.', String(n), u, [c, d, u+1, u-1]);
+    if(kind==='chiffreC') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des centaines ?','Le chiffre des centaines est le premier chiffre.',
+      'Dans ' + n + ', le chiffre des centaines est ' + c + '.', String(n), c, [d, u, c+1, c-1]);
+    if(kind==='nbDiz'){
+      var t = randInt(2, 9) * 10 + (level===2 ? randInt(0,9)*100 : 0);
+      var nd = t/10;
+      return bigNumQuestion('Nombres','Combien y a-t-il de dizaines dans ' + t + ' ?','Une dizaine = 10.',
+        t + ' = ' + nd + ' × 10, donc il y a ' + nd + ' dizaines.', String(t), nd, [nd+1, nd-1, t, nd*10, nd+10]);
+    }
+    // composition : 30 + 4 = ?  /  300 + 40 + 7 = ?
+    var txt = level===2 ? (c*100 + ' + ' + d*10 + ' + ' + u) : (d*10 + ' + ' + u);
+    if(level===2 && d===0) txt = c*100 + ' + ' + u;
+    return bigNumQuestion('Nombres','Quel nombre obtient-on ?','Additionne les centaines, dizaines et unités.',
+      txt + ' = ' + n + '.', txt + ' = ?', n, [n+10, n-10, n+1, n-1, n+100, d*10+u]);
+  }
+  // -- Ordre : suivant, précédent, entre, plus grand, plus petit, pair --
+  function genOrdreQuestion(level){
+    var hi = level===0 ? 20 : level===1 ? 100 : 1000;
+    var kinds = level===0 ? ['suivant','precedent','grand','petit'] : ['suivant','precedent','entre','grand','petit','pair'];
+    var kind = pick(kinds);
+    var n = randInt(3, hi-2);
+    if(level>0 && Math.random()<0.4) n = Math.round(n/10)*10 + pick([-1,0,9]);   // frontières de dizaines
+    n = Math.max(3, Math.min(hi-2, n));
+    if(kind==='suivant') return bigNumQuestion('Nombres','Quel nombre vient juste après ' + n + ' ?','Ajoute 1.',(n+1) + ' vient juste après ' + n + ' : ' + n + ' + 1 = ' + (n+1) + '.', n + ' → ?', n+1, [n+2, n-1, n+10, n]);
+    if(kind==='precedent') return bigNumQuestion('Nombres','Quel nombre vient juste avant ' + n + ' ?','Retire 1.',(n-1) + ' vient juste avant ' + n + ' : ' + n + ' - 1 = ' + (n-1) + '.', '? → ' + n, n-1, [n-2, n+1, n-10, n]);
+    if(kind==='entre') return bigNumQuestion('Nombres','Quel nombre est entre ' + (n-1) + ' et ' + (n+1) + ' ?','Cherche le nombre qui est juste au milieu.',(n-1) + ' < ' + n + ' < ' + (n+1) + '.', (n-1) + ' … ' + (n+1), n, [n-2, n+2, n+10, n-10]);
+    if(kind==='pair'){
+      var ev = 2*randInt(1, Math.floor(hi/2)-1);
+      var opts = [], guard2 = 0;
+      while(opts.length<3 && guard2++<200){
+        var od = 2*randInt(0, Math.floor(hi/2)-1) + 1;
+        if(opts.indexOf(od)===-1) opts.push(od);
+      }
+      return {
+        tag:'Nombres', question:'Quel est le nombre pair ?', sub:'Un nombre pair se termine par 0, 2, 4, 6 ou 8.',
+        explain: ev + ' est pair (il se termine par ' + (ev%10) + ') ; les autres sont impairs.',
+        draw:function(){ drawEquation('pair ou impair ?'); }, cols3:false,
+        choices: shuffle([ev].concat(opts)).map(function(v){ return { label:String(v), ok:v===ev }; })
+      };
+    }
+    // plus grand / plus petit parmi 4 nombres
+    var vals = [n], guard = 0;
+    while(vals.length<4 && guard++<50){ var v = randInt(1, hi); if(vals.indexOf(v)===-1) vals.push(v); }
+    var target = kind==='grand' ? Math.max.apply(null, vals) : Math.min.apply(null, vals);
+    return {
+      tag:'Nombres', question: kind==='grand' ? 'Quel est le plus grand de ces nombres ?' : 'Quel est le plus petit de ces nombres ?',
+      sub:'Compare-les un par un.',
+      explain: target + ' est le ' + (kind==='grand' ? 'plus grand' : 'plus petit') + ' : ' + vals.slice().sort(function(a,b){ return a-b; }).join(' < ') + '.',
+      draw:function(){ drawEquation(kind==='grand' ? 'le plus grand ?' : 'le plus petit ?'); }, cols3:false,
+      choices: shuffle(vals.slice()).map(function(v){ return { label:String(v), ok:v===target }; })
+    };
+  }
+
   // ---- Déclaration des types de Quizz du thème Calcul ----
   registerQuizType({ id:'calc', category:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
@@ -277,3 +349,9 @@
   registerQuizType({ id:'suiteNombres', category:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
     randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
     generate:genSuiteNombresQuestion });
+  registerQuizType({ id:'numeration', category:'nombres', label:'Dizaines et unités', longLabel:'Dizaines et unités (numération)', defaultLevels:[0,1,2],
+    randomNote:'Chiffre des dizaines/unités (centaines en Difficile), nombre de dizaines, ou composer un nombre (30 + 4). Facile : jusqu\'à 59 ; Moyen : jusqu\'à 99 ; Difficile : jusqu\'à 999.',
+    generate:genNumerationQuestion });
+  registerQuizType({ id:'ordre', category:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
+    randomNote:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à 20 ; Moyen : jusqu\'à 100 ; Difficile : jusqu\'à 1000, souvent autour des changements de dizaine.',
+    generate:genOrdreQuestion });
