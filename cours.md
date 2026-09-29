@@ -73,7 +73,7 @@ Question à choix multiples, avec illustration. Le tableau montre les niveaux o�
 | Lire des coordonnées | ✔ | ✔ | ✔ | Le point sur le quadrillage |
 | Nom du solide | ✔ | ✔ | ✔ | Le solide (12 possibles), parfois retourné en miroir |
 | Monnaie | ✔ | ✔ | ✔ | Les pièces et billets (1, 2, 5, 10, 20 €) |
-| Lire l'heure (QCM) | ✔ | ✔ | ✔ | L'heure ; précision selon le niveau (voir plus bas) |
+| Lire l'heure (QCM) | ✔ | ✔ | ✔ | L'heure ; précision selon le niveau, et en Difficile heures de 0 h à 23 h (voir plus bas) |
 | Angles (droit / aigu / obtus) | | ✔ | ✔ | La catégorie et la valeur ; l'écart avec 90° est de 14° en M et de 7° en D |
 | Photo / illustration | | ✔ | ✔ | 5 scènes (maison, clôture, château, robot, train) avec des éléments qui varient |
 | Trouver sur le quadrillage | | ✔ | ✔ | Les 4 cases et leurs formes |
@@ -97,7 +97,7 @@ Une horloge, 4 heures proposées.
 |---|---|
 | F | Heure pile ou demie |
 | M | + quarts d'heure |
-| D | Toutes les 5 minutes |
+| D | Toutes les 5 minutes **et les heures de 0 h à 23 h** (24 h) : l'énoncé donne le moment de la journée (nuit, matin, après-midi, soir) ; l'après-midi, il faut ajouter 12 h |
 
 ### 🕐 Régler l'heure
 On place soi-même les aiguilles sur une heure donnée (heure pile ou demie). **Pas de niveaux** : identique partout. La petite aiguille se cale toutes les demi-heures.

@@ -175,10 +175,61 @@
       : 'La petite aiguille (les heures) a dépassé le ' + h12 + ' sans atteindre le ' + ((h12%12)+1) + '.';
     return bigTxt + ' ' + smallTxt + ' Il est donc ' + label + '.';
   }
+  // ---- Difficile : les heures de 0 h 00 à 23 h 59 (format 24 h) ----
+  // L'horloge ronde ne dit pas s'il est le matin ou l'après-midi : la question
+  // donne donc le moment de la journée, et la bonne réponse est en heures de 0 à 23.
+  function periodOfDay(h){
+    if(h < 6)  return { phrase:'cette nuit', emoji:'🌙' };
+    if(h < 12) return { phrase:'le matin', emoji:'🌅' };
+    if(h < 18) return { phrase:'l\'après-midi', emoji:'☀️' };
+    return { phrase:'le soir', emoji:'🌆' };
+  }
+  function minutesToLabel24(totalMin){
+    var h = Math.floor(totalMin/60) % 24;
+    var m = totalMin % 60;
+    return m===0 ? (h+' h') : (h+' h '+(m<10?'0'+m:m));
+  }
+  function genHeure24Question(svgId){
+    var hour = randInt(0,23);
+    var minuteVal = pick([0,5,10,15,20,25,30,35,40,45,50,55]);
+    var total = hour*60 + minuteVal;
+    var period = periodOfDay(hour);
+    var hourTip = angleToXY(((hour%12) + minuteVal/60) * 30 - 90, 42);
+    var minTip = angleToXY((minuteVal/60)*360 - 90, 62);
+    var correctLabel = minutesToLabel24(total);
+    // Fausses réponses : le piège classique (oublier d'ajouter ou de retirer 12 h)
+    // et des heures voisines à 5, 10 ou 15 minutes près.
+    var seen = {}; seen[correctLabel] = true;
+    var shifted = minutesToLabel24((total + 720) % 1440);
+    seen[shifted] = true;
+    var near = [];
+    [-3,-2,-1,1,2,3].forEach(function(k){
+      var label = minutesToLabel24(((total + k*5) % 1440 + 1440) % 1440);
+      if(!seen[label]){ seen[label] = true; near.push(label); }
+    });
+    var wrong = [shifted].concat(shuffle(near).slice(0,2));
+    var explain = clockExplain(hour, minuteVal, minutesToClockLabel(total) + ' sur l\'horloge');
+    if(hour===0) explain += ' Juste après minuit, l\'horloge montre 12 mais on dit 0 h : il est ' + correctLabel + '.';
+    else if(hour >= 13) explain += ' Comme c\'est ' + period.phrase + ', on ajoute 12 h : ' + (hour-12) + ' + 12 = ' + hour + '. Il est donc ' + correctLabel + '.';
+    else explain += ' Comme c\'est ' + period.phrase + ', l\'heure ne change pas : on garde ' + correctLabel + '.';
+    return {
+      tag:'Lire l\'heure',
+      question:'C\'est ' + period.phrase + ' ' + period.emoji + '. Quelle heure indique cette horloge ?',
+      sub:'Les heures vont de 0 h à 23 h (l\'après-midi : 13 h, 14 h, 15 h…). Regarde bien les deux aiguilles.',
+      explain: explain,
+      draw:function(){
+        var svg=document.getElementById(svgId); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawClockFace(svg, hourTip, minTip);
+      },
+      cols3:false,
+      choices: shuffle([correctLabel].concat(wrong)).map(function(l){ return { label:l, ok:l===correctLabel }; })
+    };
+  }
   function genHeureQuestion(svgId, level){
     svgId = svgId || 'm4Svg';
     level = level || 0;
-    var step = level===0 ? 30 : (level===1 ? 15 : 5);
+    if(level >= 2) return genHeure24Question(svgId);
+    var step = level===0 ? 30 : 15;
     var hour = 1+randInt(0,11);
     var minuteVal = level===0 ? (Math.random()<0.5?0:30) : pick((function(){
       var opts=[]; for(var m=0;m<60;m+=step) opts.push(m); return opts;
@@ -212,5 +263,5 @@
 
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
   registerQuizType({ id:'heure', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
-    randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, n\'importe quelle tranche de 5 min en Difficile.',
+    randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
     generate:function(level){ return genHeureQuestion('m4Svg', level); } });

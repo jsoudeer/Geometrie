@@ -26,6 +26,8 @@ Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seu
 
 **Accessibilité (RGAA)** : contrastes vérifiés automatiquement dans les deux thèmes, focus visible, libellés pour lecteurs d'écran, boîtes de dialogue fermées par Échap, coins de la forme déplaçables au clavier, ✔ / ✘ en plus de la couleur, police Rubik pour le Brainrot (la police décorative n'est gardée que pour le titre).
 
+**Horloge Difficile en 24 h** (29/09/2026) : « Lire l'heure » et le type de Quizz « Lire l'heure » tirent les heures de 0 h à 23 h 59 au niveau Difficile ; l'énoncé donne le moment de la journée (nuit, matin, après-midi, soir), la réponse est en format 24 h, et le piège « oublier d'ajouter 12 h » est toujours proposé (`genHeure24Question` dans `src/js/horloge.js`). « Régler l'heure » reste à heure pile ou demie.
+
 **Pédagogie** : chaque question a une explication propre (patrons, horloge, alignement, solides, énigmes, angles) ; plus de « ou alors il y a un trou ».
 
 **Réglages** : effets, avancement automatique, affichage des cartes en bataille, configuration des activités, **Effacer ma progression** (2 étapes), « Tout débloquer » (test).
