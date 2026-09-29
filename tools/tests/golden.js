@@ -94,6 +94,10 @@ async function record(outFile) {
     await ev(`setAppMode('manual')`);
     put('panel:manual', await ev(`document.getElementById('manual-picker').innerHTML`));
     await ev(`setAppMode('auto')`);
+    // Panneau « Activités & difficulté » (une liste par famille)
+    for (const fam of JSON.parse(await ev(`JSON.stringify(MANUAL_FAMILY_LIST)`))) {
+      put('aconf:' + fam, await ev(`(function(){ renderActivityConfig('${fam}'); return document.getElementById('activity-config-list').innerHTML; })()`));
+    }
 
     // ---- 3. empreintes de captures d'écran ---------------------------------
     // (une première capture « à blanc » : la toute première est parfois instable

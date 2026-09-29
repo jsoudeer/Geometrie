@@ -79,3 +79,54 @@
     };
   }
 
+  // ---- Paramètres par niveau (0 = Facile, 1 = Moyen, 2 = Difficile) ----
+  // modes : 'add' = a + b ; 'missing' = a + x = c (trouve x). max = plus grand total.
+  var CALC_LEVELS = [
+    { modes:['add'], max:10 },
+    { modes:['add'], max:20 },
+    { modes:['add','missing'], max:20 }
+  ];
+
+  function genCalcQuestion(level){
+    var mode = pick(CALC_LEVELS[level].modes || ['add']);
+    var maxV = CALC_LEVELS[level].max || 10;
+    if(mode==='missing'){
+      // a + x = c : l'enfant retrouve x
+      var a = randInt(0, maxV);
+      var x = randInt(0, maxV - a);
+      var c = a + x;
+      return {
+        tag: 'Calcul',
+        question: 'Trouve x : ' + a + ' + x = ' + c,
+        sub: 'Cherche le nombre qui manque pour que l\'égalité soit vraie.',
+        explain: 'x = ' + c + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + c + '.',
+        draw: function(){ drawEquation(a + ' + x = ' + c); },
+        cols3: false,
+        choices: numChoiceSet(x, [0,1,2,3,4,5,6,7,8,9,10,x+1,x+2,Math.max(0,x-1),Math.max(0,x-2)]).map(function(v){ return { label:String(v), ok: v===x }; })
+      };
+    }
+    // addition simple : a + b
+    var a2 = randInt(0, maxV);
+    var b2 = randInt(0, maxV - a2);
+    var sum = a2 + b2;
+    return {
+      tag: 'Calcul',
+      question: 'Combien font ' + a2 + ' + ' + b2 + ' ?',
+      sub: 'Calcule le résultat de cette addition.',
+      explain: a2 + ' + ' + b2 + ' = ' + sum + '.',
+      draw: function(){ drawEquation(a2 + ' + ' + b2 + ' = ?'); },
+      cols3: false,
+      choices: numChoiceSet(sum, [sum-2,sum-1,sum+1,sum+2,sum+3,Math.max(0,sum-3)].filter(function(v){return v>=0;})).map(function(v){ return { label:String(v), ok: v===sum }; })
+    };
+  }
+
+  // ---- Déclaration des types de Quizz du thème Calcul ----
+  registerQuizType({ id:'calc', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
+    randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
+    generate:genCalcQuestion });
+  registerQuizType({ id:'monnaie', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
+    randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
+    generate:genMonnaieQuestion });
+  registerQuizType({ id:'vie', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
+    randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes, puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
+    generate:genVieQuestion });

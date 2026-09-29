@@ -528,3 +528,18 @@
     return t;
   }
 
+  // ---- Registre des types de Quizz ----
+  // Chaque thème appelle registerQuizType() pour déclarer ses types de questions :
+  //   id            identifiant unique (ex. 'sides')
+  //   label         nom court (panneau « Configurer les activités »)
+  //   longLabel     nom affiché dans la liste du mode Manuel
+  //   defaultLevels niveaux où le type apparaît par défaut : 0 Facile, 1 Moyen, 2 Difficile
+  //   randomNote    ce qui est tiré au hasard, pour le panneau de configuration
+  //   generate(level)  renvoie la question :
+  //     { tag, question, sub, explain, draw:function(){…}, cols3:bool, choices:[{label, ok}] }
+  var QCM_TYPE_DEFS = [];
+  function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
+  function quizTypeById(id){
+    for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }
+    return null;
+  }

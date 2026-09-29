@@ -1553,6 +1553,21 @@
     return t;
   }
 
+  // ---- Registre des types de Quizz ----
+  // Chaque thème appelle registerQuizType() pour déclarer ses types de questions :
+  //   id            identifiant unique (ex. 'sides')
+  //   label         nom court (panneau « Configurer les activités »)
+  //   longLabel     nom affiché dans la liste du mode Manuel
+  //   defaultLevels niveaux où le type apparaît par défaut : 0 Facile, 1 Moyen, 2 Difficile
+  //   randomNote    ce qui est tiré au hasard, pour le panneau de configuration
+  //   generate(level)  renvoie la question :
+  //     { tag, question, sub, explain, draw:function(){…}, cols3:bool, choices:[{label, ok}] }
+  var QCM_TYPE_DEFS = [];
+  function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
+  function quizTypeById(id){
+    for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }
+    return null;
+  }
   /* ===================== THÈME GÉOMÉTRIE =====================
      Mesurer (règle), Déformer (formes) et les questions de Quizz de géométrie :
      côtés, sommets, nom, angles, alignement, milieu, repérage, codage/décodage,
@@ -2599,6 +2614,115 @@
     };
   }
 
+  // ---- Paramètres par niveau (0 = Facile, 1 = Moyen, 2 = Difficile) ----
+  var GEO_LEVELS = [
+    { shapes:['triangle','carre','rectangle'], angleGap:20 },
+    { shapes:['triangle','carre','rectangle','pentagone','hexagone','cercle'], angleGap:14 },
+    { shapes:['triangle','carre','rectangle','pentagone','hexagone','cercle','losange'], angleGap:7 }
+  ];
+
+  // ---- Questions de Quizz déplacées depuis l'ancien moteur (mêmes textes, même tirage) ----
+  function genSidesVerticesQuestion(type, level){
+    var shapeKey = pick(GEO_LEVELS[level].shapes);
+    var meta = SHAPE_META[shapeKey];
+    var correct = (type==='sides') ? meta.sides : meta.vertices;
+    var choices = numChoiceSet(correct, [0,1,2,3,4,5,6,7,8]);
+    return {
+      tag: type==='sides' ? 'Côtés' : 'Sommets',
+      question: type==='sides' ? 'Combien de côtés a cette forme ?' : 'Combien de sommets (angles) a cette forme ?',
+      sub: meta.isCircle ? 'Regarde bien : cette forme est-elle vraiment pointue quelque part ?' : 'Observe bien la forme, puis choisis la bonne réponse.',
+      explain: 'Un ' + meta.label + ' a ' + meta.sides + ' côtés et ' + meta.vertices + ' sommets. ' + meta.note,
+      draw: function(){ drawShapeGeneric(meta); },
+      cols3: false,
+      choices: choices.map(function(v){ return { label:String(v), ok: v===correct }; })
+    };
+  }
+
+  function genNameQuestion(level){
+    var shapeKey2 = pick(GEO_LEVELS[level].shapes);
+    var meta2 = SHAPE_META[shapeKey2];
+    var pool = shuffle(NAME_POOL.filter(function(n){return n!==meta2.label;})).slice(0,3);
+    var labels = shuffle([meta2.label].concat(pool));
+    return {
+      tag: 'Nom de la forme',
+      question: 'Quel est le nom de cette forme ?',
+      sub: 'Observe bien la forme, puis choisis son nom.',
+      explain: 'C\'est un ' + meta2.label + '. ' + meta2.note,
+      draw: function(){ drawShapeGeneric(meta2); },
+      cols3: false,
+      choices: labels.map(function(l){ return { label:l, ok: l===meta2.label }; })
+    };
+  }
+
+  function genAngleQuestion(level){
+    var cat = pick(['droit','aigu','obtus']);
+    var gap = GEO_LEVELS[level].angleGap;
+    var angleDeg;
+    if(cat==='droit') angleDeg = 90;
+    else if(cat==='aigu') angleDeg = Math.round(rand(20, 90-gap));
+    else angleDeg = Math.round(rand(90+gap, 165));
+    var angleExplain = {
+      droit: 'Cet angle a exactement la forme du coin d\'une feuille ou d\'un carré : c\'est un angle droit (90°).',
+      aigu: 'Compare-le au coin d\'une feuille : cet angle est plus fermé (plus pointu) que le coin, donc c\'est un angle aigu.',
+      obtus: 'Compare-le au coin d\'une feuille : cet angle est plus ouvert que le coin, donc c\'est un angle obtus.'
+    };
+    return {
+      tag: 'Angles',
+      question: 'Cet angle est-il droit, aigu ou obtus ?',
+      sub: 'Regarde bien l\'écart entre les deux traits.',
+      explain: angleExplain[cat],
+      draw: function(){ drawAngle(angleDeg); },
+      cols3: true,
+      choices: shuffle(['droit','aigu','obtus']).map(function(c){ return { label:c, ok: c===cat }; })
+    };
+  }
+
+  // ---- Déclaration des types de Quizz du thème Géométrie ----
+  registerQuizType({ id:'sides', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
+    randomNote:'La forme est tirée au hasard parmi celles autorisées à ce niveau ; son nombre de côtés en découle de façon fixe (ce n\'est pas lui qui est tiré, seule la forme l\'est).',
+    generate:function(level){ return genSidesVerticesQuestion('sides', level); } });
+  registerQuizType({ id:'vertices', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
+    randomNote:'Même principe que "Côtés" : la forme est tirée au hasard, son nombre de sommets en découle de façon fixe.',
+    generate:function(level){ return genSidesVerticesQuestion('vertices', level); } });
+  registerQuizType({ id:'name', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
+    randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.',
+    generate:genNameQuestion });
+  registerQuizType({ id:'align', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
+    randomNote:'Les 3 points (alignés ou non) et leur disposition sont tirés au hasard à chaque question.',
+    generate:genAlignQuestion });
+  registerQuizType({ id:'milieu', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
+    randomNote:'La position du segment et les formes-repères sont tirées au hasard à chaque question.',
+    generate:genMilieuQuestion });
+  registerQuizType({ id:'coord', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
+    randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.',
+    generate:genCoordQuestion });
+  registerQuizType({ id:'angle', label:'Angles', longLabel:'Angles (droit/aigu/obtus)', defaultLevels:[1,2],
+    randomNote:'La catégorie (droit/aigu/obtus) et la valeur en degrés sont tirées au hasard. C\'est le NIVEAU qui resserre l\'écart minimum autour de 90° (14° en Moyen, 7° en Difficile), rendant la distinction plus fine à l\'œil.',
+    generate:genAngleQuestion });
+  registerQuizType({ id:'image', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
+    randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.',
+    generate:function(){ return pick(IMAGE_QUESTIONS)(); } });
+  registerQuizType({ id:'coordFind', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
+    randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.',
+    generate:genCoordFindQuestion });
+  registerQuizType({ id:'codage', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
+    randomNote:'Le point de départ et la suite de flèches (2 à 3 déplacements) sont tirés au hasard.',
+    generate:genCodageQuestion });
+  registerQuizType({ id:'chasse', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
+    randomNote:'Le nombre et la disposition des formes affichées sont tirés au hasard à chaque question.',
+    generate:genChasseQuestion });
+  registerQuizType({ id:'symAxe', label:'Symétrie', longLabel:'Axe de symétrie', defaultLevels:[1,2],
+    randomNote:'La position des 3 droites candidates est tirée au hasard ; le triangle est toujours isocèle, donc il y a toujours exactement un vrai axe de symétrie parmi elles (règle fixe).',
+    generate:genSymAxeQuestion });
+  registerQuizType({ id:'decodage', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
+    randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.',
+    generate:genDecodageQuestion });
+  registerQuizType({ id:'symVrai', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
+    randomNote:'La droite proposée est parallèle à un côté (jamais une diagonale, qui prêtait à confusion) : soit exactement au milieu (vrai axe), soit décalée d\'un pourcentage variable (10 à 90%, jamais 50%) tiré au hasard.',
+    generate:genSymVraiQuestion });
+  registerQuizType({ id:'enigme', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
+    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 24 énigmes (texte non généré : toujours les mêmes formulations).',
+    generate:genEnigmeQuestion });
   /* ===================== THÈME HORLOGE =====================
      Lire l'heure, Régler l'heure, et la question de Quizz « Lire l'heure ».
   */
@@ -2811,6 +2935,10 @@
     };
   }
 
+  // ---- Déclaration du type de Quizz « Lire l'heure » ----
+  registerQuizType({ id:'heure', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
+    randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, n\'importe quelle tranche de 5 min en Difficile.',
+    generate:function(level){ return genHeureQuestion('m4Svg', level); } });
   /* ===================== THÈME CALCUL =====================
      Questions de Quizz de calcul : opérations, monnaie, maths de la vie.
   */
@@ -2892,6 +3020,57 @@
     };
   }
 
+  // ---- Paramètres par niveau (0 = Facile, 1 = Moyen, 2 = Difficile) ----
+  // modes : 'add' = a + b ; 'missing' = a + x = c (trouve x). max = plus grand total.
+  var CALC_LEVELS = [
+    { modes:['add'], max:10 },
+    { modes:['add'], max:20 },
+    { modes:['add','missing'], max:20 }
+  ];
+
+  function genCalcQuestion(level){
+    var mode = pick(CALC_LEVELS[level].modes || ['add']);
+    var maxV = CALC_LEVELS[level].max || 10;
+    if(mode==='missing'){
+      // a + x = c : l'enfant retrouve x
+      var a = randInt(0, maxV);
+      var x = randInt(0, maxV - a);
+      var c = a + x;
+      return {
+        tag: 'Calcul',
+        question: 'Trouve x : ' + a + ' + x = ' + c,
+        sub: 'Cherche le nombre qui manque pour que l\'égalité soit vraie.',
+        explain: 'x = ' + c + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + c + '.',
+        draw: function(){ drawEquation(a + ' + x = ' + c); },
+        cols3: false,
+        choices: numChoiceSet(x, [0,1,2,3,4,5,6,7,8,9,10,x+1,x+2,Math.max(0,x-1),Math.max(0,x-2)]).map(function(v){ return { label:String(v), ok: v===x }; })
+      };
+    }
+    // addition simple : a + b
+    var a2 = randInt(0, maxV);
+    var b2 = randInt(0, maxV - a2);
+    var sum = a2 + b2;
+    return {
+      tag: 'Calcul',
+      question: 'Combien font ' + a2 + ' + ' + b2 + ' ?',
+      sub: 'Calcule le résultat de cette addition.',
+      explain: a2 + ' + ' + b2 + ' = ' + sum + '.',
+      draw: function(){ drawEquation(a2 + ' + ' + b2 + ' = ?'); },
+      cols3: false,
+      choices: numChoiceSet(sum, [sum-2,sum-1,sum+1,sum+2,sum+3,Math.max(0,sum-3)].filter(function(v){return v>=0;})).map(function(v){ return { label:String(v), ok: v===sum }; })
+    };
+  }
+
+  // ---- Déclaration des types de Quizz du thème Calcul ----
+  registerQuizType({ id:'calc', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
+    randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
+    generate:genCalcQuestion });
+  registerQuizType({ id:'monnaie', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
+    randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
+    generate:genMonnaieQuestion });
+  registerQuizType({ id:'vie', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
+    randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes, puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
+    generate:genVieQuestion });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */
@@ -3626,6 +3805,13 @@
     };
   }
 
+  // ---- Déclaration des types de Quizz sur les solides ----
+  registerQuizType({ id:'solideNom', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
+    randomNote:'Le solide est tiré au hasard parmi les 6 solides connus ; son nom (la réponse) en découle de façon fixe.',
+    generate:genSolideNomQuestion });
+  registerQuizType({ id:'solideCompte', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
+    randomNote:'Le solide (cube/pavé/pyramide) et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant est ensuite fixe pour ce solide.',
+    generate:genSolideCompteQuestion });
   /* ===================== QUIZZ (moteur) + ORCHESTRATEUR + CONFIGURATION DES ACTIVITÉS =====================
      Moteur du Quizz : registre des types, niveaux, tirage, affichage, correction.
      Puis l'orchestrateur (niveaux, chrono, séries) et le panneau de configuration.
@@ -3639,80 +3825,24 @@
        dessinée à la main en SVG, qui tient lieu de prototype pour une
        vraie image stockée plus tard — voir la réponse ci-dessous).
   */
-  var TYPE_LABELS = {
-    sides:'Côtés', vertices:'Sommets', name:'Nom', angle:'Angles', image:'Image', calc:'Calcul',
-    align:'Alignement', milieu:'Milieu', coord:'Coordonnées', coordFind:'Repérage', codage:'Déplacement',
-    decodage:'Trajet', chasse:'Chasse aux formes', symAxe:'Symétrie', symVrai:'Symétrie (vrai/faux)',
-    solideNom:'Solides', solideCompte:'Compter les solides', monnaie:'Monnaie', heure:'Lire l\'heure',
-    enigme:'Énigme', vie:'Maths de la vie'
-  };
+  // Ordre d'affichage historique des types dans les listes (Configurer les
+  // activités, mode Manuel). Un type absent de cette liste (nouveau thème)
+  // s'affiche à la suite, dans l'ordre d'enregistrement.
+  var QCM_DISPLAY_ORDER = ['sides', 'vertices', 'name', 'calc', 'align', 'milieu', 'coord', 'solideNom', 'monnaie', 'heure', 'angle', 'image', 'coordFind', 'codage', 'chasse', 'symAxe', 'solideCompte', 'vie', 'decodage', 'symVrai', 'enigme'];
+  QCM_TYPE_DEFS.sort(function(a, b){
+    var ia = QCM_DISPLAY_ORDER.indexOf(a.id), ib = QCM_DISPLAY_ORDER.indexOf(b.id);
+    if(ia === -1) ia = QCM_DISPLAY_ORDER.length + QCM_TYPE_DEFS.indexOf(a);
+    if(ib === -1) ib = QCM_DISPLAY_ORDER.length + QCM_TYPE_DEFS.indexOf(b);
+    return ia - ib;
+  });
 
-  // Chaque type de question du Quizz (module 4) est déclaré une fois ici,
-  // avec ses niveaux PAR DÉFAUT (defaultLevels) et une note qui explique ce
-  // qui est tiré au hasard vs fixe pour ce type précis. Le panneau de
-  // réglages "Activités & difficulté" peut surcharger defaultLevels (voir
-  // typeLevelOverrides / rebuildM4Types plus bas dans l'orchestrateur), qui
-  // reconstruit alors M4_LEVELS[*].types à partir de ces définitions —
-  // qcmTypeLevels() (mode Manuel) lit donc toujours le résultat à jour.
-  var QCM_TYPE_DEFS = [
-    { id:'sides',        label:TYPE_LABELS.sides,        defaultLevels:[0,1,2],
-      randomNote:'La forme est tirée au hasard parmi celles autorisées à ce niveau ; son nombre de côtés en découle de façon fixe (ce n\'est pas lui qui est tiré, seule la forme l\'est).' },
-    { id:'vertices',     label:TYPE_LABELS.vertices,     defaultLevels:[0,1,2],
-      randomNote:'Même principe que "Côtés" : la forme est tirée au hasard, son nombre de sommets en découle de façon fixe.' },
-    { id:'name',         label:TYPE_LABELS.name,         defaultLevels:[0,1,2],
-      randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.' },
-    { id:'calc',         label:TYPE_LABELS.calc,         defaultLevels:[0,1,2],
-      randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".' },
-    { id:'align',        label:TYPE_LABELS.align,        defaultLevels:[0,1,2],
-      randomNote:'Les 3 points (alignés ou non) et leur disposition sont tirés au hasard à chaque question.' },
-    { id:'milieu',       label:TYPE_LABELS.milieu,       defaultLevels:[0,1,2],
-      randomNote:'La position du segment et les formes-repères sont tirées au hasard à chaque question.' },
-    { id:'coord',        label:TYPE_LABELS.coord,        defaultLevels:[0,1,2],
-      randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.' },
-    { id:'solideNom',    label:TYPE_LABELS.solideNom,    defaultLevels:[0,1,2],
-      randomNote:'Le solide est tiré au hasard parmi les 6 solides connus ; son nom (la réponse) en découle de façon fixe.' },
-    { id:'monnaie',      label:TYPE_LABELS.monnaie,      defaultLevels:[0,1,2],
-      randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.' },
-    { id:'heure',        label:TYPE_LABELS.heure,        defaultLevels:[0,1,2],
-      randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, n\'importe quelle tranche de 5 min en Difficile.' },
-    { id:'angle',        label:TYPE_LABELS.angle,        defaultLevels:[1,2],
-      randomNote:'La catégorie (droit/aigu/obtus) et la valeur en degrés sont tirées au hasard. C\'est le NIVEAU qui resserre l\'écart minimum autour de 90° (14° en Moyen, 7° en Difficile), rendant la distinction plus fine à l\'œil.' },
-    { id:'image',        label:TYPE_LABELS.image,        defaultLevels:[1,2],
-      randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.' },
-    { id:'coordFind',    label:TYPE_LABELS.coordFind,    defaultLevels:[1,2],
-      randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.' },
-    { id:'codage',       label:TYPE_LABELS.codage,       defaultLevels:[1,2],
-      randomNote:'Le point de départ et la suite de flèches (2 à 3 déplacements) sont tirés au hasard.' },
-    { id:'chasse',       label:TYPE_LABELS.chasse,       defaultLevels:[1,2],
-      randomNote:'Le nombre et la disposition des formes affichées sont tirés au hasard à chaque question.' },
-    { id:'symAxe',       label:TYPE_LABELS.symAxe,       defaultLevels:[1,2],
-      randomNote:'La position des 3 droites candidates est tirée au hasard ; le triangle est toujours isocèle, donc il y a toujours exactement un vrai axe de symétrie parmi elles (règle fixe).' },
-    { id:'solideCompte', label:TYPE_LABELS.solideCompte, defaultLevels:[1,2],
-      randomNote:'Le solide (cube/pavé/pyramide) et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant est ensuite fixe pour ce solide.' },
-    { id:'vie',          label:TYPE_LABELS.vie,          defaultLevels:[1,2],
-      randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes, puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.' },
-    { id:'decodage',     label:TYPE_LABELS.decodage,     defaultLevels:[2],
-      randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.' },
-    { id:'symVrai',      label:TYPE_LABELS.symVrai,      defaultLevels:[2],
-      randomNote:'La droite proposée est parallèle à un côté (jamais une diagonale, qui prêtait à confusion) : soit exactement au milieu (vrai axe), soit décalée d\'un pourcentage variable (10 à 90%, jamais 50%) tiré au hasard.' },
-    { id:'enigme',       label:TYPE_LABELS.enigme,       defaultLevels:[2],
-      randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 24 énigmes (texte non généré : toujours les mêmes formulations).' }
-  ];
-  // types rempli par rebuildM4Types() (appelée après le chargement des
-  // éventuelles surcharges manuelles, voir plus bas) — jamais laissé vide.
+  // Niveaux du Quizz : `types` est rempli par rebuildM4Types() (appelée après le
+  // chargement des éventuelles surcharges manuelles, voir plus bas) — jamais laissé
+  // vide. Les paramètres propres à un thème (formes, calcul…) vivent dans ce thème.
   var M4_LEVELS = [
-    { name:'Facile',
-      shapes:['triangle','carre','rectangle'],
-      types:[],
-      angleGap:20, calcModes:['add'], calcMax:10 },
-    { name:'Moyen',
-      shapes:['triangle','carre','rectangle','pentagone','hexagone','cercle'],
-      types:[],
-      angleGap:14, calcModes:['add'], calcMax:20 },
-    { name:'Difficile',
-      shapes:['triangle','carre','rectangle','pentagone','hexagone','cercle','losange'],
-      types:[],
-      angleGap:7, calcModes:['add','missing'], calcMax:20 }
+    { name:'Facile',    types:[] },
+    { name:'Moyen',     types:[] },
+    { name:'Difficile', types:[] }
   ];
   var m4TypeFilter = 'random';
   var m4Current = null;
@@ -3720,115 +3850,8 @@
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
     var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pick(lv.types);
-
-    if(type==='sides' || type==='vertices'){
-      var shapeKey = pick(lv.shapes);
-      var meta = SHAPE_META[shapeKey];
-      var correct = (type==='sides') ? meta.sides : meta.vertices;
-      var choices = numChoiceSet(correct, [0,1,2,3,4,5,6,7,8]);
-      return {
-        tag: type==='sides' ? 'Côtés' : 'Sommets',
-        question: type==='sides' ? 'Combien de côtés a cette forme ?' : 'Combien de sommets (angles) a cette forme ?',
-        sub: meta.isCircle ? 'Regarde bien : cette forme est-elle vraiment pointue quelque part ?' : 'Observe bien la forme, puis choisis la bonne réponse.',
-        explain: 'Un ' + meta.label + ' a ' + meta.sides + ' côtés et ' + meta.vertices + ' sommets. ' + meta.note,
-        draw: function(){ drawShapeGeneric(meta); },
-        cols3: false,
-        choices: choices.map(function(v){ return { label:String(v), ok: v===correct }; })
-      };
-    }
-
-    if(type==='name'){
-      var shapeKey2 = pick(lv.shapes);
-      var meta2 = SHAPE_META[shapeKey2];
-      var pool = shuffle(NAME_POOL.filter(function(n){return n!==meta2.label;})).slice(0,3);
-      var labels = shuffle([meta2.label].concat(pool));
-      return {
-        tag: 'Nom de la forme',
-        question: 'Quel est le nom de cette forme ?',
-        sub: 'Observe bien la forme, puis choisis son nom.',
-        explain: 'C\'est un ' + meta2.label + '. ' + meta2.note,
-        draw: function(){ drawShapeGeneric(meta2); },
-        cols3: false,
-        choices: labels.map(function(l){ return { label:l, ok: l===meta2.label }; })
-      };
-    }
-
-    if(type==='angle'){
-      var cat = pick(['droit','aigu','obtus']);
-      var gap = lv.angleGap;
-      var angleDeg;
-      if(cat==='droit') angleDeg = 90;
-      else if(cat==='aigu') angleDeg = Math.round(rand(20, 90-gap));
-      else angleDeg = Math.round(rand(90+gap, 165));
-      var angleExplain = {
-        droit: 'Cet angle a exactement la forme du coin d\'une feuille ou d\'un carré : c\'est un angle droit (90°).',
-        aigu: 'Compare-le au coin d\'une feuille : cet angle est plus fermé (plus pointu) que le coin, donc c\'est un angle aigu.',
-        obtus: 'Compare-le au coin d\'une feuille : cet angle est plus ouvert que le coin, donc c\'est un angle obtus.'
-      };
-      return {
-        tag: 'Angles',
-        question: 'Cet angle est-il droit, aigu ou obtus ?',
-        sub: 'Regarde bien l\'écart entre les deux traits.',
-        explain: angleExplain[cat],
-        draw: function(){ drawAngle(angleDeg); },
-        cols3: true,
-        choices: shuffle(['droit','aigu','obtus']).map(function(c){ return { label:c, ok: c===cat }; })
-      };
-    }
-
-    if(type==='calc'){
-      var mode = pick(lv.calcModes || ['add']);
-      var maxV = lv.calcMax || 10;
-      if(mode==='missing'){
-        // a + x = c : l'enfant retrouve x
-        var a = randInt(0, maxV);
-        var x = randInt(0, maxV - a);
-        var c = a + x;
-        return {
-          tag: 'Calcul',
-          question: 'Trouve x : ' + a + ' + x = ' + c,
-          sub: 'Cherche le nombre qui manque pour que l\'égalité soit vraie.',
-          explain: 'x = ' + c + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + c + '.',
-          draw: function(){ drawEquation(a + ' + x = ' + c); },
-          cols3: false,
-          choices: numChoiceSet(x, [0,1,2,3,4,5,6,7,8,9,10,x+1,x+2,Math.max(0,x-1),Math.max(0,x-2)]).map(function(v){ return { label:String(v), ok: v===x }; })
-        };
-      }
-      // addition simple : a + b
-      var a2 = randInt(0, maxV);
-      var b2 = randInt(0, maxV - a2);
-      var sum = a2 + b2;
-      return {
-        tag: 'Calcul',
-        question: 'Combien font ' + a2 + ' + ' + b2 + ' ?',
-        sub: 'Calcule le résultat de cette addition.',
-        explain: a2 + ' + ' + b2 + ' = ' + sum + '.',
-        draw: function(){ drawEquation(a2 + ' + ' + b2 + ' = ?'); },
-        cols3: false,
-        choices: numChoiceSet(sum, [sum-2,sum-1,sum+1,sum+2,sum+3,Math.max(0,sum-3)].filter(function(v){return v>=0;})).map(function(v){ return { label:String(v), ok: v===sum }; })
-      };
-    }
-
-    if(type==='align')      return genAlignQuestion();
-    if(type==='milieu')     return genMilieuQuestion();
-    if(type==='coord')      return genCoordQuestion();
-    if(type==='coordFind')  return genCoordFindQuestion();
-    if(type==='codage')     return genCodageQuestion();
-    if(type==='decodage')   return genDecodageQuestion();
-    if(type==='chasse')     return genChasseQuestion();
-    if(type==='symAxe')     return genSymAxeQuestion();
-    if(type==='symVrai')    return genSymVraiQuestion();
-    if(type==='solideNom')  return genSolideNomQuestion();
-    if(type==='solideCompte') return genSolideCompteQuestion();
-    if(type==='monnaie')    return genMonnaieQuestion();
-    if(type==='heure')      return genHeureQuestion('m4Svg', globalLevel);
-    if(type==='enigme')     return genEnigmeQuestion();
-    if(type==='vie')        return genVieQuestion();
-
-    // type === 'image' : question basée sur une illustration fixe, tirée
-    // d'un petit pool de scènes (prototype du circuit "images stockées",
-    // voir la note sur le stockage d'images à côté du code)
-    return pick(IMAGE_QUESTIONS)();
+    // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
+    return (quizTypeById(type) || quizTypeById('image')).generate(globalLevel);
   }
 
   function newQCM(){
@@ -3916,17 +3939,6 @@
   // (M4_LEVELS[*].types) qui étaient auparavant sélectionnables un par un.
   // On les réexpose ici en mode Manuel via l'ancien mécanisme m4TypeFilter
   // (déjà lu par genQuestion, mais plus jamais réglé depuis la fusion).
-  var QCM_TYPE_LABELS = {
-    sides:'Compter les côtés', vertices:'Compter les sommets', name:'Nom de la forme',
-    angle:'Angles (droit/aigu/obtus)', calc:'Calcul', align:'Alignement',
-    milieu:'Milieu d\'un segment', coord:'Lire des coordonnées',
-    coordFind:'Trouver sur le quadrillage', codage:'Déplacement (codage)',
-    decodage:'Trajet (décodage)', chasse:'Chasse aux formes',
-    symAxe:'Axe de symétrie', symVrai:'Vrai axe de symétrie ?',
-    solideNom:'Nom du solide', solideCompte:'Compter faces/sommets/arêtes',
-    monnaie:'Monnaie', heure:'Lire l\'heure (QCM)', enigme:'Énigme',
-    vie:'Maths de la vie', image:'Photo / illustration'
-  };
   var LEVEL_NAMES = ['Facile','Moyen','Difficile'];
   var LEVEL_SHORT = ['Fa','Mo','Di'];
 
@@ -4095,7 +4107,7 @@
     M4_LEVELS.forEach(function(lv){
       lv.types.forEach(function(t){ if(allTypes.indexOf(t)===-1) allTypes.push(t); });
     });
-    var labels = ['Aléatoire'].concat(allTypes.map(function(t){ return QCM_TYPE_LABELS[t] || t; }));
+    var labels = ['Aléatoire'].concat(allTypes.map(function(t){ return (quizTypeById(t) && quizTypeById(t).longLabel) || t; }));
     m4TypeFilter = 'random';
     buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
       m4TypeFilter = idx===0 ? 'random' : allTypes[idx-1];

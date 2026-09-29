@@ -210,3 +210,7 @@
     };
   }
 
+  // ---- Déclaration du type de Quizz « Lire l'heure » ----
+  registerQuizType({ id:'heure', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
+    randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, n\'importe quelle tranche de 5 min en Difficile.',
+    generate:function(level){ return genHeureQuestion('m4Svg', level); } });
