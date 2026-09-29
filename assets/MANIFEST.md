@@ -33,11 +33,11 @@ généré dans un navigateur et réenregistre chaque `.svg` à jour.
 
 | Fichier | Nom |
 |---|---|
-| cat01.png | Mochi (personnage de départ, débloqué d'office) |
-| cat02.png | Fraise (départ) |
-| cat03.png | Nuage (départ) |
-| cat04.png | Biscuit (départ, Soutien) |
-| cat05.png | Praline (départ, Archer) |
+| cat01.png | Lavandou (départ) |
+| cat02.png | Cœurette (départ) |
+| cat03.png | Pétale (départ) |
+| cat04.png | Étoilou (départ, Soutien) |
+| cat05.png | Éclairon (départ, Archer) |
 | cat06.png | Câlin |
 | cat07.png | Doudou |
 | cat08.png | Pompon |
@@ -73,11 +73,11 @@ généré dans un navigateur et réenregistre chaque `.svg` à jour.
 
 | Fichier | Nom |
 |---|---|
-| br01.png | Tarallino Turbo (personnage de départ, débloqué d'office) |
-| br02.png | Fettuccino Furioso (départ) |
-| br03.png | Broccolino Bang (départ) |
-| br04.png | Salamino Sprint (départ, Soutien) |
-| br05.png | Peperoncino Pazzo (départ, Archer) |
+| br01.png | Baguetto Montone (départ) |
+| br02.png | Maiale Cuvetto (départ) |
+| br03.png | Waffolo Papero (départ) |
+| br04.png | Spaghettino Orsetto (départ, Soutien) |
+| br05.png | Televisiogatto (départ, Archer) |
 | br06.png | Lasagnone Lampo |
 | br07.png | Grissino Ghost |
 | br08.png | Cannolotto Caos |
@@ -93,8 +93,8 @@ généré dans un navigateur et réenregistre chaque `.svg` à jour.
 | br18.png | Struzzolino Strike |
 | br19.png | Gnoccotto Gigante |
 | br20.png | Biscottino Blitz |
-| br21.png | Gelatino Gagà — Défi chrono Facile · 1 min · 5 bonnes réponses |
-| br22.png | Polpettone Pop — Défi chrono Facile · 2 min · 8 bonnes réponses |
+| br21.png | MiaoStation 5 — Défi chrono Facile · 1 min · 5 bonnes réponses |
+| br22.png | Leone Spaghettoni — Défi chrono Facile · 2 min · 8 bonnes réponses |
 | br23.png | Ciabattino Cric — Défi chrono Facile · 3 min · 10 bonnes réponses |
 | br24.png | Tiramisù Tuono — Défi chrono Facile · 5 min · 15 bonnes réponses |
 | br25.png | Carciofo Comico — Défi chrono Moyen · 1 min · 4 bonnes réponses |
@@ -114,3 +114,11 @@ généré dans un navigateur et réenregistre chaque `.svg` à jour.
 Ces 15 personnages par clan **ne s'achètent pas** : ils se débloquent en
 relevant un défi (le même numéro débloque le chat ET le brainrot). Un clic sur
 leur carte dans la Boutique explique comment les obtenir.
+
+## Images générées (Grok) déjà intégrées
+
+12 personnages ont une vraie illustration (visage `<id>.png` 256 px + plein pied
+détouré `<id>_full.png`) : cat01–05, br01–05, br21, br22. Les originaux sont dans
+`wip/`. Les images sont aussi embarquées en base64 dans `index.html` (bloc
+`IMG_DATA_START … IMG_DATA_END`) pour que l'aperçu publié (fichier unique) les
+affiche. Les autres personnages gardent leur dessin procédural en attendant.

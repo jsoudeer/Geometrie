@@ -23,7 +23,7 @@ affiche actuellement. Tu peux remplacer n'importe lequel par ta propre
 image :
 
 1. Regarde `assets/MANIFEST.md` pour trouver l'identifiant du personnage
-   (ex. `cat01` pour Mochi) et l'ordre de priorité des formats.
+   (ex. `cat01` pour Lavandou) et l'ordre de priorité des formats.
 2. Remplace le fichier existant dans `assets/cats/` ou `assets/brainrot/`
    (ou ajoute un `.png`/`.jpg` du même nom à côté, qui sera prioritaire).
 3. Ouvre (ou recharge) `index.html` depuis ce dépôt — la nouvelle image
