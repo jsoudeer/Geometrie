@@ -522,15 +522,19 @@
   function drawSolidCylindre(svg){
     var cx=100, topCy=62, botCy=150, rx=46, ry=16;
     svg.appendChild(el('rect',{x:cx-rx,y:topCy,width:2*rx,height:botCy-topCy,fill:'var(--accent2)'}));
+    svg.appendChild(el('path',{d:'M '+(cx-rx)+' '+botCy+' A '+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+botCy+' Z', fill:'var(--accent2)'}));
     svg.appendChild(el('line',{x1:cx-rx,y1:topCy,x2:cx-rx,y2:botCy,stroke:'var(--text)','stroke-width':2}));
     svg.appendChild(el('line',{x1:cx+rx,y1:topCy,x2:cx+rx,y2:botCy,stroke:'var(--text)','stroke-width':2}));
     svg.appendChild(el('path',{d:'M '+(cx-rx)+' '+botCy+' A '+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+botCy, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('path',{d:'M '+(cx-rx)+' '+botCy+' A '+rx+' '+ry+' 0 0 1 '+(cx+rx)+' '+botCy, fill:'none', stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'5,4'}));
     svg.appendChild(el('ellipse',{cx:cx,cy:topCy,rx:rx,ry:ry,fill:'var(--accent3)',stroke:'var(--text)','stroke-width':2}));
   }
   function drawSolidCone(svg){
     var rx=48, ry=16, baseCy=150, apex=[100,40];
     svg.appendChild(el('polygon',{points:isoPoly([apex,[100-rx,baseCy],[100+rx,baseCy]]),fill:'var(--accent2)'}));
-    svg.appendChild(el('ellipse',{cx:100,cy:baseCy,rx:rx,ry:ry,fill:'var(--accent3)',stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('path',{d:'M '+(100-rx)+' '+baseCy+' A '+rx+' '+ry+' 0 0 0 '+(100+rx)+' '+baseCy+' Z', fill:'var(--accent2)'}));
+    svg.appendChild(el('path',{d:'M '+(100-rx)+' '+baseCy+' A '+rx+' '+ry+' 0 0 0 '+(100+rx)+' '+baseCy, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('path',{d:'M '+(100-rx)+' '+baseCy+' A '+rx+' '+ry+' 0 0 1 '+(100+rx)+' '+baseCy, fill:'none', stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'5,4'}));
     svg.appendChild(el('line',{x1:apex[0],y1:apex[1],x2:100-rx,y2:baseCy,stroke:'var(--text)','stroke-width':2}));
     svg.appendChild(el('line',{x1:apex[0],y1:apex[1],x2:100+rx,y2:baseCy,stroke:'var(--text)','stroke-width':2}));
   }
@@ -587,20 +591,40 @@
     }
     return pts;
   }
+  // Prisme droit à base régulière à n côtés, en perspective : on le dessine EN
+  // ENTIER, comme les autres solides (cube, pyramide…) — les arêtes cachées
+  // sont en pointillés. Vue de dessus légère : une face rectangulaire est
+  // toujours bien en face ; une face latérale est visible si son milieu est du
+  // côté « avant » (sinus > 0) ; une arête est cachée si toutes les faces qui la
+  // touchent sont cachées.
   function drawSolidPrismeN(svg, n){
-    var cx=100, rx=46, ry=17, topCy=62, botCy=148;
-    var top = ngonPoints(n,cx,topCy,rx,ry,-90);
-    var bot = ngonPoints(n,cx,botCy,rx,ry,-90);
-    svg.appendChild(el('rect',{x:cx-rx,y:topCy,width:2*rx,height:botCy-topCy,fill:'var(--accent2)'}));
-    svg.appendChild(el('line',{x1:cx-rx,y1:topCy,x2:cx-rx,y2:botCy, stroke:'var(--text)','stroke-width':2}));
-    svg.appendChild(el('line',{x1:cx+rx,y1:topCy,x2:cx+rx,y2:botCy, stroke:'var(--text)','stroke-width':2}));
-    var front = bot.filter(function(p){ return p[1] >= botCy - 0.01; }).sort(function(a,b){ return a[0]-b[0]; });
-    if(front.length>1){
-      var d = 'M '+front[0][0]+' '+front[0][1];
-      for(var i=1;i<front.length;i++) d += ' L '+front[i][0]+' '+front[i][1];
-      svg.appendChild(el('path',{d:d, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    var cx=100, rx=52, ry=20, topCy=58, botCy=146;
+    var rot = n===3 ? 90 : 90 - 180/n;   // triangle : une arête (sommet) en face, pour bien voir 2 faces latérales
+    var top = ngonPoints(n,cx,topCy,rx,ry,rot);
+    var bot = ngonPoints(n,cx,botCy,rx,ry,rot);
+    var front = [];                                    // face k = entre les sommets k et k+1
+    for(var k=0;k<n;k++){
+      var mid = (rot + (k+0.5)*360/n) * Math.PI/180;
+      front.push(Math.sin(mid) > 0.01);
     }
-    svg.appendChild(el('polygon',{points:isoPoly(top), fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2}));
+    var colors = ['var(--accent)','var(--accent2)','var(--accent3)'];
+    for(k=0;k<n;k++){
+      if(front[k]) solidFace(svg, [top[k], top[(k+1)%n], bot[(k+1)%n], bot[k]], colors[k%3]);
+    }
+    solidFace(svg, top, 'var(--accent3)');
+    // arêtes cachées d'abord (pointillés)
+    for(k=0;k<n;k++){
+      var prev = (k+n-1)%n;
+      if(!front[k] && !front[prev]) solidEdge(svg, top[k], bot[k], true);   // arête verticale
+      if(!front[k]) solidEdge(svg, bot[k], bot[(k+1)%n], true);            // arête du bas, au fond
+    }
+    // arêtes visibles
+    for(k=0;k<n;k++){
+      var prev2 = (k+n-1)%n;
+      solidEdge(svg, top[k], top[(k+1)%n], false);
+      if(front[k] || front[prev2]) solidEdge(svg, top[k], bot[k], false);
+      if(front[k]) solidEdge(svg, bot[k], bot[(k+1)%n], false);
+    }
   }
   function drawSolidPrismeTri(svg){ drawSolidPrismeN(svg,3); }
   function drawSolidPrismePenta(svg){ drawSolidPrismeN(svg,5); }
