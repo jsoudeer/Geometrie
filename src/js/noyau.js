@@ -94,7 +94,7 @@
     document.querySelectorAll('.coach-avatar').forEach(function(av){
       // La mascotte perso (si choisie) garde son propre visage, pas
       // l'emoji générique du thème (voir renderMascotDock plus bas).
-      if(av.id === 'mascot-face' && mascotSpriteId) return;
+      if(av.id === 'mascot-face' && activeMascotId()) return;
       av.textContent = cfg.mascot;
     });
     try{ localStorage.setItem('geo_theme', th); }catch(e){}
@@ -498,7 +498,7 @@
     document.querySelectorAll('.coach-avatar').forEach(function(av){
       // La mascotte perso (si choisie) garde son propre visage au lieu de
       // l'emoji de réaction générique (voir renderMascotDock plus bas).
-      if(av.id === 'mascot-face' && mascotSpriteId) return;
+      if(av.id === 'mascot-face' && activeMascotId()) return;
       av.textContent = face;
     });
   }

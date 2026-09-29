@@ -141,7 +141,7 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 ### Bataille
 Équipe de **3 classiques + 1 Soutien + 1 Archer** du clan actif. 3 cartes au hasard sur le terrain ; quand une carte est battue (0 point), une autre la remplace. Quand A attaque B : B perd autant de points que A en a, et A perd les points de B (sauf l'Archer). Victoire : **+3 ⭐**.
 
-### Défis (15 personnages par clan, le chat et le brainrot du même numéro se débloquent ensemble)
+### Défis (15 personnages par clan : un défi réussi débloque le personnage du clan dans lequel on joue)
 
 **Défis chronométrés** : bonnes réponses à obtenir avant la fin du temps.
 
