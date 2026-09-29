@@ -10,12 +10,13 @@ en un seul fichier HTML autonome (`index.html`), sans dépendance externe.
 3. **Patron → Cube** — pliage de patron en 3D
 4. **QCM Formes** — quiz multi-types (formes, repérage, solides, énigmes...)
 5. **Horloge** — lecture et réglage de l'heure
-6. **Boutique** — achat de personnages avec les étoiles gagnées, et mode
-   Bataille (comparaison de statistiques entre un chat et un brainrot)
+6. **Boutique** — personnages du clan actif (débloqués et à obtenir côte à
+   côte), achat avec les étoiles, personnages « Défi » à débloquer
+7. **Bataille** — combat d'équipes de cartes (voir plus bas)
 
 ## Utiliser tes propres images de personnages
 
-Les 40 personnages (20 chats + 20 brainrots) sont dessinés par le code (SVG
+Les 70 personnages (35 chats + 35 brainrots) sont dessinés par le code (SVG
 généré en JavaScript), et **chacun a aussi son fichier `.svg` dans
 `assets/cats/` et `assets/brainrot/`** — un export exact de ce que le jeu
 affiche actuellement. Tu peux remplacer n'importe lequel par ta propre
@@ -61,10 +62,63 @@ mascotte** de l'appli :
 
 Dans l'onglet **Bataille**, le réglage global **⚙️ Réglages → « Affichage
 des personnages en Bataille »** permet de choisir si les cartes des
-combattants (Duel rapide et Mode Équipe) montrent leur **tête** (portrait,
-comme aujourd'hui) ou leur **corps en pied** — avec la même logique de
-substitution en deux temps (asset `_full` si présent, sinon buste générique
-+ tête du personnage).
+combattants montrent leur **tête** (portrait) ou leur **corps en pied** — avec
+la même logique de substitution en deux temps (asset `_full` si présent, sinon
+buste générique + tête du personnage).
+
+Le personnage en pied est affiché en bas à droite de l'écran, **sous** les
+boutons de réponse et légèrement transparent, pour ne jamais gêner la lecture ;
+la petite image de la mascotte est en haut à gauche, avec le bouton **Menu**
+juste en dessous (il ouvre/ferme la ligne Facile · Moyen · Difficile · Manuel ·
+Boutique).
+
+## Bataille
+
+Tu joues avec le **clan actif** (le bouton à gauche des étoiles bascule entre
+Chats Kawaii et Brainrot) contre l'autre clan.
+
+- Une seule caractéristique par personnage : ses **points ❤️**, qui sont à la
+  fois sa force d'attaque et son énergie.
+- Quand A attaque B : B perd autant de points que A en a, et A perd autant de
+  points que B en avait. Une carte à 0 est battue.
+- 💖 **Soutien** : donne +5 points à tous ses alliés (ceux déjà sur le terrain
+  quand il arrive, puis chaque allié qui arrive ensuite tant qu'il est là).
+- 🏹 **Archer** : attaque sans jamais perdre de points en retour.
+- Équipe : **3 classiques + 1 soutien + 1 archer**. 3 cartes tirées au hasard
+  sont posées sur le terrain ; quand une carte est battue, une carte de la
+  réserve la remplace. Le camp qui n'a plus aucune carte a perdu (+3 ⭐ pour
+  une victoire).
+
+L'adversaire est choisi pour rester du même niveau que ta meilleure carte
+(équilibrage mesuré par simulation : ~50 % de victoires en tapant au hasard,
+~70 % en jouant attentivement).
+
+## Personnages « Défi » (15 par clan)
+
+Non achetables, ils se débloquent en relevant des défis — un défi réussi
+débloque **le chat ET le brainrot** du même numéro :
+
+| Niveau | 1 min | 2 min | 3 min | 5 min | Série sans faute |
+|---|---|---|---|---|---|
+| Facile | 5 | 8 | 10 | 15 | 20 d'affilée |
+| Moyen | 4 | 6 | 8 | 12 | 20 d'affilée |
+| Difficile | 3 | 5 | 7 | 10 | 20 d'affilée |
+
+Les 4 premières colonnes : nombre de **bonnes réponses** à atteindre en mode
+**Chronométré** avant la fin du temps. La dernière : 20 bonnes réponses
+d'affilée, sans aucune erreur, en mode **Aléatoire** (un compteur 🔥 s'affiche
+au-dessus de la question). Un clic sur la carte d'un personnage « Défi » dans la
+Boutique explique comment le débloquer. **⚙️ Réglages → « Effacer ma
+progression »** remet à zéro étoiles, personnages débloqués et mascotte.
+
+## Accessibilité (RGAA / WCAG AA)
+
+Contrastes texte/fond ≥ 4,5:1 dans les deux thèmes (mesurés par un audit
+automatique), bordures des contrôles ≥ 3:1, focus clavier visible, boutons
+nommés, boîtes de dialogue (`role="dialog"`, Échap pour fermer), retours de
+réponse annoncés (`aria-live`), déformation des formes utilisable au clavier
+(flèches), état correct/incorrect signalé aussi par un symbole ✔ / ✘. Le thème
+Brainrot utilise une police de lecture (Rubik) pour les questions.
 
 ## Écran de démarrage
 

@@ -13,37 +13,58 @@
   [hidden]{ display:none !important; }
 
   /* ================= TOKENS ================= */
+  /* Accessibilité (RGAA 3.2 / WCAG AA) : tous les couples texte/fond
+     ci-dessous ont été mesurés (≥ 4,5:1 pour le texte normal). Le texte
+     posé sur une couleur d'accent utilise --on-accent (sombre dans les deux
+     thèmes) plutôt que du blanc, qui n'était pas assez contrasté sur les
+     accents pastel. Les états correct/incorrect s'appuient aussi sur un
+     symbole (✔ / ✘) et pas seulement sur la couleur. */
   :root{
     --bg:#FFF6F0; --surface:#FFFFFF; --surface2:#FFE7EF; --surface3:#FFF0DC;
-    --text:#5B4034; --text-soft:#9C7C6E;
+    --text:#4A3228; --text-soft:#6F5244; --on-accent:#3B2A20;
     --accent:#FF8FAE; --accent2:#B79CED; --accent3:#7FD8C4;
-    --good:#3FA672; --bad:#E85D5D;
-    --border:#F3D6DD; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
+    --good:#17683F; --bad:#B02A2A; --on-good:#FFFFFF; --on-bad:#FFFFFF;
+    --border:#E9C4CE; --control-border:#B9728A; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
+    --focus:#1B4FD8;
     --font-display:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --font-title:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
     --font-body:'Nunito', system-ui, sans-serif;
     --radius:20px;
     color-scheme: light;
   }
   body[data-app-theme="cats"]{
     --bg:#FFF6F0; --surface:#FFFFFF; --surface2:#FFE7EF; --surface3:#FFF0DC;
-    --text:#5B4034; --text-soft:#9C7C6E;
+    --text:#4A3228; --text-soft:#6F5244; --on-accent:#3B2A20;
     --accent:#FF8FAE; --accent2:#B79CED; --accent3:#7FD8C4;
-    --good:#3FA672; --bad:#E85D5D;
-    --border:#F3D6DD; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
+    --good:#17683F; --bad:#B02A2A; --on-good:#FFFFFF; --on-bad:#FFFFFF;
+    --border:#E9C4CE; --control-border:#B9728A; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
+    --focus:#1B4FD8;
     --font-display:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --font-title:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
     --font-body:'Nunito', system-ui, sans-serif;
     color-scheme: light;
   }
+  /* Brainrot : la police décorative "Bungee" (majuscules épaisses) n'est
+     plus utilisée que pour le titre court ; les questions, boutons et
+     consignes passent en Rubik gras, bien plus lisible (le principal
+     reproche fait à ce thème). Fond un peu moins sombre/saturé, texte
+     blanc franc, accents lime/rose/orange réservés aux fonds de boutons
+     (avec texte sombre par-dessus) et jamais aux petits textes. */
   body[data-app-theme="brainrot"]{
-    --bg:#120E1A; --surface:#1E1830; --surface2:#2A2043; --surface3:#241A38;
-    --text:#F5F0FF; --text-soft:#B9AEDB;
-    --accent:#C6FF3D; --accent2:#FF3EA5; --accent3:#FF7A1A;
-    --good:#63FF9E; --bad:#FF5A78;
-    --border:#3A2E58; --shadow:0 10px 28px -10px rgba(198,255,61,.18);
-    --font-display:'Bungee', 'Baloo 2', sans-serif;
+    --bg:#15101F; --surface:#221B36; --surface2:#31274D; --surface3:#2A2140;
+    --text:#FFFFFF; --text-soft:#D9D0F2; --on-accent:#120E1A;
+    --accent:#C6FF3D; --accent2:#FF6BBE; --accent3:#FF9A47;
+    --good:#7BFFAE; --bad:#FF8DA1; --on-good:#0B2A1A; --on-bad:#2B0A12;
+    --border:#5B4A8A; --control-border:#8F7BD0; --shadow:0 10px 28px -10px rgba(198,255,61,.18);
+    --focus:#FFE94D;
+    --font-display:'Rubik', system-ui, sans-serif;
+    --font-title:'Bungee', 'Rubik', sans-serif;
     --font-body:'Rubik', system-ui, sans-serif;
     color-scheme: dark;
   }
+  /* Focus clavier bien visible partout (RGAA 10.7). */
+  :focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+  button:focus-visible, [role="button"]:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
 
   *{box-sizing:border-box;}
   html, body{ overflow-x:hidden; }
@@ -62,15 +83,34 @@
   }
 
   h1,h2,h3{ font-family:var(--font-display); margin:0; text-wrap:balance; }
+  .brand h1, .splash-title{ font-family:var(--font-title); }
 
   /* ============ TOP BAR ============ */
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
     gap:10px; padding:6px 4px 12px;
   }
-  .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
-  .mascot{ font-size:30px; line-height:1; flex:none; }
-  .brand h1{ font-size:18px; letter-spacing:.2px; }
+  .brand{ display:flex; align-items:flex-start; gap:10px; min-width:0; }
+  /* Colonne de gauche : l'image de la mascotte (ou son emoji) et, juste en
+     dessous, le bouton Menu qui fait apparaître/disparaître la ligne
+     Facile / Moyen / Difficile / Manuel / Boutique. */
+  .brand-left{ display:flex; flex-direction:column; align-items:center; gap:4px; flex:none; }
+  .mascot{ font-size:34px; line-height:1; flex:none; width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+  .brand h1{ font-size:18px; letter-spacing:.2px; margin-top:8px; }
+  .menu-btn{
+    border:1.5px solid var(--border); background:var(--surface2); color:var(--text);
+    border-radius:10px; padding:4px 8px; min-height:28px; cursor:pointer;
+    font-family:var(--font-body); font-weight:800; font-size:12px; line-height:1;
+  }
+  .menu-btn[aria-expanded="true"]{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  /* Bouton de bascule Chats Kawaii <-> Brainrot, à gauche des étoiles. */
+  .theme-toggle{
+    flex:none; width:40px; height:40px; border-radius:50%;
+    background:var(--surface2); border:1.5px solid var(--border);
+    font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  .theme-toggle:active{ transform:scale(.9); }
   body[data-app-theme="brainrot"] .brand h1{ font-size:15px; letter-spacing:.4px; text-transform:uppercase; }
   .stars{
     display:flex; align-items:center; gap:6px;
@@ -97,6 +137,7 @@
   }
   .settings-overlay[hidden]{ display:none; }
   .settings-panel{
+    max-height:92vh; overflow-y:auto;
     background:var(--surface); border:1.5px solid var(--border); border-radius:16px;
     box-shadow:var(--shadow); padding:16px 18px; width:100%; max-width:360px;
   }
@@ -105,7 +146,7 @@
   }
   .settings-close{
     background:var(--surface2); border:1px solid var(--border); border-radius:50%;
-    width:30px; height:30px; font-size:14px; cursor:pointer;
+    width:44px; height:44px; font-size:16px; cursor:pointer;
   }
   .settings-hint{ font-size:12px; margin-top:8px; }
   .settings-divider{ border:none; border-top:1px solid var(--border); margin:14px 0; }
@@ -131,7 +172,7 @@
     font-family:var(--font-body); font-weight:800; font-size:11px;
     border-radius:8px; padding:5px 8px; cursor:pointer; transition:all .15s;
   }
-  .aconf-level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:#14121A; }
+  .aconf-level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:var(--on-accent); }
   .aconf-note{ font-size:11.5px; color:var(--text-soft); line-height:1.45; margin:0; }
   .aconf-static-card{
     background:var(--surface2); border:1.5px solid var(--border); border-radius:12px;
@@ -140,35 +181,21 @@
   .aconf-static-card h3{ font-size:14px; margin-bottom:6px; }
   .aconf-static-card p{ font-size:12.5px; color:var(--text-soft); line-height:1.55; margin:0; }
 
-  /* ============ THEME SWITCH ============ */
-  .theme-switch{
-    display:flex; gap:8px; padding:4px; margin-bottom:14px;
-    background:var(--surface2); border-radius:999px; border:1px solid var(--border);
-  }
-  .theme-btn{
-    flex:1; border:none; cursor:pointer; padding:9px 8px; border-radius:999px;
-    font-family:var(--font-display); font-size:13px; font-weight:700;
-    background:transparent; color:var(--text-soft);
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    transition:background .2s, color .2s, transform .15s;
-  }
-  .theme-btn.active{ background:var(--surface); color:var(--text); box-shadow:var(--shadow); }
-  .theme-btn:active{ transform:scale(.96); }
-
   /* ============ TABS ============ */
   /* flex-wrap + min-width:0 : même précaution que .level-row, pour que
-     l'ajout de nouveaux onglets ne fasse jamais déborder la barre. */
-  .tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+     l'ajout de nouveaux onglets ne fasse jamais déborder la barre.
+     La barre est repliée par défaut (attribut hidden) : on la fait
+     apparaître avec le bouton Menu de la barre du haut. */
+  .tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
   .tab-btn{
-    flex:1 1 auto; min-width:70px; border:2px solid var(--border); background:var(--surface);
-    color:var(--text-soft); cursor:pointer; border-radius:14px;
-    padding:9px 4px; font-family:var(--font-body); font-weight:800; font-size:11.5px;
+    flex:1 1 auto; min-width:60px; min-height:44px; border:2px solid var(--border); background:var(--surface);
+    color:var(--text); cursor:pointer; border-radius:14px;
+    padding:8px 4px; font-family:var(--font-body); font-weight:800; font-size:12.5px;
     display:flex; flex-direction:column; align-items:center; gap:3px;
     transition:all .2s;
   }
   .tab-btn .ic{ font-size:18px; }
-  .tab-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
-  body[data-app-theme="brainrot"] .tab-btn.active{ color:#14121A; }
+  .tab-btn.active{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
 
   .card{
     background:var(--surface); border:1px solid var(--border);
@@ -185,7 +212,6 @@
      sont resserrés. Le bandeau ⏱️/score (#countdown-hud) remplace la
      topbar comme seul repère du haut pendant le défi. */
   body.chrono-compact .topbar,
-  body.chrono-compact .theme-switch,
   body.chrono-compact .tabs,
   body.chrono-compact #practice-mode,
   body.chrono-compact #mascot-dock,
@@ -195,16 +221,21 @@
   body.chrono-compact .app{ padding-top:8px; padding-bottom:16px; }
   body.chrono-compact #tab-practice > .card{ padding:10px 14px; margin-bottom:0; }
   body.chrono-compact #countdown-hud{ margin-bottom:8px; }
+  .home-btn{
+    flex:none; width:44px; height:44px; border-radius:50%;
+    background:var(--surface); border:2px solid var(--border); font-size:20px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .home-btn:active{ transform:scale(.92); }
   body.chrono-compact .muted{ margin-bottom:8px; }
 
   .btn{
     font-family:var(--font-display); font-weight:700; font-size:14px;
     border:none; border-radius:14px; padding:12px 16px; cursor:pointer;
-    background:var(--accent2); color:#fff; transition:transform .12s, filter .15s;
+    background:var(--accent2); color:var(--on-accent); transition:transform .12s, filter .15s;
   }
   .btn:active{ transform:scale(.96); }
   .btn.primary{ background:var(--accent); }
-  body[data-app-theme="brainrot"] .btn{ color:#14121A; }
   .btn.ghost{ background:var(--surface2); color:var(--text); }
   .btn[disabled]{ opacity:.45; cursor:default; }
   .btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
@@ -239,7 +270,7 @@
     white-space:normal; line-height:1.25; text-align:center;
   }
   .level-row.level-row-even .level-btn{ flex:1 1 auto; }
-  .level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:#14121A; }
+  .level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:var(--on-accent); }
 
   /* ============ MODULE 1 : MESURER ============ */
   .ruler-wrap{ display:flex; justify-content:center; margin-bottom:6px; }
@@ -251,14 +282,17 @@
     border-radius:12px; padding:12px 2px; cursor:pointer; transition:all .15s;
   }
   .choice-btn:active{ transform:scale(.94); }
-  .choice-btn.correct{ background:var(--good); border-color:var(--good); color:#fff; }
-  .choice-btn.wrong{ background:var(--bad); border-color:var(--bad); color:#fff; }
+  .choice-btn.correct{ background:var(--good); border-color:var(--good); color:var(--on-good); }
+  .choice-btn.correct::after{ content:' ✔'; }
+  .choice-btn.wrong{ background:var(--bad); border-color:var(--bad); color:var(--on-bad); }
+  .choice-btn.wrong::after{ content:' ✘'; }
   .choice-btn[disabled]{ pointer-events:none; }
 
   /* ============ MODULE 2 : DEFORMER ============ */
   .deform-wrap{ display:flex; justify-content:center; }
   .deform-wrap svg{ width:100%; max-width:280px; height:auto; touch-action:none; }
   .deform-wrap circle.handle{ cursor:grab; }
+  .deform-wrap circle.handle:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
   .side-label{ font-family:var(--font-body); font-weight:800; font-size:11px; fill:var(--text); }
   .side-label-bg{ fill:var(--surface); opacity:.85; }
 
@@ -316,16 +350,8 @@
     border-radius:14px; padding:10px 13px; font-family:var(--font-display);
     font-size:15.5px; font-weight:700; flex:1; text-wrap:balance;
   }
-  .coach-bubble::before{
-    content:''; position:absolute; left:-7px; top:14px; width:0; height:0;
-    border-top:7px solid transparent; border-bottom:7px solid transparent;
-    border-right:8px solid var(--border);
-  }
-  .coach-bubble::after{
-    content:''; position:absolute; left:-5.5px; top:14px; width:0; height:0;
-    border-top:7px solid transparent; border-bottom:7px solid transparent;
-    border-right:8px solid var(--surface2);
-  }
+  /* Plus de petit visage à côté de la question : c'est le personnage plein
+     pied, en bas à droite de l'écran, qui "pose" les questions. */
 
   /* ============ EFFETS : réussite / échec ============ */
   .explain-line{ font-weight:600; font-size:12.5px; margin-top:4px; opacity:.85; }
@@ -391,10 +417,16 @@
   @media (prefers-reduced-motion: reduce){ .qenter{ animation:none; } }
 
   /* ============ MASCOTTE (buste en bas de l'écran) ============ */
+  /* Le plein pied passe SOUS les choix et les textes : le dock est en
+     z-index:1, et tout ce qui se trouve dans une carte (.card > *) est en
+     z-index:2 (voir plus bas). Il reste visible sur le fond de la carte,
+     mais un bouton ou une réponse passe toujours par-dessus, et il est
+     légèrement transparent pour ne jamais gêner la lecture. */
   .mascot-dock{
     position:fixed; right:2vw; bottom:0;
-    width:130px; max-width:30vw; z-index:5; pointer-events:none;
+    width:130px; max-width:30vw; z-index:1; pointer-events:none; opacity:.88;
   }
+  .card > *{ position:relative; z-index:2; }
   .mascot-dock svg{ width:100%; height:auto; display:block; filter:drop-shadow(0 6px 10px rgba(0,0,0,.15)); }
   .mascot-dock .mascot-face{
     position:absolute; top:16%; left:50%; transform:translateX(-50%);
@@ -444,7 +476,7 @@
   }
   /* Icône mascotte perso dans la barre du haut (à la place de l'emoji). */
   #mascotIcon svg, #mascotIcon img{
-    width:30px; height:30px; display:block; border-radius:50%; object-fit:cover;
+    width:44px; height:44px; display:block; border-radius:50%; object-fit:cover;
   }
   /* Tailles réduites quand ces composites servent de carte combattant en Bataille. */
   .duel-fighter .fullbody-compose, .duel-fighter .sp-full-img{ width:84px; margin:0 auto; }
@@ -477,7 +509,7 @@
 
   .auto-advance-toast{
     position:fixed; top:16px; left:50%; transform:translateX(-50%);
-    background:var(--good); color:#fff; font-family:var(--font-display); font-weight:800;
+    background:var(--good); color:var(--on-good); font-family:var(--font-display); font-weight:800;
     font-size:14px; padding:10px 18px; border-radius:999px; box-shadow:var(--shadow);
     z-index:9999; pointer-events:none;
     animation:toastPop 2.2s ease-in-out forwards;
@@ -508,31 +540,70 @@
   }
   .sprite-card svg{ width:64px; height:64px; }
   .sprite-card .sp-custom-img{ width:64px; height:64px; object-fit:contain; border-radius:12px; }
-  .sprite-card .sp-name{ font-family:var(--font-display); font-weight:800; font-size:11.5px; line-height:1.15; }
+  .sprite-card .sp-name{ font-family:var(--font-display); font-weight:800; font-size:12.5px; line-height:1.15; }
   .sprite-card .rarity-pill{
-    font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.3px;
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.3px;
     border-radius:7px; padding:2px 7px; color:#fff;
   }
   .sprite-card .sp-cost{ font-size:11px; font-weight:800; color:var(--text-soft); }
-  .sprite-card.locked{ opacity:.62; }
-  .sprite-card.locked svg{ filter:grayscale(.75); }
+  /* Pas d'opacité réduite sur le texte (contraste) : c'est l'illustration seule qui est grisée. */
+  .sprite-card.locked svg, .sprite-card.locked .sp-custom-img{ filter:grayscale(.85) opacity(.75); }
   .sprite-card.owned{ border-color:var(--good); }
   .sprite-card.selected{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 18%, var(--surface2)); transform:scale(1.03); }
   .sprite-card.affordable:active{ transform:scale(.95); }
   .sprite-card .sp-buy{
-    margin-top:2px; font-family:var(--font-display); font-weight:800; font-size:10.5px;
+    margin-top:2px; font-family:var(--font-display); font-weight:800; font-size:12px;
     border:none; border-radius:8px; padding:5px 9px; cursor:pointer;
-    background:var(--accent); color:#fff;
+    background:var(--accent); color:var(--on-accent);
   }
-  body[data-app-theme="brainrot"] .sprite-card .sp-buy{ color:#14121A; }
   .sprite-card .sp-buy[disabled]{ opacity:.4; cursor:default; }
   .sprite-card .sp-mascot-btn{
-    margin-top:2px; font-family:var(--font-display); font-weight:700; font-size:9.5px;
+    margin-top:2px; font-family:var(--font-display); font-weight:700; font-size:11.5px;
     border:2px solid var(--border); border-radius:8px; padding:4px 7px; cursor:pointer;
     background:var(--surface); color:var(--text-soft);
   }
-  .sprite-card .sp-mascot-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
-  body[data-app-theme="brainrot"] .sprite-card .sp-mascot-btn.active{ color:#14121A; }
+  .sprite-card .sp-mascot-btn.active{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .sprite-card .sp-role{ font-size:11.5px; font-weight:700; color:var(--text-soft); line-height:1.2; }
+  button.sprite-card{ font-family:var(--font-body); color:var(--text); }
+  .sprite-card.reward-locked{ border-style:dashed; cursor:pointer; }
+  .sprite-card.is-full{ border-style:dashed; }
+  .sprite-card .sp-info{ background:var(--accent2); }
+  .sprite-card .sp-buy, .sprite-card .sp-mascot-btn{ min-height:32px; }
+  .streak-pill{ margin-left:6px; }
+  .info-art{ display:flex; flex-direction:column; align-items:center; gap:4px; margin:6px auto 10px; }
+  .info-art svg, .info-art .sp-custom-img{ width:96px; height:96px; }
+  .info-art-row{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+
+  /* ---- Bataille : équipes de cartes ---- */
+  .bt-rules{ background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; padding:8px 12px; margin-bottom:12px; font-size:13.5px; }
+  .bt-rules summary{ cursor:pointer; font-weight:800; }
+  .bt-rules ul{ margin:8px 0 2px; padding-left:18px; line-height:1.5; }
+  .bt-status{ font-weight:800; font-size:14px; margin:0 0 8px; min-height:2.4em; }
+  .bt-side-title{ margin:6px 0 6px; font-family:var(--font-display); font-weight:800; font-size:14px; }
+  .bt-field{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; min-height:132px; }
+  .bt-reserve{ margin:6px 0 0; font-size:12.5px; color:var(--text-soft); }
+  .bt-log{ margin:10px 0; padding:8px 10px; background:var(--surface2); border-radius:12px; font-size:13px; line-height:1.4; min-height:3.6em; }
+  .bt-log p{ margin:0 0 2px; }
+  .bt-result{ font-family:var(--font-display); font-weight:900; font-size:19px; text-align:center; margin:10px 0; }
+  .bcard{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:6px 4px 8px; border:2px solid var(--border); background:var(--surface2);
+    border-radius:14px; cursor:pointer; color:var(--text); font-family:var(--font-body); text-align:center;
+    transition:transform .15s, border-color .15s;
+  }
+  .bcard.enemy{ background:var(--surface3); }
+  .bcard:disabled{ cursor:default; opacity:1; }
+  .bcard-art{ width:60px; height:60px; display:flex; align-items:center; justify-content:center; }
+  .bcard-art svg, .bcard-art .sp-custom-img, .bcard-art .sp-full-img, .bcard-art .fullbody-compose{ width:60px; height:60px; object-fit:contain; }
+  .bcard-name{ font-family:var(--font-display); font-weight:800; font-size:12.5px; line-height:1.1; }
+  .bcard-role{ font-size:11.5px; font-weight:700; color:var(--text-soft); }
+  .bcard-pts{ font-family:var(--font-display); font-weight:900; font-size:18px; }
+  .bcard.selected{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent) inset; transform:translateY(-3px); }
+  .bcard.targetable{ border-color:var(--bad); }
+  .bcard.targetable:active{ transform:scale(.96); }
+  .bcard.hit{ animation:shakeX .4s; }
+  .bcard.dying{ opacity:.35; }
+  @media (prefers-reduced-motion: reduce){ .bcard.hit{ animation:none; } .bcard{ transition:none; } }
 
   .duel-wrap{ display:flex; align-items:center; justify-content:center; gap:10px; margin:10px 0 4px; }
   /* Portrait : les deux combattants l'un au-dessus de l'autre. Paysage :
@@ -588,16 +659,24 @@
   @media (prefers-reduced-motion: reduce){
     .duel-fighter.winner{ animation:none; }
   }
+
+  /* Bordures des contrôles (boutons, pastilles, cartes cliquables) assez
+     contrastées (≥ 3:1 avec le fond) pour être repérées sans dépendre de la
+     seule couleur de remplissage (RGAA 3.3). Placé en dernier : les états
+     (.active, .selected, .correct...) plus spécifiques gardent leur couleur. */
+  .choice-btn, .level-btn, .tab-btn, .menu-btn, .theme-toggle, .settings-btn, .home-btn,
+  .bcard, .sprite-card, .settings-close, .aconf-level-btn, .sp-mascot-btn, .btn.ghost{ border-color:var(--control-border); }
+  .btn.ghost{ border:1.5px solid var(--control-border); }
 </style>
 
-<div class="app" id="app">
+<div class="app" id="app" lang="fr">
   <!-- Écran de démarrage : présente le duo Chat kawaii / Brainrot avant
        d'entrer dans l'appli (voir drawSplashArt). Un export fixe de ce
        visuel vit aussi dans assets/branding/ pour réutilisation (icône,
        README, packaging futur). -->
   <div class="splash-overlay" id="splash-overlay">
     <div class="splash-card">
-      <svg id="splashSvg" class="splash-art" viewBox="0 0 320 180"></svg>
+      <svg id="splashSvg" class="splash-art" viewBox="0 0 320 180" role="img" aria-label="Un chat kawaii et un personnage brainrot face à face"></svg>
       <h1 class="splash-title">Géo Miaou <span class="splash-vs-inline">VS</span> Geo Chaos 9000</h1>
       <p class="splash-sub">La géométrie CE1 comme un jeu : mesure, formes, quiz et bataille de personnages !</p>
       <button class="btn primary splash-start-btn" id="splash-start-btn" type="button">Commencer à jouer ▶</button>
@@ -606,20 +685,24 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="mascot" id="mascotIcon">🐱</span>
+      <div class="brand-left">
+        <span class="mascot" id="mascotIcon" role="img" aria-label="Ta mascotte">🐱</span>
+        <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="main-nav">☰ Menu</button>
+      </div>
       <h1 id="appTitle">Géo Miaou</h1>
     </div>
     <div class="topbar-right">
-      <div class="stars">⭐ <span id="starCount">0</span></div>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Passer en mode Brainrot" title="Changer de clan">👹</button>
+      <div class="stars" role="status" aria-label="Tes étoiles">⭐ <span id="starCount">0</span></div>
       <button class="settings-btn" id="settings-btn" type="button" aria-label="Réglages">⚙️</button>
     </div>
   </header>
 
   <!-- Réglages : intensité des effets (son + confettis) sur les réponses -->
   <div class="settings-overlay" id="settings-overlay" hidden>
-    <div class="settings-panel">
+    <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="settings-panel-head">
-        <h2>Réglages</h2>
+        <h2 id="settings-title">Réglages</h2>
         <button class="settings-close" id="settings-close" type="button" aria-label="Fermer">✕</button>
       </div>
       <p class="muted">Effets sur les bonnes/mauvaises réponses :</p>
@@ -646,6 +729,36 @@
       <hr class="settings-divider">
 
       <button class="btn ghost" id="open-activity-config-btn" type="button" style="width:100%;">🎚️ Configurer les activités et leur difficulté</button>
+
+      <hr class="settings-divider">
+
+      <!-- Effacer la progression : étoiles, personnages débloqués, mascotte.
+           Les réglages (thème, effets, affichage...) sont conservés. Deux
+           étapes pour éviter un effacement par erreur. -->
+      <button class="btn ghost" id="reset-progress-btn" type="button" style="width:100%;">🗑️ Effacer ma progression</button>
+      <div id="reset-confirm" hidden>
+        <p class="muted settings-hint" role="alert">Tout effacer ? Tes étoiles, tes personnages débloqués et ta mascotte reviendront à zéro. Cette action est définitive.</p>
+        <div class="btn-row">
+          <button class="btn primary" id="reset-yes" type="button">Oui, tout effacer</button>
+          <button class="btn ghost" id="reset-no" type="button">Non, je garde</button>
+        </div>
+      </div>
+      <p class="muted settings-hint" id="reset-done" role="status" hidden>Progression effacée.</p>
+
+      <hr class="settings-divider">
+      <button class="btn ghost" id="unlock-all-btn" type="button" style="width:100%;">🔓 Tout débloquer (pour tester)</button>
+    </div>
+  </div>
+
+  <!-- Fenêtre d'information (explication d'un personnage à débloquer, ou
+       annonce d'un personnage tout juste débloqué). -->
+  <div class="settings-overlay" id="info-overlay" hidden>
+    <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="info-title">
+      <div class="settings-panel-head">
+        <h2 id="info-title">Information</h2>
+        <button class="settings-close" id="info-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <div id="info-body"></div>
     </div>
   </div>
 
@@ -654,9 +767,9 @@
        apparaît actuellement, modifiables à la main, et une note expliquant
        ce qui est tiré au hasard vs fixe pour chaque épreuve. -->
   <div class="settings-overlay" id="activity-config-overlay" hidden>
-    <div class="settings-panel activity-config-panel">
+    <div class="settings-panel activity-config-panel" role="dialog" aria-modal="true" aria-labelledby="aconf-title">
       <div class="settings-panel-head">
-        <h2>Activités &amp; difficulté</h2>
+        <h2 id="aconf-title">Activités &amp; difficulté</h2>
         <button class="settings-close" id="activity-config-close" type="button" aria-label="Fermer">✕</button>
       </div>
       <p class="muted">Pour Quizz et Patron→Solide, coche les niveaux où chaque épreuve doit apparaître (décoche pour la retirer d'un niveau, coche pour l'y ajouter). Les autres activités n'ont pas de sous-types : une note explique comment leur difficulté fonctionne.</p>
@@ -665,17 +778,12 @@
     </div>
   </div>
 
-  <div class="theme-switch" role="tablist" aria-label="Choix de l'univers">
-    <button class="theme-btn active" data-theme="cats" type="button">🐱 Chats Kawaii</button>
-    <button class="theme-btn" data-theme="brainrot" type="button">👹 Brainrot</button>
-  </div>
-
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="facile" type="button"><span class="ic">🙂</span>Facile</button>
-    <button class="tab-btn" data-tab="moyen" type="button"><span class="ic">🤔</span>Moyen</button>
-    <button class="tab-btn" data-tab="difficile" type="button"><span class="ic">🔥</span>Difficile</button>
-    <button class="tab-btn" data-tab="manuel" type="button"><span class="ic">🎯</span>Manuel</button>
-    <button class="tab-btn" data-tab="arena" type="button"><span class="ic">🎮</span>Boutique</button>
+  <nav class="tabs" id="main-nav" aria-label="Choix de l'activité" hidden>
+    <button class="tab-btn active" data-tab="facile" type="button" aria-pressed="true"><span class="ic" aria-hidden="true">🙂</span>Facile</button>
+    <button class="tab-btn" data-tab="moyen" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🤔</span>Moyen</button>
+    <button class="tab-btn" data-tab="difficile" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🔥</span>Difficile</button>
+    <button class="tab-btn" data-tab="manuel" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎯</span>Manuel</button>
+    <button class="tab-btn" data-tab="arena" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎮</span>Boutique</button>
   </nav>
 
   <main id="tabContent">
@@ -726,8 +834,9 @@
         </div>
 
         <!-- Mode "compte à rebours" : pendant le défi -->
-        <div id="countdown-hud" class="arena-star-note" hidden>
-          <span>⏱️</span><span>Temps restant : <strong id="countdown-time-left">60 s</strong> — Score : <strong id="countdown-score-live">0 / 0</strong></span>
+        <div id="countdown-hud" class="arena-star-note countdown-hud" hidden>
+          <button class="home-btn" id="countdown-home-btn" type="button" aria-label="Quitter le chronomètre et revenir à l'accueil">🏠</button>
+          <span role="timer" aria-live="off"><span aria-hidden="true">⏱️</span> Temps restant : <strong id="countdown-time-left">60 s</strong> — Bonnes réponses : <strong id="countdown-score-live">0 / 0</strong></span>
         </div>
 
         <!-- Mode "compte à rebours" : résultats -->
@@ -742,10 +851,11 @@
              est visible à la fois, choisi au hasard par nextPracticeQuestion(). -->
         <div id="practice-exercise">
           <span class="qtype-tag" id="practice-family-tag">Mesurer</span>
+          <span class="qtype-tag streak-pill" id="streak-pill" hidden></span>
 
           <div id="fam-measure" hidden>
             <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
-            <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100"></svg></div>
+            <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>
             <div class="choices" id="m1-choices"></div>
             <div class="feedback" id="m1-feedback"></div>
             <div class="btn-row">
@@ -755,7 +865,7 @@
 
           <div id="fam-deform" hidden>
             <p class="muted" id="m2-instructions">Fais glisser les coins pour transformer la forme.</p>
-            <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260"></svg></div>
+            <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>
             <div class="feedback" id="m2-feedback"></div>
             <div class="btn-row">
               <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>
@@ -765,7 +875,7 @@
 
           <div id="fam-net" hidden>
             <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
-            <div class="stage" id="stage">
+            <div class="stage" id="stage" role="img" aria-label="Patron à plat qui se plie pour former un solide">
               <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
             </div>
             <div class="qcm-choices" id="m3-choices"></div>
@@ -777,11 +887,10 @@
 
           <div id="fam-qcm" hidden>
             <div class="coach-row">
-              <span class="coach-avatar" id="m4-avatar">🐱</span>
               <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>
             </div>
             <p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>
-            <div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200"></svg></div>
+            <div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200" role="img" aria-label="Illustration de la question"></svg></div>
             <div class="qcm-choices" id="m4-choices"></div>
             <div class="feedback" id="m4-feedback"></div>
             <div class="btn-row">
@@ -791,11 +900,10 @@
 
           <div id="fam-clock-lire" hidden>
             <div class="coach-row">
-              <span class="coach-avatar" id="m5-avatar">🐱</span>
               <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>
             </div>
             <p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>
-            <div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200"></svg></div>
+            <div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200" role="img" aria-label="Horloge à lire"></svg></div>
             <div class="qcm-choices" id="m5-choices"></div>
             <div class="feedback" id="m5-feedback"></div>
             <div class="btn-row">
@@ -805,7 +913,7 @@
 
           <div id="fam-clock-regler" hidden>
             <p class="muted">Place les aiguilles sur : <strong id="m5-target">3 h</strong></p>
-            <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200"></svg></div>
+            <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>
             <div class="feedback" id="m5r-feedback"></div>
             <div class="btn-row">
               <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>
@@ -821,96 +929,78 @@
     <section class="tabpanel" id="tab-arena" hidden>
       <div class="card">
         <h2>Boutique &amp; Bataille</h2>
-        <p class="muted">Utilise tes étoiles ⭐ pour débloquer des personnages, puis fais s'affronter un chat et un brainrot pour voir qui gagne !</p>
+        <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis, puis forme une équipe pour affronter l'autre clan !</p>
         <div class="level-row" id="arena-modes"></div>
 
         <!-- ===== BOUTIQUE =====
-             Le clan affiché suit le thème actif choisi en haut de l'écran
-             (Chats/Brainrot) : pas de sélecteur redondant ici. Seuls les
-             personnages PAS ENCORE débloqués de ce clan apparaissent dans
-             la grille principale ; ceux déjà possédés (et le choix de la
-             mascotte) sont rangés dans un panneau replié par défaut. -->
+             Le clan affiché suit le clan actif (bouton à gauche des
+             étoiles). Personnages débloqués et à obtenir sont côte à côte
+             dans la même grille. -->
         <div id="arena-shop-wrap">
-          <div class="arena-star-note"><span>⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
-          <p class="qtype-tag" id="shop-clan-tag">Chats kawaii 🐱</p>
+          <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
+          <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
           <div class="sprite-grid" id="shop-grid"></div>
-
-          <button class="btn ghost" id="shop-owned-toggle-btn" type="button" style="width:100%;margin-top:12px;" hidden>🐾 Voir mes personnages débloqués</button>
-          <div id="shop-owned-wrap" hidden>
-            <p class="muted" style="margin-top:10px;">Tes personnages débloqués de ce clan : choisis lequel devient ta mascotte.</p>
-            <div class="sprite-grid" id="shop-owned-grid"></div>
-          </div>
         </div>
 
-        <!-- ===== BATAILLE ===== -->
+        <!-- ===== BATAILLE (équipes de cartes) =====
+             Tu joues avec le clan actif (celui du bouton en haut : Chats
+             Kawaii ou Brainrot) et tu affrontes l'autre clan. Une seule
+             caractéristique par personnage : ses points, qui servent à la
+             fois d'attaque et d'énergie. Équipe : 3 classiques, 1 soutien
+             et 1 archer ; 3 cartes sont posées au hasard sur le terrain, et
+             une nouvelle carte entre quand l'une est battue. -->
         <div id="arena-battle-wrap" hidden>
-          <div class="btn-row">
-            <button class="btn ghost" id="unlock-all-btn" type="button">🔓 Débloquer tous les personnages (test)</button>
-          </div>
-          <div class="level-row" id="battle-modes"></div>
 
-          <!-- ----- Duel rapide (1 chat vs 1 brainrot) ----- -->
-          <div id="battle-duel-mode">
-            <div id="duel-pick-wrap">
-              <p class="muted" id="battle-instructions">Choisis un chat, puis un brainrot dans tes personnages débloqués.</p>
-              <p class="qtype-tag">Tes chats 🐱</p>
-              <div class="sprite-grid" id="battle-cat-grid"></div>
-              <p class="qtype-tag" style="margin-top:14px;">Tes brainrots 👹</p>
-              <div class="sprite-grid" id="battle-brain-grid"></div>
-            </div>
-
-            <div id="battle-duel-wrap" hidden>
-              <div class="btn-row">
-                <button class="btn ghost" id="duel-change-btn" type="button">↩️ Changer les personnages</button>
-              </div>
-              <div class="duel-wrap">
-                <div class="duel-fighter" id="duel-cat"></div>
-                <div class="duel-vs">VS</div>
-                <div class="duel-fighter" id="duel-brain"></div>
-              </div>
-              <p class="muted" id="battle-pick-note" style="text-align:center;">Choisis une statistique de ton chat pour lancer le duel !</p>
-              <div id="battle-stats"></div>
-              <div class="duel-result" id="battle-result"></div>
-              <div class="btn-row" style="justify-content:center;">
-                <button class="btn primary" id="battle-again" type="button" hidden>Nouveau duel ↻</button>
-              </div>
+          <!-- ----- Choix de l'équipe ----- -->
+          <div id="bt-setup">
+            <details class="bt-rules">
+              <summary>📖 Comment ça marche ?</summary>
+              <ul>
+                <li>Chaque personnage a des <strong>points ❤️</strong> : c'est sa force d'attaque <em>et</em> son énergie.</li>
+                <li>Quand tu attaques, la carte visée perd autant de points que ton attaquant en a, et ton attaquant perd autant de points que la carte adverse en avait. Une carte à 0 est battue.</li>
+                <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain.</li>
+                <li>🏹 L'<strong>Archer</strong> attaque de loin : il n'est jamais blessé en retour.</li>
+                <li>Ton équipe : 3 classiques, 1 soutien, 1 archer. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
+              </ul>
+            </details>
+            <p class="muted" id="bt-intro">Forme ton équipe : 3 classiques, 1 soutien et 1 archer.</p>
+            <p class="qtype-tag" id="bt-tag-classic">⚔️ Classiques : <span id="bt-count-classic">0/3</span></p>
+            <div class="sprite-grid" id="bt-grid-classic"></div>
+            <p class="qtype-tag" id="bt-tag-support" style="margin-top:14px;">💖 Soutien : <span id="bt-count-support">0/1</span></p>
+            <div class="sprite-grid" id="bt-grid-support"></div>
+            <p class="qtype-tag" id="bt-tag-archer" style="margin-top:14px;">🏹 Archer : <span id="bt-count-archer">0/1</span></p>
+            <div class="sprite-grid" id="bt-grid-archer"></div>
+            <p class="muted" id="bt-missing" hidden></p>
+            <div class="btn-row" style="justify-content:center;">
+              <button class="btn primary" id="bt-start" type="button" disabled>Commencer le combat ⚔️</button>
             </div>
           </div>
 
-          <!-- ----- Mode Équipe (5 chats vs adversaires aléatoires, en gauntlet) ----- -->
-          <div id="battle-team-mode" hidden>
-            <div id="team-pick-wrap">
-              <p class="muted">Choisis <strong>5 chats</strong> pour former ton équipe (<span id="team-pick-count">0</span>/5).</p>
-              <div class="sprite-grid" id="team-pick-grid"></div>
-              <div class="btn-row" style="justify-content:center;">
-                <button class="btn primary" id="team-start-btn" type="button" hidden>Commencer le combat ! ⚔️</button>
-              </div>
+          <!-- ----- Terrain ----- -->
+          <div id="bt-arena" hidden>
+            <p class="bt-status" id="bt-status" role="status" aria-live="polite"></p>
+            <div class="bt-side">
+              <p class="bt-side-title" id="bt-enemy-title">Adversaires</p>
+              <div class="bt-field" id="bt-enemy-field"></div>
+              <p class="bt-reserve" id="bt-enemy-reserve"></p>
             </div>
-
-            <div id="team-fight-wrap" hidden>
-              <div class="btn-row">
-                <button class="btn ghost" id="team-abandon-btn" type="button">↩️ Changer d'équipe</button>
-              </div>
-              <div class="arena-star-note"><span>🏆</span><span>Adversaires vaincus : <strong id="team-score">0</strong></span></div>
-              <p class="muted" id="team-roster-note" style="text-align:center;"></p>
-              <div class="duel-wrap">
-                <div class="duel-fighter" id="team-duel-cat"></div>
-                <div class="duel-vs">VS</div>
-                <div class="duel-fighter" id="team-duel-brain"></div>
-              </div>
-              <p class="muted" id="team-pick-note" style="text-align:center;">Choisis une statistique pour attaquer !</p>
-              <div id="team-battle-stats"></div>
-              <div class="duel-result" id="team-battle-result"></div>
-              <div class="btn-row" style="justify-content:center;">
-                <button class="btn primary" id="team-next-btn" type="button" hidden>Adversaire suivant ↻</button>
-              </div>
+            <div class="bt-log" id="bt-log" role="log" aria-live="polite"></div>
+            <div class="bt-side">
+              <p class="bt-side-title">Ton équipe</p>
+              <div class="bt-field" id="bt-player-field"></div>
+              <p class="bt-reserve" id="bt-player-reserve"></p>
             </div>
+            <div class="btn-row" style="justify-content:center;">
+              <button class="btn ghost" id="bt-quit" type="button">↩️ Abandonner</button>
+            </div>
+          </div>
 
-            <div id="team-over-wrap" hidden>
-              <p class="duel-result" id="team-over-text"></p>
-              <div class="btn-row" style="justify-content:center;">
-                <button class="btn primary" id="team-restart-btn" type="button">Reformer une équipe ↺</button>
-              </div>
+          <!-- ----- Fin du combat ----- -->
+          <div id="bt-over" hidden>
+            <p class="bt-result" id="bt-over-text" role="status"></p>
+            <div class="btn-row" style="justify-content:center;">
+              <button class="btn primary" id="bt-again" type="button">Rejouer ↻</button>
+              <button class="btn ghost" id="bt-change-team" type="button">Changer d'équipe</button>
             </div>
           </div>
         </div>
@@ -922,7 +1012,7 @@
   <!-- Mascotte : personnage (chat ou brainrot selon le thème) visible jusqu'au
        tronc en bas de l'écran, qui "pose" les questions et réagit aux
        réponses (voir setCoachReaction / celebrate). -->
-  <div class="mascot-dock" id="mascot-dock">
+  <div class="mascot-dock" id="mascot-dock" aria-hidden="true">
     <div id="mascot-visual">
       <svg id="mascotBigSvg" viewBox="0 0 200 240"></svg>
       <span class="coach-avatar mascot-face" id="mascot-face">🐱</span>
@@ -1000,45 +1090,56 @@
 
   document.getElementById('settings-btn').addEventListener('click', function(){
     document.getElementById('settings-overlay').hidden = false;
+    document.getElementById('settings-close').focus();
   });
   document.getElementById('settings-close').addEventListener('click', function(){
     document.getElementById('settings-overlay').hidden = true;
+    document.getElementById('settings-btn').focus();
   });
   document.getElementById('settings-overlay').addEventListener('click', function(e){
     if(e.target.id === 'settings-overlay') document.getElementById('settings-overlay').hidden = true;
   });
 
-  document.querySelectorAll('.theme-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.remove('active'); });
-      btn.classList.add('active');
-      var th = btn.getAttribute('data-theme');
-      document.body.setAttribute('data-app-theme', th);
-      var cfg = THEMES[th];
-      document.getElementById('appTitle').textContent = cfg.title;
-      document.querySelectorAll('.coach-avatar').forEach(function(av){
-        // La mascotte perso (si choisie) garde son propre visage, pas
-        // l'emoji générique du thème (voir renderMascotDock plus bas).
-        if(av.id === 'mascot-face' && mascotSpriteId) return;
-        av.textContent = cfg.mascot;
-      });
-      try{ localStorage.setItem('geo_theme', th); }catch(e){}
-      renderTopMascotIcon();
-      renderMascotDock();
-      renderShop(); // la boutique suit le clan actif (voir syncShopThemeToAppTheme)
+  // Un seul bouton (à gauche des étoiles) bascule entre les deux clans : il
+  // affiche l'emoji du clan VERS lequel on bascule, et son libellé accessible
+  // le dit en toutes lettres (on n'affiche plus deux gros boutons de thème).
+  function syncThemeToggleButton(th){
+    var btn = document.getElementById('theme-toggle');
+    if(!btn) return;
+    var other = th==='cats' ? 'brainrot' : 'cats';
+    btn.textContent = THEMES[other].mascot;
+    btn.setAttribute('aria-label', other==='brainrot' ? 'Passer dans le clan Brainrot' : 'Passer dans le clan Chats Kawaii');
+    btn.setAttribute('title', other==='brainrot' ? 'Passer dans le clan Brainrot' : 'Passer dans le clan Chats Kawaii');
+  }
+  function applyTheme(th){
+    document.body.setAttribute('data-app-theme', th);
+    var cfg = THEMES[th];
+    document.getElementById('appTitle').textContent = cfg.title;
+    syncThemeToggleButton(th);
+    document.querySelectorAll('.coach-avatar').forEach(function(av){
+      // La mascotte perso (si choisie) garde son propre visage, pas
+      // l'emoji générique du thème (voir renderMascotDock plus bas).
+      if(av.id === 'mascot-face' && mascotSpriteId) return;
+      av.textContent = cfg.mascot;
     });
+    try{ localStorage.setItem('geo_theme', th); }catch(e){}
+    renderTopMascotIcon();
+    renderMascotDock();
+    renderShop(); // la boutique suit le clan actif (voir syncShopThemeToAppTheme)
+    if(typeof onThemeChangedForBattle === 'function') onThemeChangedForBattle();
+  }
+  document.getElementById('theme-toggle').addEventListener('click', function(){
+    applyTheme(document.body.getAttribute('data-app-theme')==='brainrot' ? 'cats' : 'brainrot');
   });
   (function initTheme(){
     var th = 'cats';
     try{ th = localStorage.getItem('geo_theme') || 'cats'; }catch(e){}
     if(th !== 'cats' && th !== 'brainrot') th = 'cats';
     document.body.setAttribute('data-app-theme', th);
-    document.querySelectorAll('.theme-btn').forEach(function(b){
-      b.classList.toggle('active', b.getAttribute('data-theme')===th);
-    });
     var cfg = THEMES[th];
     document.getElementById('mascotIcon').textContent = cfg.mascot;
     document.getElementById('appTitle').textContent = cfg.title;
+    syncThemeToggleButton(th);
     document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
     // (le premier dessin de la mascotte se fait plus bas, une fois svgNS/el
     // définis : el() en dépend, et ce IIFE s'exécute avant leur assignation)
@@ -1098,10 +1199,22 @@
   }
 
   var DIFFICULTY_TABS = { facile:0, moyen:1, difficile:2 };
+  // La ligne d'onglets (Facile/Moyen/Difficile/Manuel/Boutique) est repliée
+  // par défaut pour alléger l'écran : le bouton "☰ Menu" (juste sous l'image
+  // de la mascotte) la fait apparaître, et elle se referme dès qu'on a choisi.
+  function setMenuOpen(open){
+    document.getElementById('main-nav').hidden = !open;
+    document.getElementById('menu-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  document.getElementById('menu-btn').addEventListener('click', function(){
+    setMenuOpen(document.getElementById('main-nav').hidden);
+  });
   document.querySelectorAll('.tab-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
-      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed','true');
+      setMenuOpen(false);
       var tab = btn.getAttribute('data-tab');
       document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
       if(tab in DIFFICULTY_TABS){
@@ -1248,12 +1361,14 @@
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'level-btn' + (idx===defaultIdx ? ' active' : '');
+      b.setAttribute('aria-pressed', idx===defaultIdx ? 'true' : 'false');
       b.textContent = label;
       b.addEventListener('click', function(){
         if(current === idx) return;
         current = idx;
-        container.querySelectorAll('.level-btn').forEach(function(x){ x.classList.remove('active'); });
+        container.querySelectorAll('.level-btn').forEach(function(x){ x.classList.remove('active'); x.setAttribute('aria-pressed','false'); });
         b.classList.add('active');
+        b.setAttribute('aria-pressed','true');
         onChange(idx);
       });
       container.appendChild(b);
@@ -1400,8 +1515,15 @@
     var fb = document.getElementById(feedbackId);
     if(!fb) return;
     fb.classList.add('tappable');
+    // Accessibilité : annoncé par les lecteurs d'écran dès qu'il apparaît,
+    // atteignable au clavier, et Entrée/Espace fait la même chose qu'un clic.
+    fb.setAttribute('aria-live','polite');
+    fb.tabIndex = 0;
     fb.addEventListener('click', function(){
       if(fb.classList.contains('show')) nextFn();
+    });
+    fb.addEventListener('keydown', function(e){
+      if((e.key==='Enter' || e.key===' ') && fb.classList.contains('show')){ e.preventDefault(); nextFn(); }
     });
   }
 
@@ -1517,12 +1639,12 @@
     var ok = Math.abs(v-currentLen)<0.001;
     if(ok){
       btn.classList.add('correct');
-      fb.className = 'feedback good show';
+      fb.className = 'feedback tappable good show';
       fb.innerHTML = '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>';
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === (fmtNum(currentLen)+' cm')) b.classList.add('correct'); });
-      fb.className = 'feedback bad show';
+      fb.className = 'feedback tappable bad show';
       fb.innerHTML = '<div>✘ Pas tout à fait. La bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>';
     }
     playSound(ok?'good':'bad');
@@ -1650,6 +1772,7 @@
     return startPts;
   }
 
+  var deformFocusIdx = null; // coin qui garde le focus clavier après un redessin
   function drawDeform(){
     var svg = document.getElementById('deformSvg');
     svg.innerHTML = "";
@@ -1670,9 +1793,26 @@
     }
 
     pts.forEach(function(p, idx){
-      var c = el('circle',{cx:p[0],cy:p[1],r:13,fill:'var(--accent)',stroke:'#fff','stroke-width':3,class:'handle'});
+      var c = el('circle',{cx:p[0],cy:p[1],r:13,fill:'var(--accent)',stroke:'var(--text)','stroke-width':3,class:'handle'});
       c.style.touchAction = 'none';
+      // Accessibilité : chaque coin est atteignable au clavier (Tab) et se
+      // déplace avec les flèches (Maj = pas plus grand), en plus du glisser.
+      c.setAttribute('tabindex','0');
+      c.setAttribute('role','button');
+      c.setAttribute('aria-label','Coin ' + (idx+1) + ' sur 4 : flèches du clavier pour le déplacer');
+      c.addEventListener('keydown', function(ev){
+        var step = ev.shiftKey ? 20 : 8, dx = 0, dy = 0;
+        if(ev.key==='ArrowLeft') dx = -step; else if(ev.key==='ArrowRight') dx = step;
+        else if(ev.key==='ArrowUp') dy = -step; else if(ev.key==='ArrowDown') dy = step;
+        else return;
+        ev.preventDefault();
+        pts[idx][0] = Math.max(20, Math.min(240, pts[idx][0] + dx));
+        pts[idx][1] = Math.max(20, Math.min(240, pts[idx][1] + dy));
+        deformFocusIdx = idx;
+        drawDeform();
+      });
       c.addEventListener('pointerdown', function(ev){
+        deformFocusIdx = null;
         c.setPointerCapture(ev.pointerId);
         function toSvgPoint(clientX, clientY){
           var pt = svg.createSVGPoint();
@@ -1694,6 +1834,7 @@
         c.addEventListener('pointerup', up);
       });
       svg.appendChild(c);
+      if(deformFocusIdx === idx) c.focus();
     });
   }
 
@@ -1715,7 +1856,7 @@
     var lv = M2_LEVELS[m2ShapeIdx];
     var res = lv.check(lv.tolGreat, lv.tolOk);
     var fb = document.getElementById('m2-feedback');
-    fb.className = 'feedback ' + (res.ok ? 'good' : 'bad') + ' show';
+    fb.className = 'feedback tappable ' + (res.ok ? 'good' : 'bad') + ' show';
     fb.textContent = res.msg;
     playSound(res.ok ? 'good' : 'bad');
     celebrate(res.ok ? 'good' : 'bad', fb);
@@ -1867,6 +2008,28 @@
   };
 
   var M3_ANSWER_LABELS = { cube:'Cube', pave:'Pavé droit', pyramide:'Pyramide', aucun:'Aucun solide' };
+
+  // Explication PROPRE à chaque patron (pédagogie : on dit précisément ce
+  // qui se passe pour CE patron, au lieu d'une phrase générique), et petit
+  // indice affiché pendant qu'il se plie. "noHighlight" : pour les patrons
+  // auxquels il MANQUE une face, on ne surligne aucune face en rouge (il n'y
+  // en a pas de "mal placée" : c'est l'absence d'une face qui pose problème).
+  NET_CROSS.why = 'Ce patron est une croix de 6 carrés : un carré au centre, un au-dessus, un en dessous, un à gauche, et un dernier accroché à droite. En pliant, chaque carré devient une face et ils se referment sans se chevaucher : on obtient un cube (6 faces carrées).';
+  NET_STRIP.why = 'Les 6 carrés sont alignés en une seule bande. En pliant, la bande s\'enroule sur elle-même : les carrés se recouvrent et il reste deux ouvertures. Pour fermer un cube, il faut des carrés placés tout autour, pas une simple bande.';
+  NET_STRIP.hint = 'Regarde bien : en s\'enroulant, la bande se recouvre elle-même.';
+  NET_STAIRCASE.why = 'Les 6 carrés forment un escalier. En pliant, chacun prend une place différente (dessus, dessous, devant, derrière, gauche, droite), sans trou ni chevauchement : c\'est bien un cube.';
+  NET_BLOCK2X3.why = 'Ce patron a bien 6 carrés, mais ils sont serrés en un bloc de 2 sur 3. En pliant, deux carrés se retrouvent au même endroit pendant qu\'une autre place reste vide : ce n\'est pas un cube.';
+  NET_BLOCK2X3.hint = 'Regarde bien : deux carrés vont se retrouver l\'un sur l\'autre.';
+  NET_CUBE_5FACES.why = 'Ce patron n\'a que 5 carrés, alors qu\'un cube a besoin de 6 faces. Il manque une face : impossible de fermer le cube.';
+  NET_CUBE_5FACES.hint = 'Compte les carrés : il n\'y en a que 5, il en faut 6 pour fermer un cube.';
+  NET_CUBE_5FACES.noHighlight = true;
+  NET_CUBE_7FACES.why = 'Ce patron a 7 carrés, soit un de trop : un cube n\'a que 6 faces. En pliant, un carré se retrouve au même endroit qu\'un autre.';
+  NET_CUBE_7FACES.hint = 'Compte les carrés : il y en a 7, un cube n\'en a que 6.';
+  NET_PAVE.why = 'Ce patron a 6 rectangles : en pliant, ils forment les 6 faces d\'une boîte (dessus, dessous et 4 côtés). Toutes les faces ne sont pas des carrés, donc ce n\'est pas un cube mais un pavé droit.';
+  NET_PYRAMID.why = 'Un carré au centre (la base) et 4 triangles, un sur chaque côté du carré. En pliant, les 4 triangles se rejoignent en une pointe au-dessus de la base : c\'est une pyramide à base carrée.';
+  NET_PYRAMID_TROU.why = 'Il n\'y a que 3 triangles autour du carré, alors qu\'une pyramide à base carrée en demande 4 (un par côté du carré). Il manque un triangle : la pyramide reste ouverte.';
+  NET_PYRAMID_TROU.hint = 'Compte les triangles autour du carré : il n\'y en a que 3, il en faut 4.';
+  NET_PYRAMID_TROU.noHighlight = true;
 
   // Chaque patron ("épreuve" du module Patron→Solide) est déclaré une fois
   // ici avec ses niveaux PAR DÉFAUT ; le panneau de réglages "Activités &
@@ -2097,10 +2260,11 @@
   }
 
   function netExplain(net){
+    if(net.why) return net.why;
     if(net.answer==='cube') return 'Un cube a 6 faces carrées identiques, qui se referment sans trou ni chevauchement.';
     if(net.answer==='pave') return 'Un pavé droit (une boîte rectangulaire) a 6 faces rectangulaires, mais elles ne sont pas toutes des carrés identiques comme sur un cube.';
     if(net.answer==='pyramide') return 'Une pyramide à base carrée a 1 face carrée (la base) et 4 faces triangulaires qui se rejoignent toutes en un seul sommet, en haut.';
-    return 'Il manque une face bien placée, ou il y a un trou : ce patron ne forme aucun solide fermé.';
+    return 'Ce patron ne se referme pas en un solide.';
   }
 
   function answerNet(userChoice, btn){
@@ -2112,13 +2276,13 @@
     var fb = document.getElementById('m3-feedback');
     if(correct){
       btn.classList.add('correct');
-      fb.className = 'feedback good show';
+      fb.className = 'feedback tappable good show';
       fb.innerHTML = '<div>✔ Exact, c\'est bien "' + M3_ANSWER_LABELS[currentNet.answer] + '" !</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
       addStar(1);
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === M3_ANSWER_LABELS[currentNet.answer]) b.classList.add('correct'); });
-      fb.className = 'feedback bad show';
+      fb.className = 'feedback tappable bad show';
       fb.innerHTML = '<div>✘ Pas tout à fait : la bonne réponse était "' + M3_ANSWER_LABELS[currentNet.answer] + '".</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
     }
     playSound(correct?'good':'bad');
@@ -2128,7 +2292,7 @@
     var maxDepth = foldNet(currentElems, currentRootId, true);
     var genAtAnswer = m3Gen;
     if(currentNet.answer==='aucun'){
-      document.getElementById('m3-sub').textContent = 'Regarde bien : une face (en rouge) ne se pose pas au bon endroit, il reste un trou.';
+      document.getElementById('m3-sub').textContent = currentNet.hint || 'Regarde bien : une face (en rouge) ne se pose pas au bon endroit.';
     } else {
       document.getElementById('m3-sub').textContent = 'Regarde-le se refermer doucement...';
     }
@@ -2137,7 +2301,7 @@
     var totalMs = 220*maxDepth + 1800 + 300;
     setTimeout(function(){
       if(genAtAnswer !== m3Gen) return; // un autre patron a été chargé entre-temps
-      if(currentNet.answer==='aucun'){
+      if(currentNet.answer==='aucun' && !currentNet.noHighlight){
         var deepestId = null, deepestDepth = -1;
         Object.keys(currentElems).forEach(function(id){
           var d = depthOf(currentElems[id]);
@@ -2155,6 +2319,8 @@
   }
 
   document.getElementById('m3-next').addEventListener('click', nextPracticeQuestion);
+  // Toucher l'explication passe à la question suivante (comme dans les autres familles).
+  enableTapToContinue('m3-feedback', nextPracticeQuestion);
 
   /* ===================== MODULE 4 : QCM FORMES =====================
      Deux familles de questions, comme discuté :
@@ -2531,6 +2697,17 @@
     return (dx1*dy2 - dy1*dx2) === 0;
   }
 
+  // Explication adaptée aux 3 points affichés : sur quelle ligne/colonne/
+  // diagonale ils sont alignés, ou lequel sort de la droite des deux autres.
+  function alignExplain(pts, aligned){
+    function nm(p){ return COL_LETTERS[p.col] + (p.row+1); }
+    if(aligned){
+      if(pts[0].row===pts[1].row && pts[1].row===pts[2].row) return 'Oui : ' + pts.map(nm).join(', ') + ' sont tous sur la ligne ' + (pts[0].row+1) + '. Une règle posée sur cette ligne les touche tous les trois.';
+      if(pts[0].col===pts[1].col && pts[1].col===pts[2].col) return 'Oui : ' + pts.map(nm).join(', ') + ' sont tous dans la colonne ' + COL_LETTERS[pts[0].col] + '. Une règle posée sur cette colonne les touche tous les trois.';
+      return 'Oui : ' + pts.map(nm).join(', ') + ' sont en diagonale, à la suite les uns des autres. Une seule règle les touche tous les trois.';
+    }
+    return 'Non : si on pose la règle sur ' + nm(pts[0]) + ' et ' + nm(pts[1]) + ', elle ne touche pas ' + nm(pts[2]) + '. Il faut que la règle touche les 3 points en même temps.';
+  }
   function genAlignQuestion(){
     var aligned = Math.random()<0.5;
     var pts;
@@ -2565,7 +2742,7 @@
       tag:'Alignement',
       question:'Ces 3 points sont-ils alignés (sur une même droite) ?',
       sub:'Imagine une règle : peux-tu la poser pour toucher les 3 points en même temps ?',
-      explain: aligned ? 'Oui, une seule droite passe par les 3 points.' : 'Non, une droite ne peut pas passer par les 3 points en même temps.',
+      explain: alignExplain(pts, aligned),
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         drawGridBase(svg);
@@ -3098,6 +3275,52 @@
     meta.draw(g);
   }
 
+  // Une phrase qui décrit chaque solide (ce qui permet de le reconnaître),
+  // réutilisée par les questions "nom du solide" et les énigmes.
+  var SOLID_FACTS = {
+    'cube':'il a 6 faces carrées toutes identiques, comme un dé.',
+    'pavé droit':'il a 6 faces rectangulaires, comme une boîte à chaussures ou une brique.',
+    'pyramide à base carrée':'il a 1 base carrée et 4 faces triangulaires qui se rejoignent en une pointe.',
+    'tétraèdre':'il a 4 faces, toutes des triangles : c\'est la plus simple des pyramides.',
+    'octaèdre':'il a 8 faces triangulaires : ce sont deux pyramides à base carrée collées par leur base.',
+    'prisme triangulaire':'il a 2 faces triangulaires reliées par 3 rectangles, comme une tente de camping.',
+    'prisme pentagonal':'il a 2 faces pentagonales (5 côtés) reliées par 5 rectangles.',
+    'prisme hexagonal':'il a 2 faces hexagonales (6 côtés) reliées par 6 rectangles.',
+    'prisme octogonal':'il a 2 faces à 8 côtés reliées par 8 rectangles.',
+    'cylindre':'il a 2 disques ronds reliés par une surface qui s\'enroule, comme une boîte de conserve.',
+    'cône':'il a une base ronde et une seule pointe, comme un chapeau de sorcière ou un cornet de glace.',
+    'boule':'il est tout rond, sans arête ni sommet, comme un ballon.',
+    'triangle':'il a 3 côtés et 3 sommets. S\'il a 3 côtés égaux, on l\'appelle un triangle équilatéral.',
+    'carré':'il a 4 côtés égaux et 4 angles droits.',
+    'rectangle':'il a 4 angles droits et ses côtés opposés sont égaux (le carré est un rectangle particulier).',
+    'losange':'il a 4 côtés égaux, mais ses angles ne sont pas droits.',
+    'cercle':'c\'est une ligne courbe fermée : il n\'a ni côté ni sommet.',
+    'pentagone':'il a 5 côtés et 5 sommets.',
+    'hexagone':'il a 6 côtés et 6 sommets, comme une alvéole de ruche.'
+  };
+  // Comment compter faces / arêtes / sommets pour chaque polyèdre.
+  function countTip(key, attr){
+    var meta = SOLID_META[key];
+    var nPrism = { prisme_tri:3, prisme_penta:5, prisme_hexa:6, prisme_octo:8 }[key];
+    if(nPrism){
+      if(attr==='faces') return '2 faces de base (dessus et dessous) + ' + nPrism + ' rectangles sur les côtés = ' + meta.faces + ' faces.';
+      if(attr==='aretes') return nPrism + ' arêtes en haut + ' + nPrism + ' en bas + ' + nPrism + ' qui relient le haut et le bas = ' + meta.aretes + ' arêtes.';
+      return nPrism + ' coins en haut + ' + nPrism + ' coins en bas = ' + meta.sommets + ' sommets.';
+    }
+    var tips = {
+      cube:{ faces:'Dessus + dessous + 4 côtés = 6 faces.', aretes:'4 arêtes en haut + 4 en bas + 4 qui relient le haut et le bas = 12 arêtes.', sommets:'4 coins en haut + 4 coins en bas = 8 sommets.' },
+      pave:{ faces:'Dessus + dessous + 4 côtés = 6 faces (toutes des rectangles).', aretes:'4 arêtes en haut + 4 en bas + 4 qui relient le haut et le bas = 12 arêtes.', sommets:'4 coins en haut + 4 coins en bas = 8 sommets.' },
+      pyramide:{ faces:'1 base carrée + 4 triangles = 5 faces.', aretes:'4 arêtes autour de la base + 4 qui montent jusqu\'à la pointe = 8 arêtes.', sommets:'4 coins de la base + 1 pointe tout en haut = 5 sommets.' },
+      tetraedre:{ faces:'4 triangles = 4 faces.', aretes:'3 arêtes autour de la base + 3 qui montent jusqu\'à la pointe = 6 arêtes.', sommets:'3 coins de la base + 1 pointe = 4 sommets.' },
+      octaedre:{ faces:'4 triangles en haut + 4 triangles en bas = 8 faces.', aretes:'4 arêtes autour du milieu + 4 vers la pointe du haut + 4 vers la pointe du bas = 12 arêtes.', sommets:'1 pointe en haut + 1 en bas + 4 au milieu = 6 sommets.' }
+    };
+    return tips[key][attr];
+  }
+  var COUNT_DEFS = {
+    faces:'Une face est une surface plate du solide.',
+    aretes:'Une arête est un trait où deux faces se rejoignent.',
+    sommets:'Un sommet est une pointe, un coin où plusieurs arêtes se rejoignent.'
+  };
   function genSolideNomQuestion(){
     var keys = Object.keys(SOLID_META);
     var key = pick(keys);
@@ -3108,7 +3331,7 @@
       tag:'Solides',
       question:'Quel est le nom de ce solide ?',
       sub:'Observe bien sa forme en 3D.',
-      explain:'C\'est un(e) ' + meta.label + '.',
+      explain:'C\'est un(e) ' + meta.label + ' : ' + (SOLID_FACTS[meta.label] || 'observe bien ses faces.'),
       draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
       cols3:false,
       choices: labels.map(function(l){ return { label:l, ok:l===meta.label }; })
@@ -3128,7 +3351,7 @@
       tag:'Solides',
       question:'Combien de ' + attrLabel + ' a ce solide (' + meta.label + ') ?',
       sub:'Essaie de bien visualiser toutes les faces, même celles qu\'on ne voit pas directement.',
-      explain:'Un ' + meta.label + ' a ' + meta.faces + ' faces, ' + meta.aretes + ' arêtes et ' + meta.sommets + ' sommets.',
+      explain: COUNT_DEFS[attr] + ' ' + countTip(key, attr) + ' (Un ' + meta.label + ' a ' + meta.faces + ' faces, ' + meta.aretes + ' arêtes et ' + meta.sommets + ' sommets.)',
       draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
       cols3:false,
       // Les distracteurs sont pris AUTOUR de la vraie valeur (plutôt qu'un
@@ -3187,6 +3410,22 @@
     var m = totalMin % 60;
     return m===0 ? (h+' h') : (h+' h '+(m<10?'0'+m:m));
   }
+  // Explication adaptée à l'horloge affichée : où est la grande aiguille
+  // (minutes), où est la petite (heures), et donc quelle heure il est.
+  function clockExplain(hour, minuteVal, label){
+    var big = minuteVal/5; if(big===0) big = 12;
+    var bigTxt;
+    if(minuteVal===0) bigTxt = 'La grande aiguille (les minutes) est sur le 12 : c\'est une heure pile.';
+    else if(minuteVal===30) bigTxt = 'La grande aiguille (les minutes) est sur le 6 : c\'est la demi-heure, 30 minutes.';
+    else if(minuteVal===15) bigTxt = 'La grande aiguille (les minutes) est sur le 3 : c\'est le quart, 15 minutes.';
+    else if(minuteVal===45) bigTxt = 'La grande aiguille (les minutes) est sur le 9 : 45 minutes.';
+    else bigTxt = 'La grande aiguille (les minutes) est sur le ' + big + ' : on compte de 5 en 5, ' + big + ' × 5 = ' + minuteVal + ' minutes.';
+    var h12 = hour % 12; if(h12===0) h12 = 12;
+    var smallTxt = minuteVal===0
+      ? 'La petite aiguille (les heures) est pile sur le ' + h12 + '.'
+      : 'La petite aiguille (les heures) a dépassé le ' + h12 + ' sans atteindre le ' + ((h12%12)+1) + '.';
+    return bigTxt + ' ' + smallTxt + ' Il est donc ' + label + '.';
+  }
   function genHeureQuestion(svgId, level){
     svgId = svgId || 'm4Svg';
     level = level || 0;
@@ -3212,7 +3451,7 @@
       tag:'Lire l\'heure',
       question:'Quelle heure indique cette horloge ?',
       sub:'Regarde bien la petite aiguille (les heures) et la grande (les minutes).',
-      explain:'La petite aiguille indique les heures et la grande les minutes : il est ' + correctLabel + '.',
+      explain: clockExplain(hour, minuteVal, correctLabel),
       draw:function(){
         var svg=document.getElementById(svgId); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         drawClockFace(svg, hourTip, minTip);
@@ -3250,8 +3489,8 @@
     { text:'J\'ai 8 sommets, 12 arêtes et 6 faces, toutes identiques et carrées. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] },
     { text:'J\'ai seulement 4 faces, toutes triangulaires, et 4 sommets : je suis la plus simple des pyramides. Qui suis-je ?', answer:'tétraèdre', pool:['tétraèdre','pyramide à base carrée','cube','octaèdre'] },
     { text:'Je suis formé de deux pyramides à base carrée collées par leur base : j\'ai 8 faces triangulaires. Qui suis-je ?', answer:'octaèdre', pool:['octaèdre','tétraèdre','cube','pyramide à base carrée'] },
-    { text:'J\'ai 2 faces triangulaires et 3 faces rectangulaires : on me trouve dans les cales de certaines tentes. Qui suis-je ?', answer:'prisme triangulaire', pool:['prisme triangulaire','pyramide à base carrée','tétraèdre','pavé droit'] },
-    { text:'J\'ai 2 faces pentagonales et 5 faces rectangulaires, comme la maison des enfants ou le Pentagone. Qui suis-je ?', answer:'prisme pentagonal', pool:['prisme pentagonal','prisme hexagonal','pyramide à base carrée','cube'] },
+    { text:'J\'ai 2 faces triangulaires et 3 faces rectangulaires : on me trouve dans les tentes de camping. Qui suis-je ?', answer:'prisme triangulaire', pool:['prisme triangulaire','pyramide à base carrée','tétraèdre','pavé droit'] },
+    { text:'J\'ai 2 faces pentagonales (à 5 côtés) et 5 faces rectangulaires. Qui suis-je ?', answer:'prisme pentagonal', pool:['prisme pentagonal','prisme hexagonal','pyramide à base carrée','cube'] },
     { text:'J\'ai 2 faces hexagonales et 6 faces rectangulaires : ma base a la même forme qu\'une alvéole d\'abeille. Qui suis-je ?', answer:'prisme hexagonal', pool:['prisme hexagonal','prisme pentagonal','prisme octogonal','cylindre'] },
     { text:'J\'ai 2 faces à 8 côtés et 8 faces rectangulaires : ma base ressemble à un panneau "stop". Qui suis-je ?', answer:'prisme octogonal', pool:['prisme octogonal','prisme hexagonal','cylindre','prisme pentagonal'] }
   ];
@@ -3263,7 +3502,7 @@
       tag:'Énigme',
       question: r.text,
       sub:'Lis bien l\'énigme et retrouve la bonne réponse.',
-      explain:'La réponse est : ' + r.answer + '.',
+      explain:'La réponse est « ' + r.answer + ' » : ' + (SOLID_FACTS[r.answer] || 'relis bien les indices de l\'énigme.'),
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         svg.appendChild(svgText(100,120,64,'?'));
@@ -3361,9 +3600,9 @@
       else if(cat==='aigu') angleDeg = Math.round(rand(20, 90-gap));
       else angleDeg = Math.round(rand(90+gap, 165));
       var angleExplain = {
-        droit: 'Un angle droit correspond exactement au coin d\'un carré (90°).',
-        aigu: 'Un angle aigu est plus fermé (plus petit) qu\'un angle droit.',
-        obtus: 'Un angle obtus est plus ouvert (plus grand) qu\'un angle droit.'
+        droit: 'Cet angle a exactement la forme du coin d\'une feuille ou d\'un carré : c\'est un angle droit (90°).',
+        aigu: 'Compare-le au coin d\'une feuille : cet angle est plus fermé (plus pointu) que le coin, donc c\'est un angle aigu.',
+        obtus: 'Compare-le au coin d\'une feuille : cet angle est plus ouvert que le coin, donc c\'est un angle obtus.'
       };
       return {
         tag: 'Angles',
@@ -3459,7 +3698,7 @@
     var fb = document.getElementById('m4-feedback');
     if(choice.ok){
       btn.classList.add('correct');
-      fb.className = 'feedback good show';
+      fb.className = 'feedback tappable good show';
       fb.innerHTML = '<div>✔ Bravo, c\'est la bonne réponse !</div><div class="explain-line">'+m4Current.explain+'</div>';
       addStar(1);
       setCoachReaction('good');
@@ -3467,7 +3706,7 @@
       btn.classList.add('wrong');
       var okLabel = m4Current.choices.filter(function(c){return c.ok;})[0].label;
       buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
-      fb.className = 'feedback bad show';
+      fb.className = 'feedback tappable bad show';
       fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m4Current.explain+'</div>';
       setCoachReaction('bad');
     }
@@ -3515,7 +3754,7 @@
     var fb = document.getElementById('m5-feedback');
     if(choice.ok){
       btn.classList.add('correct');
-      fb.className = 'feedback good show';
+      fb.className = 'feedback tappable good show';
       fb.innerHTML = '<div>✔ Bravo, c\'est la bonne heure !</div><div class="explain-line">'+m5Current.explain+'</div>';
       addStar(1);
       setCoachReaction('good');
@@ -3523,7 +3762,7 @@
       btn.classList.add('wrong');
       var okLabel = m5Current.choices.filter(function(c){return c.ok;})[0].label;
       buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
-      fb.className = 'feedback bad show';
+      fb.className = 'feedback tappable bad show';
       fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m5Current.explain+'</div>';
       setCoachReaction('bad');
     }
@@ -3876,6 +4115,7 @@
       if(wrap) wrap.hidden = (k!==key);
     });
     document.getElementById('practice-family-tag').textContent = FAMILY_TAGS[key];
+    updateStreakPill();
     setCoachReaction('neutral');
     bounceMascotTalk();
     // Petite transition d'entrée à chaque nouvelle question, pour une
@@ -3897,6 +4137,7 @@
   }
   function setGlobalLevel(idx){
     globalLevel = idx;
+    resetFreeStreak();
     if(appMode!=='auto') return;
     if(practiceMode==='free'){
       nextPracticeQuestion();
@@ -3906,6 +4147,7 @@
   }
   function setAppMode(mode){
     appMode = mode;
+    resetFreeStreak();
     var isManual = (mode==='manual');
     document.getElementById('practice-mode').hidden = isManual;
     document.getElementById('manual-picker').hidden = !isManual;
@@ -3935,7 +4177,32 @@
     }
   }
   var manualStreak = 0;
+  // Série sans faute en mode Aléatoire (onglets Facile/Moyen/Difficile) :
+  // 20 bonnes réponses d'affilée débloquent les personnages du défi "série"
+  // du niveau en cours (voir CHALLENGES / completeChallenge).
+  var freeStreak = 0;
+  function resetFreeStreak(){ freeStreak = 0; updateStreakPill(); }
+  function updateStreakPill(){
+    var pill = document.getElementById('streak-pill');
+    // (au tout premier affichage, le catalogue des personnages n'est pas
+    // encore construit : il est défini plus bas dans le script)
+    if(!pill || !CAT_REWARDS || !ownedCats) return;
+    var show = appMode==='auto' && practiceMode==='free' && !countdownRunning && !isChallengeDone(12 + globalLevel);
+    pill.hidden = !show;
+    if(show){
+      pill.textContent = '🔥 Série sans faute : ' + freeStreak + ' / ' + STREAK_TARGET;
+      pill.setAttribute('aria-label', 'Série sans faute : ' + freeStreak + ' bonnes réponses sur ' + STREAK_TARGET + ' pour débloquer un personnage');
+    }
+  }
   function onPracticeAnswered(correct){
+    if(appMode==='auto' && practiceMode==='free'){
+      if(correct) freeStreak++; else freeStreak = 0;
+      if(correct && freeStreak >= STREAK_TARGET){
+        var fresh = completeChallenge(12 + globalLevel);
+        if(fresh.length) showUnlockAnnouncement(fresh, 'Série sans faute réussie !');
+      }
+      updateStreakPill();
+    }
     if(appMode==='manual' && manualFamily){
       if(!correct){
         manualStreak = 0;
@@ -3987,9 +4254,12 @@
   function setChronoCompact(active){
     document.body.classList.toggle('chrono-compact', active);
   }
+  var countdownLevel = 0; // niveau (0/1/2) sur lequel le défi en cours a été lancé
   function startCountdown(){
     countdownScore = { correct:0, total:0 };
     countdownRunning = true;
+    countdownLevel = globalLevel;
+    updateStreakPill();
     countdownEndAt = Date.now() + countdownSeconds*1000;
     document.getElementById('countdown-setup').hidden = true;
     document.getElementById('countdown-results').hidden = true;
@@ -4005,6 +4275,14 @@
     }, 250);
     nextPracticeQuestion();
   }
+  // Quitter le défi en cours (bouton 🏠) : on abandonne sans résultat ni
+  // étoiles, et on revient au mode Aléatoire, interface complète.
+  function quitCountdown(){
+    if(!countdownRunning) return;
+    var firstBtn = document.querySelector('#practice-mode .level-btn');
+    if(firstBtn) firstBtn.click(); // = repasser sur "Aléatoire" (arrête le chrono et réaffiche l'interface)
+  }
+  document.getElementById('countdown-home-btn').addEventListener('click', quitCountdown);
   function endCountdown(){
     countdownRunning = false;
     clearInterval(countdownInterval);
@@ -4014,13 +4292,28 @@
     document.getElementById('countdown-results').hidden = false;
     var starsWon = Math.max(1, Math.round(countdownScore.correct/2));
     addStar(starsWon);
-    document.getElementById('countdown-results-text').innerHTML =
-      'Tu as répondu correctement à <strong>' + countdownScore.correct + '</strong> question(s) sur ' +
+    var html = 'Tu as répondu correctement à <strong>' + countdownScore.correct + '</strong> question(s) sur ' +
       countdownScore.total + ' ! (+' + starsWon + ' ⭐)';
+    // Défi chronométré : assez de bonnes réponses pour ce niveau et cette
+    // durée -> les personnages du défi sont débloqués.
+    var ch = checkTimedChallenge(countdownLevel, countdownSeconds, countdownScore.correct);
+    if(ch.k >= 0){
+      if(ch.fresh.length){
+        html += '<br>🎉 <strong>Défi réussi !</strong> Tu débloques ' + ch.fresh.map(function(sp){ return sp.name; }).join(' et ') + '.';
+        setTimeout(function(){ showUnlockAnnouncement(ch.fresh, 'Défi réussi !'); }, 300);
+      } else if(ch.done){
+        html += '<br>✅ Défi réussi (personnages déjà débloqués).';
+      } else {
+        html += '<br>🎯 Pour débloquer les personnages de ce défi, il fallait ' + ch.target + ' bonnes réponses en ' + fmtDuration(countdownSeconds) + '. Encore un essai ?';
+      }
+    }
+    document.getElementById('countdown-results-text').innerHTML = html;
+    updateStreakPill();
   }
 
   buildLevelRow(document.getElementById('practice-mode'), ['Aléatoire','Chronométré'], 0, function(idx){
     practiceMode = idx===0 ? 'free' : 'countdown';
+    resetFreeStreak();
     clearInterval(countdownInterval);
     countdownRunning = false;
     setChronoCompact(false);
@@ -4075,20 +4368,41 @@
 
   var STAT_KEYS = ['pow','spd','chaos','charm'];
   var STAT_LABELS = { pow:'💪 Puissance', spd:'⚡ Vitesse', chaos:'🌀 Chaos', charm:'✨ Charme' };
+  // Les fonds des pastilles de rareté sont assez foncés pour que le texte
+  // blanc posé dessus soit lisible (contraste ≥ 4,5:1, accessibilité).
   var RARITY_META = {
-    commun:     { label:'Commun',     cost:8,  color:'#9C9C9C' },
-    rare:       { label:'Rare',       cost:15, color:'#4FA8E8' },
-    epique:     { label:'Épique',     cost:28, color:'#B073E8' },
-    legendaire: { label:'Légendaire', cost:45, color:'#F5B32A' }
+    commun:     { label:'Commun',     cost:8,  color:'#595959' },
+    rare:       { label:'Rare',       cost:15, color:'#1D5EA6' },
+    epique:     { label:'Épique',     cost:28, color:'#7B3FB8' },
+    legendaire: { label:'Légendaire', cost:45, color:'#8A5200' },
+    defi:       { label:'Défi',       cost:0,  color:'#A3246B' }
   };
-  var CAT_COLORS   = ['#FFC2D1','#FFE29A','#C9F2C6','#BFE3FF','#E4C9FF','#FFD6B0','#C6FFF2','#F2C6E0'];
-  var BRAIN_COLORS = ['#B7E85D','#5DE8C7','#F0857D','#7DA9F0','#F0CB5D','#C08DF0','#F07DC0','#8DF08D'];
+  var CAT_COLORS   = ['#FFC2D1','#FFE29A','#C9F2C6','#BFE3FF','#E4C9FF','#FFD6B0','#C6FFF2','#F2C6E0',
+                      '#FFB0A3','#B8C7FF','#D9D2C5','#C8E6A0'];
+  var BRAIN_COLORS = ['#B7E85D','#5DE8C7','#F0857D','#7DA9F0','#F0CB5D','#C08DF0','#F07DC0','#8DF08D',
+                      '#FFA65D','#5DC8F0','#E85D8A','#A0F0E0'];
 
+  // Chaque personnage a UNE seule caractéristique, ses "points" (pts) : ce
+  // sont à la fois sa force d'attaque et son énergie (PV) au combat. Il a
+  // aussi un rôle : "classic" (attaque normale), "support" (Soutien : donne
+  // +5 points à tous ses alliés en arrivant sur le terrain) ou "archer"
+  // (attaque sans subir de dégâts en retour).
   function mkSprite(id, name, rarity, colorIdx, accessory, statArr, starter){
+    var sum = statArr[0]+statArr[1]+statArr[2]+statArr[3];
     return {
       id:id, name:name, rarity:rarity, colorIdx:colorIdx, accessory:accessory,
       cost: starter ? 0 : RARITY_META[rarity].cost, starter: !!starter,
-      stats:{ pow:statArr[0], spd:statArr[1], chaos:statArr[2], charm:statArr[3] }
+      stats:{ pow:statArr[0], spd:statArr[1], chaos:statArr[2], charm:statArr[3] },
+      pts: Math.max(4, Math.round(sum/2.4)), role:'classic', challenge:-1
+    };
+  }
+  // Personnage "récompense" : impossible à acheter, il se débloque en
+  // relevant un défi (voir CHALLENGES plus bas).
+  function mkReward(id, name, colorIdx, accessory, pts, role, challenge){
+    return {
+      id:id, name:name, rarity:'defi', colorIdx:colorIdx, accessory:accessory,
+      cost:0, starter:false, stats:{ pow:pts, spd:pts, chaos:pts, charm:pts },
+      pts:pts, role:role, challenge:challenge
     };
   }
 
@@ -4137,6 +4451,45 @@
     mkSprite('br19','Gnoccotto Gigante','legendaire',2,'mustache',[9,8,9,8]),
     mkSprite('br20','Biscottino Blitz','legendaire',3,'propeller',[10,9,8,9])
   ];
+
+  // Rôles des personnages de base + personnages de départ (3 classiques, 1
+  // soutien, 1 archer par clan : de quoi former une équipe tout de suite).
+  var ROLE_BY_ID = {
+    cat04:'support', cat10:'support', cat14:'support', cat18:'support',
+    cat05:'archer',  cat11:'archer',  cat16:'archer',  cat20:'archer',
+    br04:'support',  br10:'support',  br14:'support',  br18:'support',
+    br05:'archer',   br11:'archer',   br16:'archer',   br20:'archer'
+  };
+  var STARTER_IDS = ['cat01','cat02','cat03','cat04','cat05','br01','br02','br03','br04','br05'];
+  CAT_SPRITES.concat(BRAINROT_SPRITES).forEach(function(sp){
+    if(ROLE_BY_ID[sp.id]) sp.role = ROLE_BY_ID[sp.id];
+    if(STARTER_IDS.indexOf(sp.id) !== -1){ sp.starter = true; sp.cost = 0; }
+  });
+
+  // 15 personnages par clan à débloquer en relevant des défis (12 défis
+  // chronométrés + 3 séries sans faute). Le n° "challenge" (0..14) est le même
+  // pour le chat et le brainrot : un défi réussi débloque LES DEUX.
+  var REWARD_ROLES = ['classic','support','classic','archer','classic'];
+  var CAT_REWARD_DEFS = [
+    ['Flocon',9,'halo'],['Muffin',8,'headphones'],['Caramel',10,'scarf'],['Zéphyr',11,'wizard'],
+    ['Saphir',9,'moon'],['Truffe',10,'shades'],['Perle',8,'halo'],['Cookie',11,'headphones'],
+    ['Aurore',9,'wizard'],['Volcan',10,'crown'],['Tonnerre',8,'shades'],['Comète',11,'moon'],
+    ['Astro',9,'star'],['Galaxie',10,'wizard'],['Phénix',8,'crown']
+  ];
+  var BRAIN_REWARD_DEFS = [
+    ['Gelatino Gagà',8,'flame'],['Polpettone Pop',9,'bolt'],['Ciabattino Cric',10,'wings'],['Tiramisù Tuono',11,'sprout'],
+    ['Carciofo Comico',8,'bolt'],['Bruschetta Bum',9,'flame'],['Pistacchio Pop',11,'wings'],['Cornetto Crash',10,'sprout'],
+    ['Gorgonzolo Gong',8,'wings'],['Melanzano Magico',9,'sprout'],['Prosciutto Pazzo',10,'flame'],['Pecorino Pow',11,'bolt'],
+    ['Limoncello Laser',8,'horns'],['Mozzarello Mega',9,'antenna'],['Tartufo Titano',10,'propeller']
+  ];
+  var CAT_REWARDS = CAT_REWARD_DEFS.map(function(d,k){
+    return mkReward('cat'+(21+k), d[0], d[1], d[2], 8 + Math.floor(k*0.5) + (k>=12?2:0), REWARD_ROLES[k%5], k);
+  });
+  var BRAIN_REWARDS = BRAIN_REWARD_DEFS.map(function(d,k){
+    return mkReward('br'+(21+k), d[0], d[1], d[2], 8 + Math.floor(k*0.5) + (k>=12?2:0), REWARD_ROLES[k%5], k);
+  });
+  CAT_SPRITES = CAT_SPRITES.concat(CAT_REWARDS);
+  BRAINROT_SPRITES = BRAINROT_SPRITES.concat(BRAIN_REWARDS);
 
   function starPolygonPoints(cx,cy,outerR,innerR,spikes){
     spikes = spikes || 5;
@@ -4201,6 +4554,25 @@
       svg.appendChild(el('line',{x1:64,y1:75,x2:76,y2:75, stroke:'#2B2B2B','stroke-width':3}));
     } else if(kind==='crown'){
       svg.appendChild(el('polygon',{points:'52,32 58,12 70,26 82,12 88,32', fill:'#FFD24C', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+    } else if(kind==='halo'){
+      svg.appendChild(el('ellipse',{cx:70,cy:20,rx:24,ry:7, fill:'none', stroke:'#F5B32A','stroke-width':5}));
+    } else if(kind==='headphones'){
+      svg.appendChild(el('path',{d:'M26,80 C26,20 114,20 114,80', fill:'none', stroke:'#4A4A6A','stroke-width':6,'stroke-linecap':'round'}));
+      svg.appendChild(el('rect',{x:16,y:70,width:16,height:28,rx:7, fill:'#6B6BD6', stroke:'var(--text)','stroke-width':1.8}));
+      svg.appendChild(el('rect',{x:108,y:70,width:16,height:28,rx:7, fill:'#6B6BD6', stroke:'var(--text)','stroke-width':1.8}));
+    } else if(kind==='wizard'){
+      svg.appendChild(el('polygon',{points:'46,36 70,2 94,36', fill:'#5B4BB0', stroke:'var(--text)','stroke-width':2,'stroke-linejoin':'round'}));
+      svg.appendChild(el('ellipse',{cx:70,cy:36,rx:34,ry:6, fill:'#5B4BB0', stroke:'var(--text)','stroke-width':2}));
+      svg.appendChild(el('polygon',{points:starPolygonPoints(70,18,6,2.6), fill:'#FFD24C'}));
+    } else if(kind==='scarf'){
+      svg.appendChild(el('path',{d:'M34,112 Q70,132 106,112 L110,124 Q70,146 30,124 Z', fill:'#E8534A', stroke:'var(--text)','stroke-width':2,'stroke-linejoin':'round'}));
+      svg.appendChild(el('rect',{x:92,y:118,width:12,height:20,rx:3, fill:'#E8534A', stroke:'var(--text)','stroke-width':2}));
+    } else if(kind==='moon'){
+      svg.appendChild(el('path',{d:'M78,40 A14,14 0 1 0 78,62 A11,11 0 1 1 78,40 Z', fill:'#FFD24C', stroke:'var(--text)','stroke-width':1.6}));
+    } else if(kind==='shades'){
+      svg.appendChild(el('rect',{x:38,y:66,width:28,height:18,rx:6, fill:'#222', stroke:'#222','stroke-width':2}));
+      svg.appendChild(el('rect',{x:74,y:66,width:28,height:18,rx:6, fill:'#222', stroke:'#222','stroke-width':2}));
+      svg.appendChild(el('line',{x1:66,y1:73,x2:74,y2:73, stroke:'#222','stroke-width':3}));
     }
   }
 
@@ -4254,6 +4626,18 @@
     } else if(kind==='horns'){
       svg.appendChild(el('polygon',{points:'44,26 36,4 54,20', fill:'#E8D65D', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
       svg.appendChild(el('polygon',{points:'96,26 104,4 86,20', fill:'#E8D65D', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+    } else if(kind==='flame'){
+      svg.appendChild(el('path',{d:'M70,2 C84,16 92,24 84,34 C80,40 60,40 56,34 C48,24 62,16 70,2 Z', fill:'#FF7A1A', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+      svg.appendChild(el('path',{d:'M70,14 C78,22 78,32 70,34 C62,32 62,22 70,14 Z', fill:'#FFD24C'}));
+    } else if(kind==='bolt'){
+      svg.appendChild(el('polygon',{points:'76,2 56,22 68,22 62,40 86,16 72,16', fill:'#FFD24C', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+    } else if(kind==='wings'){
+      svg.appendChild(el('path',{d:'M22,70 C0,52 -2,84 20,92 C6,96 18,112 34,104 Z', fill:'#FFFFFF', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+      svg.appendChild(el('path',{d:'M118,70 C140,52 142,84 120,92 C134,96 122,112 106,104 Z', fill:'#FFFFFF', stroke:'var(--text)','stroke-width':1.8,'stroke-linejoin':'round'}));
+    } else if(kind==='sprout'){
+      svg.appendChild(el('line',{x1:70,y1:20,x2:70,y2:6, stroke:'#2E8B3A','stroke-width':3,'stroke-linecap':'round'}));
+      svg.appendChild(el('ellipse',{cx:60,cy:6,rx:11,ry:6, fill:'#4CC65A', stroke:'var(--text)','stroke-width':1.5, transform:'rotate(-25 60 6)'}));
+      svg.appendChild(el('ellipse',{cx:80,cy:6,rx:11,ry:6, fill:'#4CC65A', stroke:'var(--text)','stroke-width':1.5, transform:'rotate(25 80 6)'}));
     }
   }
 
@@ -4362,15 +4746,137 @@
     return true;
   }
 
+  /* ---- Défis : les 15 personnages "récompense" de chaque clan ----
+     Ils ne s'achètent pas : on les débloque en relevant un défi. Chaque
+     défi débloque DEUX personnages d'un coup (le chat ET le brainrot du même
+     numéro), pour que les deux clans progressent ensemble.
+       - 12 défis chronométrés (3 niveaux x 4 durées) : réussir au moins N
+         bonnes réponses avant la fin du temps.
+       - 3 séries sans faute (un par niveau) : 20 bonnes réponses d'affilée,
+         sans aucune erreur, en mode Aléatoire. */
+  var LEVEL_NAMES_FR = ['Facile','Moyen','Difficile'];
+  var TIMED_DURATIONS = [60,120,180,300];
+  var TIMED_TARGETS = [ [5,8,10,15], [4,6,8,12], [3,5,7,10] ];
+  var STREAK_TARGET = 20;
+  function fmtDuration(sec){ return sec===60 ? '1 minute' : (sec/60)+' minutes'; }
+  function challengeInfo(k){
+    if(k < 12){
+      var lvl = Math.floor(k/4), d = k%4;
+      return { type:'timed', level:lvl, seconds:TIMED_DURATIONS[d], target:TIMED_TARGETS[lvl][d] };
+    }
+    return { type:'streak', level:k-12, target:STREAK_TARGET };
+  }
+  function challengeText(k){
+    var c = challengeInfo(k), lvl = LEVEL_NAMES_FR[c.level];
+    if(c.type === 'timed'){
+      return 'Défi ' + lvl + ' : ouvre le menu, choisis « ' + lvl + ' », puis « Chronométré » et « ' +
+        fmtDuration(c.seconds) + ' ». Réponds correctement à ' + c.target + ' questions avant la fin du temps !';
+    }
+    return 'Défi ' + lvl + ' · série sans faute : ouvre le menu, choisis « ' + lvl + ' » et reste en mode « Aléatoire ». ' +
+      'Réponds correctement à ' + c.target + ' questions d\'affilée, sans aucune erreur !';
+  }
+  function isChallengeDone(k){
+    return !!ownedCats[CAT_REWARDS[k].id] && !!ownedBrain[BRAIN_REWARDS[k].id];
+  }
+  // Débloque les deux personnages du défi k ; renvoie ceux qui sont NOUVEAUX
+  // (liste vide si le défi était déjà réussi).
+  function completeChallenge(k){
+    var fresh = [], c = CAT_REWARDS[k], b = BRAIN_REWARDS[k];
+    if(!ownedCats[c.id]){ ownedCats[c.id] = true; fresh.push(c); }
+    if(!ownedBrain[b.id]){ ownedBrain[b.id] = true; fresh.push(b); }
+    if(fresh.length){
+      saveOwned();
+      renderShop();
+      renderBtSetup();
+      playSound('good');
+    }
+    return fresh;
+  }
+  // Appelée à la fin d'un défi chronométré (voir endCountdown).
+  function checkTimedChallenge(level, seconds, correctCount){
+    var d = TIMED_DURATIONS.indexOf(seconds);
+    if(d === -1) return { k:-1, fresh:[], target:0, done:false };
+    var k = level*4 + d, target = TIMED_TARGETS[level][d];
+    if(correctCount >= target) return { k:k, fresh:completeChallenge(k), target:target, done:true };
+    return { k:k, fresh:[], target:target, done:false };
+  }
+
+  /* ---- Fenêtre d'information (accessible : rôle dialog, focus rendu à la
+     fermeture, Échap pour fermer) ---- */
+  var infoReturnFocus = null;
+  function openInfoDialog(title, buildBody){
+    var overlay = document.getElementById('info-overlay');
+    document.getElementById('info-title').textContent = title;
+    var body = document.getElementById('info-body');
+    body.innerHTML = '';
+    buildBody(body);
+    infoReturnFocus = document.activeElement;
+    overlay.hidden = false;
+    document.getElementById('info-close').focus();
+  }
+  function closeInfoDialog(){
+    document.getElementById('info-overlay').hidden = true;
+    if(infoReturnFocus && infoReturnFocus.focus){ try{ infoReturnFocus.focus(); }catch(e){} }
+    infoReturnFocus = null;
+  }
+  document.getElementById('info-close').addEventListener('click', closeInfoDialog);
+  document.getElementById('info-overlay').addEventListener('click', function(e){
+    if(e.target.id === 'info-overlay') closeInfoDialog();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    ['info-overlay','activity-config-overlay','settings-overlay'].some(function(id){
+      var o = document.getElementById(id);
+      if(o && !o.hidden){
+        if(id==='info-overlay') closeInfoDialog(); else o.hidden = true;
+        return true;
+      }
+      return false;
+    });
+  });
+  function showRewardExplanation(sprite){
+    openInfoDialog('🔒 ' + sprite.name, function(body){
+      var art = document.createElement('div');
+      art.className = 'info-art';
+      renderSpriteVisual(art, sprite);
+      body.appendChild(art);
+      var role = document.createElement('p');
+      role.className = 'muted';
+      role.textContent = BT_ROLE_META[sprite.role].icon + ' ' + BT_ROLE_META[sprite.role].label + ' · ❤️ ' + sprite.pts + ' points · ' +
+        (sprite.role==='support' ? 'donne +5 points à ses alliés' : sprite.role==='archer' ? 'attaque sans être blessé' : 'attaque normale');
+      body.appendChild(role);
+      var p = document.createElement('p');
+      p.textContent = 'Ce personnage ne s\'achète pas : il se débloque en relevant un défi. ' + challengeText(sprite.challenge);
+      body.appendChild(p);
+    });
+  }
+  function showUnlockAnnouncement(fresh, headline){
+    openInfoDialog('🎉 ' + (headline || 'Nouveaux personnages !'), function(body){
+      var row = document.createElement('div');
+      row.className = 'info-art-row';
+      fresh.forEach(function(sp){
+        var box = document.createElement('div');
+        box.className = 'info-art';
+        renderSpriteVisual(box, sp);
+        var nm = document.createElement('div');
+        nm.className = 'sp-name'; nm.textContent = sp.name;
+        box.appendChild(nm);
+        row.appendChild(box);
+      });
+      body.appendChild(row);
+      var p = document.createElement('p');
+      p.textContent = fresh.map(function(sp){ return sp.name; }).join(' et ') + ' rejoi' + (fresh.length>1 ? 'gnent' : 'nt') + ' ta collection ! Retrouve-' + (fresh.length>1 ? 'les' : 'le') + ' dans la boutique.';
+      body.appendChild(p);
+    });
+  }
+
   /* ---- Boutique ----
-     La boutique n'affiche que le clan actuellement actif (celui choisi tout
-     en haut via le sélecteur de thème Chats/Brainrot) : plus de sélecteur
-     de clan séparé et redondant dans la boutique elle-même. Et pour ne
-     montrer "que les personnages à acheter" (demande explicite), la grille
-     principale n'affiche que les personnages PAS ENCORE débloqués ; les
-     personnages déjà possédés (et le choix de la mascotte) vont dans un
-     petit panneau replié par défaut ("Tes personnages"), pour ne pas
-     encombrer la boutique une fois qu'on a commencé à en débloquer. */
+     La boutique affiche tous les personnages du clan actuellement actif (le
+     bouton à gauche des étoiles, en haut) : ceux qu'on possède déjà et ceux
+     qu'il reste à obtenir sont côte à côte dans la même grille, sans rien à
+     déplier. Un personnage possédé peut devenir mascotte ; un personnage
+     ordinaire se débloque avec des étoiles ; un personnage "Défi" ne
+     s'achète pas : un clic sur sa carte explique comment l'obtenir. */
   var shopTheme = 0; // 0 = chats, 1 = brainrots — toujours synchronisé sur le thème actif, voir syncShopThemeToAppTheme()
   function currentShopList(){ return shopTheme===0 ? CAT_SPRITES : BRAINROT_SPRITES; }
   function currentOwnedMap(){ return shopTheme===0 ? ownedCats : ownedBrain; }
@@ -4379,8 +4885,13 @@
     var tag = document.getElementById('shop-clan-tag');
     if(tag) tag.textContent = shopTheme===0 ? 'Chats kawaii 🐱' : 'Brainrots 👹';
   }
+  function roleLine(sprite){
+    var m = BT_ROLE_META[sprite.role];
+    return m.icon + ' ' + m.label + ' · ❤️ ' + sprite.pts;
+  }
   function buildSpriteShopCard(sprite, isOwned){
     var card = document.createElement('div');
+    var isReward = sprite.rarity === 'defi';
     card.className = 'sprite-card ' + (isOwned ? 'owned' : 'locked');
     renderSpriteVisual(card, sprite);
     var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
@@ -4389,6 +4900,8 @@
     rarity.textContent = RARITY_META[sprite.rarity].label;
     rarity.style.background = RARITY_META[sprite.rarity].color;
     card.appendChild(rarity);
+    var roleEl = document.createElement('div'); roleEl.className='sp-role'; roleEl.textContent = roleLine(sprite);
+    card.appendChild(roleEl);
     if(isOwned){
       var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
       card.appendChild(tag);
@@ -4396,6 +4909,7 @@
       var mascotBtn = document.createElement('button');
       mascotBtn.type = 'button';
       mascotBtn.className = 'sp-mascot-btn' + (isMascot ? ' active' : '');
+      mascotBtn.setAttribute('aria-pressed', isMascot ? 'true' : 'false');
       mascotBtn.textContent = isMascot ? '★ Mascotte actuelle' : '☆ Devenir mascotte';
       mascotBtn.addEventListener('click', function(){
         mascotSpriteId = isMascot ? null : sprite.id;
@@ -4405,6 +4919,16 @@
         renderShop();
       });
       card.appendChild(mascotBtn);
+    } else if(isReward){
+      card.classList.add('reward-locked');
+      var lock = document.createElement('div'); lock.className='sp-cost'; lock.textContent = '🔒 Défi à relever';
+      card.appendChild(lock);
+      var infoBtn = document.createElement('button');
+      infoBtn.type = 'button'; infoBtn.className = 'sp-buy sp-info';
+      infoBtn.textContent = 'Comment l\'obtenir ?';
+      infoBtn.addEventListener('click', function(e){ e.stopPropagation(); showRewardExplanation(sprite); });
+      card.appendChild(infoBtn);
+      card.addEventListener('click', function(){ showRewardExplanation(sprite); });
     } else {
       var owned = currentOwnedMap();
       var costTag = document.createElement('div'); costTag.className='sp-cost'; costTag.textContent = sprite.cost + ' ⭐';
@@ -4419,6 +4943,7 @@
           playSound('good');
           celebrate('good', card);
           renderShop();
+          renderBtSetup();
         }
       });
       card.appendChild(buyBtn);
@@ -4429,36 +4954,14 @@
     syncShopThemeToAppTheme();
     document.getElementById('shop-star-count').textContent = stars;
     var list = currentShopList(), owned = currentOwnedMap();
-    var toBuy = list.filter(function(s){ return !owned[s.id]; });
-    var alreadyOwned = list.filter(function(s){ return !!owned[s.id]; });
-
     var grid = document.getElementById('shop-grid');
     grid.innerHTML = '';
-    if(toBuy.length===0){
-      var doneMsg = document.createElement('p');
-      doneMsg.className = 'muted';
-      doneMsg.textContent = 'Tous les personnages de ce clan sont débloqués ! 🎉';
-      grid.appendChild(doneMsg);
-    } else {
-      toBuy.forEach(function(sprite){ grid.appendChild(buildSpriteShopCard(sprite, false)); });
-    }
-
-    var ownedWrap = document.getElementById('shop-owned-wrap');
-    var ownedToggleBtn = document.getElementById('shop-owned-toggle-btn');
-    ownedToggleBtn.hidden = alreadyOwned.length===0;
-    var ownedGrid = document.getElementById('shop-owned-grid');
-    ownedGrid.innerHTML = '';
-    alreadyOwned.forEach(function(sprite){ ownedGrid.appendChild(buildSpriteShopCard(sprite, true)); });
+    list.forEach(function(sprite){ grid.appendChild(buildSpriteShopCard(sprite, !!owned[sprite.id])); });
+    var have = list.filter(function(s){ return !!owned[s.id]; }).length;
+    var counter = document.getElementById('shop-collection-count');
+    if(counter) counter.textContent = have + ' / ' + list.length + ' débloqués';
   }
-  document.getElementById('shop-owned-toggle-btn').addEventListener('click', function(){
-    var wrap = document.getElementById('shop-owned-wrap');
-    wrap.hidden = !wrap.hidden;
-    this.textContent = wrap.hidden ? '🐾 Voir mes personnages débloqués' : '🙈 Masquer mes personnages débloqués';
-  });
 
-  /* ---- Bataille : Duel rapide (1v1) et Mode Équipe (5 vs adversaires
-     aléatoires, en gauntlet) partagent le même moteur de résolution
-     (runDuelResolution : anim. d'attaque puis résultat). ---- */
   function findSprite(list, id){
     for(var i=0;i<list.length;i++){ if(list[i].id===id) return list[i]; }
     return null;
@@ -4521,93 +5024,173 @@
     renderCreatureVisual(custom, sprite, 'full');
   }
   /* ---- Réglage global "tête / plein pied" pour l'affichage des
-     combattants en Bataille (Duel rapide + Mode Équipe). ---- */
+     cartes en Bataille. ---- */
   var fighterDisplayMode = 'head';
   (function loadFighterDisplayMode(){
     try{ if(localStorage.getItem('geo_fighter_display')==='full') fighterDisplayMode='full'; }catch(e){}
   })();
-  function refreshBattleVisuals(){
-    // Re-rend les cartes combattants déjà affichées (si un duel est en
-    // cours) avec le nouveau réglage tête/plein pied, sans rien casser
-    // d'autre (stats, résultat en cours restent inchangés).
-    if(typeof selectedCatId !== 'undefined' && selectedCatId && typeof selectedBrainId !== 'undefined' && selectedBrainId){
-      var dc = document.getElementById('duel-cat'), db = document.getElementById('duel-brain');
-      if(dc && dc.childElementCount) renderFighterCard(dc, findSprite(CAT_SPRITES, selectedCatId));
-      if(db && db.childElementCount) renderFighterCard(db, findSprite(BRAINROT_SPRITES, selectedBrainId));
-    }
-    if(typeof currentTeamCat === 'function'){
-      var tdc = document.getElementById('team-duel-cat'), tdb = document.getElementById('team-duel-brain');
-      var tCat = currentTeamCat();
-      if(tdc && tdc.childElementCount && tCat) renderFighterCard(tdc, tCat);
-      if(tdb && tdb.childElementCount && typeof teamCurrentBrain !== 'undefined' && teamCurrentBrain) renderFighterCard(tdb, teamCurrentBrain);
-    }
-  }
   buildLevelRow(document.getElementById('fighter-display-row'), ['Tête','Plein pied'], fighterDisplayMode==='full' ? 1 : 0, function(idx){
     fighterDisplayMode = idx===1 ? 'full' : 'head';
     try{ localStorage.setItem('geo_fighter_display', fighterDisplayMode); }catch(e){}
-    refreshBattleVisuals();
+    if(typeof btRender === 'function') btRender();
   });
   function unlockAllSprites(){
     CAT_SPRITES.forEach(function(s){ ownedCats[s.id] = true; });
     BRAINROT_SPRITES.forEach(function(s){ ownedBrain[s.id] = true; });
     saveOwned();
     renderShop();
-    renderBattleGrids();
-    renderTeamPickGrid();
+    renderBtSetup();
   }
   document.getElementById('unlock-all-btn').addEventListener('click', unlockAllSprites);
 
-  function renderPickGrid(container, list, ownedMap, selectedId, onPick){
-    container.innerHTML = '';
-    var ownedList = list.filter(function(s){ return ownedMap[s.id]; });
-    ownedList.forEach(function(sprite){
-      var card = document.createElement('div');
-      card.className = 'sprite-card owned' + (sprite.id===selectedId ? ' selected' : '');
-      renderSpriteVisual(card, sprite);
-      var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
-      card.appendChild(nameEl);
-      var rarity = document.createElement('div'); rarity.className='rarity-pill';
-      rarity.textContent = RARITY_META[sprite.rarity].label;
-      rarity.style.background = RARITY_META[sprite.rarity].color;
-      card.appendChild(rarity);
-      card.addEventListener('click', function(){ onPick(sprite.id); });
-      container.appendChild(card);
+  /* ---- Effacer la progression (réglages) : étoiles, personnages
+     débloqués, mascotte, équipes de bataille et série en cours. Les
+     réglages (thème, effets, affichage) sont conservés. ---- */
+  function resetProgress(){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_bt_team_cats','geo_bt_team_brainrot'].forEach(function(k){
+      try{ localStorage.removeItem(k); }catch(e){}
     });
-    if(!ownedList.length){
-      var msg = document.createElement('p'); msg.className='muted';
-      msg.textContent = 'Rien débloqué pour le moment — va faire un tour à la boutique !';
-      container.appendChild(msg);
-    }
+    stars = 0;
+    document.getElementById('starCount').textContent = '0';
+    Object.keys(ownedCats).forEach(function(k){ delete ownedCats[k]; });
+    Object.keys(ownedBrain).forEach(function(k){ delete ownedBrain[k]; });
+    CAT_SPRITES.forEach(function(sp){ if(sp.starter) ownedCats[sp.id] = true; });
+    BRAINROT_SPRITES.forEach(function(sp){ if(sp.starter) ownedBrain[sp.id] = true; });
+    mascotSpriteId = null;
+    btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
+    if(typeof resetFreeStreak === 'function') resetFreeStreak();
+    saveOwned();
+    renderShop();
+    renderMascotDock();
+    renderTopMascotIcon();
+    btBackToSetup();
   }
-  function renderFighterCard(container, sprite){
-    container.innerHTML = '';
-    renderCreatureVisual(container, sprite, fighterDisplayMode);
+  document.getElementById('reset-progress-btn').addEventListener('click', function(){
+    document.getElementById('reset-confirm').hidden = false;
+    document.getElementById('reset-done').hidden = true;
+    this.hidden = true;
+    document.getElementById('reset-no').focus();
+  });
+  document.getElementById('reset-no').addEventListener('click', function(){
+    document.getElementById('reset-confirm').hidden = true;
+    var b = document.getElementById('reset-progress-btn'); b.hidden = false; b.focus();
+  });
+  document.getElementById('reset-yes').addEventListener('click', function(){
+    resetProgress();
+    document.getElementById('reset-confirm').hidden = true;
+    var b = document.getElementById('reset-progress-btn'); b.hidden = false;
+    document.getElementById('reset-done').hidden = false;
+  });
+
+  /* ===================== BATAILLE (équipes de cartes) =====================
+     Règles (voir aussi le bloc "Comment ça marche ?" dans l'interface) :
+     - une seule caractéristique par personnage : ses points (pts), qui sont
+       à la fois sa force d'attaque et son énergie ;
+     - quand A attaque B : B perd autant de points que A en a, et A perd
+       autant de points que B en avait (les deux cartes s'abîment) ;
+     - Archer : il attaque sans jamais perdre de points en retour ;
+     - Soutien : il ajoute +5 points à tous ses alliés (ceux déjà sur le
+       terrain quand il arrive, puis chaque allié qui arrive ensuite tant
+       qu'il est là) ;
+     - équipe = 3 classiques + 1 soutien + 1 archer ; 3 cartes tirées au
+       hasard sont posées sur le terrain, et une carte de la réserve entre
+       dès qu'une carte est battue (à 0 point ou moins) ;
+     - le camp qui n'a plus aucune carte (terrain + réserve) a perdu. */
+  var BT_ROLE_META = {
+    classic:{ label:'Classique', icon:'⚔️' },
+    support:{ label:'Soutien',   icon:'💖' },
+    archer: { label:'Archer',    icon:'🏹' }
+  };
+  var BT_FIELD_SIZE = 3, BT_SUPPORT_BONUS = 5;
+  var BT_ROLE_ORDER = ['classic','support','archer'];
+  var BT_LIMITS = { classic:3, support:1, archer:1 };
+
+  function btSide(){ return currentThemeKey()==='brainrot' ? 'brainrot' : 'cats'; }
+  function btMyList(){ return btSide()==='cats' ? CAT_SPRITES : BRAINROT_SPRITES; }
+  function btEnemyList(){ return btSide()==='cats' ? BRAINROT_SPRITES : CAT_SPRITES; }
+  function btMyOwned(){ return btSide()==='cats' ? ownedCats : ownedBrain; }
+  function btRand(n){ return Math.floor(Math.random()*n); }
+  function btShuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){ var j = btRand(i+1), t = a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+
+  /* ---- Choix de l'équipe (mémorisé par clan) ---- */
+  var btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
+  (function loadBtSel(){
+    ['cats','brainrot'].forEach(function(side){
+      try{
+        var raw = JSON.parse(localStorage.getItem('geo_bt_team_'+side) || 'null');
+        if(raw) BT_ROLE_ORDER.forEach(function(r){ if(Array.isArray(raw[r])) btSel[side][r] = raw[r].slice(0, BT_LIMITS[r]); });
+      }catch(e){}
+    });
+  })();
+  function saveBtSel(){
+    try{
+      ['cats','brainrot'].forEach(function(side){ localStorage.setItem('geo_bt_team_'+side, JSON.stringify(btSel[side])); });
+    }catch(e){}
+  }
+  function btSpritePlain(sprite){ return sprite; }
+  function btSetupCard(sprite, picked, full, onClick){
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'sprite-card owned' + (picked ? ' selected' : '') + (full && !picked ? ' is-full' : '');
+    card.setAttribute('aria-pressed', picked ? 'true' : 'false');
+    card.setAttribute('aria-label', sprite.name + ', ' + BT_ROLE_META[sprite.role].label + ', ' + sprite.pts + ' points' + (picked ? ', choisi' : ''));
+    renderSpriteVisual(card, sprite);
     var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
-    container.appendChild(nameEl);
-    var rarity = document.createElement('div'); rarity.className='rarity-pill'; rarity.style.marginTop = '4px';
-    rarity.textContent = RARITY_META[sprite.rarity].label;
-    rarity.style.background = RARITY_META[sprite.rarity].color;
-    container.appendChild(rarity);
+    card.appendChild(nameEl);
+    var pts = document.createElement('div'); pts.className='sp-role'; pts.textContent = '❤️ ' + sprite.pts + ' points';
+    card.appendChild(pts);
+    card.addEventListener('click', onClick);
+    return card;
   }
-  function renderBattleStatsInto(containerId, cat, active, onPick){
-    var wrap = document.getElementById(containerId);
-    wrap.innerHTML = '';
-    STAT_KEYS.forEach(function(key){
-      var row = document.createElement('div');
-      row.className = 'stat-row' + (active ? '' : ' disabled');
-      row.innerHTML = '<span>'+STAT_LABELS[key]+'</span><span class="stat-val">'+cat.stats[key]+'</span>';
-      if(active) row.addEventListener('click', function(){ onPick(key); });
-      wrap.appendChild(row);
+  function renderBtSetup(){
+    if(!document.getElementById('bt-grid-classic')) return;
+    var side = btSide(), sel = btSel[side], owned = btMyOwned();
+    var ok = true, missing = [];
+    BT_ROLE_ORDER.forEach(function(role){
+      // on oublie les personnages choisis qui ne sont plus possédés (ex : effacement de la progression)
+      sel[role] = sel[role].filter(function(id){ return !!owned[id]; });
+      var container = document.getElementById('bt-grid-'+role);
+      container.innerHTML = '';
+      var mine = btMyList().filter(function(s){ return s.role===role && owned[s.id]; });
+      mine.forEach(function(sprite){
+        var picked = sel[role].indexOf(sprite.id) !== -1;
+        var full = sel[role].length >= BT_LIMITS[role];
+        container.appendChild(btSetupCard(sprite, picked, full, function(){
+          var pos = sel[role].indexOf(sprite.id);
+          if(pos !== -1) sel[role].splice(pos,1);
+          else if(sel[role].length < BT_LIMITS[role]) sel[role].push(sprite.id);
+          else if(BT_LIMITS[role] === 1) sel[role] = [sprite.id]; // un seul emplacement : on remplace
+          saveBtSel();
+          renderBtSetup();
+        }));
+      });
+      document.getElementById('bt-count-'+role).textContent = sel[role].length + '/' + BT_LIMITS[role];
+      if(sel[role].length !== BT_LIMITS[role]) ok = false;
+      if(mine.length < BT_LIMITS[role]) missing.push((BT_LIMITS[role]-mine.length) + ' ' + BT_ROLE_META[role].label.toLowerCase());
     });
+    var missEl = document.getElementById('bt-missing');
+    if(missing.length){
+      missEl.hidden = false;
+      missEl.textContent = 'Il te manque encore : ' + missing.join(', ') + '. Va en débloquer à la boutique !';
+    } else missEl.hidden = true;
+    document.getElementById('bt-start').disabled = !ok;
+    document.getElementById('bt-intro').textContent = btSide()==='cats'
+      ? 'Tu joues avec les Chats Kawaii contre les Brainrots. Forme ton équipe : 3 classiques, 1 soutien et 1 archer.'
+      : 'Tu joues avec les Brainrots contre les Chats Kawaii. Forme ton équipe : 3 classiques, 1 soutien et 1 archer.';
   }
-  // Petite flèche/éclair qui vole du gagnant vers le perdant avant que le
-  // résultat ne s'affiche (voir runDuelResolution).
+
+  // Petite flèche/éclair qui vole de l'attaquant vers la carte visée.
   function playAttackAnim(fromEl, toEl, emoji){
     var fromRect = fromEl.getBoundingClientRect(), toRect = toEl.getBoundingClientRect();
     var fx = fromRect.left+fromRect.width/2, fy = fromRect.top+fromRect.height/2;
     var tx = toRect.left+toRect.width/2, ty = toRect.top+toRect.height/2;
     var bolt = document.createElement('div');
     bolt.className = 'attack-bolt';
+    bolt.setAttribute('aria-hidden','true');
     bolt.textContent = emoji;
     bolt.style.left = fx+'px'; bolt.style.top = fy+'px';
     bolt.style.setProperty('--tx',(tx-fx)+'px');
@@ -4615,207 +5198,247 @@
     document.body.appendChild(bolt);
     setTimeout(function(){ bolt.remove(); }, 550);
   }
-  // Moteur de résolution partagé par le Duel rapide et le Mode Équipe :
-  // joue l'animation d'attaque (gagnant -> perdant), puis révèle le
-  // résultat. onDone(catWon) reçoit true/false/null (égalité).
-  function runDuelResolution(opts){
-    var catVal = opts.catSprite.stats[opts.key], brainVal = opts.brainSprite.stats[opts.key];
-    var catEl = document.getElementById(opts.catElId), brainEl = document.getElementById(opts.brainElId);
-    var resultEl = document.getElementById(opts.resultElId);
-    var tie = catVal === brainVal;
-    var catWins = catVal > brainVal;
-    if(!tie) playAttackAnim(catWins ? catEl : brainEl, catWins ? brainEl : catEl, catWins ? '⚔️' : '💥');
-    setTimeout(function(){
-      if(tie){
-        resultEl.textContent = '🤝 Égalité ! (' + catVal + ' contre ' + brainVal + ')';
-        resultEl.style.color = 'var(--text)';
-        playSound('good');
-      } else if(catWins){
-        if(opts.chosenRowEl) opts.chosenRowEl.classList.add('win');
-        catEl.classList.add('winner'); brainEl.classList.add('loser');
-        resultEl.textContent = '🎉 ' + opts.catSprite.name + ' gagne ! (' + catVal + ' contre ' + brainVal + ')';
-        resultEl.style.color = 'var(--good)';
-        playSound('good'); celebrate('good', catEl);
-      } else {
-        if(opts.chosenRowEl) opts.chosenRowEl.classList.add('lose');
-        brainEl.classList.add('winner'); catEl.classList.add('loser');
-        resultEl.textContent = '💥 ' + opts.brainSprite.name + ' gagne ! (' + brainVal + ' contre ' + catVal + ')';
-        resultEl.style.color = 'var(--bad)';
-        playSound('bad'); celebrate('bad', brainEl);
-      }
-      opts.onDone(tie ? null : catWins);
-    }, tie ? 0 : 480);
-  }
 
-  /* ----- Duel rapide (1 chat vs 1 brainrot, choisis à la main) ----- */
-  var selectedCatId = null, selectedBrainId = null;
-  function renderBattleGrids(){
-    renderPickGrid(document.getElementById('battle-cat-grid'), CAT_SPRITES, ownedCats, selectedCatId, function(id){
-      selectedCatId = id; renderBattleGrids(); checkDuelReady();
-    });
-    renderPickGrid(document.getElementById('battle-brain-grid'), BRAINROT_SPRITES, ownedBrain, selectedBrainId, function(id){
-      selectedBrainId = id; renderBattleGrids(); checkDuelReady();
-    });
-  }
-  function checkDuelReady(){
-    var ready = !!(selectedCatId && selectedBrainId);
-    document.getElementById('battle-duel-wrap').hidden = !ready;
-    // On nettoie l'UI (masque les grilles de choix) une fois les deux
-    // adversaires sélectionnés, pour gagner en lisibilité.
-    document.getElementById('duel-pick-wrap').hidden = ready;
-    if(ready) startDuel();
-  }
-  document.getElementById('duel-change-btn').addEventListener('click', function(){
-    selectedCatId = null; selectedBrainId = null;
-    document.getElementById('battle-duel-wrap').hidden = true;
-    document.getElementById('duel-pick-wrap').hidden = false;
-    renderBattleGrids();
-  });
-  function startDuel(){
-    var cat = findSprite(CAT_SPRITES, selectedCatId);
-    var brain = findSprite(BRAINROT_SPRITES, selectedBrainId);
-    if(!cat || !brain) return;
-    renderFighterCard(document.getElementById('duel-cat'), cat);
-    renderFighterCard(document.getElementById('duel-brain'), brain);
-    document.getElementById('duel-cat').className = 'duel-fighter';
-    document.getElementById('duel-brain').className = 'duel-fighter';
-    document.getElementById('battle-result').textContent = '';
-    document.getElementById('battle-pick-note').hidden = false;
-    document.getElementById('battle-again').hidden = true;
-    renderBattleStatsInto('battle-stats', cat, true, function(key){ resolveDuel(cat, brain, key); });
-  }
-  function resolveDuel(cat, brain, key){
-    document.getElementById('battle-pick-note').hidden = true;
-    renderBattleStatsInto('battle-stats', cat, false, null);
-    var chosenRowEl = document.querySelectorAll('#battle-stats .stat-row')[STAT_KEYS.indexOf(key)];
-    runDuelResolution({
-      catSprite:cat, brainSprite:brain, key:key, chosenRowEl:chosenRowEl,
-      catElId:'duel-cat', brainElId:'duel-brain', resultElId:'battle-result',
-      onDone:function(){ document.getElementById('battle-again').hidden = false; }
-    });
-  }
-  document.getElementById('battle-again').addEventListener('click', startDuel);
-
-  /* ----- Mode Équipe : 5 chats choisis à l'avance affrontent une suite
-     d'adversaires tirés au hasard (gauntlet). Une victoire garde le même
-     chat (nouvel adversaire tiré au sort) ; une défaite fait entrer le chat
-     suivant de l'équipe. Le score = nombre d'adversaires vaincus. ----- */
-  var teamRoster = [];
-  var teamFightIdx = 0;
-  var teamScore = 0;
-  var teamCurrentBrain = null;
-  function renderTeamPickGrid(){
-    var container = document.getElementById('team-pick-grid');
-    container.innerHTML = '';
-    var ownedList = CAT_SPRITES.filter(function(s){ return ownedCats[s.id]; });
-    ownedList.forEach(function(sprite){
-      var picked = teamRoster.indexOf(sprite.id) !== -1;
-      var card = document.createElement('div');
-      card.className = 'sprite-card owned' + (picked ? ' selected' : '');
-      renderSpriteVisual(card, sprite);
-      var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
-      card.appendChild(nameEl);
-      var rarity = document.createElement('div'); rarity.className='rarity-pill';
-      rarity.textContent = RARITY_META[sprite.rarity].label;
-      rarity.style.background = RARITY_META[sprite.rarity].color;
-      card.appendChild(rarity);
-      card.addEventListener('click', function(){
-        var pos = teamRoster.indexOf(sprite.id);
-        if(pos!==-1) teamRoster.splice(pos,1);
-        else if(teamRoster.length<5) teamRoster.push(sprite.id);
-        renderTeamPickGrid();
+  /* ---- Moteur de combat ---- */
+  var bt = null, btUid = 0;
+  function btMakeUnit(sprite){ return { uid:++btUid, sprite:sprite, pts:sprite.pts, buffed:false }; }
+  function btOnArrive(sideObj, unit, notes){
+    if(unit.sprite.role === 'support'){
+      sideObj.field.forEach(function(u){
+        if(u !== unit){ u.pts += BT_SUPPORT_BONUS; u.buffed = true; }
       });
-      container.appendChild(card);
-    });
-    if(!ownedList.length){
-      var msg = document.createElement('p'); msg.className='muted';
-      msg.textContent = 'Rien débloqué pour le moment — va faire un tour à la boutique !';
-      container.appendChild(msg);
+      if(sideObj.field.length > 1) notes.push(unit.sprite.name + ' donne +' + BT_SUPPORT_BONUS + ' points à ses alliés !');
+    } else if(sideObj.field.some(function(u){ return u !== unit && u.sprite.role === 'support'; })){
+      unit.pts += BT_SUPPORT_BONUS; unit.buffed = true;
+      notes.push(unit.sprite.name + ' reçoit +' + BT_SUPPORT_BONUS + ' points du soutien.');
     }
-    document.getElementById('team-pick-count').textContent = teamRoster.length;
-    document.getElementById('team-start-btn').hidden = teamRoster.length !== 5;
   }
-  function drawRandomBrainOpponent(){
-    var pool = BRAINROT_SPRITES.filter(function(s){ return ownedBrain[s.id]; });
-    if(!pool.length) pool = BRAINROT_SPRITES;
-    return pool[Math.floor(Math.random()*pool.length)];
+  function btDrawFromReserve(sideObj, notes){
+    if(!sideObj.reserve.length || sideObj.field.length >= BT_FIELD_SIZE) return null;
+    var unit = sideObj.reserve.splice(btRand(sideObj.reserve.length), 1)[0];
+    sideObj.field.push(unit);
+    btOnArrive(sideObj, unit, notes);
+    return unit;
   }
-  function currentTeamCat(){ return findSprite(CAT_SPRITES, teamRoster[teamFightIdx]); }
-  function startTeamBattle(){
-    teamCurrentBrain = drawRandomBrainOpponent();
-    document.getElementById('team-score').textContent = teamScore;
-    document.getElementById('team-roster-note').textContent =
-      'Ton champion : ' + currentTeamCat().name + ' (' + (teamFightIdx+1) + '/5)';
-    renderFighterCard(document.getElementById('team-duel-cat'), currentTeamCat());
-    renderFighterCard(document.getElementById('team-duel-brain'), teamCurrentBrain);
-    document.getElementById('team-duel-cat').className = 'duel-fighter';
-    document.getElementById('team-duel-brain').className = 'duel-fighter';
-    document.getElementById('team-battle-result').textContent = '';
-    document.getElementById('team-pick-note').hidden = false;
-    document.getElementById('team-next-btn').hidden = true;
-    renderBattleStatsInto('team-battle-stats', currentTeamCat(), true, function(key){ resolveTeamDuel(key); });
+  function btBuildEnemyTeam(myUnits){
+    var maxMine = Math.max.apply(null, myUnits.map(function(u){ return u.sprite.pts; }));
+    var pool = btEnemyList();
+    function pickRole(role, n){
+      var all = pool.filter(function(s){ return s.role === role; });
+      // (équilibrage mesuré par simulation : avec 'pts <= meilleure carte du joueur', un
+      // joueur qui tape au hasard gagne ~50 % des combats, un joueur attentif ~70 %)
+      var cands = all.filter(function(s){ return s.pts <= maxMine; });
+      if(cands.length < n) cands = all.slice().sort(function(a,b){ return a.pts-b.pts; }).slice(0, Math.max(n,3));
+      return btShuffle(cands).slice(0, n);
+    }
+    return pickRole('classic',3).concat(pickRole('support',1), pickRole('archer',1)).map(btMakeUnit);
   }
-  function resolveTeamDuel(key){
-    var cat = currentTeamCat(), brain = teamCurrentBrain;
-    document.getElementById('team-pick-note').hidden = true;
-    renderBattleStatsInto('team-battle-stats', cat, false, null);
-    var chosenRowEl = document.querySelectorAll('#team-battle-stats .stat-row')[STAT_KEYS.indexOf(key)];
-    runDuelResolution({
-      catSprite:cat, brainSprite:brain, key:key, chosenRowEl:chosenRowEl,
-      catElId:'team-duel-cat', brainElId:'team-duel-brain', resultElId:'team-battle-result',
-      onDone:function(catWon){
-        if(catWon===true){ teamScore++; document.getElementById('team-score').textContent = teamScore; }
-        else if(catWon===false){ teamFightIdx++; }
-        document.getElementById('team-next-btn').hidden = false;
-      }
+  function btStart(){
+    var side = btSide(), sel = btSel[side];
+    var ids = sel.classic.concat(sel.support, sel.archer);
+    var myUnits = ids.map(function(id){ return btMakeUnit(findSprite(btMyList(), id)); });
+    if(myUnits.length !== 5 || myUnits.some(function(u){ return !u.sprite; })) return;
+    var enUnits = btBuildEnemyTeam(myUnits);
+    bt = {
+      side: side,
+      pl: { field:[], reserve:myUnits },
+      en: { field:[], reserve:enUnits },
+      phase: 'pick-attacker', selected: null, over: false, log: []
+    };
+    var notes = [];
+    for(var i=0;i<BT_FIELD_SIZE;i++){ btDrawFromReserve(bt.pl, notes); btDrawFromReserve(bt.en, notes); }
+    document.getElementById('bt-setup').hidden = true;
+    document.getElementById('bt-over').hidden = true;
+    document.getElementById('bt-arena').hidden = false;
+    document.getElementById('bt-enemy-title').textContent = side==='cats' ? 'Adversaires (Brainrots 👹)' : 'Adversaires (Chats Kawaii 🐱)';
+    btLog(notes.length ? notes : ['Le combat commence !'], true);
+    btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
+    btRender();
+  }
+  function btSetStatus(text){ document.getElementById('bt-status').textContent = text; }
+  function btLog(lines, reset){
+    if(reset) bt.log = [];
+    lines.forEach(function(l){ bt.log.push(l); });
+    bt.log = bt.log.slice(-4);
+    document.getElementById('bt-log').innerHTML = '';
+    bt.log.forEach(function(l){
+      var p = document.createElement('p'); p.textContent = l; document.getElementById('bt-log').appendChild(p);
     });
   }
-  document.getElementById('team-start-btn').addEventListener('click', function(){
-    teamFightIdx = 0; teamScore = 0;
-    document.getElementById('team-pick-wrap').hidden = true;
-    document.getElementById('team-over-wrap').hidden = true;
-    document.getElementById('team-fight-wrap').hidden = false;
-    startTeamBattle();
-  });
-  document.getElementById('team-abandon-btn').addEventListener('click', function(){
-    teamRoster = [];
-    document.getElementById('team-fight-wrap').hidden = true;
-    document.getElementById('team-over-wrap').hidden = true;
-    document.getElementById('team-pick-wrap').hidden = false;
-    renderTeamPickGrid();
-  });
-  document.getElementById('team-restart-btn').addEventListener('click', function(){
-    teamRoster = [];
-    document.getElementById('team-over-wrap').hidden = true;
-    document.getElementById('team-pick-wrap').hidden = false;
-    renderTeamPickGrid();
-  });
-  document.getElementById('team-next-btn').addEventListener('click', function(){
-    if(teamFightIdx >= teamRoster.length){
-      document.getElementById('team-fight-wrap').hidden = true;
-      document.getElementById('team-over-wrap').hidden = false;
-      document.getElementById('team-over-text').textContent =
-        '💀 Toute ton équipe a été vaincue ! Score final : ' + teamScore + ' adversaire(s) battu(s).';
-    } else {
-      startTeamBattle();
-    }
-  });
+  function btUnitCard(unit, isEnemy){
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'bcard' + (isEnemy ? ' enemy' : '');
+    card.setAttribute('data-uid', String(unit.uid));
+    var m = BT_ROLE_META[unit.sprite.role];
+    card.setAttribute('aria-label', (isEnemy ? 'Adversaire : ' : 'Ta carte : ') + unit.sprite.name + ', ' + m.label + ', ' + unit.pts + ' points');
+    var art = document.createElement('div'); art.className = 'bcard-art';
+    renderCreatureVisual(art, unit.sprite, fighterDisplayMode);
+    card.appendChild(art);
+    var nameEl = document.createElement('div'); nameEl.className = 'bcard-name'; nameEl.textContent = unit.sprite.name;
+    card.appendChild(nameEl);
+    var role = document.createElement('div'); role.className = 'bcard-role'; role.textContent = m.icon + ' ' + m.label;
+    card.appendChild(role);
+    var pts = document.createElement('div'); pts.className = 'bcard-pts'; pts.textContent = '❤️ ' + unit.pts + (unit.buffed ? ' ⬆' : '');
+    card.appendChild(pts);
+    return card;
+  }
+  function btRender(){
+    if(!bt) return;
+    var plField = document.getElementById('bt-player-field'), enField = document.getElementById('bt-enemy-field');
+    plField.innerHTML = ''; enField.innerHTML = '';
+    bt.pl.field.forEach(function(u){
+      var c = btUnitCard(u, false);
+      var isSel = bt.selected === u;
+      if(isSel){ c.classList.add('selected'); c.setAttribute('aria-pressed','true'); }
+      var canPick = !bt.over && ((bt.phase === 'pick-attacker') || (bt.phase === 'pick-target' && isSel));
+      c.disabled = !canPick;
+      c.addEventListener('click', function(){
+        if(bt.phase === 'pick-attacker'){
+          bt.selected = u; bt.phase = 'pick-target';
+          btSetStatus(u.sprite.name + ' est prêt : touche la carte adverse à attaquer (ou retouche ta carte pour changer).');
+          btRender();
+        } else if(bt.phase === 'pick-target' && bt.selected === u){
+          bt.selected = null; bt.phase = 'pick-attacker';
+          btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
+          btRender();
+        }
+      });
+      plField.appendChild(c);
+    });
+    bt.en.field.forEach(function(u){
+      var c = btUnitCard(u, true);
+      var canTarget = !bt.over && bt.phase === 'pick-target';
+      if(canTarget) c.classList.add('targetable');
+      c.disabled = !canTarget;
+      c.addEventListener('click', function(){
+        if(bt.phase !== 'pick-target') return;
+        var attacker = bt.selected;
+        bt.selected = null; bt.phase = 'busy';
+        btSetStatus('Attaque en cours…');
+        btRender();
+        btResolveAttack(bt.pl, attacker, bt.en, u, false, btAfterPlayerAttack);
+      });
+      enField.appendChild(c);
+    });
+    document.getElementById('bt-player-reserve').textContent = 'Réserve : ' + bt.pl.reserve.length + ' carte' + (bt.pl.reserve.length>1 ? 's' : '');
+    document.getElementById('bt-enemy-reserve').textContent = 'Réserve adverse : ' + bt.en.reserve.length + ' carte' + (bt.en.reserve.length>1 ? 's' : '');
+  }
+  function btEl(unit){ return document.querySelector('#bt-arena [data-uid="'+unit.uid+'"]'); }
 
-  buildLevelRow(document.getElementById('battle-modes'), ['Duel rapide ⚔️','Mode Équipe 🛡️'], 0, function(idx){
-    document.getElementById('battle-duel-mode').hidden = idx!==0;
-    document.getElementById('battle-team-mode').hidden = idx!==1;
-    if(idx===1) renderTeamPickGrid();
-  });
+  // Résout une attaque : animation, échange de points, cartes battues,
+  // remplacements depuis la réserve, puis rappelle done().
+  function btResolveAttack(attSide, attacker, defSide, target, attackerIsEnemy, done){
+    var archer = attacker.sprite.role === 'archer';
+    var fromEl = btEl(attacker), toEl = btEl(target);
+    if(fromEl && toEl) playAttackAnim(fromEl, toEl, archer ? '🏹' : (attackerIsEnemy ? '💥' : '⚔️'));
+    setTimeout(function(){
+      var dmgToTarget = attacker.pts;
+      var dmgToAttacker = archer ? 0 : target.pts;
+      target.pts -= dmgToTarget;
+      attacker.pts -= dmgToAttacker;
+      var lines = [];
+      if(archer){
+        lines.push(attacker.sprite.name + ' tire à distance : ' + target.sprite.name + ' perd ' + dmgToTarget + ' points, ' + attacker.sprite.name + ' ne perd rien.');
+      } else {
+        lines.push(attacker.sprite.name + ' attaque ' + target.sprite.name + ' : ' + target.sprite.name + ' perd ' + dmgToTarget + ' points et ' + attacker.sprite.name + ' en perd ' + dmgToAttacker + '.');
+      }
+      var hitEl = btEl(target); if(hitEl) hitEl.classList.add('hit');
+      if(!archer){ var hitA = btEl(attacker); if(hitA) hitA.classList.add('hit'); }
+      playSound(attackerIsEnemy ? 'bad' : 'good');
+      btLog(lines);
+      btRender();
+      // Marque les cartes battues, puis les retire après un court instant.
+      var dead = [];
+      [attSide, defSide].forEach(function(sd){
+        sd.field.forEach(function(u){ if(u.pts <= 0) dead.push({ side:sd, unit:u }); });
+      });
+      dead.forEach(function(d){ var e = btEl(d.unit); if(e) e.classList.add('dying'); });
+      setTimeout(function(){
+        var notes = [];
+        dead.forEach(function(d){
+          d.side.field.splice(d.side.field.indexOf(d.unit), 1);
+          notes.push(d.unit.sprite.name + ' est battu' + (d.unit.sprite.role==='support' ? '' : '') + ' !');
+        });
+        dead.forEach(function(d){
+          var arrived = btDrawFromReserve(d.side, notes);
+          if(arrived) notes.push(arrived.sprite.name + ' entre sur le terrain.');
+        });
+        // Une carte qui reçoit un bonus après remplacement est déjà comptée dans btOnArrive ; on remplit aussi les places libres restantes.
+        [bt.pl, bt.en].forEach(function(sd){ while(sd.field.length < BT_FIELD_SIZE && sd.reserve.length){ var a = btDrawFromReserve(sd, notes); if(a) notes.push(a.sprite.name + ' entre sur le terrain.'); } });
+        if(notes.length) btLog(notes);
+        btRender();
+        done();
+      }, dead.length ? 650 : 350);
+    }, 480);
+  }
+  function btAlive(sd){ return sd.field.length + sd.reserve.length > 0; }
+  function btCheckEnd(){
+    var me = btAlive(bt.pl), foe = btAlive(bt.en);
+    if(me && foe) return false;
+    bt.over = true; bt.phase = 'over';
+    var text;
+    if(!me && !foe) text = '🤝 Égalité ! Il ne reste plus aucune carte des deux côtés.';
+    else if(me){ text = '🏆 Victoire ! Tu as battu toute l\'équipe adverse. +3 ⭐'; addStar(3); playSound('good'); celebrate('good', document.getElementById('bt-over-text')); }
+    else { text = '💥 Défaite… toute ton équipe a été battue. Réessaie, tu peux changer d\'équipe !'; playSound('bad'); }
+    document.getElementById('bt-over-text').textContent = text;
+    document.getElementById('bt-over').hidden = false;
+    document.getElementById('bt-arena').hidden = false;
+    btSetStatus('Combat terminé.');
+    btRender();
+    return true;
+  }
+  function btAfterPlayerAttack(){
+    if(btCheckEnd()) return;
+    btSetStatus('Tour de l\'adversaire…');
+    setTimeout(btEnemyTurn, 650);
+  }
+  function btChooseEnemyMove(){
+    var best = null, bestScore = -1e9;
+    bt.en.field.forEach(function(a){
+      bt.pl.field.forEach(function(t){
+        var archer = a.sprite.role === 'archer';
+        var kills = a.pts >= t.pts, dies = !archer && t.pts >= a.pts;
+        var score = (kills ? 4 : 0) + (dies ? -5 : 0) + (archer ? 2 : 0) + a.pts*0.05 - t.pts*0.1 + Math.random();
+        if(score > bestScore){ bestScore = score; best = { a:a, t:t }; }
+      });
+    });
+    return best;
+  }
+  function btEnemyTurn(){
+    if(!bt || bt.over) return;
+    var move = btChooseEnemyMove();
+    if(!move){ if(!btCheckEnd()){ bt.phase = 'pick-attacker'; btRender(); } return; }
+    btResolveAttack(bt.en, move.a, bt.pl, move.t, true, function(){
+      if(btCheckEnd()) return;
+      bt.phase = 'pick-attacker';
+      btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
+      btRender();
+    });
+  }
+  function btBackToSetup(){
+    bt = null;
+    document.getElementById('bt-arena').hidden = true;
+    document.getElementById('bt-over').hidden = true;
+    document.getElementById('bt-setup').hidden = false;
+    renderBtSetup();
+  }
+  function onThemeChangedForBattle(){ btBackToSetup(); }
+  document.getElementById('bt-start').addEventListener('click', btStart);
+  document.getElementById('bt-quit').addEventListener('click', btBackToSetup);
+  document.getElementById('bt-change-team').addEventListener('click', btBackToSetup);
+  document.getElementById('bt-again').addEventListener('click', btStart);
 
   buildLevelRow(document.getElementById('arena-modes'), ['Boutique 🛒','Bataille ⚔️'], 0, function(idx){
     document.getElementById('arena-shop-wrap').hidden = idx!==0;
     document.getElementById('arena-battle-wrap').hidden = idx!==1;
-    if(idx===1) renderBattleGrids();
+    if(idx===1) renderBtSetup();
   });
   renderShop();
-  renderBattleGrids();
+  renderBtSetup();
   renderMascotDock();
   renderTopMascotIcon();
+  updateStreakPill();
 
 })();
 </script>
