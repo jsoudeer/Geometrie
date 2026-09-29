@@ -178,6 +178,25 @@
   .card h2{ font-size:17px; margin-bottom:4px; }
   .muted{ color:var(--text-soft); font-size:13.5px; line-height:1.5; margin:0 0 12px; }
 
+  /* ============ MODE CHRONO COMPACT ============
+     Pendant un défi chronométré, on veut ne JAMAIS avoir à scroller entre
+     deux questions : la topbar, le sélecteur de thème, les onglets de
+     niveau et le titre "Entraînement" disparaissent, et les espacements
+     sont resserrés. Le bandeau ⏱️/score (#countdown-hud) remplace la
+     topbar comme seul repère du haut pendant le défi. */
+  body.chrono-compact .topbar,
+  body.chrono-compact .theme-switch,
+  body.chrono-compact .tabs,
+  body.chrono-compact #practice-mode,
+  body.chrono-compact #mascot-dock,
+  body.chrono-compact #tab-practice > .card > h2{ display:none; }
+  /* La mascotte fixe en bas de l'écran est masquée pendant le défi, donc
+     l'espace qui lui était réservé en bas de .app ne l'est plus non plus. */
+  body.chrono-compact .app{ padding-top:8px; padding-bottom:16px; }
+  body.chrono-compact #tab-practice > .card{ padding:10px 14px; margin-bottom:0; }
+  body.chrono-compact #countdown-hud{ margin-bottom:8px; }
+  body.chrono-compact .muted{ margin-bottom:8px; }
+
   .btn{
     font-family:var(--font-display); font-weight:700; font-size:14px;
     border:none; border-radius:14px; padding:12px 16px; cursor:pointer;
@@ -805,11 +824,22 @@
         <p class="muted">Utilise tes étoiles ⭐ pour débloquer des personnages, puis fais s'affronter un chat et un brainrot pour voir qui gagne !</p>
         <div class="level-row" id="arena-modes"></div>
 
-        <!-- ===== BOUTIQUE ===== -->
+        <!-- ===== BOUTIQUE =====
+             Le clan affiché suit le thème actif choisi en haut de l'écran
+             (Chats/Brainrot) : pas de sélecteur redondant ici. Seuls les
+             personnages PAS ENCORE débloqués de ce clan apparaissent dans
+             la grille principale ; ceux déjà possédés (et le choix de la
+             mascotte) sont rangés dans un panneau replié par défaut. -->
         <div id="arena-shop-wrap">
-          <div class="level-row" id="shop-theme"></div>
           <div class="arena-star-note"><span>⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
+          <p class="qtype-tag" id="shop-clan-tag">Chats kawaii 🐱</p>
           <div class="sprite-grid" id="shop-grid"></div>
+
+          <button class="btn ghost" id="shop-owned-toggle-btn" type="button" style="width:100%;margin-top:12px;" hidden>🐾 Voir mes personnages débloqués</button>
+          <div id="shop-owned-wrap" hidden>
+            <p class="muted" style="margin-top:10px;">Tes personnages débloqués de ce clan : choisis lequel devient ta mascotte.</p>
+            <div class="sprite-grid" id="shop-owned-grid"></div>
+          </div>
         </div>
 
         <!-- ===== BATAILLE ===== -->
@@ -995,6 +1025,7 @@
       try{ localStorage.setItem('geo_theme', th); }catch(e){}
       renderTopMascotIcon();
       renderMascotDock();
+      renderShop(); // la boutique suit le clan actif (voir syncShopThemeToAppTheme)
     });
   });
   (function initTheme(){
@@ -3882,6 +3913,7 @@
       // Pas de compte à rebours en mode Manuel : on arrête celui en cours s'il y en a un.
       clearInterval(countdownInterval);
       countdownRunning = false;
+      setChronoCompact(false);
       document.getElementById('countdown-hud').hidden = true;
       document.getElementById('countdown-results').hidden = true;
       document.getElementById('countdown-setup').hidden = true;
@@ -3947,6 +3979,14 @@
     document.getElementById('countdown-time-left').textContent = Math.ceil(remainMs/1000) + ' s';
     document.getElementById('countdown-score-live').textContent = countdownScore.correct + ' / ' + countdownScore.total;
   }
+  // Bascule l'interface en mode compact PENDANT que le chrono tourne (pas
+  // pendant l'écran de réglage de la durée, où on garde la topbar/les
+  // onglets pour pouvoir revenir en arrière avant de démarrer) : topbar,
+  // sélecteur de thème et onglets de niveau disparaissent, pour qu'on
+  // n'ait jamais à scroller entre deux questions.
+  function setChronoCompact(active){
+    document.body.classList.toggle('chrono-compact', active);
+  }
   function startCountdown(){
     countdownScore = { correct:0, total:0 };
     countdownRunning = true;
@@ -3955,6 +3995,7 @@
     document.getElementById('countdown-results').hidden = true;
     document.getElementById('countdown-hud').hidden = false;
     document.getElementById('practice-exercise').hidden = false;
+    setChronoCompact(true);
     updateCountdownHud();
     clearInterval(countdownInterval);
     countdownInterval = setInterval(function(){
@@ -3967,6 +4008,7 @@
   function endCountdown(){
     countdownRunning = false;
     clearInterval(countdownInterval);
+    setChronoCompact(false);
     document.getElementById('countdown-hud').hidden = true;
     document.getElementById('practice-exercise').hidden = true;
     document.getElementById('countdown-results').hidden = false;
@@ -3981,6 +4023,7 @@
     practiceMode = idx===0 ? 'free' : 'countdown';
     clearInterval(countdownInterval);
     countdownRunning = false;
+    setChronoCompact(false);
     document.getElementById('countdown-hud').hidden = true;
     document.getElementById('countdown-results').hidden = true;
     if(practiceMode==='free'){
@@ -4319,65 +4362,98 @@
     return true;
   }
 
-  /* ---- Boutique ---- */
-  var shopTheme = 0; // 0 = chats, 1 = brainrots
+  /* ---- Boutique ----
+     La boutique n'affiche que le clan actuellement actif (celui choisi tout
+     en haut via le sélecteur de thème Chats/Brainrot) : plus de sélecteur
+     de clan séparé et redondant dans la boutique elle-même. Et pour ne
+     montrer "que les personnages à acheter" (demande explicite), la grille
+     principale n'affiche que les personnages PAS ENCORE débloqués ; les
+     personnages déjà possédés (et le choix de la mascotte) vont dans un
+     petit panneau replié par défaut ("Tes personnages"), pour ne pas
+     encombrer la boutique une fois qu'on a commencé à en débloquer. */
+  var shopTheme = 0; // 0 = chats, 1 = brainrots — toujours synchronisé sur le thème actif, voir syncShopThemeToAppTheme()
   function currentShopList(){ return shopTheme===0 ? CAT_SPRITES : BRAINROT_SPRITES; }
   function currentOwnedMap(){ return shopTheme===0 ? ownedCats : ownedBrain; }
+  function syncShopThemeToAppTheme(){
+    shopTheme = currentThemeKey()==='brainrot' ? 1 : 0;
+    var tag = document.getElementById('shop-clan-tag');
+    if(tag) tag.textContent = shopTheme===0 ? 'Chats kawaii 🐱' : 'Brainrots 👹';
+  }
+  function buildSpriteShopCard(sprite, isOwned){
+    var card = document.createElement('div');
+    card.className = 'sprite-card ' + (isOwned ? 'owned' : 'locked');
+    renderSpriteVisual(card, sprite);
+    var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
+    card.appendChild(nameEl);
+    var rarity = document.createElement('div'); rarity.className='rarity-pill';
+    rarity.textContent = RARITY_META[sprite.rarity].label;
+    rarity.style.background = RARITY_META[sprite.rarity].color;
+    card.appendChild(rarity);
+    if(isOwned){
+      var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
+      card.appendChild(tag);
+      var isMascot = mascotSpriteId === sprite.id;
+      var mascotBtn = document.createElement('button');
+      mascotBtn.type = 'button';
+      mascotBtn.className = 'sp-mascot-btn' + (isMascot ? ' active' : '');
+      mascotBtn.textContent = isMascot ? '★ Mascotte actuelle' : '☆ Devenir mascotte';
+      mascotBtn.addEventListener('click', function(){
+        mascotSpriteId = isMascot ? null : sprite.id;
+        saveMascot();
+        renderMascotDock();
+        renderTopMascotIcon();
+        renderShop();
+      });
+      card.appendChild(mascotBtn);
+    } else {
+      var owned = currentOwnedMap();
+      var costTag = document.createElement('div'); costTag.className='sp-cost'; costTag.textContent = sprite.cost + ' ⭐';
+      card.appendChild(costTag);
+      var buyBtn = document.createElement('button');
+      buyBtn.type = 'button'; buyBtn.className = 'sp-buy'; buyBtn.textContent = 'Acheter';
+      if(stars < sprite.cost) buyBtn.disabled = true;
+      buyBtn.addEventListener('click', function(){
+        if(trySpendStars(sprite.cost)){
+          owned[sprite.id] = true;
+          saveOwned();
+          playSound('good');
+          celebrate('good', card);
+          renderShop();
+        }
+      });
+      card.appendChild(buyBtn);
+    }
+    return card;
+  }
   function renderShop(){
+    syncShopThemeToAppTheme();
     document.getElementById('shop-star-count').textContent = stars;
+    var list = currentShopList(), owned = currentOwnedMap();
+    var toBuy = list.filter(function(s){ return !owned[s.id]; });
+    var alreadyOwned = list.filter(function(s){ return !!owned[s.id]; });
+
     var grid = document.getElementById('shop-grid');
     grid.innerHTML = '';
-    var list = currentShopList(), owned = currentOwnedMap();
-    list.forEach(function(sprite){
-      var isOwned = !!owned[sprite.id];
-      var card = document.createElement('div');
-      card.className = 'sprite-card ' + (isOwned ? 'owned' : 'locked');
-      renderSpriteVisual(card, sprite);
-      var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
-      card.appendChild(nameEl);
-      var rarity = document.createElement('div'); rarity.className='rarity-pill';
-      rarity.textContent = RARITY_META[sprite.rarity].label;
-      rarity.style.background = RARITY_META[sprite.rarity].color;
-      card.appendChild(rarity);
-      if(isOwned){
-        var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
-        card.appendChild(tag);
-        var isMascot = mascotSpriteId === sprite.id;
-        var mascotBtn = document.createElement('button');
-        mascotBtn.type = 'button';
-        mascotBtn.className = 'sp-mascot-btn' + (isMascot ? ' active' : '');
-        mascotBtn.textContent = isMascot ? '★ Mascotte actuelle' : '☆ Devenir mascotte';
-        mascotBtn.addEventListener('click', function(){
-          mascotSpriteId = isMascot ? null : sprite.id;
-          saveMascot();
-          renderMascotDock();
-          renderTopMascotIcon();
-          renderShop();
-        });
-        card.appendChild(mascotBtn);
-      } else {
-        var costTag = document.createElement('div'); costTag.className='sp-cost'; costTag.textContent = sprite.cost + ' ⭐';
-        card.appendChild(costTag);
-        var buyBtn = document.createElement('button');
-        buyBtn.type = 'button'; buyBtn.className = 'sp-buy'; buyBtn.textContent = 'Acheter';
-        if(stars < sprite.cost) buyBtn.disabled = true;
-        buyBtn.addEventListener('click', function(){
-          if(trySpendStars(sprite.cost)){
-            owned[sprite.id] = true;
-            saveOwned();
-            playSound('good');
-            celebrate('good', card);
-            renderShop();
-          }
-        });
-        card.appendChild(buyBtn);
-      }
-      grid.appendChild(card);
-    });
+    if(toBuy.length===0){
+      var doneMsg = document.createElement('p');
+      doneMsg.className = 'muted';
+      doneMsg.textContent = 'Tous les personnages de ce clan sont débloqués ! 🎉';
+      grid.appendChild(doneMsg);
+    } else {
+      toBuy.forEach(function(sprite){ grid.appendChild(buildSpriteShopCard(sprite, false)); });
+    }
+
+    var ownedWrap = document.getElementById('shop-owned-wrap');
+    var ownedToggleBtn = document.getElementById('shop-owned-toggle-btn');
+    ownedToggleBtn.hidden = alreadyOwned.length===0;
+    var ownedGrid = document.getElementById('shop-owned-grid');
+    ownedGrid.innerHTML = '';
+    alreadyOwned.forEach(function(sprite){ ownedGrid.appendChild(buildSpriteShopCard(sprite, true)); });
   }
-  buildLevelRow(document.getElementById('shop-theme'), ['Chats kawaii 🐱','Brainrots 👹'], 0, function(idx){
-    shopTheme = idx;
-    renderShop();
+  document.getElementById('shop-owned-toggle-btn').addEventListener('click', function(){
+    var wrap = document.getElementById('shop-owned-wrap');
+    wrap.hidden = !wrap.hidden;
+    this.textContent = wrap.hidden ? '🐾 Voir mes personnages débloqués' : '🙈 Masquer mes personnages débloqués';
   });
 
   /* ---- Bataille : Duel rapide (1v1) et Mode Équipe (5 vs adversaires
