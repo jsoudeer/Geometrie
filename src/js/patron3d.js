@@ -1,3 +1,7 @@
+  /* ===================== THÈME PATRON / SOLIDES 3D =====================
+     Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
+  */
+
   /* ===================== MODULE 3 : PATRON -> CUBE ===================== */
   var S3 = 44;
 
@@ -456,4 +460,275 @@
   document.getElementById('m3-next').addEventListener('click', nextPracticeQuestion);
   // Toucher l'explication passe à la question suivante (comme dans les autres familles).
   enableTapToContinue('m3-feedback', nextPracticeQuestion);
+
+  // ===================== Solides =====================
+  // Représentation "perspective cavalière", comme dans les cahiers : les
+  // arêtes visibles sont des traits pleins, les arêtes cachées (derrière le
+  // solide) sont en pointillés, et les faces visibles sont translucides.
+  // Ça permet à l'enfant de voir ET de compter les arêtes/sommets cachés,
+  // au lieu d'avoir à "deviner" ce qu'il y a derrière.
+  function isoPoly(pts){ return pts.map(function(p){return p[0]+','+p[1];}).join(' '); }
+  function solidFace(svg,pts,color){
+    svg.appendChild(el('polygon',{points:isoPoly(pts), fill:color, 'fill-opacity':0.5, stroke:'none'}));
+  }
+  function solidEdge(svg,p1,p2,hidden){
+    var attrs = {x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1], stroke:'var(--text)','stroke-width':2.2,'stroke-linecap':'round'};
+    if(hidden) attrs['stroke-dasharray'] = '5,4';
+    svg.appendChild(el('line',attrs));
+  }
+  function drawCavalierBox(svg,c){
+    // c = coins Front(TL,TR,BR,BL) et Back(TL,TR,BR,BL). Seul le coin
+    // Back-Bas-Gauche (BBL) est caché, avec les 3 arêtes qui y mènent.
+    solidFace(svg, [c.FTL,c.FTR,c.FBR,c.FBL], 'var(--accent)');   // face avant
+    solidFace(svg, [c.FTL,c.FTR,c.BTR,c.BTL], 'var(--accent3)');  // face du dessus
+    solidFace(svg, [c.FTR,c.FBR,c.BBR,c.BTR], 'var(--accent2)');  // face de droite
+    // arêtes cachées (le coin arrière-bas-gauche, invisible depuis l'extérieur)
+    solidEdge(svg,c.FBL,c.BBL,true);
+    solidEdge(svg,c.BTL,c.BBL,true);
+    solidEdge(svg,c.BBL,c.BBR,true);
+    // arêtes visibles
+    solidEdge(svg,c.FTL,c.FTR,false); solidEdge(svg,c.FTR,c.FBR,false);
+    solidEdge(svg,c.FBR,c.FBL,false); solidEdge(svg,c.FBL,c.FTL,false);
+    solidEdge(svg,c.FTL,c.BTL,false); solidEdge(svg,c.FTR,c.BTR,false); solidEdge(svg,c.FBR,c.BBR,false);
+    solidEdge(svg,c.BTL,c.BTR,false); solidEdge(svg,c.BTR,c.BBR,false);
+  }
+  function drawSolidCube(svg){
+    // Base carrée ET profondeur cohérente avec la largeur : ça se voit
+    // clairement comme un cube, pas comme une boîte allongée.
+    drawCavalierBox(svg, {
+      FTL:[55,70], FTR:[145,70], FBR:[145,160], FBL:[55,160],
+      BTL:[90,42], BTR:[180,42], BBR:[180,132], BBL:[90,132]
+    });
+  }
+  function drawSolidPave(svg){
+    // Volontairement bien plus large que haut, et moins profond : la
+    // silhouette "boîte allongée" doit sauter aux yeux à côté du cube.
+    drawCavalierBox(svg, {
+      FTL:[30,92], FTR:[160,92], FBR:[160,145], FBL:[30,145],
+      BTL:[58,68], BTR:[188,68], BBR:[188,121], BBL:[58,121]
+    });
+  }
+  function drawSolidPyramide(svg){
+    // Base carrée en losange (F=devant, Bk=caché derrière, L/R=côtés) +
+    // sommet. Seuls le sommet arrière du carré de base et les 3 arêtes qui
+    // y mènent sont cachés (pointillés) ; le reste est visible.
+    var Apex=[100,38], Bk=[100,116], R=[153,142], F=[100,168], L=[47,142];
+    solidFace(svg, [Apex,L,F], 'var(--accent2)');
+    solidFace(svg, [Apex,F,R], 'var(--accent)');
+    solidEdge(svg,Apex,Bk,true); solidEdge(svg,L,Bk,true); solidEdge(svg,R,Bk,true);
+    solidEdge(svg,Apex,F,false); solidEdge(svg,Apex,L,false); solidEdge(svg,Apex,R,false);
+    solidEdge(svg,F,L,false); solidEdge(svg,F,R,false);
+  }
+  function drawSolidCylindre(svg){
+    var cx=100, topCy=62, botCy=150, rx=46, ry=16;
+    svg.appendChild(el('rect',{x:cx-rx,y:topCy,width:2*rx,height:botCy-topCy,fill:'var(--accent2)'}));
+    svg.appendChild(el('line',{x1:cx-rx,y1:topCy,x2:cx-rx,y2:botCy,stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('line',{x1:cx+rx,y1:topCy,x2:cx+rx,y2:botCy,stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('path',{d:'M '+(cx-rx)+' '+botCy+' A '+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+botCy, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('ellipse',{cx:cx,cy:topCy,rx:rx,ry:ry,fill:'var(--accent3)',stroke:'var(--text)','stroke-width':2}));
+  }
+  function drawSolidCone(svg){
+    var rx=48, ry=16, baseCy=150, apex=[100,40];
+    svg.appendChild(el('polygon',{points:isoPoly([apex,[100-rx,baseCy],[100+rx,baseCy]]),fill:'var(--accent2)'}));
+    svg.appendChild(el('ellipse',{cx:100,cy:baseCy,rx:rx,ry:ry,fill:'var(--accent3)',stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('line',{x1:apex[0],y1:apex[1],x2:100-rx,y2:baseCy,stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('line',{x1:apex[0],y1:apex[1],x2:100+rx,y2:baseCy,stroke:'var(--text)','stroke-width':2}));
+  }
+  function drawSolidBoule(svg){
+    svg.appendChild(el('circle',{cx:100,cy:100,r:60,fill:'var(--accent2)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('ellipse',{cx:100,cy:128,rx:38,ry:13,fill:'var(--text)','fill-opacity':0.12}));
+  }
+  // Tétraèdre : pyramide à base TRIANGULAIRE (3 sommets de base + 1 pointe,
+  // au lieu des 4 sommets de base de drawSolidPyramide). Même logique que
+  // la pyramide : les 2 faces avant sont visibles (remplies), et la seule
+  // arête du fond de la base (celle qu'on ne voit jamais de face) est en
+  // pointillés.
+  function drawSolidTetraedre(svg){
+    // L, R et F doivent rester GROUPÉS dans une bande basse étroite (comme
+    // dans drawSolidPyramide : L/R/F sont tous proches de y=142-168) pour
+    // que la base se lise comme une zone compacte, bien plus bas que la
+    // pointe (Apex tout en haut) — sinon, si F descend trop loin sous L/R,
+    // la silhouette devient un losange à 4 pointes (confondu avec un
+    // octaèdre) plutôt qu'une seule pointe au-dessus d'une base.
+    var Apex=[100,35], L=[45,140], R=[155,140], F=[100,163];
+    solidFace(svg, [Apex,F,L], 'var(--accent2)');
+    solidFace(svg, [Apex,F,R], 'var(--accent)');
+    solidEdge(svg,L,R,true);
+    solidEdge(svg,Apex,F,false); solidEdge(svg,Apex,L,false); solidEdge(svg,Apex,R,false);
+    solidEdge(svg,F,L,false); solidEdge(svg,F,R,false);
+  }
+  // Octaèdre : deux pyramides à base carrée collées base contre base — vu
+  // de face, la base carrée du milieu s'aplatit en un losange dont on ne
+  // voit que 2 des 4 sommets (Front, en bas ; le 4e, Back, est caché
+  // derrière, comme le sommet caché du patron de pyramide).
+  function drawSolidOctaedre(svg){
+    var Top=[100,30], Bot=[100,175], F=[100,128], L=[45,100], R=[155,100], Bk=[100,72];
+    solidFace(svg, [Top,F,L], 'var(--accent2)');
+    solidFace(svg, [Top,F,R], 'var(--accent)');
+    solidFace(svg, [Bot,F,L], 'var(--accent3)');
+    solidFace(svg, [Bot,F,R], 'var(--accent2)');
+    solidEdge(svg,Top,Bk,true); solidEdge(svg,Bot,Bk,true); solidEdge(svg,L,Bk,true); solidEdge(svg,R,Bk,true);
+    solidEdge(svg,Top,F,false); solidEdge(svg,Top,L,false); solidEdge(svg,Top,R,false);
+    solidEdge(svg,Bot,F,false); solidEdge(svg,Bot,L,false); solidEdge(svg,Bot,R,false);
+    solidEdge(svg,F,L,false); solidEdge(svg,F,R,false);
+  }
+  // Prismes à base polygonale régulière (triangle/pentagone/hexagone/
+  // octogone) : même langage visuel que le cylindre (drawSolidCylindre) —
+  // un "corps" plein (silhouette rectangulaire, comme si les faces
+  // latérales étaient fondues), un dessus entièrement visible, et un
+  // dessous dont seule la moitié avant (les sommets les plus bas) est
+  // tracée — plutôt que de gérer arête par arête laquelle des n faces
+  // latérales est visible ou cachée, inutilement complexe à cet âge.
+  function ngonPoints(n, cx, cy, rx, ry, rotDeg){
+    var pts=[];
+    for(var k=0;k<n;k++){
+      var ang=(rotDeg + k*360/n) * Math.PI/180;
+      pts.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
+    }
+    return pts;
+  }
+  function drawSolidPrismeN(svg, n){
+    var cx=100, rx=46, ry=17, topCy=62, botCy=148;
+    var top = ngonPoints(n,cx,topCy,rx,ry,-90);
+    var bot = ngonPoints(n,cx,botCy,rx,ry,-90);
+    svg.appendChild(el('rect',{x:cx-rx,y:topCy,width:2*rx,height:botCy-topCy,fill:'var(--accent2)'}));
+    svg.appendChild(el('line',{x1:cx-rx,y1:topCy,x2:cx-rx,y2:botCy, stroke:'var(--text)','stroke-width':2}));
+    svg.appendChild(el('line',{x1:cx+rx,y1:topCy,x2:cx+rx,y2:botCy, stroke:'var(--text)','stroke-width':2}));
+    var front = bot.filter(function(p){ return p[1] >= botCy - 0.01; }).sort(function(a,b){ return a[0]-b[0]; });
+    if(front.length>1){
+      var d = 'M '+front[0][0]+' '+front[0][1];
+      for(var i=1;i<front.length;i++) d += ' L '+front[i][0]+' '+front[i][1];
+      svg.appendChild(el('path',{d:d, fill:'none', stroke:'var(--text)','stroke-width':2}));
+    }
+    svg.appendChild(el('polygon',{points:isoPoly(top), fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2}));
+  }
+  function drawSolidPrismeTri(svg){ drawSolidPrismeN(svg,3); }
+  function drawSolidPrismePenta(svg){ drawSolidPrismeN(svg,5); }
+  function drawSolidPrismeHexa(svg){ drawSolidPrismeN(svg,6); }
+  function drawSolidPrismeOcto(svg){ drawSolidPrismeN(svg,8); }
+  // Nombre de faces/arêtes/sommets d'un prisme à base n-gonale régulière :
+  // n+2 faces (2 bases + n côtés), 3n arêtes, 2n sommets.
+  function prismCounts(n){ return { faces:n+2, aretes:3*n, sommets:2*n }; }
+  var SOLID_META = {
+    cube:          { faces:6, aretes:12, sommets:8,  label:'cube', draw:drawSolidCube },
+    pave:          { faces:6, aretes:12, sommets:8,  label:'pavé droit', draw:drawSolidPave },
+    pyramide:      { faces:5, aretes:8,  sommets:5,  label:'pyramide à base carrée', draw:drawSolidPyramide },
+    tetraedre:     { faces:4, aretes:6,  sommets:4,  label:'tétraèdre', draw:drawSolidTetraedre },
+    octaedre:      { faces:8, aretes:12, sommets:6,  label:'octaèdre', draw:drawSolidOctaedre },
+    prisme_tri:    { faces:prismCounts(3).faces, aretes:prismCounts(3).aretes, sommets:prismCounts(3).sommets,
+                     label:'prisme triangulaire', draw:drawSolidPrismeTri },
+    prisme_penta:  { faces:prismCounts(5).faces, aretes:prismCounts(5).aretes, sommets:prismCounts(5).sommets,
+                     label:'prisme pentagonal', draw:drawSolidPrismePenta },
+    prisme_hexa:   { faces:prismCounts(6).faces, aretes:prismCounts(6).aretes, sommets:prismCounts(6).sommets,
+                     label:'prisme hexagonal', draw:drawSolidPrismeHexa },
+    prisme_octo:   { faces:prismCounts(8).faces, aretes:prismCounts(8).aretes, sommets:prismCounts(8).sommets,
+                     label:'prisme octogonal', draw:drawSolidPrismeOcto },
+    cylindre: { label:'cylindre', draw:drawSolidCylindre },
+    cone:     { label:'cône', draw:drawSolidCone },
+    boule:    { label:'boule', draw:drawSolidBoule }
+  };
+  var SOLID_NAME_POOL = ['cube','pavé droit','pyramide à base carrée','cylindre','cône','boule',
+    'tétraèdre','octaèdre','prisme triangulaire','prisme pentagonal','prisme hexagonal','prisme octogonal'];
+
+  // Fait varier le "plan" (l'angle de vue) d'un solide : un miroir
+  // horizontal aléatoire (une chance sur deux), pour que l'enfant ne
+  // mémorise pas "LA" silhouette d'un solide donné mais le reconnaisse
+  // aussi vu sous un angle différent. Marche pour tous les solides sans
+  // toucher à chaque fonction de dessin : on dessine dans un <g> qu'on
+  // retourne éventuellement, plutôt que directement dans le <svg>.
+  function drawSolidVaried(svg, meta){
+    svg.innerHTML = "";
+    var g = document.createElementNS(svgNS,'g');
+    if(Math.random()<0.5) g.setAttribute('transform','translate(200,0) scale(-1,1)');
+    svg.appendChild(g);
+    meta.draw(g);
+  }
+
+  // Une phrase qui décrit chaque solide (ce qui permet de le reconnaître),
+  // réutilisée par les questions "nom du solide" et les énigmes.
+  var SOLID_FACTS = {
+    'cube':'il a 6 faces carrées toutes identiques, comme un dé.',
+    'pavé droit':'il a 6 faces rectangulaires, comme une boîte à chaussures ou une brique.',
+    'pyramide à base carrée':'il a 1 base carrée et 4 faces triangulaires qui se rejoignent en une pointe.',
+    'tétraèdre':'il a 4 faces, toutes des triangles : c\'est la plus simple des pyramides.',
+    'octaèdre':'il a 8 faces triangulaires : ce sont deux pyramides à base carrée collées par leur base.',
+    'prisme triangulaire':'il a 2 faces triangulaires reliées par 3 rectangles, comme une tente de camping.',
+    'prisme pentagonal':'il a 2 faces pentagonales (5 côtés) reliées par 5 rectangles.',
+    'prisme hexagonal':'il a 2 faces hexagonales (6 côtés) reliées par 6 rectangles.',
+    'prisme octogonal':'il a 2 faces à 8 côtés reliées par 8 rectangles.',
+    'cylindre':'il a 2 disques ronds reliés par une surface qui s\'enroule, comme une boîte de conserve.',
+    'cône':'il a une base ronde et une seule pointe, comme un chapeau de sorcière ou un cornet de glace.',
+    'boule':'il est tout rond, sans arête ni sommet, comme un ballon.',
+    'triangle':'il a 3 côtés et 3 sommets. S\'il a 3 côtés égaux, on l\'appelle un triangle équilatéral.',
+    'carré':'il a 4 côtés égaux et 4 angles droits.',
+    'rectangle':'il a 4 angles droits et ses côtés opposés sont égaux (le carré est un rectangle particulier).',
+    'losange':'il a 4 côtés égaux, mais ses angles ne sont pas droits.',
+    'cercle':'c\'est une ligne courbe fermée : il n\'a ni côté ni sommet.',
+    'pentagone':'il a 5 côtés et 5 sommets.',
+    'hexagone':'il a 6 côtés et 6 sommets, comme une alvéole de ruche.'
+  };
+  // Comment compter faces / arêtes / sommets pour chaque polyèdre.
+  function countTip(key, attr){
+    var meta = SOLID_META[key];
+    var nPrism = { prisme_tri:3, prisme_penta:5, prisme_hexa:6, prisme_octo:8 }[key];
+    if(nPrism){
+      if(attr==='faces') return '2 faces de base (dessus et dessous) + ' + nPrism + ' rectangles sur les côtés = ' + meta.faces + ' faces.';
+      if(attr==='aretes') return nPrism + ' arêtes en haut + ' + nPrism + ' en bas + ' + nPrism + ' qui relient le haut et le bas = ' + meta.aretes + ' arêtes.';
+      return nPrism + ' coins en haut + ' + nPrism + ' coins en bas = ' + meta.sommets + ' sommets.';
+    }
+    var tips = {
+      cube:{ faces:'Dessus + dessous + 4 côtés = 6 faces.', aretes:'4 arêtes en haut + 4 en bas + 4 qui relient le haut et le bas = 12 arêtes.', sommets:'4 coins en haut + 4 coins en bas = 8 sommets.' },
+      pave:{ faces:'Dessus + dessous + 4 côtés = 6 faces (toutes des rectangles).', aretes:'4 arêtes en haut + 4 en bas + 4 qui relient le haut et le bas = 12 arêtes.', sommets:'4 coins en haut + 4 coins en bas = 8 sommets.' },
+      pyramide:{ faces:'1 base carrée + 4 triangles = 5 faces.', aretes:'4 arêtes autour de la base + 4 qui montent jusqu\'à la pointe = 8 arêtes.', sommets:'4 coins de la base + 1 pointe tout en haut = 5 sommets.' },
+      tetraedre:{ faces:'4 triangles = 4 faces.', aretes:'3 arêtes autour de la base + 3 qui montent jusqu\'à la pointe = 6 arêtes.', sommets:'3 coins de la base + 1 pointe = 4 sommets.' },
+      octaedre:{ faces:'4 triangles en haut + 4 triangles en bas = 8 faces.', aretes:'4 arêtes autour du milieu + 4 vers la pointe du haut + 4 vers la pointe du bas = 12 arêtes.', sommets:'1 pointe en haut + 1 en bas + 4 au milieu = 6 sommets.' }
+    };
+    return tips[key][attr];
+  }
+  var COUNT_DEFS = {
+    faces:'Une face est une surface plate du solide.',
+    aretes:'Une arête est un trait où deux faces se rejoignent.',
+    sommets:'Un sommet est une pointe, un coin où plusieurs arêtes se rejoignent.'
+  };
+  function genSolideNomQuestion(){
+    var keys = Object.keys(SOLID_META);
+    var key = pick(keys);
+    var meta = SOLID_META[key];
+    var poolLabels = shuffle(SOLID_NAME_POOL.filter(function(l){return l!==meta.label;})).slice(0,3);
+    var labels = shuffle([meta.label].concat(poolLabels));
+    return {
+      tag:'Solides',
+      question:'Quel est le nom de ce solide ?',
+      sub:'Observe bien sa forme en 3D.',
+      explain:'C\'est un(e) ' + meta.label + ' : ' + (SOLID_FACTS[meta.label] || 'observe bien ses faces.'),
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
+      cols3:false,
+      choices: labels.map(function(l){ return { label:l, ok:l===meta.label }; })
+    };
+  }
+  // Solides pour lesquels faces/arêtes/sommets ont un sens simple à compter
+  // (polyèdres) — cylindre/cône/boule en sont volontairement exclus, leurs
+  // "faces" courbes prêtant à débat à ce niveau.
+  var SOLID_COMPTE_KEYS = ['cube','pave','pyramide','tetraedre','octaedre','prisme_tri','prisme_penta','prisme_hexa','prisme_octo'];
+  function genSolideCompteQuestion(){
+    var key = pick(SOLID_COMPTE_KEYS);
+    var meta = SOLID_META[key];
+    var attr = pick(['faces','sommets','aretes']);
+    var correct = meta[attr];
+    var attrLabel = attr==='faces'?'faces' : attr==='sommets'?'sommets' : 'arêtes';
+    return {
+      tag:'Solides',
+      question:'Combien de ' + attrLabel + ' a ce solide (' + meta.label + ') ?',
+      sub:'Essaie de bien visualiser toutes les faces, même celles qu\'on ne voit pas directement.',
+      explain: COUNT_DEFS[attr] + ' ' + countTip(key, attr) + ' (Un ' + meta.label + ' a ' + meta.faces + ' faces, ' + meta.aretes + ' arêtes et ' + meta.sommets + ' sommets.)',
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
+      cols3:false,
+      // Les distracteurs sont pris AUTOUR de la vraie valeur (plutôt qu'un
+      // pool fixe 2-12) : nécessaire depuis l'ajout des prismes, dont le
+      // nombre d'arêtes/sommets peut largement dépasser 12 (24 arêtes pour
+      // le prisme octogonal, par ex.) — un pool fixe aurait alors proposé
+      // des distracteurs ridiculement éloignés, rendant la question trop facile.
+      choices: numChoiceSet(correct, [correct-4,correct-3,correct-2,correct-1,correct+1,correct+2,correct+3,correct+4].filter(function(v){return v>=1;})).map(function(v){ return { label:String(v), ok:v===correct }; })
+    };
+  }
 

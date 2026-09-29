@@ -1,6 +1,21 @@
 {
   "template": "index.template.html",
   "output": "../index.html",
-  "css": ["css/base.css", "css/exercices.css", "css/interface.css", "css/boutique-bataille.css"],
-  "js": ["js/noyau.js", "js/mesurer.js", "js/deformer.js", "js/patron.js", "js/quizz.js", "js/horloge.js", "js/orchestrateur.js", "js/boutique-1.js", "js/images-data.js", "js/boutique-2.js", "js/bataille.js"]
+  "css": [
+    "css/base.css",
+    "css/exercices.css",
+    "css/interface.css",
+    "css/boutique-bataille.css"
+  ],
+  "js": [
+    "js/noyau.js",
+    "js/geometrie.js",
+    "js/horloge.js",
+    "js/calcul.js",
+    "js/patron3d.js",
+    "js/orchestrateur.js",
+    "js/images-data.js",
+    "js/boutique.js",
+    "js/bataille.js"
+  ]
 }

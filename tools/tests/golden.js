@@ -39,7 +39,7 @@ async function record(outFile) {
     const ev = code => page.evaluate(c => window.__t.__eval(c), code);
     const put = (k, v) => { snaps[k] = typeof v === 'string' ? v : JSON.stringify(v); };
     const shot = async (name) => {
-      await page.waitForTimeout(60);
+      await page.waitForTimeout(400);
       const buf = await page.screenshot({ fullPage: true });
       fs.writeFileSync(shotDir + name + '.png', buf);
       put('shot:' + name, md5(buf));
@@ -96,6 +96,10 @@ async function record(outFile) {
     await ev(`setAppMode('auto')`);
 
     // ---- 3. empreintes de captures d'écran ---------------------------------
+    // (une première capture « à blanc » : la toute première est parfois instable
+    //  au sous-pixel près, même sur une appli inchangée)
+    await page.screenshot({ fullPage: true });
+    await page.waitForTimeout(400);
     for (const theme of ['cats', 'brainrot']) {
       const cur = await ev(`document.body.getAttribute('data-app-theme')`);
       if (cur !== theme) { await page.click('#theme-toggle'); await page.waitForTimeout(150); }

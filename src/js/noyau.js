@@ -502,3 +502,29 @@
     });
   }
 
+
+  // ---- Outils partagés par tous les thèmes ----
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function rand(a,b){ return a+Math.random()*(b-a); }
+
+  function randInt(a,b){ return Math.floor(rand(a, b+1)); }
+
+  function numChoiceSet(correct, poolVals){
+    var opts = [correct];
+    var seen = {}; seen[correct] = true;
+    var uniquePool = poolVals.filter(function(v){
+      if(v===correct || seen[v]) return false;
+      seen[v] = true; return true;
+    });
+    var pool = shuffle(uniquePool);
+    var i=0;
+    while(opts.length<4 && i<pool.length){ opts.push(pool[i]); i++; }
+    return shuffle(opts);
+  }
+
+  function svgText(x,y,size,txt){
+    var t = el('text',{x:x,y:y,'text-anchor':'middle','font-size':size,'font-family':"'Baloo 2', sans-serif",'font-weight':'700',fill:'var(--text)'});
+    t.textContent = txt;
+    return t;
+  }
+
