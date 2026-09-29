@@ -286,7 +286,104 @@
     };
   }
 
+
+  // ---- Durées : calculer une heure de fin, une durée, une heure de début ----
+  function fmtDuree(min){
+    var h = Math.floor(min/60), m = min % 60;
+    if(h===0) return m + ' min';
+    return m===0 ? (h + ' h') : (h + ' h ' + (m<10 ? '0'+m : m));
+  }
+  var DUREE_SCENES = [
+    { icon:'🎬', start:'Le film commence', end:'Il se termine', what:'Le film' },
+    { icon:'⚽', start:'Le match commence', end:'Il se termine', what:'Le match' },
+    { icon:'🍰', start:'Le gâteau entre au four', end:'Il en sort', what:'La cuisson' },
+    { icon:'🎨', start:'L\'atelier de peinture commence', end:'Il se termine', what:'L\'atelier' },
+    { icon:'🚌', start:'Le bus part', end:'Il arrive', what:'Le voyage en bus' },
+    { icon:'📚', start:'La lecture commence', end:'Elle se termine', what:'La lecture' },
+    { icon:'🏊', start:'La séance de piscine commence', end:'Elle se termine', what:'La séance' }
+  ];
+  function labelChoices(correctMin, fmt, candidates){
+    var correct = fmt(correctMin), seen = {}, wrong = [];
+    seen[correct] = true;
+    shuffle(candidates.slice()).forEach(function(v){
+      var l = fmt(v);
+      if(v > 0 && !seen[l] && wrong.length < 3){ seen[l] = true; wrong.push(l); }
+    });
+    return shuffle([correct].concat(wrong)).map(function(l){ return { label:l, ok:l===correct }; });
+  }
+  function genDureeQuestion(level){
+    var sc = pick(DUREE_SCENES);
+    var kinds = level===0 ? ['end','end','dur'] : level===1 ? ['end','dur','start'] : ['end','dur','start','conv'];
+    var kind = pick(kinds);
+    var stepMin = level===0 ? 60 : level===1 ? 15 : 5;
+    var startMin, dur, endMin, question, explain, fmt, correctMin, cands, sub, drawTxt;
+
+    if(kind==='conv'){
+      var hh = randInt(1,3), mm = pick([15,30,45]);
+      var totalMin = hh*60 + mm;
+      question = hh + ' h ' + mm + ' min, ça fait combien de minutes en tout ?';
+      explain = '1 heure = 60 minutes. ' + hh + ' h = ' + (hh*60) + ' min, puis on ajoute ' + mm + ' min : ' + totalMin + ' minutes.';
+      var okLabel = totalMin + ' minutes';
+      var cw = [hh*100+mm, hh*10+mm, totalMin+30, totalMin-30, totalMin+15, (hh+1)*60+mm, hh*60];
+      var seen = {}; seen[okLabel] = true; var wrong = [];
+      shuffle(cw).forEach(function(v){ var l = v + ' minutes'; if(v>0 && !seen[l] && wrong.length<3){ seen[l]=true; wrong.push(l); } });
+      return {
+        tag:'Durées', question:question, sub:'Une heure, c\'est 60 minutes.', explain:explain,
+        draw:function(){
+          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+          svg.appendChild(svgText(100,120,64,'⏱️'));
+        },
+        cols3:false,
+        choices: shuffle([okLabel].concat(wrong)).map(function(l){ return { label:l, ok:l===okLabel }; })
+      };
+    }
+    // heures de départ : 12 h max en Facile, sinon la journée entière
+    var hMin = level===0 ? 1 : 6, hMax = level===0 ? 9 : 19;
+    startMin = randInt(hMin, hMax) * 60 + (level===0 ? 0 : pick(level===1 ? [0,15,30,45] : [0,5,10,15,20,25,30,35,40,45,50,55]));
+    var durChoices = level===0 ? [60,120,180] : level===1 ? [30,45,60,90,120] : [35,40,50,75,80,95,105,125,140,165];
+    dur = pick(durChoices);
+    endMin = startMin + dur;
+    var T = minutesToLabel24;
+    if(kind==='end'){
+      question = sc.start + ' à ' + T(startMin) + ' et cela dure ' + fmtDuree(dur) + '. À quelle heure est-ce fini ?';
+      explain = T(startMin) + ' + ' + fmtDuree(dur) + ' = ' + T(endMin) + '.';
+      if(level>=1 && (startMin%60) + (dur%60) >= 60) explain += ' (On passe à l\'heure suivante quand on dépasse 60 minutes.)';
+      correctMin = endMin; fmt = T;
+      cands = [endMin-60, endMin+60, endMin+120, endMin-120, endMin+30, endMin-30, endMin+15, endMin-15, endMin+10, endMin-10, startMin+dur*2, startMin-dur];
+      sub = 'Ajoute la durée à l\'heure de début.';
+      drawTxt = T(startMin) + ' + ' + fmtDuree(dur);
+    } else if(kind==='dur'){
+      question = sc.what + ' commence à ' + T(startMin) + ' et finit à ' + T(endMin) + '. Combien de temps cela dure-t-il ?';
+      explain = 'De ' + T(startMin) + ' à ' + T(endMin) + ', il s\'écoule ' + fmtDuree(dur) + '.';
+      correctMin = dur; fmt = fmtDuree;
+      cands = [dur+30, dur-30, dur+60, dur-60, dur+120, dur+180, dur+15, dur-15, dur+10, dur-10, dur+5, dur-5];
+      sub = 'Compte le temps qui passe entre le début et la fin.';
+      drawTxt = T(startMin) + ' → ' + T(endMin);
+    } else {
+      question = sc.what + ' dure ' + fmtDuree(dur) + ' et finit à ' + T(endMin) + '. À quelle heure cela a-t-il commencé ?';
+      explain = 'On recule de ' + fmtDuree(dur) + ' depuis ' + T(endMin) + ' : ' + T(endMin) + ' - ' + fmtDuree(dur) + ' = ' + T(startMin) + '.';
+      correctMin = startMin; fmt = T;
+      cands = [startMin-60, startMin+60, startMin-120, startMin+120, startMin+30, startMin-30, startMin+15, startMin-15, endMin+dur, startMin+10, startMin-10];
+      sub = 'Retire la durée à l\'heure de fin.';
+      drawTxt = T(endMin) + ' - ' + fmtDuree(dur);
+    }
+    if(level===0) cands = cands.filter(function(v){ return v>=60 && v%60===0; });
+    return {
+      tag:'Durées', question:question, sub:sub, explain:explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,95,54,sc.icon));
+        svg.appendChild(svgText(100,150,24,drawTxt));
+      },
+      cols3:false,
+      choices: labelChoices(correctMin, fmt, cands)
+    };
+  }
+
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
   registerQuizType({ id:'heure', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
     generate:function(level){ return genHeureQuestion('m4Svg', level); } });
+  registerQuizType({ id:'duree', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
+    randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
+    generate:function(level){ return genDureeQuestion(level); } });
