@@ -16,7 +16,7 @@ function serve() {
       if (p === '/index_test.html') {
         // Copie de test virtuelle (aucun fichier écrit dans le dépôt) : expose quelques fonctions internes.
         let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-        const hook = "\n  window.__t = { onPracticeAnswered:onPracticeAnswered, completeChallenge:completeChallenge, checkTimedChallenge:checkTimedChallenge, resetProgress:resetProgress, CAT_REWARDS:CAT_REWARDS, BRAIN_REWARDS:BRAIN_REWARDS, CAT_SPRITES:CAT_SPRITES, BRAINROT_SPRITES:BRAINROT_SPRITES, ownedCats:ownedCats, ownedBrain:ownedBrain, setGlobalLevel:setGlobalLevel, startCountdown:startCountdown, endCountdown:endCountdown, getStreak:function(){return freeStreak;} };\n";
+        const hook = "\n  window.__t = { onPracticeAnswered:onPracticeAnswered, completeChallenge:completeChallenge, checkTimedChallenge:checkTimedChallenge, resetProgress:resetProgress, CAT_REWARDS:CAT_REWARDS, BRAIN_REWARDS:BRAIN_REWARDS, CAT_SPRITES:CAT_SPRITES, BRAINROT_SPRITES:BRAINROT_SPRITES, ownedCats:ownedCats, ownedBrain:ownedBrain, setGlobalLevel:setGlobalLevel, startCountdown:startCountdown, endCountdown:endCountdown, getStreak:function(){return freeStreak;}, __eval:function(c){ return eval(c); } };\n";
         const i = html.lastIndexOf('\n})();\n</script>');
         html = html.slice(0, i) + hook + html.slice(i);
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return;
