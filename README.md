@@ -146,6 +146,14 @@ Si le fichier est supprimé, le dessin procédural réapparaît tout seul.
 sur claude.ai ne voit pas ce dépôt et affichera toujours le dessin généré,
 sauf à republier le fichier directement dans cette page-là (voir plus haut).
 
+## Développement
+
+`index.html` est **généré** à partir des sources du dossier `src/` (un fichier par thème :
+géométrie, horloge, calcul, patron/3D, puis orchestrateur, boutique, bataille). Après une
+modification de `src/` : `python3 tools/build.py`. Organisation détaillée et façon d'ajouter
+un thème ou des questions : `src/README.md`. Tests : `tools/tests/` (dont `golden.js`, la
+comparaison « avant / après »).
+
 ## Suite prévue
 
 - Empaquetage en application Windows (Tauri) et Android (Capacitor), pour un

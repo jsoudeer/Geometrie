@@ -3,14 +3,14 @@
 Document de reprise : il permet de repartir d'une conversation neuve sans rien perdre. À lire en premier si le contexte a été compressé.
 
 ## 1. Le projet
-Jeu de géométrie pour une élève de **CE1**, en français, dans **un seul fichier** `index.html` (HTML + CSS + JS, aucune dépendance). Deux clans : **Chats kawaii** (Géo Miaou) et **Brainrot** (Geo Chaos 9000).
+Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seul fichier** `index.html` (HTML + CSS + JS, aucune dépendance), **généré** à partir des sources de `src/` (voir §4). Deux clans : **Chats kawaii** (Géo Miaou) et **Brainrot** (Geo Chaos 9000).
 
 - Dépôt : `jsoudeer/geometrie` (branche `main`).
 - Aperçu publié : artifact Claude `https://claude.ai/artifact/77Awfhh3EpPUAUGj2XgaVs` (à republier après chaque changement ; version 28 au moment de l'écriture).
-- `cours.md` : liste des exercices, niveaux, défis. `README.md` : présentation. `assets/MANIFEST.md` : noms de fichiers des personnages.
+- `cours.md` : liste des exercices, niveaux, défis. `README.md` : présentation. `src/README.md` : organisation des sources et comment ajouter un thème. `assets/MANIFEST.md` : noms de fichiers des personnages.
 
 ## 2. Règle de travail convenue
-À chaque évolution : **tester dans un vrai navigateur → commit → push → republier l'aperçu → rendre compte en français** (court, l'essentiel d'abord). L'utilisateur n'est pas développeur : pas de jargon.
+À chaque évolution : **modifier `src/` → `python3 tools/build.py` → tester dans un vrai navigateur → commit → push → republier l'aperçu → rendre compte en français** (court, l'essentiel d'abord). L'utilisateur n'est pas développeur : pas de jargon.
 
 ## 3. Ce qui a été construit (par grandes étapes)
 
@@ -32,33 +32,36 @@ Jeu de géométrie pour une élève de **CE1**, en français, dans **un seul fic
 
 **Illustrations (Grok)** : 12 personnages ont de vraies images (visage + plein pied détouré) : `cat01–05`, `br01–05`, `br21`, `br22`. Les autres gardent un dessin SVG simple. Voir §5.
 
-## 4. Structure du code (`index.html`)
-Tout est dans une fonction anonyme (IIFE). Repères pour s'y retrouver :
-- `THEMES`, `applyTheme`, `setMenuOpen` : thème et navigation.
-- `M1_LEVELS`… : Mesurer ; `M2_LEVELS`, `perturbForLevel` : Déformer ; `NET_*`, `NET_DEFS`, `netExplain` : patrons ; `QCM_TYPE_DEFS`, `gen*Question` : quizz ; `genHeureQuestion`, `clockExplain` : horloge.
-- Orchestrateur : `nextPracticeQuestion`, `setGlobalLevel`, `startCountdown`, `endCountdown`, `onPracticeAnswered` (séries).
-- Personnages : `mkSprite`, `mkReward`, `ROLE_BY_ID`, `STARTER_IDS`, `CAT_REWARD_DEFS`, `BRAIN_REWARD_DEFS`, `drawCatSprite`, `drawBrainrotSprite`.
-- Images : bloc `/*IMG_DATA_START*/ … /*IMG_DATA_END*/` (`CUSTOM_IMG`, base64), `tryLoadCustomImage`, `tryLoadFullBodyImage`.
-- Défis : `challengeInfo`, `completeChallenge`, `checkTimedChallenge`.
-- Boutique : `renderShop`, `buildSpriteShopCard` ; mascotte : `renderMascotDock`, `renderTopMascotIcon`.
-- Bataille : `btStart`, `btResolveAttack`, `btChooseEnemyMove`, `btCheckEnd`.
+## 4. Structure du code (`src/` → `index.html`)
+`index.html` est **généré** par `python3 tools/build.py` (jamais modifié à la main ; `--check` vérifie qu'il est à jour). L'ordre d'assemblage est dans `src/manifest.json`. Tout le JS tient dans une seule fonction anonyme (IIFE). Détails et mode d'emploi : `src/README.md`.
+
+- `src/index.template.html` : structure de la page. `src/css/` : `base`, `exercices`, `interface`, `boutique-bataille`.
+- `src/js/noyau.js` : outils partagés (`el`, `shuffle`, `pick`, `rand`, `randInt`, `numChoiceSet`, `svgText`), thème (`THEMES`, `applyTheme`, `setMenuOpen`), étoiles, sons et effets (`playSound`, `celebrate`), mascotte du coach, écran de démarrage, et le **registre des types de Quizz** (`QCM_TYPE_DEFS`, `registerQuizType`, `quizTypeById`).
+- Thèmes (chacun regroupe ses exercices **et** ses types de Quizz) : `geometrie.js` (Mesurer `M1_LEVELS`, Déformer `M2_LEVELS`/`perturbForLevel`, questions de formes, angles, repérage, symétrie, scènes, énigmes ; niveaux `GEO_LEVELS`), `horloge.js` (`genHeureQuestion`, `clockExplain`, Lire/Régler l'heure), `calcul.js` (`genCalcQuestion`, monnaie, maths de la vie ; niveaux `CALC_LEVELS`), `patron3d.js` (`NET_*`, `NET_DEFS`, `netExplain`, `M3_LEVELS`, solides 3D et leurs questions).
+- `orchestrateur.js` : moteur du Quizz (`M4_LEVELS`, `QCM_DISPLAY_ORDER`, `genQuestion`, `newQCM`, `checkQCM`), puis `nextPracticeQuestion`, `setGlobalLevel`, `startCountdown`, `endCountdown`, `onPracticeAnswered` (séries), et la configuration des activités (`renderActivityConfig`, `rebuildM4Types`).
+- `images-data.js` : bloc `/*IMG_DATA_START*/ … /*IMG_DATA_END*/` (`CUSTOM_IMG`, base64), **généré** par `tools/embed.py`.
+- `boutique.js` : personnages (`mkSprite`, `mkReward`, `ROLE_BY_ID`, `CAT_REWARD_DEFS`, `BRAIN_REWARD_DEFS`, `drawCatSprite`, `drawBrainrotSprite`), images (`tryLoadCustomImage`, `tryLoadFullBodyImage`), défis (`challengeInfo`, `completeChallenge`, `checkTimedChallenge`), boutique (`renderShop`, `buildSpriteShopCard`), mascotte (`renderMascotDock`, `renderTopMascotIcon`).
+- `bataille.js` : `btStart`, `btResolveAttack`, `btChooseEnemyMove`, `btCheckEnd`.
 - Sauvegarde : `localStorage` (`geo_stars`, `geo_owned_cats`, `geo_owned_brain`, `geo_mascot_id`, `geo_theme`, `geo_bt_team_*`, `geo_fighter_display`, réglages…).
+- **Pas encore modulaire** : les activités à écran propre (Mesurer, Déformer, Patron, Lire/Régler l'heure) sont câblées en dur dans l'orchestrateur (`FAMILY_TAGS`, `MANUAL_FAMILY_LIST`, panneaux `fam-*`). Étape suivante possible : un registre de « familles », pour pouvoir publier une appli par thème.
 
 ## 5. Ajouter des personnages illustrés (procédure)
 1. L'utilisateur dépose les images Grok (fond uni conseillé) dans `wip/`, par paires visage / plein pied.
 2. Détourage du plein pied avec `rembg` (`pip install --break-system-packages rembg onnxruntime`) : `tools/proc.py`. Pour les personnages à pelage blanc, `tools/proc2.py` remplit les zones enclavées (le fond blanc trouait le pelage).
-3. `tools/embed.py` : écrit `assets/<clan>/<id>.png` (visage 256 px) et `<id>_full.png`, encode en WebP base64 dans `index.html`, renomme les personnages.
+3. Déposer la paire `assets/<clan>/<id>.png` (visage 256 px) et `<id>_full.png` (plein pied détouré), puis lancer `python3 tools/embed.py` : il encode toutes les paires en WebP base64 dans `src/js/images-data.js` et reconstruit `index.html`. Les noms de personnages se changent dans `src/js/boutique.js`.
 4. Vérifier (boutique, bataille, mascotte, contraste), commit, push, republier.
-Les scripts contiennent la correspondance image → personnage : à adapter. Les sorties temporaires vont dans `/tmp/geo_img/`.
+`proc.py` / `proc2.py` contiennent la correspondance image → personnage : à adapter. Les sorties temporaires vont dans `/tmp/geo_img/`.
 
 Consigne de prompt Grok qui marche bien : « Extend the previous image with full body standing whole body, and imagine more fuze with the same object » (plein pied) ; « A funny "Italian brainrot"-style absurd animal made of a mélange of one specific animal and one specific object, head and shoulders only, square framing, silly, weird but friendly, pixar style, not scary » (visage). Rester sur des personnages originaux, pas des personnages de meme existants.
 
 ## 6. Tests (dans `tools/tests/`)
-Playwright + Chromium (`/opt/pw-browsers/chromium`). `lib.js` sert le dépôt en local avec le bon encodage (`/index_test.html` expose des fonctions internes via `window.__t`, sans écrire de fichier). Copier le dossier vers `/tmp/geo_tests/` avant de lancer (les scripts s'y attendent), ou adapter les chemins.
-- `battle_check.js` : boutique, info défi, équipe, combat complet. `challenge_check.js` : défis, séries, effacement. `net_check.js` : explications de patrons. `contrast_audit.js` : contrastes AA (les boutons désactivés sont exemptés). `header_check.js`, `mascot_layer.js` : en-tête et calque de la mascotte. `sim.js` : équilibrage.
+Playwright + Chromium (`/opt/pw-browsers/chromium`). `lib.js` sert le dépôt en local avec le bon encodage (`/index_test.html` expose des fonctions internes via `window.__t`, dont `__eval` qui exécute du code dans la portée de l'appli, sans écrire de fichier). Les tests se lancent directement depuis `tools/tests/` (`node battle_check.js`) ; leurs captures vont dans `/tmp/geo_tests/`.
+- `battle_check.js` : boutique, info défi, équipe, combat complet. `challenge_check.js` : défis, séries, effacement. `net_check.js` : explications de patrons. `contrast_audit.js` : contrastes AA (les boutons désactivés sont exemptés). `header_check.js`, `mascot_layer.js` : en-tête et calque de la mascotte. `sim.js` : équilibrage. **`golden.js`** : test « avant / après » pour toute réorganisation (questions de tous les exercices avec hasard fixe, panneaux de réglages, captures d'écran des deux thèmes) : `node golden.js record a.json`, puis après modification `record b.json`, puis `node golden.js diff a.json b.json` (voir `src/README.md`).
 
 ## 7. Pièges déjà rencontrés
-- `index.html` est un fragment sans `<head>` : le publier tel quel ajoute l'encodage ; en test local, servir avec `charset=utf-8`.
+- `index.html` est un fragment sans `<meta charset>` : le publier tel quel ajoute l'encodage ; en test local, servir avec `charset=utf-8`.
+- **Ne jamais modifier `index.html` à la main** : la modification serait écrasée au prochain `build.py`. Modifier `src/`, puis reconstruire.
+- Ordre des fichiers JS (`src/manifest.json`) : les thèmes avant `orchestrateur.js`, `images-data.js` avant `boutique.js`.
 - Les fonctions définies plus bas dans la fonction anonyme sont utilisables plus tôt, mais pas les variables (`var`) : garder les gardes (`if(!CAT_REWARDS…)`).
 - Les `className = …` écrasent les classes : toujours remettre `tappable` dans les retours de réponse.
 - Superposition : `.mascot-dock{z-index:1}` et `.card > *{z-index:2}` (les réponses passent au-dessus de la mascotte).
@@ -69,3 +72,9 @@ Playwright + Chromium (`/opt/pw-browsers/chromium`). `lib.js` sert le dépôt en
 - Illustrer les 58 personnages restants (priorité aux défis difficiles).
 - Renard à nœud bleu (deux plein pied sans visage) : à confirmer avec l'utilisateur.
 - Pas de réglage général du décor de l'écran de démarrage.
+- Registre des « familles » d'activités (Mesurer, Déformer, Patron, Horloge) pour une appli par thème, avec une option `--themes` dans `tools/build.py`.
+- Polices Google Fonts (`index.template.html`) chargées depuis internet : à embarquer pour l'usage hors ligne (Tauri/Capacitor).
+- Nettoyer `wip/` (11 Mo d'images brutes versionnées).
+
+## 9. Refonte modulaire (29/09/2026)
+Du fichier unique éditable à `src/` + `tools/build.py`, en trois étapes vérifiées par `tools/tests/golden.js` (résultat identique à l'avant sur 1650 éléments) : (A) découpe sans changement, `index.html` identique octet pour octet ; (B1) regroupement du JS par thème ; (B2) registre des types de Quizz (`registerQuizType`). Les scripts de migration jetables ont été retirés (voir l'historique git : commits « Découpe index.html… », « Regroupe le JS… », « Registre des types de Quizz… »).
