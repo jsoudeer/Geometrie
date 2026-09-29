@@ -1161,51 +1161,51 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Géométrie ----
-  registerQuizType({ id:'sides', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
+  registerQuizType({ id:'sides', category:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
     randomNote:'La forme est tirée au hasard parmi celles autorisées à ce niveau ; son nombre de côtés en découle de façon fixe (ce n\'est pas lui qui est tiré, seule la forme l\'est).',
     generate:function(level){ return genSidesVerticesQuestion('sides', level); } });
-  registerQuizType({ id:'vertices', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
+  registerQuizType({ id:'vertices', category:'formes', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
     randomNote:'Même principe que "Côtés" : la forme est tirée au hasard, son nombre de sommets en découle de façon fixe.',
     generate:function(level){ return genSidesVerticesQuestion('vertices', level); } });
-  registerQuizType({ id:'name', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
+  registerQuizType({ id:'name', category:'formes', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
     randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.',
     generate:genNameQuestion });
-  registerQuizType({ id:'align', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
+  registerQuizType({ id:'align', category:'formes', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
     randomNote:'Les 3 points (alignés ou non) et leur disposition sont tirés au hasard à chaque question.',
     generate:genAlignQuestion });
-  registerQuizType({ id:'milieu', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
+  registerQuizType({ id:'milieu', category:'formes', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
     randomNote:'La position du segment et les formes-repères sont tirées au hasard à chaque question.',
     generate:genMilieuQuestion });
-  registerQuizType({ id:'coord', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
+  registerQuizType({ id:'coord', category:'repere', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
     randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.',
     generate:genCoordQuestion });
-  registerQuizType({ id:'angle', label:'Angles', longLabel:'Angles (droit/aigu/obtus)', defaultLevels:[1,2],
+  registerQuizType({ id:'angle', category:'formes', label:'Angles', longLabel:'Angles (droit/aigu/obtus)', defaultLevels:[1,2],
     randomNote:'La catégorie (droit/aigu/obtus) et la valeur en degrés sont tirées au hasard. C\'est le NIVEAU qui resserre l\'écart minimum autour de 90° (14° en Moyen, 7° en Difficile), rendant la distinction plus fine à l\'œil.',
     generate:genAngleQuestion });
-  registerQuizType({ id:'image', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
+  registerQuizType({ id:'image', category:'formes', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
     randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.',
     generate:function(){ return pickFresh('image', IMAGE_QUESTIONS)(); } });
-  registerQuizType({ id:'coordFind', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
+  registerQuizType({ id:'coordFind', category:'repere', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
     randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.',
     generate:genCoordFindQuestion });
-  registerQuizType({ id:'codage', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
+  registerQuizType({ id:'codage', category:'repere', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
     randomNote:'Le point de départ et la suite de flèches (2 à 3 déplacements) sont tirés au hasard.',
     generate:genCodageQuestion });
-  registerQuizType({ id:'chasse', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
+  registerQuizType({ id:'chasse', category:'formes', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
     randomNote:'Le nombre et la disposition des formes affichées sont tirés au hasard à chaque question.',
     generate:genChasseQuestion });
-  registerQuizType({ id:'symAxe', label:'Symétrie', longLabel:'Axe de symétrie', defaultLevels:[1,2],
+  registerQuizType({ id:'symAxe', category:'formes', label:'Symétrie', longLabel:'Axe de symétrie', defaultLevels:[1,2],
     randomNote:'La position des 3 droites candidates est tirée au hasard ; le triangle est toujours isocèle, donc il y a toujours exactement un vrai axe de symétrie parmi elles (règle fixe).',
     generate:genSymAxeQuestion });
-  registerQuizType({ id:'decodage', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
+  registerQuizType({ id:'decodage', category:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
     randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.',
     generate:genDecodageQuestion });
-  registerQuizType({ id:'symVrai', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
+  registerQuizType({ id:'symVrai', category:'formes', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
     randomNote:'La droite proposée est parallèle à un côté (jamais une diagonale, qui prêtait à confusion) : soit exactement au milieu (vrai axe), soit décalée d\'un pourcentage variable (10 à 90%, jamais 50%) tiré au hasard.',
     generate:genSymVraiQuestion });
-  registerQuizType({ id:'enigme', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
+  registerQuizType({ id:'enigme', category:'solides', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
     randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
-  registerQuizType({ id:'suiteFormes', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
+  registerQuizType({ id:'suiteFormes', category:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
     randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
     generate:genSuiteFormesQuestion });

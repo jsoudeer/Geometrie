@@ -250,30 +250,30 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Calcul ----
-  registerQuizType({ id:'calc', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
+  registerQuizType({ id:'calc', category:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
     generate:genCalcQuestion });
-  registerQuizType({ id:'monnaie', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
+  registerQuizType({ id:'monnaie', category:'problemes', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
     generate:genMonnaieQuestion });
-  registerQuizType({ id:'vie', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
+  registerQuizType({ id:'vie', category:'problemes', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
-  registerQuizType({ id:'soustraction', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
+  registerQuizType({ id:'soustraction', category:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
     randomNote:'a - b avec b plus petit que a. Facile : nombres jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 60 (avec retenues).',
     generate:genSoustractionQuestion });
-  registerQuizType({ id:'doubleMoitie', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
+  registerQuizType({ id:'doubleMoitie', category:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
     randomNote:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 50.',
     generate:genDoubleMoitieQuestion });
-  registerQuizType({ id:'complement', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'complement', category:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
     randomNote:'« a + ? = cible ». Facile : compléments à 10 ; Moyen : à 20 ; Difficile : à 100 (multiples de 5).',
     generate:genComplementQuestion });
-  registerQuizType({ id:'tables', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
+  registerQuizType({ id:'tables', category:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
     randomNote:'Facile : tables de 2 et de 10 ; Moyen : 2, 5 et 10 ; Difficile : 2, 3, 4, 5, 10, avec parfois le facteur manquant (5 × ? = 35).',
     generate:genTableQuestion });
-  registerQuizType({ id:'compare', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'compare', category:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
     randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
     generate:genCompareQuestion });
-  registerQuizType({ id:'suiteNombres', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
+  registerQuizType({ id:'suiteNombres', category:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
     randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
     generate:genSuiteNombresQuestion });

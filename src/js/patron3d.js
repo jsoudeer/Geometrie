@@ -757,9 +757,9 @@
   }
 
   // ---- Déclaration des types de Quizz sur les solides ----
-  registerQuizType({ id:'solideNom', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
+  registerQuizType({ id:'solideNom', category:'solides', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
     randomNote:'Le solide est tiré au hasard parmi les 6 solides connus ; son nom (la réponse) en découle de façon fixe.',
     generate:genSolideNomQuestion });
-  registerQuizType({ id:'solideCompte', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
+  registerQuizType({ id:'solideCompte', category:'solides', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
     randomNote:'Le solide (cube/pavé/pyramide) et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant est ensuite fixe pour ce solide.',
     generate:genSolideCompteQuestion });
