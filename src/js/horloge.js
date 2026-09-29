@@ -368,6 +368,7 @@
       drawTxt = T(endMin) + ' - ' + fmtDuree(dur);
     }
     if(level===0) cands = cands.filter(function(v){ return v>=60 && v%60===0; });
+    else if(level===1) cands = cands.filter(function(v){ return v%15===0; });
     return {
       tag:'Durées', question:question, sub:sub, explain:explain,
       draw:function(){

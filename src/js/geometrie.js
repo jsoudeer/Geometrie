@@ -993,6 +993,43 @@
     };
   }
 
+  // ===================== Suites logiques de formes =====================
+  var SUITE_SYMBOLS = ['🔴','🟦','🔺','⭐','🟩','🔶'];
+  var SUITE_UNITS = [
+    ['AB'],                              // Facile
+    ['AAB','ABB','ABC'],                 // Moyen
+    ['ABC','AABB','ABAC','ABCD']         // Difficile
+  ];
+  function genSuiteFormesQuestion(level){
+    var unit = pick(SUITE_UNITS[level] || SUITE_UNITS[1]);
+    var kinds = unique(unit.split(''));
+    var syms = shuffle(SUITE_SYMBOLS.slice()).slice(0, kinds.length);
+    var map = {}; kinds.forEach(function(k, i){ map[k] = syms[i]; });
+    var slots = 7, seq = [];
+    for(var i=0;i<slots;i++) seq.push(map[unit.charAt(i % unit.length)]);
+    var answer = seq[slots-1];
+    var others = shuffle(SUITE_SYMBOLS.filter(function(x){ return x!==answer; })).slice(0,3);
+    var motif = unit.split('').map(function(ch){ return map[ch]; }).join(' ');
+    return {
+      tag:'Suite logique',
+      question:'Quelle forme vient à la place du point d\'interrogation ?',
+      sub:'Trouve le motif qui se répète, puis continue la suite.',
+      explain:'Le motif qui se répète est : ' + motif + '. La suite continue avec ' + answer + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var w=26, gap=2, x0=(200-(slots*w+(slots-1)*gap))/2;
+        seq.forEach(function(sym, i){
+          var x = x0 + i*(w+gap);
+          svg.appendChild(el('rect',{x:x,y:88,width:w,height:w+8,rx:6,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
+          svg.appendChild(svgText(x+w/2,113,19, i===slots-1 ? '?' : sym));
+        });
+      },
+      cols3:false,
+      choices: shuffle([answer].concat(others)).map(function(l){ return { label:l, ok:l===answer }; })
+    };
+  }
+  function unique(a){ return a.filter(function(v,i){ return a.indexOf(v)===i; }); }
+
   // ===================== Énigmes =====================
   var ENIGME_POOL = [
     { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
@@ -1167,5 +1204,8 @@
     randomNote:'La droite proposée est parallèle à un côté (jamais une diagonale, qui prêtait à confusion) : soit exactement au milieu (vrai axe), soit décalée d\'un pourcentage variable (10 à 90%, jamais 50%) tiré au hasard.',
     generate:genSymVraiQuestion });
   registerQuizType({ id:'enigme', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
-    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 24 énigmes (texte non généré : toujours les mêmes formulations).',
+    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
+  registerQuizType({ id:'suiteFormes', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
+    randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
+    generate:genSuiteFormesQuestion });
