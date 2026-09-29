@@ -58,13 +58,18 @@
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
   // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
-  // les positions valides pour le CE1 : heure pile ou demi-heure (24 crans
-  // de 15° pour la petite aiguille, 2 positions pour la grande).
-  var m5Target = { hour:3, half:false };
+  // des crans qui dépendent du niveau (0 Facile, 1 Moyen, 2 Difficile) :
+  //   Facile     heure pile ou demie      (petite : crans de 15°, grande : 2 positions)
+  //   Moyen      + les quarts d'heure     (petite : 7,5°,          grande : 4 positions)
+  //   Difficile  toutes les 5 minutes, heure de 0 h à 23 h (petite : 5°, grande : 12 positions)
+  var m5Target = { hour:3, minute:0, level:0 };
   var m5rHourTick = 0, m5rMinTick = 0, m5rDragWhich = null;
+  var M5R_HOUR_STEP = [15, 7.5, 5];    // degrés par cran, petite aiguille
+  var M5R_MIN_STEP = [180, 90, 30];    // degrés par cran, grande aiguille
+  var M5R_HOUR_TOL = [0.01, 4, 3];     // écart accepté (degrés) sur la petite aiguille
 
-  function m5rHourTip(){ return angleToXY(m5rHourTick*15 - 90, 42); }
-  function m5rMinTip(){ return angleToXY(m5rMinTick*180 - 90, 62); }
+  function m5rHourTip(){ return angleToXY(m5rHourTick*M5R_HOUR_STEP[m5Target.level] - 90, 42); }
+  function m5rMinTip(){ return angleToXY(m5rMinTick*M5R_MIN_STEP[m5Target.level] - 90, 62); }
 
   function drawSettableClock(){
     var svg = document.getElementById('m5ClockSvg');
@@ -82,10 +87,24 @@
   }
 
   function m5rGenTarget(){
-    m5Target.hour = 1+randInt(0,11);
-    m5Target.half = Math.random()<0.5;
+    var lvl = Math.max(0, Math.min(globalLevel || 0, 2));
+    var label;
+    m5Target.level = lvl;
+    if(lvl===0){
+      m5Target.hour = 1+randInt(0,11);
+      m5Target.minute = Math.random()<0.5 ? 30 : 0;
+      label = m5Target.hour + ' h' + (m5Target.minute ? ' 30' : '');
+    } else if(lvl===1){
+      m5Target.hour = 1+randInt(0,11);
+      m5Target.minute = pick([0,15,30,45]);
+      label = minutesToClockLabel(m5Target.hour*60 + m5Target.minute);
+    } else {
+      m5Target.hour = randInt(0,23);
+      m5Target.minute = pick([0,5,10,15,20,25,30,35,40,45,50,55]);
+      label = minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' (' + periodOfDay(m5Target.hour).phrase + ')';
+    }
     m5rHourTick = 0; m5rMinTick = 0; // les aiguilles repartent de midi bien net
-    document.getElementById('m5-target').textContent = m5Target.hour + ' h' + (m5Target.half ? ' 30' : '');
+    document.getElementById('m5-target').textContent = label;
     drawSettableClock();
     var fb = document.getElementById('m5r-feedback'); fb.className='feedback'; fb.innerHTML='';
   }
@@ -104,8 +123,9 @@
       var p = svgPointFromEvent(svg, evt);
       var raw = Math.atan2(p.y-100, p.x-100)*180/Math.PI;
       var clockDeg = ((raw+90)%360+360)%360;
-      if(m5rDragWhich==='hour') m5rHourTick = Math.round(clockDeg/15) % 24;
-      else m5rMinTick = Math.round(clockDeg/180) % 2;
+      var lvl = m5Target.level;
+      if(m5rDragWhich==='hour') m5rHourTick = Math.round(clockDeg/M5R_HOUR_STEP[lvl]) % Math.round(360/M5R_HOUR_STEP[lvl]);
+      else m5rMinTick = Math.round(clockDeg/M5R_MIN_STEP[lvl]) % Math.round(360/M5R_MIN_STEP[lvl]);
       drawSettableClock();
     });
     function endDrag(){ m5rDragWhich = null; }
@@ -115,13 +135,18 @@
 
   document.getElementById('m5r-new').addEventListener('click', nextPracticeQuestion);
   document.getElementById('m5r-check').addEventListener('click', function(){
-    var targetTick = (m5Target.hour % 12) * 2 + (m5Target.half ? 1 : 0);
-    var hourOk = m5rHourTick === targetTick;
-    var minOk = m5rMinTick === (m5Target.half ? 1 : 0);
+    var lvl = m5Target.level;
+    function angGap(a, b){ var d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); }
+    var exactHourDeg = ((m5Target.hour % 12) + m5Target.minute/60) * 30;
+    var hourOk = angGap(m5rHourTick * M5R_HOUR_STEP[lvl], exactHourDeg) <= M5R_HOUR_TOL[lvl];
+    var minOk = angGap(m5rMinTick * M5R_MIN_STEP[lvl], m5Target.minute * 6) < 0.01;
+    // En Difficile, l'heure demandée est en 24 h : on rappelle comment elle se lit sur le cadran.
+    var readAs = (lvl===2 && (m5Target.hour===0 || m5Target.hour>=13))
+      ? '<div class="explain-line">Sur le cadran, ' + minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' se lit ' + minutesToClockLabel(m5Target.hour*60 + m5Target.minute) + '.</div>' : '';
     var fb = document.getElementById('m5r-feedback');
     if(hourOk && minOk){
       fb.className = 'feedback good show';
-      fb.innerHTML = '<div>✔ Bravo, les aiguilles sont bien placées !</div>';
+      fb.innerHTML = '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs;
       addStar(1);
       setCoachReaction('good');
     } else {
@@ -129,7 +154,7 @@
       var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
         : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée.'
         : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
-      fb.innerHTML = '<div>✘ ' + msg + '</div>';
+      fb.innerHTML = '<div>✘ ' + msg + '</div>' + readAs;
       setCoachReaction('bad');
     }
     playSound(hourOk && minOk ? 'good' : 'bad');
@@ -261,7 +286,105 @@
     };
   }
 
+
+  // ---- Durées : calculer une heure de fin, une durée, une heure de début ----
+  function fmtDuree(min){
+    var h = Math.floor(min/60), m = min % 60;
+    if(h===0) return m + ' min';
+    return m===0 ? (h + ' h') : (h + ' h ' + (m<10 ? '0'+m : m));
+  }
+  var DUREE_SCENES = [
+    { icon:'🎬', start:'Le film commence', end:'Il se termine', what:'Le film' },
+    { icon:'⚽', start:'Le match commence', end:'Il se termine', what:'Le match' },
+    { icon:'🍰', start:'Le gâteau entre au four', end:'Il en sort', what:'La cuisson' },
+    { icon:'🎨', start:'L\'atelier de peinture commence', end:'Il se termine', what:'L\'atelier' },
+    { icon:'🚌', start:'Le bus part', end:'Il arrive', what:'Le voyage en bus' },
+    { icon:'📚', start:'La lecture commence', end:'Elle se termine', what:'La lecture' },
+    { icon:'🏊', start:'La séance de piscine commence', end:'Elle se termine', what:'La séance' }
+  ];
+  function labelChoices(correctMin, fmt, candidates){
+    var correct = fmt(correctMin), seen = {}, wrong = [];
+    seen[correct] = true;
+    shuffle(candidates.slice()).forEach(function(v){
+      var l = fmt(v);
+      if(v > 0 && !seen[l] && wrong.length < 3){ seen[l] = true; wrong.push(l); }
+    });
+    return shuffle([correct].concat(wrong)).map(function(l){ return { label:l, ok:l===correct }; });
+  }
+  function genDureeQuestion(level){
+    var sc = pick(DUREE_SCENES);
+    var kinds = level===0 ? ['end','end','dur'] : level===1 ? ['end','dur','start'] : ['end','dur','start','conv'];
+    var kind = pick(kinds);
+    var stepMin = level===0 ? 60 : level===1 ? 15 : 5;
+    var startMin, dur, endMin, question, explain, fmt, correctMin, cands, sub, drawTxt;
+
+    if(kind==='conv'){
+      var hh = randInt(1,3), mm = pick([15,30,45]);
+      var totalMin = hh*60 + mm;
+      question = hh + ' h ' + mm + ' min, ça fait combien de minutes en tout ?';
+      explain = '1 heure = 60 minutes. ' + hh + ' h = ' + (hh*60) + ' min, puis on ajoute ' + mm + ' min : ' + totalMin + ' minutes.';
+      var okLabel = totalMin + ' minutes';
+      var cw = [hh*100+mm, hh*10+mm, totalMin+30, totalMin-30, totalMin+15, (hh+1)*60+mm, hh*60];
+      var seen = {}; seen[okLabel] = true; var wrong = [];
+      shuffle(cw).forEach(function(v){ var l = v + ' minutes'; if(v>0 && !seen[l] && wrong.length<3){ seen[l]=true; wrong.push(l); } });
+      return {
+        tag:'Durées', question:question, sub:'Une heure, c\'est 60 minutes.', explain:explain,
+        draw:function(){
+          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+          svg.appendChild(svgText(100,120,64,'⏱️'));
+        },
+        cols3:false,
+        choices: shuffle([okLabel].concat(wrong)).map(function(l){ return { label:l, ok:l===okLabel }; })
+      };
+    }
+    // heures de départ : 12 h max en Facile, sinon la journée entière
+    var hMin = level===0 ? 1 : 6, hMax = level===0 ? 9 : 19;
+    startMin = randInt(hMin, hMax) * 60 + (level===0 ? 0 : pick(level===1 ? [0,15,30,45] : [0,5,10,15,20,25,30,35,40,45,50,55]));
+    var durChoices = level===0 ? [60,120,180] : level===1 ? [30,45,60,90,120] : [35,40,50,75,80,95,105,125,140,165];
+    dur = pick(durChoices);
+    endMin = startMin + dur;
+    var T = minutesToLabel24;
+    if(kind==='end'){
+      question = sc.start + ' à ' + T(startMin) + ' et cela dure ' + fmtDuree(dur) + '. À quelle heure est-ce fini ?';
+      explain = T(startMin) + ' + ' + fmtDuree(dur) + ' = ' + T(endMin) + '.';
+      if(level>=1 && (startMin%60) + (dur%60) >= 60) explain += ' (On passe à l\'heure suivante quand on dépasse 60 minutes.)';
+      correctMin = endMin; fmt = T;
+      cands = [endMin-60, endMin+60, endMin+120, endMin-120, endMin+30, endMin-30, endMin+15, endMin-15, endMin+10, endMin-10, startMin+dur*2, startMin-dur];
+      sub = 'Ajoute la durée à l\'heure de début.';
+      drawTxt = T(startMin) + ' + ' + fmtDuree(dur);
+    } else if(kind==='dur'){
+      question = sc.what + ' commence à ' + T(startMin) + ' et finit à ' + T(endMin) + '. Combien de temps cela dure-t-il ?';
+      explain = 'De ' + T(startMin) + ' à ' + T(endMin) + ', il s\'écoule ' + fmtDuree(dur) + '.';
+      correctMin = dur; fmt = fmtDuree;
+      cands = [dur+30, dur-30, dur+60, dur-60, dur+120, dur+180, dur+15, dur-15, dur+10, dur-10, dur+5, dur-5];
+      sub = 'Compte le temps qui passe entre le début et la fin.';
+      drawTxt = T(startMin) + ' → ' + T(endMin);
+    } else {
+      question = sc.what + ' dure ' + fmtDuree(dur) + ' et finit à ' + T(endMin) + '. À quelle heure cela a-t-il commencé ?';
+      explain = 'On recule de ' + fmtDuree(dur) + ' depuis ' + T(endMin) + ' : ' + T(endMin) + ' - ' + fmtDuree(dur) + ' = ' + T(startMin) + '.';
+      correctMin = startMin; fmt = T;
+      cands = [startMin-60, startMin+60, startMin-120, startMin+120, startMin+30, startMin-30, startMin+15, startMin-15, endMin+dur, startMin+10, startMin-10];
+      sub = 'Retire la durée à l\'heure de fin.';
+      drawTxt = T(endMin) + ' - ' + fmtDuree(dur);
+    }
+    if(level===0) cands = cands.filter(function(v){ return v>=60 && v%60===0; });
+    else if(level===1) cands = cands.filter(function(v){ return v%15===0; });
+    return {
+      tag:'Durées', question:question, sub:sub, explain:explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,95,54,sc.icon));
+        svg.appendChild(svgText(100,150,24,drawTxt));
+      },
+      cols3:false,
+      choices: labelChoices(correctMin, fmt, cands)
+    };
+  }
+
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
   registerQuizType({ id:'heure', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
     generate:function(level){ return genHeureQuestion('m4Svg', level); } });
+  registerQuizType({ id:'duree', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
+    randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
+    generate:function(level){ return genDureeQuestion(level); } });

@@ -1344,6 +1344,26 @@
     }
     return arr;
   }
+  // Tirage « sans remise » : chaque élément sort une fois avant qu'aucun ne
+  // revienne, et le premier d'un nouveau tour n'est jamais le dernier du tour
+  // précédent. `key` identifie le sac (un sac par liste à varier).
+  var FRESH_BAGS = {};
+  function pickFresh(key, arr){
+    var b = FRESH_BAGS[key];
+    if(!b || b.n !== arr.length){ b = FRESH_BAGS[key] = { n:arr.length, bag:[], last:-1 }; }
+    if(!b.bag.length){
+      var idx = [];
+      for(var i=0;i<arr.length;i++) idx.push(i);
+      shuffle(idx);
+      if(idx.length>1 && idx[idx.length-1]===b.last){   // le prochain sorti = idx.pop()
+        var j = Math.floor(Math.random()*(idx.length-1));
+        var t = idx[idx.length-1]; idx[idx.length-1] = idx[j]; idx[j] = t;
+      }
+      b.bag = idx;
+    }
+    b.last = b.bag.pop();
+    return arr[b.last];
+  }
   function fmtNum(v){
     // affiche "6" ou "6,5" (virgule française)
     return (Math.round(v*2)/2).toString().replace('.', ',');
@@ -2563,6 +2583,43 @@
     };
   }
 
+  // ===================== Suites logiques de formes =====================
+  var SUITE_SYMBOLS = ['🔴','🟦','🔺','⭐','🟩','🔶'];
+  var SUITE_UNITS = [
+    ['AB'],                              // Facile
+    ['AAB','ABB','ABC'],                 // Moyen
+    ['ABC','AABB','ABAC','ABCD']         // Difficile
+  ];
+  function genSuiteFormesQuestion(level){
+    var unit = pick(SUITE_UNITS[level] || SUITE_UNITS[1]);
+    var kinds = unique(unit.split(''));
+    var syms = shuffle(SUITE_SYMBOLS.slice()).slice(0, kinds.length);
+    var map = {}; kinds.forEach(function(k, i){ map[k] = syms[i]; });
+    var slots = 7, seq = [];
+    for(var i=0;i<slots;i++) seq.push(map[unit.charAt(i % unit.length)]);
+    var answer = seq[slots-1];
+    var others = shuffle(SUITE_SYMBOLS.filter(function(x){ return x!==answer; })).slice(0,3);
+    var motif = unit.split('').map(function(ch){ return map[ch]; }).join(' ');
+    return {
+      tag:'Suite logique',
+      question:'Quelle forme vient à la place du point d\'interrogation ?',
+      sub:'Trouve le motif qui se répète, puis continue la suite.',
+      explain:'Le motif qui se répète est : ' + motif + '. La suite continue avec ' + answer + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var w=26, gap=2, x0=(200-(slots*w+(slots-1)*gap))/2;
+        seq.forEach(function(sym, i){
+          var x = x0 + i*(w+gap);
+          svg.appendChild(el('rect',{x:x,y:88,width:w,height:w+8,rx:6,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
+          svg.appendChild(svgText(x+w/2,113,19, i===slots-1 ? '?' : sym));
+        });
+      },
+      cols3:false,
+      choices: shuffle([answer].concat(others)).map(function(l){ return { label:l, ok:l===answer }; })
+    };
+  }
+  function unique(a){ return a.filter(function(v,i){ return a.indexOf(v)===i; }); }
+
   // ===================== Énigmes =====================
   var ENIGME_POOL = [
     { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
@@ -2594,10 +2651,26 @@
     { text:'J\'ai 2 faces triangulaires et 3 faces rectangulaires : on me trouve dans les tentes de camping. Qui suis-je ?', answer:'prisme triangulaire', pool:['prisme triangulaire','pyramide à base carrée','tétraèdre','pavé droit'] },
     { text:'J\'ai 2 faces pentagonales (à 5 côtés) et 5 faces rectangulaires. Qui suis-je ?', answer:'prisme pentagonal', pool:['prisme pentagonal','prisme hexagonal','pyramide à base carrée','cube'] },
     { text:'J\'ai 2 faces hexagonales et 6 faces rectangulaires : ma base a la même forme qu\'une alvéole d\'abeille. Qui suis-je ?', answer:'prisme hexagonal', pool:['prisme hexagonal','prisme pentagonal','prisme octogonal','cylindre'] },
-    { text:'J\'ai 2 faces à 8 côtés et 8 faces rectangulaires : ma base ressemble à un panneau "stop". Qui suis-je ?', answer:'prisme octogonal', pool:['prisme octogonal','prisme hexagonal','cylindre','prisme pentagonal'] }
+    { text:'J\'ai 2 faces à 8 côtés et 8 faces rectangulaires : ma base ressemble à un panneau "stop". Qui suis-je ?', answer:'prisme octogonal', pool:['prisme octogonal','prisme hexagonal','cylindre','prisme pentagonal'] },
+    { text:"Je suis un quadrilatère : j'ai 4 côtés. Mes côtés opposés sont égaux deux par deux et j'ai 4 angles droits, mais je ne suis pas un carré. Qui suis-je ?", answer:"rectangle", pool:["rectangle", "carré", "losange", "triangle"] },
+    { text:"J'ai 6 sommets et 6 côtés. Si on me coupe en deux, on obtient deux trapèzes. Qui suis-je ?", answer:"hexagone", pool:["hexagone", "pentagone", "carré", "triangle"] },
+    { text:"Une pièce de monnaie a la forme de mon contour : je suis tout rond et plat. Qui suis-je ?", answer:"cercle", pool:["cercle", "boule", "cylindre", "losange"] },
+    { text:"On me trouve souvent sous la forme d'une boîte de chaussures. Qui suis-je ?", answer:"pavé droit", pool:["pavé droit", "cube", "cylindre", "cône"] },
+    { text:"On me trouve souvent sous la forme d'un cornet de glace. Qui suis-je ?", answer:"cône", pool:["cône", "cylindre", "pyramide à base carrée", "boule"] },
+    { text:"On me trouve souvent sous la forme d'un toit de pyramide en Égypte. Qui suis-je ?", answer:"pyramide à base carrée", pool:["pyramide à base carrée", "cube", "cône", "pavé droit"] },
+    { text:"On me trouve souvent sous la forme d'une bille. Qui suis-je ?", answer:"boule", pool:["boule", "cercle", "cylindre", "cône"] },
+    { text:"On me trouve souvent sous la forme d'un rouleau de papier toilette. Qui suis-je ?", answer:"cylindre", pool:["cylindre", "cône", "boule", "cube"] },
+    { text:"J'ai 3 sommets et 3 côtés, et un de mes angles est droit. Qui suis-je ?", answer:"triangle", pool:["triangle", "rectangle", "carré", "pentagone"] },
+    { text:"Je suis un quadrilatère avec 4 côtés égaux et 4 angles droits : si on me tourne d'un quart de tour, je reste pareil. Qui suis-je ?", answer:"carré", pool:["carré", "rectangle", "losange", "triangle"] },
+    { text:"J'ai 5 sommets et 5 côtés : j'ai un côté de plus qu'un quadrilatère. Qui suis-je ?", answer:"pentagone", pool:["pentagone", "hexagone", "carré", "triangle"] },
+    { text:"J'ai 5 faces : une base carrée et 4 triangles qui se rejoignent en haut. Qui suis-je ?", answer:"pyramide à base carrée", pool:["pyramide à base carrée", "tétraèdre", "cube", "cône"] },
+    { text:"J'ai 1 face plane ronde, 1 sommet et une surface qui s'enroule. Qui suis-je ?", answer:"cône", pool:["cône", "cylindre", "pyramide à base carrée", "boule"] },
+    { text:"J'ai 12 arêtes, mais mes faces n'ont pas toutes la même taille. Je ressemble à une brique. Qui suis-je ?", answer:"pavé droit", pool:["pavé droit", "cube", "pyramide à base carrée", "cylindre"] },
+    { text:"Je n'ai aucune face plane : je suis rond de partout. Qui suis-je ?", answer:"boule", pool:["boule", "cylindre", "cône", "cube"] },
+    { text:"Je suis un quadrilatère qui a 4 côtés égaux. Si on me pose sur une pointe, je ressemble à un diamant. Qui suis-je ?", answer:"losange", pool:["losange", "rectangle", "triangle", "pentagone"] }
   ];
   function genEnigmeQuestion(){
-    var r = pick(ENIGME_POOL);
+    var r = pickFresh('enigme', ENIGME_POOL);
     var poolOthers = shuffle(r.pool.filter(function(p){return p!==r.answer;})).slice(0,3);
     var labels = shuffle([r.answer].concat(poolOthers));
     return {
@@ -2701,7 +2774,7 @@
     generate:genAngleQuestion });
   registerQuizType({ id:'image', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
     randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.',
-    generate:function(){ return pick(IMAGE_QUESTIONS)(); } });
+    generate:function(){ return pickFresh('image', IMAGE_QUESTIONS)(); } });
   registerQuizType({ id:'coordFind', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
     randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.',
     generate:genCoordFindQuestion });
@@ -2721,8 +2794,11 @@
     randomNote:'La droite proposée est parallèle à un côté (jamais une diagonale, qui prêtait à confusion) : soit exactement au milieu (vrai axe), soit décalée d\'un pourcentage variable (10 à 90%, jamais 50%) tiré au hasard.',
     generate:genSymVraiQuestion });
   registerQuizType({ id:'enigme', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
-    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 24 énigmes (texte non généré : toujours les mêmes formulations).',
+    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
+  registerQuizType({ id:'suiteFormes', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
+    randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
+    generate:genSuiteFormesQuestion });
   /* ===================== THÈME HORLOGE =====================
      Lire l'heure, Régler l'heure, et la question de Quizz « Lire l'heure ».
   */
@@ -2783,13 +2859,18 @@
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
   // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
-  // les positions valides pour le CE1 : heure pile ou demi-heure (24 crans
-  // de 15° pour la petite aiguille, 2 positions pour la grande).
-  var m5Target = { hour:3, half:false };
+  // des crans qui dépendent du niveau (0 Facile, 1 Moyen, 2 Difficile) :
+  //   Facile     heure pile ou demie      (petite : crans de 15°, grande : 2 positions)
+  //   Moyen      + les quarts d'heure     (petite : 7,5°,          grande : 4 positions)
+  //   Difficile  toutes les 5 minutes, heure de 0 h à 23 h (petite : 5°, grande : 12 positions)
+  var m5Target = { hour:3, minute:0, level:0 };
   var m5rHourTick = 0, m5rMinTick = 0, m5rDragWhich = null;
+  var M5R_HOUR_STEP = [15, 7.5, 5];    // degrés par cran, petite aiguille
+  var M5R_MIN_STEP = [180, 90, 30];    // degrés par cran, grande aiguille
+  var M5R_HOUR_TOL = [0.01, 4, 3];     // écart accepté (degrés) sur la petite aiguille
 
-  function m5rHourTip(){ return angleToXY(m5rHourTick*15 - 90, 42); }
-  function m5rMinTip(){ return angleToXY(m5rMinTick*180 - 90, 62); }
+  function m5rHourTip(){ return angleToXY(m5rHourTick*M5R_HOUR_STEP[m5Target.level] - 90, 42); }
+  function m5rMinTip(){ return angleToXY(m5rMinTick*M5R_MIN_STEP[m5Target.level] - 90, 62); }
 
   function drawSettableClock(){
     var svg = document.getElementById('m5ClockSvg');
@@ -2807,10 +2888,24 @@
   }
 
   function m5rGenTarget(){
-    m5Target.hour = 1+randInt(0,11);
-    m5Target.half = Math.random()<0.5;
+    var lvl = Math.max(0, Math.min(globalLevel || 0, 2));
+    var label;
+    m5Target.level = lvl;
+    if(lvl===0){
+      m5Target.hour = 1+randInt(0,11);
+      m5Target.minute = Math.random()<0.5 ? 30 : 0;
+      label = m5Target.hour + ' h' + (m5Target.minute ? ' 30' : '');
+    } else if(lvl===1){
+      m5Target.hour = 1+randInt(0,11);
+      m5Target.minute = pick([0,15,30,45]);
+      label = minutesToClockLabel(m5Target.hour*60 + m5Target.minute);
+    } else {
+      m5Target.hour = randInt(0,23);
+      m5Target.minute = pick([0,5,10,15,20,25,30,35,40,45,50,55]);
+      label = minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' (' + periodOfDay(m5Target.hour).phrase + ')';
+    }
     m5rHourTick = 0; m5rMinTick = 0; // les aiguilles repartent de midi bien net
-    document.getElementById('m5-target').textContent = m5Target.hour + ' h' + (m5Target.half ? ' 30' : '');
+    document.getElementById('m5-target').textContent = label;
     drawSettableClock();
     var fb = document.getElementById('m5r-feedback'); fb.className='feedback'; fb.innerHTML='';
   }
@@ -2829,8 +2924,9 @@
       var p = svgPointFromEvent(svg, evt);
       var raw = Math.atan2(p.y-100, p.x-100)*180/Math.PI;
       var clockDeg = ((raw+90)%360+360)%360;
-      if(m5rDragWhich==='hour') m5rHourTick = Math.round(clockDeg/15) % 24;
-      else m5rMinTick = Math.round(clockDeg/180) % 2;
+      var lvl = m5Target.level;
+      if(m5rDragWhich==='hour') m5rHourTick = Math.round(clockDeg/M5R_HOUR_STEP[lvl]) % Math.round(360/M5R_HOUR_STEP[lvl]);
+      else m5rMinTick = Math.round(clockDeg/M5R_MIN_STEP[lvl]) % Math.round(360/M5R_MIN_STEP[lvl]);
       drawSettableClock();
     });
     function endDrag(){ m5rDragWhich = null; }
@@ -2840,13 +2936,18 @@
 
   document.getElementById('m5r-new').addEventListener('click', nextPracticeQuestion);
   document.getElementById('m5r-check').addEventListener('click', function(){
-    var targetTick = (m5Target.hour % 12) * 2 + (m5Target.half ? 1 : 0);
-    var hourOk = m5rHourTick === targetTick;
-    var minOk = m5rMinTick === (m5Target.half ? 1 : 0);
+    var lvl = m5Target.level;
+    function angGap(a, b){ var d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); }
+    var exactHourDeg = ((m5Target.hour % 12) + m5Target.minute/60) * 30;
+    var hourOk = angGap(m5rHourTick * M5R_HOUR_STEP[lvl], exactHourDeg) <= M5R_HOUR_TOL[lvl];
+    var minOk = angGap(m5rMinTick * M5R_MIN_STEP[lvl], m5Target.minute * 6) < 0.01;
+    // En Difficile, l'heure demandée est en 24 h : on rappelle comment elle se lit sur le cadran.
+    var readAs = (lvl===2 && (m5Target.hour===0 || m5Target.hour>=13))
+      ? '<div class="explain-line">Sur le cadran, ' + minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' se lit ' + minutesToClockLabel(m5Target.hour*60 + m5Target.minute) + '.</div>' : '';
     var fb = document.getElementById('m5r-feedback');
     if(hourOk && minOk){
       fb.className = 'feedback good show';
-      fb.innerHTML = '<div>✔ Bravo, les aiguilles sont bien placées !</div>';
+      fb.innerHTML = '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs;
       addStar(1);
       setCoachReaction('good');
     } else {
@@ -2854,7 +2955,7 @@
       var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
         : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée.'
         : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
-      fb.innerHTML = '<div>✘ ' + msg + '</div>';
+      fb.innerHTML = '<div>✘ ' + msg + '</div>' + readAs;
       setCoachReaction('bad');
     }
     playSound(hourOk && minOk ? 'good' : 'bad');
@@ -2986,10 +3087,108 @@
     };
   }
 
+
+  // ---- Durées : calculer une heure de fin, une durée, une heure de début ----
+  function fmtDuree(min){
+    var h = Math.floor(min/60), m = min % 60;
+    if(h===0) return m + ' min';
+    return m===0 ? (h + ' h') : (h + ' h ' + (m<10 ? '0'+m : m));
+  }
+  var DUREE_SCENES = [
+    { icon:'🎬', start:'Le film commence', end:'Il se termine', what:'Le film' },
+    { icon:'⚽', start:'Le match commence', end:'Il se termine', what:'Le match' },
+    { icon:'🍰', start:'Le gâteau entre au four', end:'Il en sort', what:'La cuisson' },
+    { icon:'🎨', start:'L\'atelier de peinture commence', end:'Il se termine', what:'L\'atelier' },
+    { icon:'🚌', start:'Le bus part', end:'Il arrive', what:'Le voyage en bus' },
+    { icon:'📚', start:'La lecture commence', end:'Elle se termine', what:'La lecture' },
+    { icon:'🏊', start:'La séance de piscine commence', end:'Elle se termine', what:'La séance' }
+  ];
+  function labelChoices(correctMin, fmt, candidates){
+    var correct = fmt(correctMin), seen = {}, wrong = [];
+    seen[correct] = true;
+    shuffle(candidates.slice()).forEach(function(v){
+      var l = fmt(v);
+      if(v > 0 && !seen[l] && wrong.length < 3){ seen[l] = true; wrong.push(l); }
+    });
+    return shuffle([correct].concat(wrong)).map(function(l){ return { label:l, ok:l===correct }; });
+  }
+  function genDureeQuestion(level){
+    var sc = pick(DUREE_SCENES);
+    var kinds = level===0 ? ['end','end','dur'] : level===1 ? ['end','dur','start'] : ['end','dur','start','conv'];
+    var kind = pick(kinds);
+    var stepMin = level===0 ? 60 : level===1 ? 15 : 5;
+    var startMin, dur, endMin, question, explain, fmt, correctMin, cands, sub, drawTxt;
+
+    if(kind==='conv'){
+      var hh = randInt(1,3), mm = pick([15,30,45]);
+      var totalMin = hh*60 + mm;
+      question = hh + ' h ' + mm + ' min, ça fait combien de minutes en tout ?';
+      explain = '1 heure = 60 minutes. ' + hh + ' h = ' + (hh*60) + ' min, puis on ajoute ' + mm + ' min : ' + totalMin + ' minutes.';
+      var okLabel = totalMin + ' minutes';
+      var cw = [hh*100+mm, hh*10+mm, totalMin+30, totalMin-30, totalMin+15, (hh+1)*60+mm, hh*60];
+      var seen = {}; seen[okLabel] = true; var wrong = [];
+      shuffle(cw).forEach(function(v){ var l = v + ' minutes'; if(v>0 && !seen[l] && wrong.length<3){ seen[l]=true; wrong.push(l); } });
+      return {
+        tag:'Durées', question:question, sub:'Une heure, c\'est 60 minutes.', explain:explain,
+        draw:function(){
+          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+          svg.appendChild(svgText(100,120,64,'⏱️'));
+        },
+        cols3:false,
+        choices: shuffle([okLabel].concat(wrong)).map(function(l){ return { label:l, ok:l===okLabel }; })
+      };
+    }
+    // heures de départ : 12 h max en Facile, sinon la journée entière
+    var hMin = level===0 ? 1 : 6, hMax = level===0 ? 9 : 19;
+    startMin = randInt(hMin, hMax) * 60 + (level===0 ? 0 : pick(level===1 ? [0,15,30,45] : [0,5,10,15,20,25,30,35,40,45,50,55]));
+    var durChoices = level===0 ? [60,120,180] : level===1 ? [30,45,60,90,120] : [35,40,50,75,80,95,105,125,140,165];
+    dur = pick(durChoices);
+    endMin = startMin + dur;
+    var T = minutesToLabel24;
+    if(kind==='end'){
+      question = sc.start + ' à ' + T(startMin) + ' et cela dure ' + fmtDuree(dur) + '. À quelle heure est-ce fini ?';
+      explain = T(startMin) + ' + ' + fmtDuree(dur) + ' = ' + T(endMin) + '.';
+      if(level>=1 && (startMin%60) + (dur%60) >= 60) explain += ' (On passe à l\'heure suivante quand on dépasse 60 minutes.)';
+      correctMin = endMin; fmt = T;
+      cands = [endMin-60, endMin+60, endMin+120, endMin-120, endMin+30, endMin-30, endMin+15, endMin-15, endMin+10, endMin-10, startMin+dur*2, startMin-dur];
+      sub = 'Ajoute la durée à l\'heure de début.';
+      drawTxt = T(startMin) + ' + ' + fmtDuree(dur);
+    } else if(kind==='dur'){
+      question = sc.what + ' commence à ' + T(startMin) + ' et finit à ' + T(endMin) + '. Combien de temps cela dure-t-il ?';
+      explain = 'De ' + T(startMin) + ' à ' + T(endMin) + ', il s\'écoule ' + fmtDuree(dur) + '.';
+      correctMin = dur; fmt = fmtDuree;
+      cands = [dur+30, dur-30, dur+60, dur-60, dur+120, dur+180, dur+15, dur-15, dur+10, dur-10, dur+5, dur-5];
+      sub = 'Compte le temps qui passe entre le début et la fin.';
+      drawTxt = T(startMin) + ' → ' + T(endMin);
+    } else {
+      question = sc.what + ' dure ' + fmtDuree(dur) + ' et finit à ' + T(endMin) + '. À quelle heure cela a-t-il commencé ?';
+      explain = 'On recule de ' + fmtDuree(dur) + ' depuis ' + T(endMin) + ' : ' + T(endMin) + ' - ' + fmtDuree(dur) + ' = ' + T(startMin) + '.';
+      correctMin = startMin; fmt = T;
+      cands = [startMin-60, startMin+60, startMin-120, startMin+120, startMin+30, startMin-30, startMin+15, startMin-15, endMin+dur, startMin+10, startMin-10];
+      sub = 'Retire la durée à l\'heure de fin.';
+      drawTxt = T(endMin) + ' - ' + fmtDuree(dur);
+    }
+    if(level===0) cands = cands.filter(function(v){ return v>=60 && v%60===0; });
+    else if(level===1) cands = cands.filter(function(v){ return v%15===0; });
+    return {
+      tag:'Durées', question:question, sub:sub, explain:explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,95,54,sc.icon));
+        svg.appendChild(svgText(100,150,24,drawTxt));
+      },
+      cols3:false,
+      choices: labelChoices(correctMin, fmt, cands)
+    };
+  }
+
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
   registerQuizType({ id:'heure', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
     generate:function(level){ return genHeureQuestion('m4Svg', level); } });
+  registerQuizType({ id:'duree', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
+    randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
+    generate:function(level){ return genDureeQuestion(level); } });
   /* ===================== THÈME CALCUL =====================
      Questions de Quizz de calcul : opérations, monnaie, maths de la vie.
   */
@@ -3055,7 +3254,7 @@
         return { icon:'💰', question:'Tom paie avec un billet de ' + paid + '€ un jouet qui coûte ' + cost + '€. Combien de monnaie va-t-on lui rendre ?', explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
       }
     ];
-    var t = pick(templates)();
+    var t = pickFresh('vie', templates)();
     var pool = t.pool.filter(function(v){ return v>=0; });
     return {
       tag:'Maths de la vie',
@@ -3112,6 +3311,135 @@
     };
   }
 
+  // ===================== Arithmétique élargie =====================
+  // Petit utilitaire : 4 boutons numériques, la bonne réponse + 3 valeurs voisines.
+  function numChoices(correct, extra, suffix){
+    var pool = [correct-1, correct+1, correct-2, correct+2, correct+3, correct-3].concat(extra || []);
+    pool = pool.filter(function(v){ return v>=0 && v!==correct; });
+    return numChoiceSet(correct, pool).map(function(v){ return { label:String(v) + (suffix||''), ok:v===correct }; });
+  }
+  function eqQuestion(tag, question, sub, explain, eq, correct, extra){
+    return {
+      tag:tag, question:question, sub:sub, explain:explain,
+      draw:function(){ drawEquation(eq); },
+      cols3:false,
+      choices: numChoices(correct, extra)
+    };
+  }
+
+  // -- Soustraction --
+  function genSoustractionQuestion(level){
+    var a, b;
+    if(level===0){ a = randInt(2,10); b = randInt(1,a-1); }
+    else if(level===1){ a = randInt(8,20); b = randInt(1,a-1); }
+    else { a = randInt(21,60); b = randInt(6,a-1); }
+    var d = a - b;
+    return eqQuestion('Calcul', 'Combien font ' + a + ' - ' + b + ' ?', 'Calcule le résultat de cette soustraction.',
+      a + ' - ' + b + ' = ' + d + '. (Vérification : ' + d + ' + ' + b + ' = ' + a + '.)', a + ' - ' + b + ' = ?', d, [a+b, d+10, d-10]);
+  }
+
+  // -- Doubles et moitiés --
+  function genDoubleMoitieQuestion(level){
+    var hi = level===0 ? 10 : level===1 ? 20 : 50;
+    var isDouble = Math.random() < 0.5;
+    if(isDouble){
+      var n = randInt(1, hi), r = n*2;
+      return eqQuestion('Calcul', 'Quel est le double de ' + n + ' ?', 'Le double, c\'est le nombre plus lui-même.',
+        'Le double de ' + n + ' : ' + n + ' + ' + n + ' = ' + r + '.', 'double de ' + n + ' = ?', r, [n, r+10, r-10, n*3]);
+    }
+    var h = randInt(1, hi), m = h*2;
+    return eqQuestion('Calcul', 'Quelle est la moitié de ' + m + ' ?', 'La moitié, c\'est partager en deux parts égales.',
+      'La moitié de ' + m + ' : ' + h + ' + ' + h + ' = ' + m + ', donc la moitié est ' + h + '.', 'moitié de ' + m + ' = ?', h, [m, h+10, h-10, m-1]);
+  }
+
+  // -- Compléments (à 10, à 20, à 100) --
+  function genComplementQuestion(level){
+    var target = level===0 ? 10 : level===1 ? 20 : 100;
+    var a = level<2 ? randInt(1, target-1) : randInt(1,19)*5;
+    var x = target - a;
+    return eqQuestion('Calcul', a + ' + ? = ' + target, 'Cherche le nombre à ajouter pour arriver à ' + target + '.',
+      target + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + target + '.', a + ' + ? = ' + target, x,
+      level===2 ? [x+5, x-5, x+10, x-10] : [x+1, x-1]);
+  }
+
+  // -- Tables de multiplication (2, 5, 10 ; puis 3 et 4 en Difficile) --
+  function genTableQuestion(level){
+    var tables = level===0 ? [2,10] : level===1 ? [2,5,10] : [2,3,4,5,10];
+    var t = pick(tables), n = randInt(1,10), r = t*n;
+    var hint = t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
+    if(level===2 && Math.random()<0.4){
+      return eqQuestion('Calcul', t + ' × ? = ' + r, 'Cherche par combien il faut multiplier ' + t + '.',
+        t + ' × ' + n + ' = ' + r + '. ' + hint, t + ' × ? = ' + r, n, [n+t, n-t, n*2]);
+    }
+    return eqQuestion('Calcul', 'Combien font ' + t + ' × ' + n + ' ?', 'Utilise la table de ' + t + '.',
+      t + ' × ' + n + ' = ' + r + '. ' + hint, t + ' × ' + n + ' = ?', r, [r+t, r-t, r+10, r-10]);
+  }
+
+  // -- Comparer (<, >, =) --
+  function genCompareQuestion(level){
+    var lo = level===0 ? 0 : 5, hi = level===0 ? 20 : level===1 ? 30 : 99;
+    var expr = level>=1 && Math.random()<0.6;
+    var left, right, lv, rv;
+    if(expr){
+      var a=randInt(1,15), b=randInt(1,15), c, d;
+      lv = a+b;
+      // une fois sur trois, les deux côtés sont égaux (ex. 8 + 5 et 9 + 4)
+      if(Math.random()<0.34){ var tries=0; do { c=randInt(Math.max(1,lv-15), Math.min(15,lv-1)); d=lv-c; tries++; } while((c===a || c===b) && tries<10); }
+      else { c=randInt(1,15); d=randInt(1,15); }
+      rv = c+d; left = a+' + '+b; right = c+' + '+d;
+    } else {
+      lv = randInt(lo,hi); rv = Math.random()<0.2 ? lv : randInt(lo,hi);
+      left = String(lv); right = String(rv);
+    }
+    var sign = lv<rv ? '<' : lv>rv ? '>' : '=';
+    var explain = expr ? (left+' = '+lv+' et '+right+' = '+rv+'. ') : '';
+    explain += lv===rv ? lv + ' est égal à ' + rv + ' : ' + sign + '.' : (lv>rv ? lv+' est plus grand que '+rv : lv+' est plus petit que '+rv) + ' : ' + lv + ' ' + sign + ' ' + rv + '.';
+    return {
+      tag:'Calcul', question:'Quel signe faut-il mettre : ' + left + ' … ' + right + ' ?',
+      sub:'< veut dire « plus petit que », > « plus grand que », = « égal à ».',
+      explain: explain,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var txt = left + '  ?  ' + right;
+        svg.appendChild(svgText(100,112, txt.length>12 ? 22 : 34, txt));
+      },
+      cols3:true,
+      choices:['<','=','>'].map(function(l){ return { label:l, ok:l===sign }; })
+    };
+  }
+
+  // -- Suites de nombres --
+  var SUITE_NB_STEPS = [[1,2,5,10],[2,3,5,10],[3,4,6,7,9,11,20,25]];
+  function genSuiteNombresQuestion(level){
+    var step = pick(SUITE_NB_STEPS[level]);
+    var desc = level>=1 && Math.random()<0.4;
+    var n = 5, first;
+    if(desc) first = step*(n-1) + randInt(0, level===2 ? 30 : 10);
+    else first = randInt(0, level===0 ? 10 : level===1 ? 20 : 40);
+    var seq = [], i;
+    for(i=0;i<n;i++) seq.push(desc ? first - i*step : first + i*step);
+    var hole = level===0 ? n-1 : randInt(1, n-1);
+    var answer = seq[hole];
+    var shown = seq.map(function(v, k){ return k===hole ? '?' : String(v); });
+    return {
+      tag:'Suite de nombres',
+      question:'Quel nombre manque dans cette suite ?',
+      sub:'Cherche de combien on avance (ou on recule) à chaque fois.',
+      explain:'On ' + (desc ? 'recule' : 'avance') + ' de ' + step + ' à chaque fois : ' + seq.join(', ') + '. Le nombre qui manque est ' + answer + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var w=34, gap=5, x0=(200-(n*w+(n-1)*gap))/2;
+        shown.forEach(function(txt, k){
+          var x = x0 + k*(w+gap);
+          svg.appendChild(el('rect',{x:x,y:88,width:w,height:34,rx:6,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
+          svg.appendChild(svgText(x+w/2,112,txt.length>2?16:19,txt));
+        });
+      },
+      cols3:false,
+      choices: numChoices(answer, [answer+step, answer-step, answer+2*step, answer-2*step])
+    };
+  }
+
   // ---- Déclaration des types de Quizz du thème Calcul ----
   registerQuizType({ id:'calc', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
@@ -3120,8 +3448,26 @@
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
     generate:genMonnaieQuestion });
   registerQuizType({ id:'vie', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
-    randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes, puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
+    randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
+  registerQuizType({ id:'soustraction', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
+    randomNote:'a - b avec b plus petit que a. Facile : nombres jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 60 (avec retenues).',
+    generate:genSoustractionQuestion });
+  registerQuizType({ id:'doubleMoitie', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
+    randomNote:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 50.',
+    generate:genDoubleMoitieQuestion });
+  registerQuizType({ id:'complement', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
+    randomNote:'« a + ? = cible ». Facile : compléments à 10 ; Moyen : à 20 ; Difficile : à 100 (multiples de 5).',
+    generate:genComplementQuestion });
+  registerQuizType({ id:'tables', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
+    randomNote:'Facile : tables de 2 et de 10 ; Moyen : 2, 5 et 10 ; Difficile : 2, 3, 4, 5, 10, avec parfois le facteur manquant (5 × ? = 35).',
+    generate:genTableQuestion });
+  registerQuizType({ id:'compare', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
+    randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
+    generate:genCompareQuestion });
+  registerQuizType({ id:'suiteNombres', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
+    randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
+    generate:genSuiteNombresQuestion });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */
@@ -3898,9 +4244,20 @@
   var m4TypeFilter = 'random';
   var m4Current = null;
 
+  // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
+  var lastQcmType = null;
+  var lastFamily = null;
+  function pickOther(arr, last){
+    if(arr.length>1 && last!==null){
+      var rest = arr.filter(function(x){ return x!==last; });
+      if(rest.length) return pick(rest);
+    }
+    return pick(arr);
+  }
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
-    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pick(lv.types);
+    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pickOther(lv.types, lastQcmType);
+    lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     return (quizTypeById(type) || quizTypeById('image')).generate(globalLevel);
   }
@@ -3980,11 +4337,10 @@
     qcm:'fam-qcm', 'clock-lire':'fam-clock-lire', 'clock-regler':'fam-clock-regler'
   };
   var MANUAL_FAMILY_LIST = ['measure','deform','net','qcm','clock-lire','clock-regler'];
-  // "Régler l'heure" est la seule activité qui n'a pas de vrais paliers de
-  // difficulté (voir m5rGenTarget) : en mode Manuel, on masque alors le
-  // sélecteur de niveau pour cette activité-là.
+  // Activités qui ont de vrais paliers de difficulté : en mode Manuel, le
+  // sélecteur de niveau est masqué pour les autres (aucune à ce jour).
   var FAMILIES_WITH_LEVELS = {
-    measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':false
+    measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':true
   };
   // La famille "Quizz" (QCM) regroupe à elle seule ~20 types de questions
   // (M4_LEVELS[*].types) qui étaient auparavant sélectionnables un par un.
@@ -4031,7 +4387,7 @@
     measure:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
     deform:'Une seule épreuve avec 3 formes cibles (losange, rectangle, parallélogramme) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins en Moyen, les 4 coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
     'clock-lire':'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
-    'clock-regler':'Une seule épreuve, sans paliers de difficulté (identique quel que soit l\'onglet Facile/Moyen/Difficile). L\'heure cible à reproduire est tirée au hasard à chaque question ; c\'est pour ça qu\'elle n\'apparaît pas dans la liste de niveaux du mode Manuel.'
+    'clock-regler':'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h).'
   };
   var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
   var currentAconfFamily = 'qcm';
@@ -4214,7 +4570,8 @@
     exWrap.classList.add('qenter');
   }
   function nextPracticeQuestion(){
-    var key = (appMode==='manual' && manualFamily) ? manualFamily : pick(familyKeys());
+    var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
+    lastFamily = key;
     showFamily(key);
     if(key==='measure') newMeasureQuestion();
     else if(key==='deform') newDeformQuestion();

@@ -59,7 +59,7 @@ Un patron à plat se plie en 3D, il faut dire quel solide il forme : **Cube, Pav
 
 *Explication :* chaque patron a sa propre explication (par exemple « 5 carrés, il en faut 6 : il manque une face »). Le dessin est toujours le même pour un patron donné ; seul le choix du patron est tiré au hasard.
 
-### 🧠 Quizz (21 types de questions)
+### 🧠 Quizz (29 types de questions)
 Question à choix multiples, avec illustration. Le tableau montre les niveaux où chaque type apparaît.
 
 | Type de question | F | M | D | Ce qui est tiré au hasard |
@@ -81,10 +81,18 @@ Question à choix multiples, avec illustration. Le tableau montre les niveaux o�
 | Chasse aux formes | | ✔ | ✔ | Nombre et disposition des formes |
 | Axe de symétrie | | ✔ | ✔ | Triangle isocèle tourné, 3 droites candidates |
 | Compter faces / sommets / arêtes | | ✔ | ✔ | Le solide (9 polyèdres) et ce qu'on compte |
-| Maths de la vie | | ✔ | ✔ | 6 problèmes-types, nombres tirés au hasard |
+| Maths de la vie | | ✔ | ✔ | 6 problèmes-types (sans répétition tant qu'on ne les a pas tous vus), nombres tirés au hasard |
 | Trajet (décodage) | | | ✔ | Points de départ et d'arrivée, trajets proposés |
 | Vrai axe de symétrie ? | | | ✔ | Droite exactement au milieu, ou décalée |
-| Énigme | | | ✔ | Une énigme parmi une trentaine de textes fixes |
+| Énigme | | | ✔ | Une énigme parmi 46 textes fixes, sans répétition tant qu'on ne les a pas toutes vues |
+| Suite de formes | ✔ | ✔ | ✔ | Symboles et motif : AB (F) ; AAB, ABB, ABC (M) ; + AABB, ABAC, ABCD (D) |
+| Durées | ✔ | ✔ | ✔ | Heure de fin, temps écoulé, heure de début. F : heures pleines ; M : ½ h et quarts d'heure ; D : minutes quelconques + conversion h → min |
+| Soustraction | ✔ | ✔ | ✔ | a - b : jusqu'à 10 (F), 20 (M), 60 (D) |
+| Doubles et moitiés | ✔ | ✔ | ✔ | Jusqu'à 10 (F), 20 (M), 50 (D) ; la moitié porte toujours sur un nombre pair |
+| Compléments | ✔ | ✔ | ✔ | « a + ? = 10 » (F), « … = 20 » (M), « … = 100 » avec multiples de 5 (D) |
+| Tables | | ✔ | ✔ | M : tables de 2, 5, 10 ; D : + 3 et 4, et facteur manquant (5 × ? = 35) |
+| Comparer (<, >, =) | ✔ | ✔ | ✔ | Deux nombres (jusqu'à 20 / 30 / 99) ; en M/D parfois deux additions |
+| Suite de nombres | | ✔ | ✔ | Nombre manquant : de 1, 2, 5, 10 (F) ; 2, 3, 5, 10, parfois en descendant (M) ; 3, 4, 6, 7, 9, 11, 20, 25 (D) |
 
 **Formes par niveau (côtés, sommets, nom) :** F triangle, carré, rectangle ; M + pentagone, hexagone, cercle ; D + losange.
 
@@ -100,7 +108,15 @@ Une horloge, 4 heures proposées.
 | D | Toutes les 5 minutes **et les heures de 0 h à 23 h** (24 h) : l'énoncé donne le moment de la journée (nuit, matin, après-midi, soir) ; l'après-midi, il faut ajouter 12 h |
 
 ### 🕐 Régler l'heure
-On place soi-même les aiguilles sur une heure donnée (heure pile ou demie). **Pas de niveaux** : identique partout. La petite aiguille se cale toutes les demi-heures.
+On place soi-même les aiguilles sur une heure donnée.
+
+| Niveau | Consigne |
+|---|---|
+| F | Heure pile ou demie (la petite aiguille se cale toutes les demi-heures) |
+| M | + quarts d'heure |
+| D | Toutes les 5 minutes, heures de 0 h à 23 h : l'énoncé rappelle l'heure sur l'horloge à 12 h |
+
+**Variété :** l'appli ne propose jamais deux fois de suite le même type de Quizz ni la même famille d'activités.
 
 ---
 
