@@ -33,9 +33,20 @@
   var m4TypeFilter = 'random';
   var m4Current = null;
 
+  // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
+  var lastQcmType = null;
+  var lastFamily = null;
+  function pickOther(arr, last){
+    if(arr.length>1 && last!==null){
+      var rest = arr.filter(function(x){ return x!==last; });
+      if(rest.length) return pick(rest);
+    }
+    return pick(arr);
+  }
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
-    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pick(lv.types);
+    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pickOther(lv.types, lastQcmType);
+    lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     return (quizTypeById(type) || quizTypeById('image')).generate(globalLevel);
   }
@@ -348,7 +359,8 @@
     exWrap.classList.add('qenter');
   }
   function nextPracticeQuestion(){
-    var key = (appMode==='manual' && manualFamily) ? manualFamily : pick(familyKeys());
+    var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
+    lastFamily = key;
     showFamily(key);
     if(key==='measure') newMeasureQuestion();
     else if(key==='deform') newDeformQuestion();

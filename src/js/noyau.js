@@ -319,6 +319,26 @@
     }
     return arr;
   }
+  // Tirage « sans remise » : chaque élément sort une fois avant qu'aucun ne
+  // revienne, et le premier d'un nouveau tour n'est jamais le dernier du tour
+  // précédent. `key` identifie le sac (un sac par liste à varier).
+  var FRESH_BAGS = {};
+  function pickFresh(key, arr){
+    var b = FRESH_BAGS[key];
+    if(!b || b.n !== arr.length){ b = FRESH_BAGS[key] = { n:arr.length, bag:[], last:-1 }; }
+    if(!b.bag.length){
+      var idx = [];
+      for(var i=0;i<arr.length;i++) idx.push(i);
+      shuffle(idx);
+      if(idx.length>1 && idx[idx.length-1]===b.last){   // le prochain sorti = idx.pop()
+        var j = Math.floor(Math.random()*(idx.length-1));
+        var t = idx[idx.length-1]; idx[idx.length-1] = idx[j]; idx[j] = t;
+      }
+      b.bag = idx;
+    }
+    b.last = b.bag.pop();
+    return arr[b.last];
+  }
   function fmtNum(v){
     // affiche "6" ou "6,5" (virgule française)
     return (Math.round(v*2)/2).toString().replace('.', ',');

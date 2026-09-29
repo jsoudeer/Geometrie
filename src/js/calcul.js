@@ -63,7 +63,7 @@
         return { icon:'💰', question:'Tom paie avec un billet de ' + paid + '€ un jouet qui coûte ' + cost + '€. Combien de monnaie va-t-on lui rendre ?', explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
       }
     ];
-    var t = pick(templates)();
+    var t = pickFresh('vie', templates)();
     var pool = t.pool.filter(function(v){ return v>=0; });
     return {
       tag:'Maths de la vie',

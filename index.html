@@ -1344,6 +1344,26 @@
     }
     return arr;
   }
+  // Tirage « sans remise » : chaque élément sort une fois avant qu'aucun ne
+  // revienne, et le premier d'un nouveau tour n'est jamais le dernier du tour
+  // précédent. `key` identifie le sac (un sac par liste à varier).
+  var FRESH_BAGS = {};
+  function pickFresh(key, arr){
+    var b = FRESH_BAGS[key];
+    if(!b || b.n !== arr.length){ b = FRESH_BAGS[key] = { n:arr.length, bag:[], last:-1 }; }
+    if(!b.bag.length){
+      var idx = [];
+      for(var i=0;i<arr.length;i++) idx.push(i);
+      shuffle(idx);
+      if(idx.length>1 && idx[idx.length-1]===b.last){   // le prochain sorti = idx.pop()
+        var j = Math.floor(Math.random()*(idx.length-1));
+        var t = idx[idx.length-1]; idx[idx.length-1] = idx[j]; idx[j] = t;
+      }
+      b.bag = idx;
+    }
+    b.last = b.bag.pop();
+    return arr[b.last];
+  }
   function fmtNum(v){
     // affiche "6" ou "6,5" (virgule française)
     return (Math.round(v*2)/2).toString().replace('.', ',');
@@ -2594,10 +2614,26 @@
     { text:'J\'ai 2 faces triangulaires et 3 faces rectangulaires : on me trouve dans les tentes de camping. Qui suis-je ?', answer:'prisme triangulaire', pool:['prisme triangulaire','pyramide à base carrée','tétraèdre','pavé droit'] },
     { text:'J\'ai 2 faces pentagonales (à 5 côtés) et 5 faces rectangulaires. Qui suis-je ?', answer:'prisme pentagonal', pool:['prisme pentagonal','prisme hexagonal','pyramide à base carrée','cube'] },
     { text:'J\'ai 2 faces hexagonales et 6 faces rectangulaires : ma base a la même forme qu\'une alvéole d\'abeille. Qui suis-je ?', answer:'prisme hexagonal', pool:['prisme hexagonal','prisme pentagonal','prisme octogonal','cylindre'] },
-    { text:'J\'ai 2 faces à 8 côtés et 8 faces rectangulaires : ma base ressemble à un panneau "stop". Qui suis-je ?', answer:'prisme octogonal', pool:['prisme octogonal','prisme hexagonal','cylindre','prisme pentagonal'] }
+    { text:'J\'ai 2 faces à 8 côtés et 8 faces rectangulaires : ma base ressemble à un panneau "stop". Qui suis-je ?', answer:'prisme octogonal', pool:['prisme octogonal','prisme hexagonal','cylindre','prisme pentagonal'] },
+    { text:"Je suis un quadrilatère : j'ai 4 côtés. Mes côtés opposés sont égaux deux par deux et j'ai 4 angles droits, mais je ne suis pas un carré. Qui suis-je ?", answer:"rectangle", pool:["rectangle", "carré", "losange", "triangle"] },
+    { text:"J'ai 6 sommets et 6 côtés. Si on me coupe en deux, on obtient deux trapèzes. Qui suis-je ?", answer:"hexagone", pool:["hexagone", "pentagone", "carré", "triangle"] },
+    { text:"Une pièce de monnaie a la forme de mon contour : je suis tout rond et plat. Qui suis-je ?", answer:"cercle", pool:["cercle", "boule", "cylindre", "losange"] },
+    { text:"On me trouve souvent sous la forme d'une boîte de chaussures. Qui suis-je ?", answer:"pavé droit", pool:["pavé droit", "cube", "cylindre", "cône"] },
+    { text:"On me trouve souvent sous la forme d'un cornet de glace. Qui suis-je ?", answer:"cône", pool:["cône", "cylindre", "pyramide à base carrée", "boule"] },
+    { text:"On me trouve souvent sous la forme d'un toit de pyramide en Égypte. Qui suis-je ?", answer:"pyramide à base carrée", pool:["pyramide à base carrée", "cube", "cône", "pavé droit"] },
+    { text:"On me trouve souvent sous la forme d'une bille. Qui suis-je ?", answer:"boule", pool:["boule", "cercle", "cylindre", "cône"] },
+    { text:"On me trouve souvent sous la forme d'un rouleau de papier toilette. Qui suis-je ?", answer:"cylindre", pool:["cylindre", "cône", "boule", "cube"] },
+    { text:"J'ai 3 sommets et 3 côtés, et un de mes angles est droit. Qui suis-je ?", answer:"triangle", pool:["triangle", "rectangle", "carré", "pentagone"] },
+    { text:"Je suis un quadrilatère avec 4 côtés égaux et 4 angles droits : si on me tourne d'un quart de tour, je reste pareil. Qui suis-je ?", answer:"carré", pool:["carré", "rectangle", "losange", "triangle"] },
+    { text:"J'ai 5 sommets et 5 côtés : j'ai un côté de plus qu'un quadrilatère. Qui suis-je ?", answer:"pentagone", pool:["pentagone", "hexagone", "carré", "triangle"] },
+    { text:"J'ai 5 faces : une base carrée et 4 triangles qui se rejoignent en haut. Qui suis-je ?", answer:"pyramide à base carrée", pool:["pyramide à base carrée", "tétraèdre", "cube", "cône"] },
+    { text:"J'ai 1 face plane ronde, 1 sommet et une surface qui s'enroule. Qui suis-je ?", answer:"cône", pool:["cône", "cylindre", "pyramide à base carrée", "boule"] },
+    { text:"J'ai 12 arêtes, mais mes faces n'ont pas toutes la même taille. Je ressemble à une brique. Qui suis-je ?", answer:"pavé droit", pool:["pavé droit", "cube", "pyramide à base carrée", "cylindre"] },
+    { text:"Je n'ai aucune face plane : je suis rond de partout. Qui suis-je ?", answer:"boule", pool:["boule", "cylindre", "cône", "cube"] },
+    { text:"Je suis un quadrilatère qui a 4 côtés égaux. Si on me pose sur une pointe, je ressemble à un diamant. Qui suis-je ?", answer:"losange", pool:["losange", "rectangle", "triangle", "pentagone"] }
   ];
   function genEnigmeQuestion(){
-    var r = pick(ENIGME_POOL);
+    var r = pickFresh('enigme', ENIGME_POOL);
     var poolOthers = shuffle(r.pool.filter(function(p){return p!==r.answer;})).slice(0,3);
     var labels = shuffle([r.answer].concat(poolOthers));
     return {
@@ -2701,7 +2737,7 @@
     generate:genAngleQuestion });
   registerQuizType({ id:'image', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
     randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.',
-    generate:function(){ return pick(IMAGE_QUESTIONS)(); } });
+    generate:function(){ return pickFresh('image', IMAGE_QUESTIONS)(); } });
   registerQuizType({ id:'coordFind', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
     randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.',
     generate:genCoordFindQuestion });
@@ -3080,7 +3116,7 @@
         return { icon:'💰', question:'Tom paie avec un billet de ' + paid + '€ un jouet qui coûte ' + cost + '€. Combien de monnaie va-t-on lui rendre ?', explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
       }
     ];
-    var t = pick(templates)();
+    var t = pickFresh('vie', templates)();
     var pool = t.pool.filter(function(v){ return v>=0; });
     return {
       tag:'Maths de la vie',
@@ -3923,9 +3959,20 @@
   var m4TypeFilter = 'random';
   var m4Current = null;
 
+  // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
+  var lastQcmType = null;
+  var lastFamily = null;
+  function pickOther(arr, last){
+    if(arr.length>1 && last!==null){
+      var rest = arr.filter(function(x){ return x!==last; });
+      if(rest.length) return pick(rest);
+    }
+    return pick(arr);
+  }
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
-    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pick(lv.types);
+    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pickOther(lv.types, lastQcmType);
+    lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     return (quizTypeById(type) || quizTypeById('image')).generate(globalLevel);
   }
@@ -4238,7 +4285,8 @@
     exWrap.classList.add('qenter');
   }
   function nextPracticeQuestion(){
-    var key = (appMode==='manual' && manualFamily) ? manualFamily : pick(familyKeys());
+    var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
+    lastFamily = key;
     showFamily(key);
     if(key==='measure') newMeasureQuestion();
     else if(key==='deform') newDeformQuestion();
