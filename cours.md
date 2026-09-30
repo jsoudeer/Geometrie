@@ -130,6 +130,8 @@ On place soi-même les aiguilles sur une heure donnée.
 | M | + quarts d'heure |
 | D | Toutes les 5 minutes, heures de 0 h à 23 h : l'énoncé rappelle l'heure sur l'horloge à 12 h |
 
+**Petite aiguille :** elle se place sur **24 positions** à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (5–10 min : sur l'heure ; 20–40 min : entre les deux ; 50–55 min : sur l'heure suivante ; à 15 ou 45 min, les deux positions voisines sont acceptées). Une **seule étoile** par heure demandée, même si on appuie plusieurs fois sur Vérifier (idem pour Déformer).
+
 **Variété :** l'appli ne propose jamais deux fois de suite le même type de Quizz ni la même famille d'activités.
 
 ### ✋ Ateliers (on touche pour construire)
