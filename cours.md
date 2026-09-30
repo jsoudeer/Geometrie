@@ -42,6 +42,17 @@ Faire glisser les 4 coins d'une forme (au doigt, à la souris ou aux flèches du
 
 *Tiré au hasard :* la forme demandée (identique à tous les niveaux), les coins décalés, la direction et la distance.
 
+### 📏 Estimer une longueur
+Une règle de **10 cm** dont seuls le **0** et le **10** sont écrits : il faut estimer la longueur du trait à l'œil, en s'aidant de repères (la moitié de la règle, c'est 5 cm). Après la réponse, les graduations apparaissent pour vérifier, et l'explication situe le trait par rapport à la moitié de la règle.
+
+| Niveau | Le trait | Réponses proposées |
+|---|---|---|
+| Facile | part du 0, 1 à 9 cm | 4 réponses espacées d'au moins 2 cm |
+| Moyen | part du 0, 1 à 9 cm | à 1 cm près |
+| Difficile | posé plus bas, ne part pas du 0, en demi-cm | à 1 cm ou 1,5 cm près |
+
+Réponse en un toucher : l'activité fait aussi partie du mode Chronométré.
+
 ### 📦 Patron → Solide
 Un patron à plat se plie en 3D, il faut dire quel solide il forme. Quatre réponses sont proposées parmi **Cube, Pavé droit, Pyramide, Prisme et Aucun solide** (toujours la bonne et « Aucun solide »).
 

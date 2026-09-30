@@ -9,7 +9,7 @@ let AXE;
 try { AXE = fs.readFileSync(require.resolve('axe-core/axe.min.js', { paths: [__dirname] }), 'utf8'); }
 catch (e) { console.log('axe-core absent : cd tools/tests && npm install --no-save axe-core@4'); process.exit(1); }
 
-const FAMS = ['measure', 'deform', 'net', 'qcm', 'clock-lire', 'clock-regler', 'atelier-sym', 'atelier-fraction', 'atelier-copie'];
+const FAMS = ['measure', 'estimate', 'deform', 'net', 'qcm', 'clock-lire', 'clock-regler', 'atelier-sym', 'atelier-fraction', 'atelier-copie'];
 (async () => {
   let total = 0;
   for (const theme of ['cats', 'brainrot']) {
