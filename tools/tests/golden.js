@@ -51,7 +51,10 @@ async function record(outFile) {
       deform: ["newDeformQuestion()", 'fam-deform'],
       net: ["loadNet(pickNetForLevel(globalLevel))", 'fam-net'],
       'clock-lire': ["newM5Lire()", 'fam-clock-lire'],
-      'clock-regler': ["m5rGenTarget()", 'fam-clock-regler']
+      'clock-regler': ["m5rGenTarget()", 'fam-clock-regler'],
+      'atelier-sym': ["extraFamily('atelier-sym').generate(globalLevel)", 'fam-atelier-sym'],
+      'atelier-fraction': ["extraFamily('atelier-fraction').generate(globalLevel)", 'fam-atelier-fraction'],
+      'atelier-copie': ["extraFamily('atelier-copie').generate(globalLevel)", 'fam-atelier-copie']
     };
     for (let lvl = 0; lvl < 3; lvl++) {
       for (const key of Object.keys(FAM)) {

@@ -196,6 +196,21 @@
     'clock-regler':'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h).'
   };
   var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
+  // Familles déclarées par les thèmes (voir registerFamily dans noyau.js) : on les
+  // ajoute aux listes ci-dessus et on leur crée un conteneur d'écran.
+  EXTRA_FAMILIES.forEach(function(f){
+    FAMILY_TAGS[f.key] = f.tag;
+    FAMILY_WRAP_IDS[f.key] = 'fam-' + f.key;
+    MANUAL_FAMILY_LIST.push(f.key);
+    FAMILIES_WITH_LEVELS[f.key] = true;
+    STATIC_FAMILY_NOTES[f.key] = f.note;
+    ACTIVITY_CONFIG_FAMILIES.push(f.key);
+    var wrap = document.createElement('div');
+    wrap.id = 'fam-' + f.key; wrap.hidden = true;
+    var host = document.getElementById('fam-clock-regler');
+    host.parentNode.insertBefore(wrap, host.nextSibling);
+    f.build(wrap);
+  });
   var currentAconfFamily = 'qcm';
   var aconfOpenCats = {};
   function flashAconfWarning(){
@@ -310,7 +325,7 @@
       globalLevel = levels[idx];
       manualStreak = 0;
       nextPracticeQuestion();
-      armManualCollapse();
+      collapseManualActivities();   // un niveau choisi : on cache tout de suite la liste des activités
     });
     globalLevel = levels[0];
   }
@@ -370,6 +385,11 @@
       document.getElementById('manual-show-activities-btn').hidden = false;
     }, 5000);
   }
+  function collapseManualActivities(){
+    clearTimeout(manualCollapseTimer);
+    document.getElementById('manual-activity-picker').hidden = true;
+    document.getElementById('manual-show-activities-btn').hidden = false;
+  }
   function expandManualActivities(){
     clearTimeout(manualCollapseTimer);
     document.getElementById('manual-activity-picker').hidden = false;
@@ -387,7 +407,7 @@
   function familyKeys(){
     return practiceMode==='countdown'
       ? ['measure','qcm','clock-lire']
-      : ['measure','deform','net','qcm','clock-lire','clock-regler'];
+      : ['measure','deform','net','qcm','qcm','qcm','clock-lire','clock-regler'].concat(EXTRA_FAMILIES.map(function(f){ return f.key; }));
   }
   function showFamily(key){
     currentFamily = key;
@@ -419,6 +439,7 @@
     if(key==='deform') return 'deform|' + m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';');
     if(key==='net') return 'net|' + NET_DEFS.map(function(n){ return n.obj; }).indexOf(currentNet);
     if(key==='clock-regler') return 'regler|' + m5Target.hour + ':' + m5Target.minute;
+    if(extraFamily(key)) return key + '|' + extraFamily(key).signature();
     var q = key==='qcm' ? m4Current : m5Current;
     return key + '|' + q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
   }
@@ -430,6 +451,11 @@
     else if(key==='qcm') newQCM();
     else if(key==='clock-lire') newM5Lire();
     else if(key==='clock-regler') m5rGenTarget();
+    else extraFamily(key).generate(globalLevel);
+  }
+  function extraFamily(key){
+    for(var i=0;i<EXTRA_FAMILIES.length;i++){ if(EXTRA_FAMILIES[i].key===key) return EXTRA_FAMILIES[i]; }
+    return null;
   }
   function nextPracticeQuestion(){
     var sig = null;
@@ -660,6 +686,12 @@
     { label:'📦 Solides',          families:['net'] },
     { label:'🕒 Horloge',          families:['clock-lire','clock-regler'] }
   ];
+  EXTRA_FAMILIES.forEach(function(f){
+    var th = null;
+    FAMILY_THEMES.forEach(function(t){ if(t.label===f.theme) th = t; });
+    if(!th){ th = { label:f.theme, families:[] }; FAMILY_THEMES.push(th); }
+    th.families.push(f.key);
+  });
   function startManualFamily(key){
     manualFamily = key;
     refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
