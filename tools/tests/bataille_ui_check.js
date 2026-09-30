@@ -6,8 +6,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   let bad = 0; const chk = (ok, msg) => { console.log(ok ? '  ok' : '  ✘', msg); if (!ok) bad++; };
   // on possède tout pour tester la rotation
   await ev(`(function(){ CAT_SPRITES.forEach(function(s){ ownedCats[s.id]=true; }); BRAINROT_SPRITES.forEach(function(s){ ownedBrain[s.id]=true; }); btSel.cats={classic:[],support:[],archer:[]}; renderBtSetup(); })()`);
-  await page.click('#menu-btn'); await page.click('.tab-btn[data-tab="arena"]');
-  await page.evaluate(() => [...document.querySelectorAll('#arena-modes .level-btn')].find(x => x.textContent.includes('Bataille')).click());
+  await page.click('#battle-btn');
   const sel = () => ev(`JSON.stringify(btSel[btSide()])`).then(JSON.parse);
   // rotation du plus ancien
   const ids = JSON.parse(await ev(`JSON.stringify(btMyList().filter(function(s){return s.role==='classic';}).slice(0,5).map(function(s){return s.id;}))`));
@@ -35,8 +34,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   await page.evaluate(() => document.querySelector('#bt-player-field .bcard:not(:disabled)').click());
   await page.waitForTimeout(50);
   await page.evaluate(() => document.querySelector('#bt-enemy-field .bcard:not(:disabled)').click());
-  await page.waitForTimeout(400);
-  const midHtml = await page.evaluate(() => ({ floats: document.querySelectorAll('.dmg-float').length, lunge: true }));
+  let midHtml = { floats: 0 };
+  for (let i = 0; i < 20 && !midHtml.floats; i++) { await page.waitForTimeout(100); midHtml = await page.evaluate(() => ({ floats: document.querySelectorAll('.dmg-float').length })); }
   chk(midHtml.floats >= 1, 'chiffres flottants pendant l\'attaque (' + midHtml.floats + ')');
   await page.waitForTimeout(2600);
   const after = await page.evaluate((u) => { const c = document.querySelector('#bt-arena [data-uid="' + u + '"]'); return { kept: c ? c.__id === 'X' : 'mort', txt: c && c.querySelector('.bcard-pts').textContent }; }, uid);

@@ -30,7 +30,8 @@
     </div>
     <div class="topbar-right">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Passer en mode Brainrot" title="Changer de clan">👹</button>
-      <div class="stars" role="status" aria-label="Tes étoiles">⭐ <span id="starCount">0</span></div>
+      <button class="stars" id="stars-btn" type="button" title="Boutique" aria-pressed="false"><span aria-hidden="true">⭐</span> <span id="starCount">0</span><span class="vh"> étoiles — ouvrir la boutique</span></button>
+      <button class="battle-btn" id="battle-btn" type="button" title="Bataille" aria-label="Bataille" aria-pressed="false">⚔️</button>
       <button class="settings-btn" id="settings-btn" type="button" aria-label="Réglages">⚙️</button>
     </div>
   </header>
@@ -120,7 +121,6 @@
     <button class="tab-btn" data-tab="moyen" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🤔</span>Moyen</button>
     <button class="tab-btn" data-tab="difficile" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🔥</span>Difficile</button>
     <button class="tab-btn" data-tab="manuel" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎯</span>Manuel</button>
-    <button class="tab-btn" data-tab="arena" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎮</span>Boutique</button>
   </nav>
 
   <main id="tabContent">
@@ -268,17 +268,11 @@
       </div>
     </section>
 
-    <!-- MODULE 6 : BOUTIQUE + BATAILLE -->
-    <section class="tabpanel" id="tab-arena" hidden>
+    <!-- BOUTIQUE : ouverte par le compteur d'étoiles (en haut à droite) -->
+    <section class="tabpanel" id="tab-shop" hidden>
       <div class="card">
-        <h2>Boutique &amp; Bataille</h2>
-        <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis, puis forme une équipe pour affronter l'autre clan !</p>
-        <div class="level-row" id="arena-modes"></div>
-
-        <!-- ===== BOUTIQUE =====
-             Le clan affiché suit le clan actif (bouton à gauche des
-             étoiles). Personnages débloqués et à obtenir sont côte à côte
-             dans la même grille. -->
+        <div class="panel-head"><h2>Boutique 🛒</h2><button class="btn ghost small" type="button" data-back>↩️ Retour aux exercices</button></div>
+        <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis. Le clan affiché est le clan actif (bouton 👹 / 🐱 en haut).</p>
         <div id="arena-shop-wrap">
           <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
           <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
@@ -286,6 +280,13 @@
           <div class="sprite-grid" id="shop-grid"></div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- BATAILLE : ouverte par l'icône ⚔️ (à droite du compteur d'étoiles) -->
+    <section class="tabpanel" id="tab-battle" hidden>
+      <div class="card">
+        <div class="panel-head"><h2>Bataille ⚔️</h2><button class="btn ghost small" type="button" data-back>↩️ Retour aux exercices</button></div>
         <!-- ===== BATAILLE (équipes de cartes) =====
              Tu joues avec le clan actif (celui du bouton en haut : Chats
              Kawaii ou Brainrot) et tu affrontes l'autre clan. Une seule
@@ -293,7 +294,7 @@
              fois d'attaque et d'énergie. Équipe : 3 classiques, 1 soutien
              et 1 archer ; 3 cartes sont posées au hasard sur le terrain, et
              une nouvelle carte entre quand l'une est battue. -->
-        <div id="arena-battle-wrap" hidden>
+        <div id="arena-battle-wrap">
 
           <!-- ----- Choix de l'équipe ----- -->
           <div id="bt-setup">
@@ -302,7 +303,7 @@
               <ul>
                 <li>Chaque personnage a des <strong>points ❤️</strong> : c'est sa force d'attaque <em>et</em> son énergie.</li>
                 <li>Quand tu attaques, la carte visée perd autant de points que ton attaquant en a, et ton attaquant perd autant de points que la carte adverse en avait. Une carte à 0 est battue.</li>
-                <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain.</li>
+                <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain, puis <strong>+2 points à chaque allié à la fin de chaque tour</strong> de son camp.</li>
                 <li>🏹 L'<strong>Archer</strong> attaque de loin : il n'est jamais blessé en retour.</li>
                 <li>Ton équipe : 3 classiques, 1 soutien, 1 archer. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
               </ul>

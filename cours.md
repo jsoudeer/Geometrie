@@ -147,6 +147,8 @@ Trois activités interactives, sans chronomètre. On touche les cases ou les par
 
 ## 3. Les personnages, la boutique et la bataille
 
+**Accès** : le menu ☰ ne contient plus que Facile, Moyen, Difficile et Manuel. La **Boutique** s'ouvre en touchant le **compteur d'étoiles** ⭐ (en haut à droite), la **Bataille** avec l'icône ⚔️ à sa droite ; on ferme en retouchant le bouton ou avec « ↩️ Retour aux exercices » (retour au dernier niveau joué).
+
 ### Boutique
 Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratuits, 30 à obtenir. La boutique affiche le clan actif (bouton à gauche des ⭐).
 
@@ -160,7 +162,7 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 
 ### Rôles (une seule caractéristique : les points ❤️, qui sont l'attaque **et** l'énergie)
 - ⚔️ **Classique** : attaque normale.
-- 💖 **Soutien** : donne +5 points à tous ses alliés quand il arrive sur le terrain.
+- 💖 **Soutien** : donne +5 points à tous ses alliés quand il arrive sur le terrain, puis **+2 points à chaque allié à la fin de chaque tour** de son camp (tant qu'il est là).
 - 🏹 **Archer** : attaque sans jamais perdre de points en retour.
 
 ### Bataille

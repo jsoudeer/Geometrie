@@ -105,3 +105,6 @@ L'avancement automatique de niveau fonctionne aussi en mode Aléatoire (`onPract
 ## 17. Bataille : équipe en un clic, cartes persistantes (30/09/2026)
 Cartes de choix et cartes de combat créées une seule fois (`btSetupCards`, `bt.cards`) et mises à jour en place (`btReconcile`, `btSyncCard`) au lieu d'être recréées à chaque rendu, cause du clignotement des images. Animations : `btLunge`, chiffres qui défilent (`btAnimatePts`), `btFloat`, `bDie`/`bArrive`. Choix d'équipe : `btToggleSetup` (le plus ancien sort), `btAutoTeam`. Test : `bataille_ui_check.js`.
 
+## 18. Boutique et Bataille sorties du menu ; Soutien à chaque tour (30/09/2026)
+Deux panneaux distincts (`tab-shop`, `tab-battle`) ouverts par `#stars-btn` et `#battle-btn` (`showTab`, `toggleSidePanel` dans noyau.js) ; le menu ne garde que les 3 niveaux et Manuel. Le Soutien ajoute `BT_SUPPORT_TURN` (+2) à chaque allié à la fin de chaque tour de son camp (`btSupportTick`), en plus du +5 d'arrivée. Test : `nav_check.js`.
+

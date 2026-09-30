@@ -174,7 +174,7 @@
   }
 
   var DIFFICULTY_TABS = { facile:0, moyen:1, difficile:2 };
-  // La ligne d'onglets (Facile/Moyen/Difficile/Manuel/Boutique) est repliée
+  // La ligne d'onglets (Facile/Moyen/Difficile/Manuel) est repliée
   // par défaut pour alléger l'écran : le bouton "☰ Menu" (juste sous l'image
   // de la mascotte) la fait apparaître, et elle se referme dès qu'on a choisi.
   function setMenuOpen(open){
@@ -184,28 +184,48 @@
   document.getElementById('menu-btn').addEventListener('click', function(){
     setMenuOpen(document.getElementById('main-nav').hidden);
   });
-  document.querySelectorAll('.tab-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
-      btn.classList.add('active');
-      btn.setAttribute('aria-pressed','true');
-      setMenuOpen(false);
-      var tab = btn.getAttribute('data-tab');
-      document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
-      if(tab in DIFFICULTY_TABS){
-        document.getElementById('tab-practice').hidden = false;
-        document.getElementById('mascot-dock').hidden = false;
-        setAppMode('auto');
-        setGlobalLevel(DIFFICULTY_TABS[tab]);
-      } else if(tab === 'manuel'){
-        document.getElementById('tab-practice').hidden = false;
-        document.getElementById('mascot-dock').hidden = false;
-        setAppMode('manual');
-      } else {
-        document.getElementById('tab-'+tab).hidden = false;
-        document.getElementById('mascot-dock').hidden = true;
-      }
+  // Navigation : les exercices (Facile/Moyen/Difficile/Manuel) passent par le
+  // menu ; la Boutique (compteur d'étoiles) et la Bataille (icône ⚔️) s'ouvrent
+  // depuis l'en-tête et se referment en retouchant leur bouton ou « Retour ».
+  var lastPracticeTab = 'facile';
+  function showTab(tab){
+    document.querySelectorAll('.tab-btn').forEach(function(b){
+      var on = b.getAttribute('data-tab') === tab;
+      b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    document.getElementById('stars-btn').setAttribute('aria-pressed', tab==='shop' ? 'true' : 'false');
+    document.getElementById('battle-btn').setAttribute('aria-pressed', tab==='battle' ? 'true' : 'false');
+    document.getElementById('stars-btn').classList.toggle('active', tab==='shop');
+    document.getElementById('battle-btn').classList.toggle('active', tab==='battle');
+    setMenuOpen(false);
+    document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
+    if(tab in DIFFICULTY_TABS){
+      lastPracticeTab = tab;
+      document.getElementById('tab-practice').hidden = false;
+      document.getElementById('mascot-dock').hidden = false;
+      setAppMode('auto');
+      setGlobalLevel(DIFFICULTY_TABS[tab]);
+    } else if(tab === 'manuel'){
+      lastPracticeTab = tab;
+      document.getElementById('tab-practice').hidden = false;
+      document.getElementById('mascot-dock').hidden = false;
+      setAppMode('manual');
+    } else {
+      document.getElementById('tab-'+tab).hidden = false;
+      document.getElementById('mascot-dock').hidden = true;
+      if(tab === 'battle') renderBtSetup();
+    }
+  }
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ showTab(btn.getAttribute('data-tab')); });
+  });
+  function toggleSidePanel(tab){
+    showTab(document.getElementById('tab-'+tab).hidden ? tab : lastPracticeTab);
+  }
+  document.getElementById('stars-btn').addEventListener('click', function(){ toggleSidePanel('shop'); });
+  document.getElementById('battle-btn').addEventListener('click', function(){ toggleSidePanel('battle'); });
+  document.querySelectorAll('[data-back]').forEach(function(b){
+    b.addEventListener('click', function(){ showTab(lastPracticeTab); });
   });
 
   var svgNS = "http://www.w3.org/2000/svg";
