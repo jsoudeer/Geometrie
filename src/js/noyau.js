@@ -446,6 +446,62 @@
     }catch(e){ /* audio non disponible : on continue sans son */ }
   }
 
+  /* ---- Sons du « reveal » d'un nouveau personnage ----
+     playRevealWhoosh : balayage montant pendant que la silhouette grandit.
+     playRevealSting(side) : le son au moment où le personnage apparaît,
+     différent pour chaque clan (chats : arpège de harpe scintillant + petit
+     « miaou » ; brainrot : boum grave + bips saccadés « glitch »). */
+  function revealCtx(){
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    return Ctx ? new Ctx() : null;
+  }
+  function revealTone(ctx, type, f0, f1, t, dur, peak){
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    if(f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + Math.min(0.02, dur/3));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function playRevealWhoosh(){
+    try{
+      var ctx = revealCtx(); if(!ctx) return;
+      var k = sfxMode==='overload' ? 1.6 : 1;
+      revealTone(ctx, 'sine', 180, 900, ctx.currentTime, 1.7, 0.09*k);
+      revealTone(ctx, 'triangle', 90, 450, ctx.currentTime, 1.7, 0.05*k);
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 2000);
+    }catch(e){}
+  }
+  function playRevealSting(side){
+    try{
+      var ctx = revealCtx(); if(!ctx) return;
+      var t0 = ctx.currentTime, k = sfxMode==='overload' ? 1.6 : 1;
+      if(side === 'brainrot'){
+        // boum grave qui chute
+        revealTone(ctx, 'sine', 140, 38, t0, 0.7, 0.55*k);
+        revealTone(ctx, 'sawtooth', 900, 90, t0, 0.35, 0.14*k);
+        // bips « glitch » saccadés
+        [523, 262, 784, 196, 1046, 330].forEach(function(f, i){
+          revealTone(ctx, 'square', f, f, t0 + 0.12 + i*0.055, 0.045, 0.1*k);
+        });
+        revealTone(ctx, 'square', 1568, 392, t0 + 0.5, 0.3, 0.08*k);
+      } else {
+        // arpège de harpe scintillant
+        [1046.5, 1318.5, 1568, 2093, 2637].forEach(function(f, i){
+          revealTone(ctx, 'triangle', f, f, t0 + i*0.075, 0.5, 0.22*k);
+          revealTone(ctx, 'sine', f*2, f*2, t0 + i*0.075, 0.25, 0.05*k);
+        });
+        // petit « miaou » : glissando doux
+        revealTone(ctx, 'sine', 620, 980, t0 + 0.42, 0.14, 0.16*k);
+        revealTone(ctx, 'sine', 980, 700, t0 + 0.56, 0.2, 0.14*k);
+      }
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 1600);
+    }catch(e){}
+  }
+
   function celebrate(kind, anchorEl){
     setCoachReaction(kind);
     reactMascot(kind);

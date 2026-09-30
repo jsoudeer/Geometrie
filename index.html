@@ -715,6 +715,44 @@
   .shop-mascot .sm-txt strong{ font-family:var(--font-display); font-size:15px; display:block; }
   .info-art.full{ width:160px; }
   .info-art.full .sp-full-img, .info-art.full .fullbody-compose{ width:160px; height:auto; max-height:260px; object-fit:contain; }
+
+  /* ===== Reveal d'un nouveau personnage ===== */
+  .reveal-overlay{
+    position:fixed; inset:0; z-index:120; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    background:radial-gradient(ellipse at center, #3b2a4d 0%, #120d1a 75%); color:#fff; padding:16px; text-align:center;
+    animation:rvFade .3s ease-out; perspective:900px; cursor:pointer;
+  }
+  .reveal-overlay.brainrot{ background:radial-gradient(ellipse at center, #1d3a2a 0%, #07110b 78%); }
+  @keyframes rvFade{ from{ opacity:0; } to{ opacity:1; } }
+  .rv-head{ font-family:var(--font-display); font-weight:900; font-size:20px; margin:0; text-shadow:0 2px 8px rgba(0,0,0,.5); }
+  .rv-stage{ position:relative; width:min(78vw,300px); height:min(58vh,380px); display:flex; align-items:center; justify-content:center; }
+  .rv-glow{ position:absolute; inset:8%; border-radius:50%; background:radial-gradient(circle, rgba(255,214,235,.55), rgba(255,214,235,0) 68%); opacity:0; transform:scale(.4); }
+  .reveal-overlay.brainrot .rv-glow{ background:radial-gradient(circle, rgba(140,255,120,.55), rgba(140,255,120,0) 68%); }
+  .rv-art{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; filter:brightness(0); transform:scale(.12); }
+  .rv-art .sp-full-img, .rv-art .fullbody-compose{ width:auto; max-width:100%; height:auto; max-height:100%; object-fit:contain; display:block; margin:0; }
+  .rv-art .fullbody-compose{ width:min(60vw,220px); }
+  .rv-art svg{ max-height:100%; }
+  .reveal-overlay.spinning .rv-art{ animation:rvSpin 2.1s cubic-bezier(.2,.7,.25,1) forwards; }
+  @keyframes rvSpin{
+    0%{ transform:scale(.12) rotateY(0deg); }
+    100%{ transform:scale(1) rotateY(900deg); }
+  }
+  .reveal-overlay.shown .rv-art{ animation:none; transform:scale(1); filter:brightness(1); transition:filter .5s ease-out; }
+  .reveal-overlay.shown .rv-glow{ animation:rvGlow 1.4s ease-out forwards; }
+  @keyframes rvGlow{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; transform:scale(1.15); } 100%{ opacity:.55; transform:scale(1); } }
+  .rv-flash{ position:absolute; inset:-30%; background:#fff; opacity:0; pointer-events:none; border-radius:50%; }
+  .reveal-overlay.shown .rv-flash{ animation:rvFlash .6s ease-out; }
+  @keyframes rvFlash{ 0%{ opacity:.95; transform:scale(.3); } 100%{ opacity:0; transform:scale(1.2); } }
+  .rv-spark{ position:absolute; left:50%; top:50%; font-size:22px; pointer-events:none; animation:rvSpark 1.2s ease-out forwards; }
+  @keyframes rvSpark{ 0%{ transform:translate(-50%,-50%) scale(.3); opacity:1; } 100%{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2); opacity:0; } }
+  .rv-info{ min-height:120px; opacity:0; transform:translateY(12px); transition:opacity .4s .25s, transform .4s .25s; }
+  .reveal-overlay.shown .rv-info{ opacity:1; transform:none; }
+  .rv-name{ font-family:var(--font-display); font-weight:900; font-size:26px; margin:0; }
+  .rv-role{ margin:2px 0 10px; font-size:14px; opacity:.85; }
+  @media (prefers-reduced-motion: reduce){
+    .reveal-overlay, .reveal-overlay.spinning .rv-art, .reveal-overlay.shown .rv-glow, .reveal-overlay.shown .rv-flash, .rv-spark{ animation:none; }
+    .rv-spark{ display:none; } .rv-info{ transition:none; }
+  }
 </style>
 
 <div class="app" id="app" lang="fr">
@@ -1533,6 +1571,62 @@
       }
       setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 900);
     }catch(e){ /* audio non disponible : on continue sans son */ }
+  }
+
+  /* ---- Sons du « reveal » d'un nouveau personnage ----
+     playRevealWhoosh : balayage montant pendant que la silhouette grandit.
+     playRevealSting(side) : le son au moment où le personnage apparaît,
+     différent pour chaque clan (chats : arpège de harpe scintillant + petit
+     « miaou » ; brainrot : boum grave + bips saccadés « glitch »). */
+  function revealCtx(){
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    return Ctx ? new Ctx() : null;
+  }
+  function revealTone(ctx, type, f0, f1, t, dur, peak){
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    if(f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + Math.min(0.02, dur/3));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function playRevealWhoosh(){
+    try{
+      var ctx = revealCtx(); if(!ctx) return;
+      var k = sfxMode==='overload' ? 1.6 : 1;
+      revealTone(ctx, 'sine', 180, 900, ctx.currentTime, 1.7, 0.09*k);
+      revealTone(ctx, 'triangle', 90, 450, ctx.currentTime, 1.7, 0.05*k);
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 2000);
+    }catch(e){}
+  }
+  function playRevealSting(side){
+    try{
+      var ctx = revealCtx(); if(!ctx) return;
+      var t0 = ctx.currentTime, k = sfxMode==='overload' ? 1.6 : 1;
+      if(side === 'brainrot'){
+        // boum grave qui chute
+        revealTone(ctx, 'sine', 140, 38, t0, 0.7, 0.55*k);
+        revealTone(ctx, 'sawtooth', 900, 90, t0, 0.35, 0.14*k);
+        // bips « glitch » saccadés
+        [523, 262, 784, 196, 1046, 330].forEach(function(f, i){
+          revealTone(ctx, 'square', f, f, t0 + 0.12 + i*0.055, 0.045, 0.1*k);
+        });
+        revealTone(ctx, 'square', 1568, 392, t0 + 0.5, 0.3, 0.08*k);
+      } else {
+        // arpège de harpe scintillant
+        [1046.5, 1318.5, 1568, 2093, 2637].forEach(function(f, i){
+          revealTone(ctx, 'triangle', f, f, t0 + i*0.075, 0.5, 0.22*k);
+          revealTone(ctx, 'sine', f*2, f*2, t0 + i*0.075, 0.25, 0.05*k);
+        });
+        // petit « miaou » : glissando doux
+        revealTone(ctx, 'sine', 620, 980, t0 + 0.42, 0.14, 0.16*k);
+        revealTone(ctx, 'sine', 980, 700, t0 + 0.56, 0.2, 0.14*k);
+      }
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 1600);
+    }catch(e){}
   }
 
   function celebrate(kind, anchorEl){
@@ -6348,7 +6442,6 @@
       saveOwned();
       renderShop();
       renderBtSetup();
-      playSound('good');
     }
     return fresh;
   }
@@ -6423,24 +6516,76 @@
       body.appendChild(role);
     });
   }
-  function showUnlockAnnouncement(fresh, headline){
-    openInfoDialog('🎉 ' + (headline || 'Nouveaux personnages !'), function(body){
-      var row = document.createElement('div');
-      row.className = 'info-art-row';
-      fresh.forEach(function(sp){
-        var box = document.createElement('div');
-        box.className = 'info-art';
-        renderSpriteVisual(box, sp);
-        var nm = document.createElement('div');
-        nm.className = 'sp-name'; nm.textContent = sp.name;
-        box.appendChild(nm);
-        row.appendChild(box);
+  /* ---- Reveal d'un nouveau personnage ----
+     Plein écran : sa silhouette noire (ombre chinoise, en pied) grossit au
+     milieu de l'écran en pivotant sur elle-même, puis s'arrête et se dévoile
+     en pleine couleur avec un petit son propre à son clan. Un toucher pendant
+     l'animation passe directement à la fin. Plusieurs personnages : à la suite. */
+  var revealTimers = [];
+  function revealClearTimers(){ revealTimers.forEach(clearTimeout); revealTimers = []; }
+  function showReveal(list, headline, onClose){
+    var queue = list.slice();
+    function closeAll(){
+      revealClearTimers();
+      var o = document.getElementById('reveal-overlay'); if(o) o.remove();
+      document.removeEventListener('keydown', onKey);
+      if(onClose) onClose();
+    }
+    function onKey(e){ if(e.key==='Escape') closeAll(); }
+    document.addEventListener('keydown', onKey);
+    function next(){
+      revealClearTimers();
+      var old = document.getElementById('reveal-overlay'); if(old) old.remove();
+      if(!queue.length){ document.removeEventListener('keydown', onKey); if(onClose) onClose(); return; }
+      var sp = queue.shift(), side = spriteSide(sp), done = false;
+      var ov = document.createElement('div');
+      ov.id = 'reveal-overlay'; ov.className = 'reveal-overlay ' + side;
+      ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label', 'Nouveau personnage : ' + sp.name);
+      var head = document.createElement('p'); head.className = 'rv-head'; head.textContent = '🎉 ' + (headline || 'Nouveau personnage !');
+      var stage = document.createElement('div'); stage.className = 'rv-stage';
+      var glow = document.createElement('div'); glow.className = 'rv-glow';
+      var art = document.createElement('div'); art.className = 'rv-art';
+      renderCreatureVisual(art, sp, 'full');
+      var flash = document.createElement('div'); flash.className = 'rv-flash';
+      stage.appendChild(glow); stage.appendChild(art); stage.appendChild(flash);
+      var info = document.createElement('div'); info.className = 'rv-info';
+      var nm = document.createElement('p'); nm.className = 'rv-name'; nm.textContent = sp.name;
+      var rl = document.createElement('p'); rl.className = 'rv-role'; rl.textContent = roleLine(sp) + ' · ' + RARITY_META[sp.rarity].label;
+      var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn primary rv-ok';
+      ok.textContent = queue.length ? 'Suivant ➜' : 'Super !';
+      info.appendChild(nm); info.appendChild(rl); info.appendChild(ok);
+      ov.appendChild(head); ov.appendChild(stage); ov.appendChild(info);
+      document.body.appendChild(ov);
+      function reveal(){
+        if(done) return; done = true;
+        revealClearTimers();
+        ov.classList.add('shown');
+        playRevealSting(side);
+        for(var i=0;i<12;i++){
+          var sparkle = document.createElement('span');
+          sparkle.className = 'rv-spark'; sparkle.setAttribute('aria-hidden','true');
+          sparkle.textContent = side==='brainrot' ? ['💥','⚡','🔥'][i%3] : ['✨','⭐','💖'][i%3];
+          var ang = (i/12)*Math.PI*2, dist = 110 + (i%3)*30;
+          sparkle.style.setProperty('--dx', Math.round(Math.cos(ang)*dist)+'px');
+          sparkle.style.setProperty('--dy', Math.round(Math.sin(ang)*dist)+'px');
+          stage.appendChild(sparkle);
+        }
+        ok.focus();
+      }
+      ov.addEventListener('click', function(e){
+        if(!done){ reveal(); return; }
+        if(e.target === ok || e.target === ov) next();
       });
-      body.appendChild(row);
-      var p = document.createElement('p');
-      p.textContent = fresh.map(function(sp){ return sp.name; }).join(' et ') + ' rejoi' + (fresh.length>1 ? 'gnent' : 'nt') + ' ta collection ! Retrouve-' + (fresh.length>1 ? 'les' : 'le') + ' dans la boutique.';
-      body.appendChild(p);
-    });
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(reduced){ reveal(); return; }
+      ov.classList.add('spinning');
+      playRevealWhoosh();
+      revealTimers.push(setTimeout(reveal, 2100));
+    }
+    next();
+  }
+  function showUnlockAnnouncement(fresh, headline){
+    showReveal(fresh, headline || 'Nouveau personnage !');
   }
 
   /* ---- Boutique ----
@@ -6514,10 +6659,9 @@
         if(trySpendStars(sprite.cost)){
           owned[sprite.id] = true;
           saveOwned();
-          playSound('good');
-          celebrate('good', card);
           renderShop();
           renderBtSetup();
+          showReveal([sprite], 'Nouveau personnage !');
         }
       });
       card.appendChild(buyBtn);
