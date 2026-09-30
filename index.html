@@ -572,8 +572,6 @@
   }
   .sprite-card .sp-cost{ font-size:11px; font-weight:800; color:var(--text-soft); }
   /* Pas d'opacité réduite sur le texte (contraste) : c'est l'illustration seule qui est grisée. */
-  /* ombre chinoise : tout le dessin en noir, on ne devine rien (léger liseré pour le thème sombre) */
-  .sprite-card.locked svg, .sprite-card.locked .sp-custom-img, .info-art.silhouette svg, .info-art.silhouette .sp-custom-img{ filter:brightness(0) drop-shadow(0 0 1.5px rgba(255,255,255,.55)); }
   .sprite-card.owned{ border-color:var(--good); }
   .sprite-card.selected{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 18%, var(--surface2)); transform:scale(1.03); }
   .sprite-card.affordable:active{ transform:scale(.95); }
@@ -6279,6 +6277,30 @@
     }
   }
 
+  /* ---- Silhouette « mystère » : la MÊME image pour tous les personnages
+     verrouillés d'un clan (un chat / un brainrot noir avec un « ? »). ---- */
+  function drawMysterySprite(svg, side){
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox','0 0 140 140');
+    var ink = '#22222b', rim = {stroke:'rgba(255,255,255,.4)','stroke-width':2,'stroke-linejoin':'round'};
+    function shape(tag, attrs){ var a = {fill:ink}; for(var k in rim) a[k]=rim[k]; for(var j in attrs) a[j]=attrs[j]; svg.appendChild(el(tag, a)); }
+    if(side === 'cats'){
+      shape('polygon',{points:'35,45 25,10 55,35'});
+      shape('polygon',{points:'105,45 115,10 85,35'});
+      shape('circle',{cx:70,cy:78,r:48});
+    } else {
+      shape('polygon',{points:[[70,20],[88,32],[110,28],[118,50],[112,72],[122,90],[104,104],[96,124],[70,132],[44,124],[36,104],[18,90],[28,72],[22,50],[30,28],[52,32]].map(function(p){return p[0]+','+p[1];}).join(' ')});
+    }
+    var q = el('text',{x:70, y: side==='cats' ? 100 : 104, 'text-anchor':'middle', 'font-size':70, 'font-weight':900, 'font-family':'system-ui, Arial, sans-serif', fill:'#fff'});
+    q.textContent = '?';
+    svg.appendChild(q);
+  }
+  function renderMysteryVisual(container, sprite){
+    var svg = document.createElementNS(svgNS,'svg');
+    container.appendChild(svg);
+    drawMysterySprite(svg, spriteSide(sprite));
+    return svg;
+  }
   function drawSpriteInto(svg, sprite){
     if(CAT_SPRITES.indexOf(sprite) >= 0) drawCatSprite(svg, sprite);
     else drawBrainrotSprite(svg, sprite);
@@ -6496,10 +6518,10 @@
     });
   });
   function showRewardExplanation(sprite){
-    openInfoDialog('🔒 Personnage mystère', function(body){
+    openInfoDialog('🔒 ' + sprite.name, function(body){
       var art = document.createElement('div');
-      art.className = 'info-art silhouette';
-      renderSpriteVisual(art, sprite);
+      art.className = 'info-art';
+      renderMysteryVisual(art, sprite);
       body.appendChild(art);
       var p = document.createElement('p');
       p.textContent = 'Ce personnage ne s\'achète pas : il se débloque en relevant un défi. ' + challengeText(sprite.challenge);
@@ -6614,11 +6636,10 @@
     var card = document.createElement('div');
     var isReward = sprite.rarity === 'defi';
     card.className = 'sprite-card ' + (isOwned ? 'owned' : 'locked');
-    renderSpriteVisual(card, sprite);
-    // Personnage pas encore débloqué : ombre chinoise, rien ne doit se deviner (ni nom, ni rôle).
-    var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = isOwned ? sprite.name : '???';
+    if(isOwned) renderSpriteVisual(card, sprite); else renderMysteryVisual(card, sprite);   // verrouillé : image « ? » commune
+    // Personnage pas encore débloqué : image « ? » commune ; le nom reste visible, le rôle est caché.
+    var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
     card.appendChild(nameEl);
-    if(!isOwned) card.setAttribute('aria-label', 'Personnage mystère, ' + RARITY_META[sprite.rarity].label);
     if(isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showSpritePreview(sprite); });
     var rarity = document.createElement('div'); rarity.className='rarity-pill';
     rarity.textContent = RARITY_META[sprite.rarity].label;
