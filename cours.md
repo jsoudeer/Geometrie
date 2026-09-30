@@ -12,7 +12,7 @@ Ce fichier reprend, sur le même modèle que **⚙️ Réglages → Configurer l
 |---|---|---|
 | **Aléatoire** (onglets Facile / Moyen / Difficile) | Une activité tirée au hasard à chaque question | Les 6 familles ci-dessous |
 | **Chronométré** (1, 2, 3 ou 5 min) | Un maximum de bonnes réponses avant la fin du temps | Seulement Mesurer, Quizz et Lire l'heure (réponse en un geste) |
-| **Manuel** | On choisit une activité (et, pour le Quizz, un type de question précis) à répéter | Toutes les familles |
+| **Manuel** | On choisit une activité (et, pour le Quizz, un type de question précis), puis un niveau : **aucun niveau n'est choisi d'office et aucune épreuve n'apparaît** tant qu'on n'a pas touché Facile, Moyen ou Difficile ; ce toucher affiche l'épreuve et replie la liste des activités (bouton « Afficher / Masquer les activités », plus de minuterie) | Toutes les familles |
 
 En chronométré, à la fin : +1 ⭐ pour 2 bonnes réponses (au moins 1 ⭐).
 

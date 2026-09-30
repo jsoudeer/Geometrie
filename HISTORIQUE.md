@@ -119,3 +119,8 @@ Deux panneaux distincts (`tab-shop`, `tab-battle`) ouverts par `#stars-btn` et `
 
 ## 22. Personnages verrouillés : image « ? » commune à chaque clan (30/09/2026)
 Première version en silhouette noire du vrai dessin (`brightness(0)`) : abandonnée (carré noir pour les photos, silhouettes différentes qui trahissent). Remplacée par `drawMysterySprite` / `renderMysteryVisual` (boutique.js) : une même image par clan (chat / brainrot noir avec « ? »), nom visible, rôle « Mystère », pas d'aperçu au toucher, fenêtre de défi avec la même image. Test : `silhouette_check.js`.
+
+## 23. Mode Manuel sans niveau d'office ; détourage des chats (30/09/2026)
+- **Manuel** : `rebuildManualLevelRow` ne présélectionne plus de niveau (`-1`) et masque l'épreuve ; `showManualExercise` (appelé au toucher d'un niveau) affiche l'épreuve et replie la liste des activités. La minuterie de 5 s (`armManualCollapse`) est supprimée ; bouton `Afficher / Masquer les activités` (`updateManualToggle`). Changer d'activité, de thème ou de type de quizz demande de rechoisir le niveau. Test : `manual_check.js`.
+- **Détourage** : `tools/proc2.py` remplissait tous les trous du masque (`binary_fill_holes`), ce qui gardait le fond d'origine entre la baguette, le bras et le corps d'Étoilou (cat04), et des éclats blancs autour d'Éclairon (cat05) et près de l'oreille de Pétale (cat03). `tools/decoupe_poches.py` retire ces poches de fond (couleur du fond source) et laisse le pelage blanc intact ; cat01 et cat02 sont identiques à l'octet près. Nouvelles images dans `assets/cats/cat0{3,4,5}_full.png`, ré-embarquées par `tools/embed.py`. Les 7 brainrots (détourés sans remplissage) ont été revus : rien à corriger.
+

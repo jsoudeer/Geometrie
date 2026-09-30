@@ -323,19 +323,33 @@
   // argument (ex : un type de quizz qui n'existe qu'en Difficile n'affiche
   // qu'un seul bouton) — c'est le choix d'activité qui pilote les niveaux
   // disponibles, jamais l'inverse.
+  // Mode Manuel : AUCUN niveau n'est sélectionné d'office et aucune épreuve n'est
+  // affichée tant qu'on n'a pas touché Facile / Moyen / Difficile. Ce toucher fait
+  // apparaître l'épreuve et replier la liste des activités en même temps (plus de
+  // minuterie de repli). Une activité sans niveaux (ex : un atelier) démarre tout de suite.
   var manualAvailableLevels = [0,1,2];
+  var manualLevelChosen = false;
+  function showManualExercise(){
+    manualLevelChosen = true;
+    document.getElementById('practice-exercise').hidden = false;
+    nextPracticeQuestion();
+    collapseManualActivities();
+  }
   function rebuildManualLevelRow(levels){
     var wrap = document.getElementById('manual-level-wrap');
     manualStreak = 0;
+    manualLevelChosen = false;
     manualAvailableLevels = levels || [];
+    document.getElementById('practice-exercise').hidden = true;
+    expandManualActivities();
     if(!levels || !levels.length){ wrap.hidden = true; return; }
     wrap.hidden = false;
     var labels = levels.map(function(i){ return LEVEL_NAMES[i]; });
-    buildLevelRow(document.getElementById('manual-level-row'), labels, 0, function(idx){
+    buildLevelRow(document.getElementById('manual-level-row'), labels, -1, function(idx){
       globalLevel = levels[idx];
       manualStreak = 0;
-      nextPracticeQuestion();
-      collapseManualActivities();   // un niveau choisi : on cache tout de suite la liste des activités
+      resetSeenQuestions();
+      showManualExercise();
     });
     globalLevel = levels[0];
   }
@@ -371,43 +385,34 @@
       m4TypeFilter = 'random';
       buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
         m4TypeFilter = idx===0 ? 'random' : list[idx-1];
-        rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));
-        nextPracticeQuestion();
-        armManualCollapse();
+        rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));   // le niveau est à rechoisir
       });
     }
     buildLevelRow(document.getElementById('manual-qcm-cat-row'), ['Toutes'].concat(cats.map(function(c){ return c.icon + ' ' + c.label; })), 0, function(idx){
       m4CategoryFilter = idx===0 ? 'all' : cats[idx-1].id;
       buildTypeRow(m4CategoryFilter);
-      rebuildManualLevelRow(qcmTypeLevels('random'));
-      nextPracticeQuestion();
-      armManualCollapse();
+      rebuildManualLevelRow(qcmTypeLevels('random'));   // le niveau est à rechoisir
     });
     buildTypeRow('all');
     rebuildManualLevelRow(qcmTypeLevels('random'));
   }
-  // ---- Repli automatique de la liste d'activités après 5s d'inactivité ----
-  var manualCollapseTimer = null;
-  function armManualCollapse(){
-    clearTimeout(manualCollapseTimer);
-    manualCollapseTimer = setTimeout(function(){
-      document.getElementById('manual-activity-picker').hidden = true;
-      document.getElementById('manual-show-activities-btn').hidden = false;
-    }, 5000);
+  // ---- Liste d'activités : repliée au choix d'un niveau, bouton pour la remontrer/cacher ----
+  function updateManualToggle(){
+    var btn = document.getElementById('manual-show-activities-btn');
+    var hiddenNow = document.getElementById('manual-activity-picker').hidden;
+    btn.hidden = !manualLevelChosen;
+    btn.textContent = hiddenNow ? '👁 Afficher les activités' : '🙈 Masquer les activités';
   }
   function collapseManualActivities(){
-    clearTimeout(manualCollapseTimer);
     document.getElementById('manual-activity-picker').hidden = true;
-    document.getElementById('manual-show-activities-btn').hidden = false;
+    updateManualToggle();
   }
   function expandManualActivities(){
-    clearTimeout(manualCollapseTimer);
     document.getElementById('manual-activity-picker').hidden = false;
-    document.getElementById('manual-show-activities-btn').hidden = true;
+    updateManualToggle();
   }
   document.getElementById('manual-show-activities-btn').addEventListener('click', function(){
-    expandManualActivities();
-    armManualCollapse();
+    if(document.getElementById('manual-activity-picker').hidden) expandManualActivities(); else collapseManualActivities();
   });
   // Manipulations plus lentes (glisser des coins, régler des aiguilles) sont
   // réservées au mode Aléatoire : un compte à rebours mélange seulement les
@@ -536,14 +541,14 @@
       document.getElementById('countdown-hud').hidden = true;
       document.getElementById('countdown-results').hidden = true;
       document.getElementById('countdown-setup').hidden = true;
-      document.getElementById('practice-exercise').hidden = !manualFamily;
-      expandManualActivities();
-      if(manualFamily) nextPracticeQuestion();
+      var ready = !!manualFamily && (manualLevelChosen || !manualAvailableLevels.length);
+      document.getElementById('practice-exercise').hidden = !ready;
+      if(ready){ manualLevelChosen = true; collapseManualActivities(); nextPracticeQuestion(); }
+      else expandManualActivities();
     } else {
       // Retour en mode auto (Facile/Moyen/Difficile) : jamais de type QCM
       // forcé, le mélange redevient entièrement aléatoire.
       m4TypeFilter = 'random';
-      clearTimeout(manualCollapseTimer);
       if(practiceMode==='free'){
         document.getElementById('countdown-setup').hidden = true;
         document.getElementById('practice-exercise').hidden = false;
@@ -749,9 +754,8 @@
     if(manualFamily !== 'qcm'){
       rebuildManualLevelRow(FAMILIES_WITH_LEVELS[manualFamily] ? [0,1,2] : []);
     }
-    document.getElementById('practice-exercise').hidden = false;
-    nextPracticeQuestion();
-    armManualCollapse();
+    // Sans niveaux à choisir, l'épreuve démarre tout de suite ; sinon elle attend le choix du niveau.
+    if(!manualAvailableLevels.length) showManualExercise();
   }
   buildLevelRow(
     document.getElementById('manual-family-row'),
@@ -770,10 +774,12 @@
       document.getElementById('manual-qcm-type-wrap').hidden = true;
       m4TypeFilter = 'random'; m4CategoryFilter = 'all';
       document.getElementById('manual-level-wrap').hidden = true;
+      manualLevelChosen = false; manualAvailableLevels = [];
+      document.getElementById('practice-exercise').hidden = true;
+      updateManualToggle();
       buildLevelRow(document.getElementById('manual-family-sub-row'),
         theme.families.map(function(k){ return FAMILY_TAGS[k]; }), -1,
         function(j){ startManualFamily(theme.families[j]); });
-      armManualCollapse();
     }
   );
 
