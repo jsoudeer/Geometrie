@@ -68,9 +68,10 @@ buste générique + tête du personnage).
 
 Le personnage en pied est affiché en bas à droite de l'écran, **sous** les
 boutons de réponse et légèrement transparent, pour ne jamais gêner la lecture ;
-la petite image de la mascotte est en haut à gauche, avec le bouton **Menu**
-juste en dessous (il ouvre/ferme la ligne Facile · Moyen · Difficile · Manuel ·
-Boutique).
+la petite image de la mascotte, en haut à gauche, sert de bouton de **menu** :
+elle ouvre, juste en dessous, la colonne Facile · Moyen · Difficile · Manuel (sa
+pastille rappelle le niveau en cours). Pendant un défi chronométré, toucher la
+mascotte arrête le défi.
 
 ## Bataille
 

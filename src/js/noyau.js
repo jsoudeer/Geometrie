@@ -1,4 +1,8 @@
 
+  // Langue de la page (RGAA 8.3) : la page est publiée sans balise <html> à elle,
+  // on déclare donc le français sur la racine du document.
+  document.documentElement.lang = 'fr';
+
   /* ===================== CORE : THEME + NAV ===================== */
   var THEMES = {
     cats:{ mascot:"🐱", title:"Géo Miaou" },
@@ -174,15 +178,59 @@
   }
 
   var DIFFICULTY_TABS = { facile:0, moyen:1, difficile:2 };
-  // La ligne d'onglets (Facile/Moyen/Difficile/Manuel) est repliée
-  // par défaut pour alléger l'écran : le bouton "☰ Menu" (juste sous l'image
-  // de la mascotte) la fait apparaître, et elle se referme dès qu'on a choisi.
-  function setMenuOpen(open){
+  // Menu : l'icône de la mascotte (en haut à gauche) ouvre, juste sous elle,
+  // la colonne Facile / Moyen / Difficile / Manuel, posée par-dessus la page.
+  // Elle se referme dès qu'on a choisi, en touchant ailleurs, ou avec Échap
+  // (le focus revient alors sur l'icône). Flèches haut/bas pour s'y déplacer.
+  // Pendant un défi chronométré, la même icône sert à QUITTER le défi.
+  var MENU_BADGES = { facile:'🙂', moyen:'🤔', difficile:'🔥', manuel:'🎯' };
+  var MENU_NAMES = { facile:'Facile', moyen:'Moyen', difficile:'Difficile', manuel:'Manuel' };
+  function menuItems(){ return [].slice.call(document.querySelectorAll('#main-nav .tab-btn')); }
+  function isMenuOpen(){ return !document.getElementById('main-nav').hidden; }
+  function setMenuOpen(open, focusItem){
     document.getElementById('main-nav').hidden = !open;
     document.getElementById('menu-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+    if(open && focusItem){
+      var items = menuItems(), cur = items.filter(function(b){ return b.classList.contains('active'); })[0];
+      (cur || items[0]).focus();
+    }
   }
-  document.getElementById('menu-btn').addEventListener('click', function(){
-    setMenuOpen(document.getElementById('main-nav').hidden);
+  // Pastille et nom accessible du bouton : niveau en cours, ou « quitter » en chrono.
+  function updateMenuButton(){
+    var btn = document.getElementById('menu-btn'), badge = document.getElementById('menu-badge');
+    var chrono = typeof countdownRunning !== 'undefined' && countdownRunning;
+    document.body.classList.toggle('chrono-running', !!chrono);
+    if(chrono){
+      badge.textContent = '✕';
+      btn.setAttribute('aria-label', 'Quitter le défi chronométré');
+      btn.removeAttribute('aria-expanded');
+      btn.title = 'Quitter le défi';
+    } else {
+      badge.textContent = MENU_BADGES[lastPracticeTab] || '🙂';
+      btn.setAttribute('aria-label', 'Menu : choisir le niveau (niveau actuel : ' + (MENU_NAMES[lastPracticeTab] || 'Facile') + ')');
+      btn.setAttribute('aria-expanded', isMenuOpen() ? 'true' : 'false');
+      btn.title = 'Choisir le niveau';
+    }
+  }
+  document.getElementById('menu-btn').addEventListener('click', function(e){
+    if(typeof countdownRunning !== 'undefined' && countdownRunning){ quitCountdown(); return; }
+    // clavier (e.detail===0) : on place le focus dans le menu pour s'y déplacer aux flèches
+    setMenuOpen(!isMenuOpen(), e.detail === 0);
+  });
+  document.getElementById('main-nav').addEventListener('keydown', function(e){
+    var items = menuItems(), i = items.indexOf(document.activeElement);
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+      e.preventDefault();
+      var n = e.key==='ArrowDown' ? (i+1) % items.length : (i-1+items.length) % items.length;
+      items[n].focus();
+    } else if(e.key==='Home'){ e.preventDefault(); items[0].focus(); }
+    else if(e.key==='End'){ e.preventDefault(); items[items.length-1].focus(); }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape' && isMenuOpen()){ setMenuOpen(false); document.getElementById('menu-btn').focus(); }
+  });
+  document.addEventListener('click', function(e){
+    if(isMenuOpen() && !e.target.closest('.brand')) setMenuOpen(false);
   });
   // Navigation : les exercices (Facile/Moyen/Difficile/Manuel) passent par le
   // menu ; la Boutique (compteur d'étoiles) et la Bataille (icône ⚔️) s'ouvrent
@@ -215,6 +263,7 @@
       document.getElementById('mascot-dock').hidden = true;
       if(tab === 'battle') renderBtSetup();
     }
+    updateMenuButton();
   }
   document.querySelectorAll('.tab-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ showTab(btn.getAttribute('data-tab')); });
@@ -595,6 +644,7 @@
      opts : { feedback: id ou élément, tries: 1|3 }
      La rangée de boutons masquée est la .btn-row qui suit le retour. */
   var MANIP_TRIES = 3;
+  var qfFocusNext = false;   // la question suivante a été demandée depuis le retour, au clavier
   function makeQuestionFlow(opts){
     var fb = typeof opts.feedback==='string' ? document.getElementById(opts.feedback) : opts.feedback;
     var row = fb.parentNode.querySelector('.btn-row');
@@ -603,7 +653,11 @@
     // Entrée/Espace fait la même chose qu'un toucher.
     fb.setAttribute('aria-live','polite');
     fb.tabIndex = 0;
-    function goNext(){ if(flow.closed) nextPracticeQuestion(); }
+    function goNext(){
+      if(!flow.closed) return;
+      qfFocusNext = (document.activeElement === fb);
+      nextPracticeQuestion();
+    }
     fb.addEventListener('click', goNext);
     fb.addEventListener('keydown', function(e){
       if((e.key==='Enter' || e.key===' ') && flow.closed){ e.preventDefault(); goNext(); }
@@ -617,13 +671,20 @@
     }
     function close(ok, html){
       flow.closed = true;
+      // le bouton qu'on vient d'utiliser va disparaître : on garde le focus clavier
+      // sur le retour, pour qu'Entrée passe à la question suivante (RGAA 12.8)
+      var ae = document.activeElement, hadFocus = !ae || ae === document.body || fb.parentNode.contains(ae);   // (un bouton de réponse désactivé perd le focus : il retombe sur la page)
       if(row) row.hidden = true;
       show(ok, html, true);
+      if(hadFocus) fb.focus();
       if(ok) addStar(1);
       onPracticeAnswered(ok);
     }
     // Nouvelle question : tout est remis à zéro.
     flow.start = function(){
+      var q = fb.parentNode.querySelector('.coach-bubble');
+      if(qfFocusNext && q){ q.tabIndex = -1; q.focus(); }   // on vient du retour (clavier) : on lit la nouvelle question
+      qfFocusNext = false;
       flow.tries = 0; flow.closed = false;
       fb.className = 'feedback'; fb.innerHTML = '';
       if(row) row.hidden = false;

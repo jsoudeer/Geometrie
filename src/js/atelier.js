@@ -20,7 +20,7 @@
       '<div class="feedback" id="at-' + key + '-fb"></div>' +
       '<div class="btn-row">' +
       '<button class="btn primary" id="at-' + key + '-check" type="button">Vérifier ✅</button>' +
-      '<button class="btn ghost" id="at-' + key + '-next" type="button">Nouvelle activité ↻</button></div>';
+      '<button class="btn primary" id="at-' + key + '-next" type="button">Nouvelle activité ↻</button></div>';
     var ui = {
       q: wrap.querySelector('#at-' + key + '-q'),
       instr: wrap.querySelector('#at-' + key + '-instr'),

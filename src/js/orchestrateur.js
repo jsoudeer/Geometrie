@@ -610,6 +610,7 @@
     var pos = manualAvailableLevels.indexOf(newLevel);
     document.querySelectorAll('#manual-level-row .level-btn').forEach(function(b,i){
       b.classList.toggle('active', i===pos);
+      b.setAttribute('aria-pressed', i===pos ? 'true' : 'false');
     });
     showAutoAdvanceToast(LEVEL_NAMES[newLevel]);
     nextPracticeQuestion();
@@ -627,14 +628,10 @@
     document.getElementById('countdown-time-left').textContent = Math.ceil(remainMs/1000) + ' s';
     document.getElementById('countdown-score-live').textContent = countdownScore.correct + ' / ' + countdownScore.total;
   }
-  // Bascule l'interface en mode compact PENDANT que le chrono tourne (pas
-  // pendant l'écran de réglage de la durée, où on garde la topbar/les
-  // onglets pour pouvoir revenir en arrière avant de démarrer) : topbar,
-  // sélecteur de thème et onglets de niveau disparaissent, pour qu'on
-  // n'ait jamais à scroller entre deux questions.
-  function setChronoCompact(active){
-    document.body.classList.toggle('chrono-compact', active);
-  }
+  // Pendant le défi, l'interface reste la même (plus de plein écran) : on
+  // masque seulement le choix Aléatoire / Chronométré, et l'icône du menu
+  // devient le bouton « quitter » (voir updateMenuButton, noyau.js).
+  function setChronoCompact(active){ updateMenuButton(); }
   var countdownLevel = 0; // niveau (0/1/2) sur lequel le défi en cours a été lancé
   function startCountdown(){
     resetSeenQuestions();
@@ -664,7 +661,6 @@
     var firstBtn = document.querySelector('#practice-mode .level-btn');
     if(firstBtn) firstBtn.click(); // = repasser sur "Aléatoire" (arrête le chrono et réaffiche l'interface)
   }
-  document.getElementById('countdown-home-btn').addEventListener('click', quitCountdown);
   function endCountdown(){
     countdownRunning = false;
     clearInterval(countdownInterval);

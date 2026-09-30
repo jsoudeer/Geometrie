@@ -43,21 +43,21 @@ Faire glisser les 4 coins d'une forme (au doigt, à la souris ou aux flèches du
 *Tiré au hasard :* la forme demandée (identique à tous les niveaux), les coins décalés, la direction et la distance.
 
 ### 📦 Patron → Solide
-Un patron à plat se plie en 3D, il faut dire quel solide il forme : **Cube, Pavé droit, Pyramide ou Aucun solide**. Une fois plié, on peut faire tourner le solide au doigt.
+Un patron à plat se plie en 3D, il faut dire quel solide il forme. Quatre réponses sont proposées parmi **Cube, Pavé droit, Pyramide, Prisme et Aucun solide** (toujours la bonne et « Aucun solide »).
 
-| Patron | Niveaux | Se plie en |
+Après la réponse, le patron se plie **lentement, une face après l'autre** (face 1 = celle qui reste posée), puis le solide fait un tour sur lui-même et peut être tourné au doigt ou aux flèches ; « ↺ Revoir le pliage » rejoue l'animation. Si le patron ne se referme pas, l'appli le **montre** : une face **en trop** est hachurée en rouge et soulevée, une face **manquante** apparaît en pointillés bleus avec un « ? », et une petite légende le dit en toutes lettres.
+
+**Code couleur :** la couleur dit la forme de la face (carré bleu, rectangle vert, triangle jaune) ; l'intérieur du solide est couleur papier ; les numéros suivent l'ordre de pliage.
+
+| Groupe | Patrons | Niveaux par défaut |
 |---|---|---|
-| Croix (6 carrés en croix) | F M D | Cube |
-| Pavé droit (boîte rectangulaire) | F M D | Pavé droit |
-| Pyramide à base carrée | F M D | Pyramide |
-| Bande de 6 carrés alignés | F M | Aucun (piège : la bande se recouvre) |
-| Escalier (carrés en zigzag) | M D | Cube |
-| Bloc 2×3 | M D | Aucun (piège : deux carrés se superposent) |
-| Presque un cube, **5 carrés** | M D | Aucun (il manque une face) |
-| Presque un cube, **7 carrés** | D | Aucun (une face en trop) |
-| Pyramide avec un triangle manquant | D | Aucun (il manque un triangle) |
+| 🧊 Cubes | les **11 patrons du cube** (croix, T, 1-4-1 décalés, 2-3-1, escalier 2-2-2, 3-3) | croix F M D ; T, 1-4-1 décalé, 1-4-1 au milieu, escalier M D ; les autres D |
+| 📦 Pavés droits | en T, en Z | T : F M D ; Z : M D |
+| 🔺 Pyramides | étoile (base carrée) F M D ; un triangle accroché à un autre M D ; pyramide à base triangulaire (grand triangle, bande) D | |
+| ⛺ Prismes | triangles face à face M D ; triangles décalés D | |
+| 🪤 Pièges | bande de 6 (F M), 5 carrés (F M D), deux carrés du même côté (M D), bloc 2×3 (M D), 7 carrés, 4 carrés en carré, pyramide à 3 ou 5 triangles, prisme avec deux triangles en haut (D) | |
 
-*Explication :* chaque patron a sa propre explication (par exemple « 5 carrés, il en faut 6 : il manque une face »). Le dessin est toujours le même pour un patron donné ; seul le choix du patron est tiré au hasard.
+*Explication :* elle est écrite à partir du pliage réellement calculé (par exemple « une face se pose sur une autre (en trop) et il reste un trou »). La bonne réponse elle-même se déduit du calcul : un patron ajouté ne peut pas être mal étiqueté. Le dessin est fixe pour un patron donné ; seul le choix du patron est tiré au hasard.
 
 ### 🧠 Quizz (39 types de questions)
 Les types sont regroupés en **sous-catégories** : 🔷 Formes, 🧭 Repérage, 🧊 Solides & énigmes, 🕒 Heure & calendrier, 📏 Mesures, 🔢 Nombres, ➕ Calcul, 🪙 Problèmes & monnaie, 🧩 Suites logiques. Dans « Activités & difficulté » chaque groupe est repliable ; en mode Manuel, on choisit d'abord un thème (🧠 Quizz, 📐 Formes & mesures, 📦 Solides, 🕒 Horloge), puis l'activité ou, pour le Quizz, la sous-catégorie puis le type.

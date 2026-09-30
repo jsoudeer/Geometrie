@@ -156,7 +156,7 @@
       '<div class="feedback" id="m2-feedback"></div>',
       '<div class="btn-row">',
       '  <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>',
-      '  <button class="btn ghost" id="m2-next" type="button">Nouvelle activité ↻</button>',
+      '  <button class="btn primary" id="m2-next" type="button">Nouvelle activité ↻</button>',
       '</div>'
     ].join('\n'),
     generate:function(){ newDeformQuestion(); },

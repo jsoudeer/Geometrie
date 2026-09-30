@@ -23,36 +23,36 @@
   .deform-wrap svg{ width:100%; max-width:280px; height:auto; touch-action:none; }
   .deform-wrap circle.handle{ cursor:grab; }
   .deform-wrap circle.handle:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+  /* aiguilles de l'horloge au clavier : cercle de focus bien visible */
+  .clock-handle{ cursor:grab; outline:none; }
+  .clock-handle:focus-visible{ fill:rgba(27,79,216,.18); stroke:var(--focus); stroke-width:3.5; }
+  .coach-bubble:focus{ outline:none; }
+  .coach-bubble:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
   .side-label{ font-family:var(--font-body); font-weight:800; font-size:11px; fill:var(--text); }
   .side-label-bg{ fill:var(--surface); opacity:.85; }
 
-  /* ============ MODULE 3 : PATRON -> CUBE ============ */
+  /* ============ MODULE 3 : PATRON -> SOLIDE ============ */
+  /* Scène : un plateau clair, légèrement quadrillé comme une feuille de
+     cahier, pour que les faces pastel ressortent dans les deux clans. */
   .stage{
-    height:230px; display:flex; align-items:center; justify-content:center;
-    perspective:700px; perspective-origin:50% 40%;
-    touch-action:none;
+    position:relative; border-radius:16px; overflow:hidden; touch-action:none;
+    background-color:var(--stage-bg);
+    background-image:linear-gradient(var(--stage-grid) 1px, transparent 1px), linear-gradient(90deg, var(--stage-grid) 1px, transparent 1px);
+    background-size:22px 22px; border:1.5px solid var(--border);
   }
+  .stage svg{ display:block; width:100%; height:auto; }
   .stage.spinnable{ cursor:grab; }
   .stage.spinnable:active{ cursor:grabbing; }
-  .net-spin{ transform-style:preserve-3d; transition:transform .15s ease-out; }
-  .net{ position:relative; transform-style:preserve-3d; transition:transform 1.6s ease; }
-  .face{
-    position:absolute; top:0; left:0; display:flex; align-items:center; justify-content:center;
-    transform-style:preserve-3d; border-radius:6px;
-    border:2px solid rgba(0,0,0,.12);
-    font-family:var(--font-display); font-weight:800; font-size:15px; color:#3B2E22;
-    transition:transform 1.8s cubic-bezier(.65,0,.35,1);
-    backface-visibility:hidden;
+  .stage-btn{
+    position:absolute; right:8px; bottom:8px; min-height:36px; padding:6px 12px; cursor:pointer;
+    border-radius:10px; border:1.5px solid var(--control-border); background:var(--surface);
+    color:var(--text); font-family:var(--font-body); font-weight:800; font-size:12.5px;
   }
-  .face.broken{ outline:3px solid var(--bad); outline-offset:-3px; animation:pulseBad 1.1s ease-in-out infinite; }
-  /* Les triangles de la pyramide se replient de plus de 90° (jusqu'à ce que
-     leur pointe rejoigne les autres devant le centre de la base) : passé ce
-     point, la FACE AVANT du triangle (celle qui affiche son numéro) finit
-     tournée à l'opposé de la caméra. Avec backface-visibility:hidden
-     (hérité de .face, utile pour le cube), elle deviendrait invisible une
-     fois pliée. Les triangles gardent donc leurs deux faces visibles. */
-  .face-tri{ backface-visibility:visible; }
-  @keyframes pulseBad{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.35); } }
+  .net-legend{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:700; }
+  .net-legend li{ display:flex; align-items:center; gap:8px; }
+  .nl-swatch{ flex:none; width:22px; height:16px; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
+  .nl-extra{ border:2px solid #8E1B1B; background:repeating-linear-gradient(45deg, #C62828 0 3px, #FFD9D6 3px 7px); }
+  .nl-missing{ border:2px dashed #1B4FD8; color:#1B4FD8; background:#E3EBFF; }
   .yesno-row{ display:flex; gap:10px; margin-top:14px; }
   .yesno-row .btn{ flex:1; }
 

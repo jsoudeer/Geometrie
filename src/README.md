@@ -134,6 +134,20 @@ et ses questions de Quizz. Les outils de dessin utilisés par plusieurs thèmes 
 `isoPoly`, `ngonPoints`, `drawEquation`, `svgText`…) vivent dans `noyau.js`.
 `tools/tests/theme_removal_check.js` le vérifie pour chaque thème.
 
+## Ajouter un patron (Patron → Solide)
+
+Dans `src/js/patron3d.js`, ajouter une ligne à `NET_DEFS` avec `netDef(id, groupe, nom, niveaux, polygones, { solid })`.
+Les polygones se fabriquent avec `gridPolys('.X../XXXX/.X..')` (carrés ou rectangles, `/` = ligne suivante),
+`pyramidPolys`, `prismPolys` ou `tetraPolys`. Les charnières, l'ordre de pliage, les angles et la
+bonne réponse (solide ou « Aucun solide ») sont calculés : `node tools/tests/net_check.js` vérifie que
+chaque patron du groupe `piege` ne se referme pas, et que tous les autres se referment.
+
+## Accessibilité
+
+`node tools/tests/a11y_audit.js` passe axe-core (WCAG 2.2 A/AA, équivalent RGAA) sur tous les écrans dans
+les deux clans (installer d'abord `cd tools/tests && npm install --no-save axe-core@4`) ;
+`contrast_audit.js` et `keyboard_check.js` complètent ce qu'un outil automatique ne voit pas.
+
 ## Vérifier qu'une modification ne casse rien
 
 ```

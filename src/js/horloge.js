@@ -76,11 +76,11 @@
       '  <div class="coach-bubble">Place les aiguilles sur <span id="m5-target">3 h</span></div>',
       '</div>',
       '<p class="muted">Fais glisser la petite et la grande aiguille, puis vérifie.</p>',
-      '<div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>',
+      '<div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="group" aria-label="Horloge dont on règle les aiguilles : touche une aiguille, puis les flèches pour la tourner"></svg></div>',
       '<div class="feedback" id="m5r-feedback"></div>',
       '<div class="btn-row">',
       '  <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>',
-      '  <button class="btn ghost" id="m5r-new" type="button">Nouvelle activité ↻</button>',
+      '  <button class="btn primary" id="m5r-new" type="button">Nouvelle activité ↻</button>',
       '</div>'
     ].join('\n'),
     generate:function(){ m5rGenTarget(); },
@@ -118,12 +118,41 @@
     var ht = m5rHourTip(), mt = m5rMinTip();
     drawClockFace(svg, ht, mt);
     // Poignées invisibles, plus grosses que le trait, pour un glisser confortable au doigt.
-    var hHandle = el('circle',{cx:ht[0],cy:ht[1],r:20,fill:'rgba(0,0,0,0.001)'});
-    hHandle.setAttribute('data-hand','hour');
-    svg.appendChild(hHandle);
-    var mHandle = el('circle',{cx:mt[0],cy:mt[1],r:20,fill:'rgba(0,0,0,0.001)'});
-    mHandle.setAttribute('data-hand','minute');
-    svg.appendChild(mHandle);
+    // Au clavier (RGAA 7.3), chaque aiguille est un curseur : Tab pour la choisir,
+    // flèches pour la faire tourner d'un cran ; sa position est annoncée en mots.
+    var lvl = m5Target.level;
+    [['hour', ht, 'Petite aiguille (les heures)', hourHandText()], ['minute', mt, 'Grande aiguille (les minutes)', minuteHandText()]].forEach(function(h){
+      var c = el('circle',{cx:h[1][0],cy:h[1][1],r:20,fill:'rgba(0,0,0,0.001)', class:'clock-handle'});
+      c.setAttribute('data-hand', h[0]);
+      c.setAttribute('role', 'slider');
+      c.setAttribute('tabindex', '0');
+      c.setAttribute('aria-label', h[2]);
+      c.setAttribute('aria-valuetext', h[3]);
+      c.setAttribute('aria-valuenow', h[0]==='hour' ? m5rHourTick : m5rMinTick);
+      c.setAttribute('aria-valuemin', 0);
+      c.setAttribute('aria-valuemax', Math.round(360/(h[0]==='hour' ? M5R_HOUR_STEP[lvl] : M5R_MIN_STEP[lvl])) - 1);
+      c.addEventListener('keydown', function(e){
+        var d = (e.key==='ArrowRight' || e.key==='ArrowUp') ? 1 : (e.key==='ArrowLeft' || e.key==='ArrowDown') ? -1 : 0;
+        if(!d || m5rFlow.closed) return;
+        e.preventDefault();
+        m5rFlow.clearHint();
+        if(h[0]==='hour'){ var nh = Math.round(360/M5R_HOUR_STEP[lvl]); m5rHourTick = (m5rHourTick + d + nh) % nh; }
+        else { var nm = Math.round(360/M5R_MIN_STEP[lvl]); m5rMinTick = (m5rMinTick + d + nm) % nm; }
+        m5rFocus = h[0];
+        drawSettableClock();
+      });
+      svg.appendChild(c);
+      if(m5rFocus === h[0]) c.focus();
+    });
+  }
+  var m5rFocus = null;   // aiguille qui garde le focus clavier après un redessin
+  function hourHandText(){
+    var half = m5rHourTick * M5R_HOUR_STEP[m5Target.level] / 30, h = Math.floor(half) || 12;
+    return Math.abs(half - Math.round(half)) < 0.01 ? 'sur le ' + (Math.round(half) || 12) : 'entre le ' + h + ' et le ' + (h===12 ? 1 : h+1);
+  }
+  function minuteHandText(){
+    var m = Math.round(m5rMinTick * M5R_MIN_STEP[m5Target.level] / 6) % 60;
+    return m===0 ? 'sur le 12 (0 minute)' : 'sur le ' + (m/5) + ' (' + m + ' minutes)';
   }
 
   function m5rGenTarget(){
@@ -155,6 +184,7 @@
     svg.addEventListener('pointerdown', function(evt){
       var which = evt.target && evt.target.getAttribute && evt.target.getAttribute('data-hand');
       if(!which || m5rFlow.closed) return;
+      m5rFocus = null;
       m5rFlow.clearHint();
       m5rDragWhich = which;
       svg.setPointerCapture(evt.pointerId);

@@ -62,6 +62,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     await gen(key);
     const bubble = await page.evaluate(k => { const w = document.getElementById('fam-' + k); const b = w && w.querySelector('.coach-bubble'); return b ? b.textContent.trim() : ''; }, key);
     chk(bubble.length > 3, 'question dans la bulle : « ' + bubble + ' »');
+    const colors = await page.evaluate(k => [...document.querySelectorAll('#fam-' + k + ' .btn-row .btn')].map(b => getComputedStyle(b).backgroundColor), key);
+    chk(colors.length > 0 && colors.every(c => c === colors[0]), 'boutons de la même couleur (' + [...new Set(colors)].join(' / ') + ')');
 
     // 1) bonne réponse
     const stars0 = await page.evaluate(() => +document.getElementById('starCount').textContent);
