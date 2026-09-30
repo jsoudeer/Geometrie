@@ -2,7 +2,7 @@ const { withPage, SHOTS } = require('./lib');
 withPage({ viewport: { width: 390, height: 900 }, init: "localStorage.setItem('geo_theme','cats')" }, async (page) => {
   await page.evaluate(() => document.getElementById('menu-btn').click());
   await page.click('.tab-btn[data-tab="manuel"]');
-  await page.evaluate(() => [...document.querySelectorAll('#manual-family-row .level-btn')].find(x => x.textContent.includes('Patron')).click());
+  await page.evaluate(() => [...document.querySelectorAll('#manual-family-row .level-btn')].find(x => x.textContent.includes('Solides')).click());
   await page.evaluate(() => [...document.querySelectorAll('#manual-level-row .level-btn')].find(x => x.textContent.includes('Difficile')).click());
   await page.waitForTimeout(200);
   const want = { five: false, seven: false, trou: false };

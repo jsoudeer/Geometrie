@@ -62,6 +62,9 @@ registerQuizType({
 });
 ```
 
+Une réponse peut être un **dessin** : `{ label:'Horloge 1', ok:true, viewBox:'0 0 200 200', draw:function(svg){ … } }`
+(le libellé ne sert qu'à l'accessibilité).
+
 Elle apparaît alors toute seule dans le Quizz, le mode Manuel et « Configurer les
 activités ». Les paramètres propres à un niveau vivent dans le thème (`GEO_LEVELS`,
 `CALC_LEVELS`).

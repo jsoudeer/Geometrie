@@ -71,7 +71,19 @@
       var b = document.createElement('button');
       b.className = 'choice-btn';
       b.type = 'button';
-      b.textContent = c.label.charAt(0).toUpperCase()+c.label.slice(1);
+      b._ok = !!c.ok;
+      if(c.draw){
+        // Réponse VISUELLE : le bouton contient un petit dessin (c.draw(svg)) ;
+        // c.label ne sert qu'à l'accessibilité.
+        b.className += ' visual';
+        b.setAttribute('aria-label', c.label);
+        var csvg = document.createElementNS(svgNS,'svg');
+        csvg.setAttribute('viewBox', c.viewBox || '0 0 200 200');
+        b.appendChild(csvg);
+        c.draw(csvg);
+      } else {
+        b.textContent = c.label.charAt(0).toUpperCase()+c.label.slice(1);
+      }
       b.addEventListener('click', function(){ checkQCM(c, b); });
       wrap.appendChild(b);
     });
@@ -91,8 +103,7 @@
       setCoachReaction('good');
     } else {
       btn.classList.add('wrong');
-      var okLabel = m4Current.choices.filter(function(c){return c.ok;})[0].label;
-      buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
+      buttons.forEach(function(b){ if(b._ok) b.classList.add('correct'); });
       fb.className = 'feedback tappable bad show';
       fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m4Current.explain+'</div>';
       setCoachReaction('bad');
@@ -641,18 +652,44 @@
   // Mode "Manuel" : choix d'une activité précise à répéter en boucle. Le
   // niveau (en dessous) dépend de l'activité choisie : moins de boutons si
   // elle n'existe pas en Facile et/ou en Moyen (voir rebuildManualLevelRow).
+  // Deux étages : d'abord un THÈME (Quizz, Formes & mesures, Solides, Horloge),
+  // puis, s'il en contient plusieurs, l'activité précise.
+  var FAMILY_THEMES = [
+    { label:'🧠 Quizz',            families:['qcm'] },
+    { label:'📐 Formes & mesures', families:['measure','deform'] },
+    { label:'📦 Solides',          families:['net'] },
+    { label:'🕒 Horloge',          families:['clock-lire','clock-regler'] }
+  ];
+  function startManualFamily(key){
+    manualFamily = key;
+    refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
+    if(manualFamily !== 'qcm'){
+      rebuildManualLevelRow(FAMILIES_WITH_LEVELS[manualFamily] ? [0,1,2] : []);
+    }
+    document.getElementById('practice-exercise').hidden = false;
+    nextPracticeQuestion();
+    armManualCollapse();
+  }
   buildLevelRow(
     document.getElementById('manual-family-row'),
-    MANUAL_FAMILY_LIST.map(function(k){ return FAMILY_TAGS[k]; }),
+    FAMILY_THEMES.map(function(t){ return t.label; }),
     -1,
     function(idx){
-      manualFamily = MANUAL_FAMILY_LIST[idx];
-      refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
-      if(manualFamily !== 'qcm'){
-        rebuildManualLevelRow(FAMILIES_WITH_LEVELS[manualFamily] ? [0,1,2] : []);
+      var theme = FAMILY_THEMES[idx];
+      var subWrap = document.getElementById('manual-family-sub-wrap');
+      if(theme.families.length === 1){
+        subWrap.hidden = true;
+        startManualFamily(theme.families[0]);
+        return;
       }
-      document.getElementById('practice-exercise').hidden = false;
-      nextPracticeQuestion();
+      subWrap.hidden = false;
+      manualFamily = null;
+      document.getElementById('manual-qcm-type-wrap').hidden = true;
+      m4TypeFilter = 'random'; m4CategoryFilter = 'all';
+      document.getElementById('manual-level-wrap').hidden = true;
+      buildLevelRow(document.getElementById('manual-family-sub-row'),
+        theme.families.map(function(k){ return FAMILY_TAGS[k]; }), -1,
+        function(j){ startManualFamily(theme.families[j]); });
       armManualCollapse();
     }
   );

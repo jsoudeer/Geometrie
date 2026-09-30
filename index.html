@@ -294,6 +294,10 @@
   .choice-btn.wrong{ background:var(--bad); border-color:var(--bad); color:var(--on-bad); }
   .choice-btn.wrong::after{ content:' ✘'; }
   .choice-btn[disabled]{ pointer-events:none; }
+  /* Réponses en dessin (voir newQCM) */
+  .choice-btn.visual{ padding:4px; position:relative; }
+  .choice-btn.visual svg{ width:100%; max-width:120px; height:auto; display:block; margin:0 auto; pointer-events:none; }
+  .choice-btn.visual.correct::after, .choice-btn.visual.wrong::after{ position:absolute; top:2px; right:6px; font-size:18px; }
 
   /* ============ MODULE 2 : DEFORMER ============ */
   .deform-wrap{ display:flex; justify-content:center; }
@@ -825,6 +829,10 @@
           <div id="manual-activity-picker">
             <p class="muted">Choisis une activité à travailler :</p>
             <div class="level-row" id="manual-family-row"></div>
+            <div id="manual-family-sub-wrap" hidden>
+              <p class="muted">Activité :</p>
+              <div class="level-row" id="manual-family-sub-row"></div>
+            </div>
             <!-- La famille "Quizz" contient à elle seule une vingtaine de
                  types de questions différents (côtés, angles, coordonnées,
                  symétrie, solides, énigmes, calcul...) : ce sélecteur permet
@@ -2794,6 +2802,61 @@
     };
   }
 
+  // ===================== Symétrie : choisir le dessin symétrique =====================
+  // Grille 3 colonnes × 5 lignes à gauche de l'axe ; les 4 réponses sont des
+  // moitiés droites : la bonne (miroir), la même sans miroir (translation),
+  // le miroir retourné en hauteur, et une version avec une case fausse.
+  function drawHalfGrid(svg, cells, x0, y0, c, color){
+    for(var r=0;r<5;r++) for(var k=0;k<3;k++){
+      svg.appendChild(el('rect',{x:x0+k*c,y:y0+r*c,width:c,height:c,fill:cells[r][k] ? color : 'var(--surface)',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.45}));
+    }
+  }
+  function genSymVisuelQuestion(level){
+    var rows = level===0 ? 3 : 5, count = level===0 ? 4 : level===1 ? 5 : 7;
+    var left, tries = 0, right, trans, flip, off;
+    function empty(){ var g=[]; for(var r=0;r<5;r++){ g.push([false,false,false]); } return g; }
+    function key(g){ return g.map(function(r){ return r.map(function(v){ return v?1:0; }).join(''); }).join('|'); }
+    do {
+      left = empty();
+      var placed = 0, guard = 0;
+      while(placed<count && guard++<100){
+        var r = randInt(0,rows-1), k = randInt(0,2);
+        if(!left[r][k]){ left[r][k] = true; placed++; }
+      }
+      right = empty(); trans = empty(); flip = empty();
+      for(r=0;r<5;r++) for(k=0;k<3;k++){
+        right[r][k] = left[r][2-k];
+        trans[r][k] = left[r][k];
+        flip[r][k] = left[4-r][2-k];
+      }
+      off = right.map(function(row){ return row.slice(); });
+      var rr = randInt(0,rows-1), kk = randInt(0,2); off[rr][kk] = !off[rr][kk];
+      tries++;
+    } while(tries<100 && (new Set([key(right),key(trans),key(flip),key(off)])).size<4);
+    if(tries>=100) return genSymVisuelQuestion(level);
+    var opts = shuffle([{g:right,ok:true},{g:trans,ok:false},{g:flip,ok:false},{g:off,ok:false}]);
+    var C = 22;
+    return {
+      tag:'Symétrie', question:'Quel dessin complète la figure pour qu\'elle soit symétrique par rapport à la ligne rouge ?',
+      sub:'Imagine un miroir posé sur la ligne : ce qui est loin de la ligne à gauche est loin de la ligne à droite.',
+      explain:'Avec un miroir sur la ligne, chaque case coloriée à gauche a sa case « jumelle » à droite, à la même hauteur et à la même distance de la ligne : la colonne près de la ligne reste près de la ligne.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var x0 = 100 - 3*C, y0 = 100 - 2.5*C;
+        drawHalfGrid(svg, left, x0, y0, C, 'var(--accent2)');
+        for(var r2=0;r2<5;r2++) for(var k2=0;k2<3;k2++) svg.appendChild(el('rect',{x:100+k2*C,y:y0+r2*C,width:C,height:C,fill:'none',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.2,'stroke-dasharray':'3,3'}));
+        svg.appendChild(el('line',{x1:100,y1:y0-6,x2:100,y2:y0+5*C+6,stroke:'#d33','stroke-width':3}));
+      },
+      cols3:false,
+      choices: opts.map(function(o, i){
+        return { label:'Dessin ' + (i+1), ok:o.ok, viewBox:'0 0 100 100', draw:function(svg){
+          svg.appendChild(el('line',{x1:20,y1:4,x2:20,y2:96,stroke:'#d33','stroke-width':2.5}));
+          drawHalfGrid(svg, o.g, 20, 7.5, 17, 'var(--accent2)');
+        } };
+      })
+    };
+  }
+
   // ===================== Énigmes =====================
   var ENIGME_POOL = [
     { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
@@ -2982,6 +3045,9 @@
   registerQuizType({ id:'intrus', category:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
     randomNote:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.',
     generate:genIntrusQuestion });
+  registerQuizType({ id:'symVisuel', category:'formes', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
+    randomNote:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).',
+    generate:genSymVisuelQuestion });
   /* ===================== THÈME HORLOGE =====================
      Lire l'heure, Régler l'heure, et la question de Quizz « Lire l'heure ».
   */
@@ -3406,6 +3472,41 @@
     };
   }
 
+  // ---- Choisir la bonne horloge parmi 4 dessins ----
+  function genHorlogeChoixQuestion(level){
+    var steps = level===0 ? [0,30] : level===1 ? [0,15,30,45] : [0,5,10,15,20,25,30,35,40,45,50,55];
+    var h = randInt(1,12), m = pick(steps);
+    function key(hh, mm){ return ((hh%12)*60 + mm) + ''; }
+    var options = [{ h:h, m:m, ok:true }], used = {}; used[key(h,m)] = true;
+    function add(hh, mm){
+      hh = ((hh-1+12)%12)+1; mm = ((mm%60)+60)%60;
+      if(used[key(hh,mm)]) return false;
+      used[key(hh,mm)] = true; options.push({ h:hh, m:mm, ok:false }); return true;
+    }
+    // pièges classiques : aiguilles échangées, heure d'à côté, minutes d'à côté
+    var swapH = m===0 ? 12 : m/5;
+    if(m % 5 === 0) add(swapH, h*5 % 60);
+    add(h+1, m); add(h-1, m);
+    var tries = 0;
+    while(options.length<4 && tries++<50){ add(h, m + pick(level===0 ? [30] : [15,30,45,5,10])); if(options.length<4) add(h + pick([-2,2,3]), m); }
+    options = options.slice(0,4);
+    var label = m===0 ? (h + ' h') : (h + ' h ' + (m<10 ? '0'+m : m));
+    return {
+      tag:'Lire l\'heure', question:'Quelle horloge indique ' + label + ' ?', sub:'La petite aiguille montre l\'heure, la grande aiguille les minutes.',
+      explain:clockExplain(h, m, label + ' se lit : ' + minutesToClockLabel(h*60+m)),
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,120,54,label));
+      },
+      cols3:false,
+      choices: shuffle(options).map(function(o, i){
+        return { label:'Horloge ' + (i+1), ok:o.ok, viewBox:'0 0 200 200', draw:function(svg){
+          drawClockFace(svg, angleToXY(((o.h%12) + o.m/60) * 30 - 90, 42), angleToXY((o.m/60)*360 - 90, 62));
+        } };
+      })
+    };
+  }
+
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
   registerQuizType({ id:'heure', category:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
@@ -3416,6 +3517,9 @@
   registerQuizType({ id:'calendrier', category:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
     randomNote:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.',
     generate:genCalendrierQuestion });
+  registerQuizType({ id:'horlogeChoix', category:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2],
+    randomNote:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.',
+    generate:genHorlogeChoixQuestion });
   /* ===================== THÈME CALCUL =====================
      Questions de Quizz de calcul : opérations, monnaie, maths de la vie.
   */
@@ -3739,6 +3843,127 @@
     };
   }
 
+  // ===================== Activités visuelles : fractions et dénombrement =====================
+  // Dessine une figure partagée en n parts égales dont k sont coloriées.
+  // kind : 'pie' (disque) ou 'bar' (bande) ; centre (cx,cy) et taille.
+  function drawFractionShape(svg, kind, n, k, cx, cy, size){
+    var fill = 'var(--accent)', off = 'var(--surface)', i;
+    if(kind==='pie'){
+      var r = size/2;
+      for(i=0;i<n;i++){
+        var a0 = -Math.PI/2 + i*2*Math.PI/n, a1 = -Math.PI/2 + (i+1)*2*Math.PI/n;
+        var d = 'M '+cx+' '+cy+' L '+(cx+r*Math.cos(a0))+' '+(cy+r*Math.sin(a0))+' A '+r+' '+r+' 0 0 1 '+(cx+r*Math.cos(a1))+' '+(cy+r*Math.sin(a1))+' Z';
+        svg.appendChild(el('path',{d:d, fill:i<k ? fill : off, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+      }
+    } else {
+      var w = size, h = size*0.5, x0 = cx-w/2, y0 = cy-h/2;
+      for(i=0;i<n;i++){
+        svg.appendChild(el('rect',{x:x0+i*w/n, y:y0, width:w/n, height:h, fill:i<k ? fill : off, stroke:'var(--text)','stroke-width':2.5}));
+      }
+    }
+  }
+  function gcd2(a,b){ return b===0 ? a : gcd2(b, a % b); }
+  function genFractionQuestion(level){
+    var kind = pick(['pie','bar']);
+    var dens = level===0 ? [2,4] : level===1 ? [2,3,4] : [3,4,5,6,8];
+    if(Math.random() < (level===0 ? 0.5 : 0.4)){
+      // -- Choisir le DESSIN qui a la bonne fraction coloriée --
+      var TARGETS = level===0 ? [[1,2,'la moitié'],[1,4,'le quart']] : [[1,2,'la moitié'],[1,4,'le quart'],[3,4,'les trois quarts'],[1,3,'le tiers']];
+      var tg = pick(TARGETS);
+      var val = tg[0]/tg[1];
+      var options = [];   // { n, k, kind }
+      var used = {}; used[val] = true;
+      var okN = level===2 && tg[1]%2===0 && Math.random()<0.6 ? tg[1]*2 : tg[1];
+      options.push({ n:okN, k:tg[0]*okN/tg[1], ok:true });
+      var guard = 0;
+      while(options.length<4 && guard++<200){
+        var n2 = pick(level===0 ? [2,4] : [2,3,4,6,8]), k2 = randInt(1,n2-1), v2 = k2/n2;
+        if(used[v2]) continue;
+        used[v2] = true; options.push({ n:n2, k:k2, ok:false });
+      }
+      if(options.length<4) return genFractionQuestion(level);
+      var kinds = pick([['pie'],['bar'],['pie','bar']]);
+      return {
+        tag:'Fractions', question:'Quelle figure a ' + tg[2] + ' de sa surface coloriée ?', sub:'Regarde combien de parts sont coloriées sur le nombre total de parts.',
+        explain:'La bonne figure est partagée en ' + options[0].n + ' parts égales avec ' + options[0].k + ' coloriée' + (options[0].k>1?'s':'') + ' : ' + options[0].k + '/' + options[0].n + ' = ' + tg[0] + '/' + tg[1] + '.',
+        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'🍕')); },
+        cols3:false,
+        choices: shuffle(options).map(function(o, i){
+          var kd = kinds[i % kinds.length];
+          return { label:'Figure ' + (i+1), ok:o.ok, viewBox:'0 0 100 100', draw:function(svg){ drawFractionShape(svg, kd, o.n, o.k, 50, 50, 84); } };
+        })
+      };
+    }
+    // -- Lire la fraction coloriée --
+    var n = pick(dens), k = randInt(1,n-1);
+    var val2 = k/n, seen = {}; seen[val2] = true;
+    var wrong = [], cand = [[n-k,n],[k,n+1],[k+1,n],[Math.max(1,k-1),n],[1,n],[n,k],[k,n-1],[k,n+2]];
+    shuffle(cand).forEach(function(f){
+      var a = f[0], b = f[1];
+      if(a>=1 && b>a && b<=10 && !seen[a/b] && wrong.length<3){ seen[a/b] = true; wrong.push(a + '/' + b); }
+    });
+    var g = 0; while(wrong.length<3 && g++<100){ var b3 = randInt(3,9), a3 = randInt(1,b3-1); if(!seen[a3/b3]){ seen[a3/b3]=true; wrong.push(a3+'/'+b3); } }
+    var okStr = k + '/' + n;
+    return {
+      tag:'Fractions', question:'Quelle fraction de la figure est coloriée ?', sub:'En bas : le nombre total de parts égales. En haut : les parts coloriées.',
+      explain:'La figure est partagée en ' + n + ' parts égales et ' + k + ' sont coloriées : ' + okStr + '.',
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; drawFractionShape(svg, kind, n, k, 100, 100, kind==='pie' ? 150 : 170); },
+      cols3:false,
+      choices: shuffle([okStr].concat(wrong)).map(function(l){ return { label:l, ok:l===okStr }; })
+    };
+  }
+
+  // -- Dénombrement : compter des objets, ou lire des blocs centaines/dizaines/unités --
+  var COUNT_ICONS = ['🍎','⭐','🐟','🚗','🎈','🐞','🍪','🌸'];
+  function genComptageQuestion(level){
+    if(level===0){
+      var n = randInt(3,12), icon = pick(COUNT_ICONS);
+      var cells = []; for(var i=0;i<16;i++) cells.push(i);
+      var chosen = shuffle(cells).slice(0,n);
+      return {
+        tag:'Dénombrement', question:'Combien y a-t-il d\'objets ?', sub:'Compte-les un par un, sans en oublier ni en compter deux fois.',
+        explain:'Il y a ' + n + ' objets.',
+        draw:function(){
+          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+          chosen.forEach(function(c){ var x = 28 + (c%4)*48 + randInt(-6,6), y = 52 + Math.floor(c/4)*44 + randInt(-4,4); svg.appendChild(svgText(x,y,30,icon)); });
+        },
+        cols3:false, choices: numChoices(n, [n+1,n-1,n+2,n-2])
+      };
+    }
+    var hu = level===2 ? randInt(0,2) : 0, te = randInt(1,5), un = randInt(0,9);
+    var total = hu*100 + te*10 + un;
+    if(total===0) return genComptageQuestion(level);
+    return {
+      tag:'Dénombrement', question:'Quel nombre est représenté avec ces blocs ?', sub:'Une plaque = 100, une barre = 10, un petit cube = 1.',
+      explain:(hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var i, j, y0 = 8;
+        if(hu){
+          for(i=0;i<hu;i++){
+            var px = 100 - hu*25 + i*50 + 3;
+            svg.appendChild(el('rect',{x:px,y:y0,width:44,height:44,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--text)','stroke-width':2}));
+            for(j=1;j<10;j++){
+              svg.appendChild(el('line',{x1:px+j*4.4,y1:y0,x2:px+j*4.4,y2:y0+44,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
+              svg.appendChild(el('line',{x1:px,y1:y0+j*4.4,x2:px+44,y2:y0+j*4.4,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
+            }
+          }
+          y0 = 64;
+        } else y0 = 40;
+        for(i=0;i<te;i++){
+          var bx = 20 + i*17;
+          svg.appendChild(el('rect',{x:bx,y:y0,width:12,height:96,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
+          for(j=1;j<10;j++) svg.appendChild(el('line',{x1:bx,y1:y0+j*9.6,x2:bx+12,y2:y0+j*9.6,stroke:'var(--text)','stroke-width':0.6}));
+        }
+        for(i=0;i<un;i++){
+          var ux = 128 + (i%3)*20, uy = y0 + 4 + Math.floor(i/3)*22;
+          svg.appendChild(el('rect',{x:ux,y:uy,width:16,height:16,fill:'var(--accent)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':1.5}));
+        }
+      },
+      cols3:false, choices: numChoices(total, [total+10, total-10, total+1, total-1, total+100, hu*100+un*10+te])
+    };
+  }
+
   // ---- Déclaration des types de Quizz du thème Calcul ----
   registerQuizType({ id:'calc', category:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
@@ -3773,6 +3998,12 @@
   registerQuizType({ id:'ordre', category:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
     randomNote:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à 20 ; Moyen : jusqu\'à 100 ; Difficile : jusqu\'à 1000, souvent autour des changements de dizaine.',
     generate:genOrdreQuestion });
+  registerQuizType({ id:'fraction', category:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2],
+    randomNote:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).',
+    generate:genFractionQuestion });
+  registerQuizType({ id:'comptage', category:'nombres', label:'Dénombrement (visuel)', longLabel:'Dénombrement : compter des objets, des blocs', defaultLevels:[0,1,2],
+    randomNote:'Facile : compter 3 à 12 objets éparpillés. Moyen : lire des blocs (barres de 10, cubes). Difficile : + plaques de 100.',
+    generate:genComptageQuestion });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */
@@ -4611,7 +4842,19 @@
       var b = document.createElement('button');
       b.className = 'choice-btn';
       b.type = 'button';
-      b.textContent = c.label.charAt(0).toUpperCase()+c.label.slice(1);
+      b._ok = !!c.ok;
+      if(c.draw){
+        // Réponse VISUELLE : le bouton contient un petit dessin (c.draw(svg)) ;
+        // c.label ne sert qu'à l'accessibilité.
+        b.className += ' visual';
+        b.setAttribute('aria-label', c.label);
+        var csvg = document.createElementNS(svgNS,'svg');
+        csvg.setAttribute('viewBox', c.viewBox || '0 0 200 200');
+        b.appendChild(csvg);
+        c.draw(csvg);
+      } else {
+        b.textContent = c.label.charAt(0).toUpperCase()+c.label.slice(1);
+      }
       b.addEventListener('click', function(){ checkQCM(c, b); });
       wrap.appendChild(b);
     });
@@ -4631,8 +4874,7 @@
       setCoachReaction('good');
     } else {
       btn.classList.add('wrong');
-      var okLabel = m4Current.choices.filter(function(c){return c.ok;})[0].label;
-      buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
+      buttons.forEach(function(b){ if(b._ok) b.classList.add('correct'); });
       fb.className = 'feedback tappable bad show';
       fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m4Current.explain+'</div>';
       setCoachReaction('bad');
@@ -5181,18 +5423,44 @@
   // Mode "Manuel" : choix d'une activité précise à répéter en boucle. Le
   // niveau (en dessous) dépend de l'activité choisie : moins de boutons si
   // elle n'existe pas en Facile et/ou en Moyen (voir rebuildManualLevelRow).
+  // Deux étages : d'abord un THÈME (Quizz, Formes & mesures, Solides, Horloge),
+  // puis, s'il en contient plusieurs, l'activité précise.
+  var FAMILY_THEMES = [
+    { label:'🧠 Quizz',            families:['qcm'] },
+    { label:'📐 Formes & mesures', families:['measure','deform'] },
+    { label:'📦 Solides',          families:['net'] },
+    { label:'🕒 Horloge',          families:['clock-lire','clock-regler'] }
+  ];
+  function startManualFamily(key){
+    manualFamily = key;
+    refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
+    if(manualFamily !== 'qcm'){
+      rebuildManualLevelRow(FAMILIES_WITH_LEVELS[manualFamily] ? [0,1,2] : []);
+    }
+    document.getElementById('practice-exercise').hidden = false;
+    nextPracticeQuestion();
+    armManualCollapse();
+  }
   buildLevelRow(
     document.getElementById('manual-family-row'),
-    MANUAL_FAMILY_LIST.map(function(k){ return FAMILY_TAGS[k]; }),
+    FAMILY_THEMES.map(function(t){ return t.label; }),
     -1,
     function(idx){
-      manualFamily = MANUAL_FAMILY_LIST[idx];
-      refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
-      if(manualFamily !== 'qcm'){
-        rebuildManualLevelRow(FAMILIES_WITH_LEVELS[manualFamily] ? [0,1,2] : []);
+      var theme = FAMILY_THEMES[idx];
+      var subWrap = document.getElementById('manual-family-sub-wrap');
+      if(theme.families.length === 1){
+        subWrap.hidden = true;
+        startManualFamily(theme.families[0]);
+        return;
       }
-      document.getElementById('practice-exercise').hidden = false;
-      nextPracticeQuestion();
+      subWrap.hidden = false;
+      manualFamily = null;
+      document.getElementById('manual-qcm-type-wrap').hidden = true;
+      m4TypeFilter = 'random'; m4CategoryFilter = 'all';
+      document.getElementById('manual-level-wrap').hidden = true;
+      buildLevelRow(document.getElementById('manual-family-sub-row'),
+        theme.families.map(function(k){ return FAMILY_TAGS[k]; }), -1,
+        function(j){ startManualFamily(theme.families[j]); });
       armManualCollapse();
     }
   );

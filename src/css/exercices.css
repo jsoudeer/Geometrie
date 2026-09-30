@@ -13,6 +13,10 @@
   .choice-btn.wrong{ background:var(--bad); border-color:var(--bad); color:var(--on-bad); }
   .choice-btn.wrong::after{ content:' ✘'; }
   .choice-btn[disabled]{ pointer-events:none; }
+  /* Réponses en dessin (voir newQCM) */
+  .choice-btn.visual{ padding:4px; position:relative; }
+  .choice-btn.visual svg{ width:100%; max-width:120px; height:auto; display:block; margin:0 auto; pointer-events:none; }
+  .choice-btn.visual.correct::after, .choice-btn.visual.wrong::after{ position:absolute; top:2px; right:6px; font-size:18px; }
 
   /* ============ MODULE 2 : DEFORMER ============ */
   .deform-wrap{ display:flex; justify-content:center; }

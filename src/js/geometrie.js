@@ -1164,6 +1164,61 @@
     };
   }
 
+  // ===================== Symétrie : choisir le dessin symétrique =====================
+  // Grille 3 colonnes × 5 lignes à gauche de l'axe ; les 4 réponses sont des
+  // moitiés droites : la bonne (miroir), la même sans miroir (translation),
+  // le miroir retourné en hauteur, et une version avec une case fausse.
+  function drawHalfGrid(svg, cells, x0, y0, c, color){
+    for(var r=0;r<5;r++) for(var k=0;k<3;k++){
+      svg.appendChild(el('rect',{x:x0+k*c,y:y0+r*c,width:c,height:c,fill:cells[r][k] ? color : 'var(--surface)',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.45}));
+    }
+  }
+  function genSymVisuelQuestion(level){
+    var rows = level===0 ? 3 : 5, count = level===0 ? 4 : level===1 ? 5 : 7;
+    var left, tries = 0, right, trans, flip, off;
+    function empty(){ var g=[]; for(var r=0;r<5;r++){ g.push([false,false,false]); } return g; }
+    function key(g){ return g.map(function(r){ return r.map(function(v){ return v?1:0; }).join(''); }).join('|'); }
+    do {
+      left = empty();
+      var placed = 0, guard = 0;
+      while(placed<count && guard++<100){
+        var r = randInt(0,rows-1), k = randInt(0,2);
+        if(!left[r][k]){ left[r][k] = true; placed++; }
+      }
+      right = empty(); trans = empty(); flip = empty();
+      for(r=0;r<5;r++) for(k=0;k<3;k++){
+        right[r][k] = left[r][2-k];
+        trans[r][k] = left[r][k];
+        flip[r][k] = left[4-r][2-k];
+      }
+      off = right.map(function(row){ return row.slice(); });
+      var rr = randInt(0,rows-1), kk = randInt(0,2); off[rr][kk] = !off[rr][kk];
+      tries++;
+    } while(tries<100 && (new Set([key(right),key(trans),key(flip),key(off)])).size<4);
+    if(tries>=100) return genSymVisuelQuestion(level);
+    var opts = shuffle([{g:right,ok:true},{g:trans,ok:false},{g:flip,ok:false},{g:off,ok:false}]);
+    var C = 22;
+    return {
+      tag:'Symétrie', question:'Quel dessin complète la figure pour qu\'elle soit symétrique par rapport à la ligne rouge ?',
+      sub:'Imagine un miroir posé sur la ligne : ce qui est loin de la ligne à gauche est loin de la ligne à droite.',
+      explain:'Avec un miroir sur la ligne, chaque case coloriée à gauche a sa case « jumelle » à droite, à la même hauteur et à la même distance de la ligne : la colonne près de la ligne reste près de la ligne.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var x0 = 100 - 3*C, y0 = 100 - 2.5*C;
+        drawHalfGrid(svg, left, x0, y0, C, 'var(--accent2)');
+        for(var r2=0;r2<5;r2++) for(var k2=0;k2<3;k2++) svg.appendChild(el('rect',{x:100+k2*C,y:y0+r2*C,width:C,height:C,fill:'none',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.2,'stroke-dasharray':'3,3'}));
+        svg.appendChild(el('line',{x1:100,y1:y0-6,x2:100,y2:y0+5*C+6,stroke:'#d33','stroke-width':3}));
+      },
+      cols3:false,
+      choices: opts.map(function(o, i){
+        return { label:'Dessin ' + (i+1), ok:o.ok, viewBox:'0 0 100 100', draw:function(svg){
+          svg.appendChild(el('line',{x1:20,y1:4,x2:20,y2:96,stroke:'#d33','stroke-width':2.5}));
+          drawHalfGrid(svg, o.g, 20, 7.5, 17, 'var(--accent2)');
+        } };
+      })
+    };
+  }
+
   // ===================== Énigmes =====================
   var ENIGME_POOL = [
     { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
@@ -1352,3 +1407,6 @@
   registerQuizType({ id:'intrus', category:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
     randomNote:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.',
     generate:genIntrusQuestion });
+  registerQuizType({ id:'symVisuel', category:'formes', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
+    randomNote:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).',
+    generate:genSymVisuelQuestion });

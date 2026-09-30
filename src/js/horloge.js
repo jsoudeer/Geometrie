@@ -422,6 +422,41 @@
     };
   }
 
+  // ---- Choisir la bonne horloge parmi 4 dessins ----
+  function genHorlogeChoixQuestion(level){
+    var steps = level===0 ? [0,30] : level===1 ? [0,15,30,45] : [0,5,10,15,20,25,30,35,40,45,50,55];
+    var h = randInt(1,12), m = pick(steps);
+    function key(hh, mm){ return ((hh%12)*60 + mm) + ''; }
+    var options = [{ h:h, m:m, ok:true }], used = {}; used[key(h,m)] = true;
+    function add(hh, mm){
+      hh = ((hh-1+12)%12)+1; mm = ((mm%60)+60)%60;
+      if(used[key(hh,mm)]) return false;
+      used[key(hh,mm)] = true; options.push({ h:hh, m:mm, ok:false }); return true;
+    }
+    // pièges classiques : aiguilles échangées, heure d'à côté, minutes d'à côté
+    var swapH = m===0 ? 12 : m/5;
+    if(m % 5 === 0) add(swapH, h*5 % 60);
+    add(h+1, m); add(h-1, m);
+    var tries = 0;
+    while(options.length<4 && tries++<50){ add(h, m + pick(level===0 ? [30] : [15,30,45,5,10])); if(options.length<4) add(h + pick([-2,2,3]), m); }
+    options = options.slice(0,4);
+    var label = m===0 ? (h + ' h') : (h + ' h ' + (m<10 ? '0'+m : m));
+    return {
+      tag:'Lire l\'heure', question:'Quelle horloge indique ' + label + ' ?', sub:'La petite aiguille montre l\'heure, la grande aiguille les minutes.',
+      explain:clockExplain(h, m, label + ' se lit : ' + minutesToClockLabel(h*60+m)),
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(svgText(100,120,54,label));
+      },
+      cols3:false,
+      choices: shuffle(options).map(function(o, i){
+        return { label:'Horloge ' + (i+1), ok:o.ok, viewBox:'0 0 200 200', draw:function(svg){
+          drawClockFace(svg, angleToXY(((o.h%12) + o.m/60) * 30 - 90, 42), angleToXY((o.m/60)*360 - 90, 62));
+        } };
+      })
+    };
+  }
+
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
   registerQuizType({ id:'heure', category:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
@@ -432,3 +467,6 @@
   registerQuizType({ id:'calendrier', category:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
     randomNote:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.',
     generate:genCalendrierQuestion });
+  registerQuizType({ id:'horlogeChoix', category:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2],
+    randomNote:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.',
+    generate:genHorlogeChoixQuestion });

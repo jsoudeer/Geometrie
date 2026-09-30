@@ -321,6 +321,127 @@
     };
   }
 
+  // ===================== Activités visuelles : fractions et dénombrement =====================
+  // Dessine une figure partagée en n parts égales dont k sont coloriées.
+  // kind : 'pie' (disque) ou 'bar' (bande) ; centre (cx,cy) et taille.
+  function drawFractionShape(svg, kind, n, k, cx, cy, size){
+    var fill = 'var(--accent)', off = 'var(--surface)', i;
+    if(kind==='pie'){
+      var r = size/2;
+      for(i=0;i<n;i++){
+        var a0 = -Math.PI/2 + i*2*Math.PI/n, a1 = -Math.PI/2 + (i+1)*2*Math.PI/n;
+        var d = 'M '+cx+' '+cy+' L '+(cx+r*Math.cos(a0))+' '+(cy+r*Math.sin(a0))+' A '+r+' '+r+' 0 0 1 '+(cx+r*Math.cos(a1))+' '+(cy+r*Math.sin(a1))+' Z';
+        svg.appendChild(el('path',{d:d, fill:i<k ? fill : off, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+      }
+    } else {
+      var w = size, h = size*0.5, x0 = cx-w/2, y0 = cy-h/2;
+      for(i=0;i<n;i++){
+        svg.appendChild(el('rect',{x:x0+i*w/n, y:y0, width:w/n, height:h, fill:i<k ? fill : off, stroke:'var(--text)','stroke-width':2.5}));
+      }
+    }
+  }
+  function gcd2(a,b){ return b===0 ? a : gcd2(b, a % b); }
+  function genFractionQuestion(level){
+    var kind = pick(['pie','bar']);
+    var dens = level===0 ? [2,4] : level===1 ? [2,3,4] : [3,4,5,6,8];
+    if(Math.random() < (level===0 ? 0.5 : 0.4)){
+      // -- Choisir le DESSIN qui a la bonne fraction coloriée --
+      var TARGETS = level===0 ? [[1,2,'la moitié'],[1,4,'le quart']] : [[1,2,'la moitié'],[1,4,'le quart'],[3,4,'les trois quarts'],[1,3,'le tiers']];
+      var tg = pick(TARGETS);
+      var val = tg[0]/tg[1];
+      var options = [];   // { n, k, kind }
+      var used = {}; used[val] = true;
+      var okN = level===2 && tg[1]%2===0 && Math.random()<0.6 ? tg[1]*2 : tg[1];
+      options.push({ n:okN, k:tg[0]*okN/tg[1], ok:true });
+      var guard = 0;
+      while(options.length<4 && guard++<200){
+        var n2 = pick(level===0 ? [2,4] : [2,3,4,6,8]), k2 = randInt(1,n2-1), v2 = k2/n2;
+        if(used[v2]) continue;
+        used[v2] = true; options.push({ n:n2, k:k2, ok:false });
+      }
+      if(options.length<4) return genFractionQuestion(level);
+      var kinds = pick([['pie'],['bar'],['pie','bar']]);
+      return {
+        tag:'Fractions', question:'Quelle figure a ' + tg[2] + ' de sa surface coloriée ?', sub:'Regarde combien de parts sont coloriées sur le nombre total de parts.',
+        explain:'La bonne figure est partagée en ' + options[0].n + ' parts égales avec ' + options[0].k + ' coloriée' + (options[0].k>1?'s':'') + ' : ' + options[0].k + '/' + options[0].n + ' = ' + tg[0] + '/' + tg[1] + '.',
+        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'🍕')); },
+        cols3:false,
+        choices: shuffle(options).map(function(o, i){
+          var kd = kinds[i % kinds.length];
+          return { label:'Figure ' + (i+1), ok:o.ok, viewBox:'0 0 100 100', draw:function(svg){ drawFractionShape(svg, kd, o.n, o.k, 50, 50, 84); } };
+        })
+      };
+    }
+    // -- Lire la fraction coloriée --
+    var n = pick(dens), k = randInt(1,n-1);
+    var val2 = k/n, seen = {}; seen[val2] = true;
+    var wrong = [], cand = [[n-k,n],[k,n+1],[k+1,n],[Math.max(1,k-1),n],[1,n],[n,k],[k,n-1],[k,n+2]];
+    shuffle(cand).forEach(function(f){
+      var a = f[0], b = f[1];
+      if(a>=1 && b>a && b<=10 && !seen[a/b] && wrong.length<3){ seen[a/b] = true; wrong.push(a + '/' + b); }
+    });
+    var g = 0; while(wrong.length<3 && g++<100){ var b3 = randInt(3,9), a3 = randInt(1,b3-1); if(!seen[a3/b3]){ seen[a3/b3]=true; wrong.push(a3+'/'+b3); } }
+    var okStr = k + '/' + n;
+    return {
+      tag:'Fractions', question:'Quelle fraction de la figure est coloriée ?', sub:'En bas : le nombre total de parts égales. En haut : les parts coloriées.',
+      explain:'La figure est partagée en ' + n + ' parts égales et ' + k + ' sont coloriées : ' + okStr + '.',
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; drawFractionShape(svg, kind, n, k, 100, 100, kind==='pie' ? 150 : 170); },
+      cols3:false,
+      choices: shuffle([okStr].concat(wrong)).map(function(l){ return { label:l, ok:l===okStr }; })
+    };
+  }
+
+  // -- Dénombrement : compter des objets, ou lire des blocs centaines/dizaines/unités --
+  var COUNT_ICONS = ['🍎','⭐','🐟','🚗','🎈','🐞','🍪','🌸'];
+  function genComptageQuestion(level){
+    if(level===0){
+      var n = randInt(3,12), icon = pick(COUNT_ICONS);
+      var cells = []; for(var i=0;i<16;i++) cells.push(i);
+      var chosen = shuffle(cells).slice(0,n);
+      return {
+        tag:'Dénombrement', question:'Combien y a-t-il d\'objets ?', sub:'Compte-les un par un, sans en oublier ni en compter deux fois.',
+        explain:'Il y a ' + n + ' objets.',
+        draw:function(){
+          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+          chosen.forEach(function(c){ var x = 28 + (c%4)*48 + randInt(-6,6), y = 52 + Math.floor(c/4)*44 + randInt(-4,4); svg.appendChild(svgText(x,y,30,icon)); });
+        },
+        cols3:false, choices: numChoices(n, [n+1,n-1,n+2,n-2])
+      };
+    }
+    var hu = level===2 ? randInt(0,2) : 0, te = randInt(1,5), un = randInt(0,9);
+    var total = hu*100 + te*10 + un;
+    if(total===0) return genComptageQuestion(level);
+    return {
+      tag:'Dénombrement', question:'Quel nombre est représenté avec ces blocs ?', sub:'Une plaque = 100, une barre = 10, un petit cube = 1.',
+      explain:(hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        var i, j, y0 = 8;
+        if(hu){
+          for(i=0;i<hu;i++){
+            var px = 100 - hu*25 + i*50 + 3;
+            svg.appendChild(el('rect',{x:px,y:y0,width:44,height:44,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--text)','stroke-width':2}));
+            for(j=1;j<10;j++){
+              svg.appendChild(el('line',{x1:px+j*4.4,y1:y0,x2:px+j*4.4,y2:y0+44,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
+              svg.appendChild(el('line',{x1:px,y1:y0+j*4.4,x2:px+44,y2:y0+j*4.4,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
+            }
+          }
+          y0 = 64;
+        } else y0 = 40;
+        for(i=0;i<te;i++){
+          var bx = 20 + i*17;
+          svg.appendChild(el('rect',{x:bx,y:y0,width:12,height:96,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
+          for(j=1;j<10;j++) svg.appendChild(el('line',{x1:bx,y1:y0+j*9.6,x2:bx+12,y2:y0+j*9.6,stroke:'var(--text)','stroke-width':0.6}));
+        }
+        for(i=0;i<un;i++){
+          var ux = 128 + (i%3)*20, uy = y0 + 4 + Math.floor(i/3)*22;
+          svg.appendChild(el('rect',{x:ux,y:uy,width:16,height:16,fill:'var(--accent)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':1.5}));
+        }
+      },
+      cols3:false, choices: numChoices(total, [total+10, total-10, total+1, total-1, total+100, hu*100+un*10+te])
+    };
+  }
+
   // ---- Déclaration des types de Quizz du thème Calcul ----
   registerQuizType({ id:'calc', category:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
@@ -355,3 +476,9 @@
   registerQuizType({ id:'ordre', category:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
     randomNote:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à 20 ; Moyen : jusqu\'à 100 ; Difficile : jusqu\'à 1000, souvent autour des changements de dizaine.',
     generate:genOrdreQuestion });
+  registerQuizType({ id:'fraction', category:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2],
+    randomNote:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).',
+    generate:genFractionQuestion });
+  registerQuizType({ id:'comptage', category:'nombres', label:'Dénombrement (visuel)', longLabel:'Dénombrement : compter des objets, des blocs', defaultLevels:[0,1,2],
+    randomNote:'Facile : compter 3 à 12 objets éparpillés. Moyen : lire des blocs (barres de 10, cubes). Difficile : + plaques de 100.',
+    generate:genComptageQuestion });
