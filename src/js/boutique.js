@@ -498,16 +498,11 @@
     });
   });
   function showRewardExplanation(sprite){
-    openInfoDialog('🔒 ' + sprite.name, function(body){
+    openInfoDialog('🔒 Personnage mystère', function(body){
       var art = document.createElement('div');
-      art.className = 'info-art';
+      art.className = 'info-art silhouette';
       renderSpriteVisual(art, sprite);
       body.appendChild(art);
-      var role = document.createElement('p');
-      role.className = 'muted';
-      role.textContent = BT_ROLE_META[sprite.role].icon + ' ' + BT_ROLE_META[sprite.role].label + ' · ❤️ ' + sprite.pts + ' points · ' +
-        (sprite.role==='support' ? 'donne +5 points à ses alliés' : sprite.role==='archer' ? 'attaque sans être blessé' : 'attaque normale');
-      body.appendChild(role);
       var p = document.createElement('p');
       p.textContent = 'Ce personnage ne s\'achète pas : il se débloque en relevant un défi. ' + challengeText(sprite.challenge);
       body.appendChild(p);
@@ -622,14 +617,16 @@
     var isReward = sprite.rarity === 'defi';
     card.className = 'sprite-card ' + (isOwned ? 'owned' : 'locked');
     renderSpriteVisual(card, sprite);
-    var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
+    // Personnage pas encore débloqué : ombre chinoise, rien ne doit se deviner (ni nom, ni rôle).
+    var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = isOwned ? sprite.name : '???';
     card.appendChild(nameEl);
-    if(!isReward || isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showSpritePreview(sprite); });
+    if(!isOwned) card.setAttribute('aria-label', 'Personnage mystère, ' + RARITY_META[sprite.rarity].label);
+    if(isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showSpritePreview(sprite); });
     var rarity = document.createElement('div'); rarity.className='rarity-pill';
     rarity.textContent = RARITY_META[sprite.rarity].label;
     rarity.style.background = RARITY_META[sprite.rarity].color;
     card.appendChild(rarity);
-    var roleEl = document.createElement('div'); roleEl.className='sp-role'; roleEl.textContent = roleLine(sprite);
+    var roleEl = document.createElement('div'); roleEl.className='sp-role'; roleEl.textContent = isOwned ? roleLine(sprite) : '❔ Mystère';
     card.appendChild(roleEl);
     if(isOwned){
       var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
