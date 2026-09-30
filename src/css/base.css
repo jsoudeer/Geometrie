@@ -75,9 +75,29 @@
   .app{
     max-width:480px;
     margin:0 auto;
-    padding:14px 16px calc(130px + env(safe-area-inset-bottom,0px));
-    min-height:100%;
+    padding:14px 16px calc(12px + env(safe-area-inset-bottom,0px));
+    min-height:100dvh;
+    display:flex; flex-direction:column;
   }
+  /* ============ ÉCRAN D'EXERCICE : zone de réponse toujours en bas ============
+     L'écran d'entraînement occupe toute la hauteur disponible. Dans chaque
+     activité, la zone de réponse (.q-bottom : réponses à choisir, retour,
+     boutons) est poussée tout en bas ; le haut (question, consigne,
+     illustration) garde la place restante. Si le contenu est plus grand que
+     l'écran, la page défile normalement (cas rare, à traiter à part). */
+  #tabContent{ flex:1 1 auto; display:flex; flex-direction:column; }
+  #tab-practice:not([hidden]){ flex:1 1 auto; display:flex; flex-direction:column; }
+  #tab-practice > .card{ flex:1 1 auto; display:flex; flex-direction:column; margin-bottom:0; }
+  #practice-exercise:not([hidden]){ flex:1 1 auto; display:flex; flex-direction:column; }
+  #practice-exercise > [id^="fam-"]:not([hidden]){ flex:1 1 auto; display:flex; flex-direction:column; }
+  .q-tags{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .q-tags .qtype-tag{ margin-bottom:8px; }
+  .q-tags .streak-pill{ margin-left:0; }
+  .q-bottom{ margin-top:auto; padding-top:10px; display:flex; flex-direction:column; }
+  .q-bottom > .choices, .q-bottom > .qcm-choices{ margin-top:0; }
+  /* le retour d'une question fermée prend la place des boutons, au même endroit */
+  .q-bottom > .feedback{ margin-top:10px; }
+  .q-bottom > .btn-row{ margin-top:12px; }
 
   h1,h2,h3{ font-family:var(--font-display); margin:0; text-wrap:balance; }
   .brand h1, .splash-title{ font-family:var(--font-title); }

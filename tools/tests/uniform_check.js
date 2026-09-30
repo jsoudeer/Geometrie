@@ -56,12 +56,21 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     return { shown: fb.classList.contains('show'), good: fb.classList.contains('good'), tappable: fb.classList.contains('tappable'), rowHidden: !!row.hidden, text: fb.textContent };
   }, f);
 
+  const btnBottoms = {};
   for (const [key, f] of Object.entries(FAM)) {
     console.log('— ' + key);
     // en-tête commun
     await gen(key);
     const bubble = await page.evaluate(k => { const w = document.getElementById('fam-' + k); const b = w && w.querySelector('.coach-bubble'); return b ? b.textContent.trim() : ''; }, key);
     chk(bubble.length > 3, 'question dans la bulle : « ' + bubble + ' »');
+    const pos = await page.evaluate(k => {
+      const w = document.getElementById('fam-' + k), bottom = w.querySelector('.q-bottom'), row = w.querySelector('.btn-row'), ch = w.querySelector('.choices, .qcm-choices');
+      return { last: w.lastElementChild === bottom, inBottom: bottom.contains(row) && (!ch || bottom.contains(ch)),
+        rowBottom: Math.round(row.getBoundingClientRect().bottom), gap: ch ? Math.round(row.getBoundingClientRect().top - ch.getBoundingClientRect().bottom) : null };
+    }, key);
+    btnBottoms[key] = pos.rowBottom;
+    chk(pos.last && pos.inBottom, 'zone de réponse en bas (réponses + boutons)');
+    if (pos.gap !== null) chk(pos.gap >= 0 && pos.gap <= 40, 'réponses juste au-dessus des boutons (écart ' + pos.gap + ' px)');
     const colors = await page.evaluate(k => [...document.querySelectorAll('#fam-' + k + ' .btn-row .btn')].map(b => getComputedStyle(b).backgroundColor), key);
     chk(colors.length > 0 && colors.every(c => c === colors[0]), 'boutons de la même couleur (' + [...new Set(colors)].join(' / ') + ')');
 
@@ -109,5 +118,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
       chk(await streak() === 0, 'passer après un raté : compte comme une erreur');
     }
   }
+  const vals = Object.values(btnBottoms);
+  chk(Math.max(...vals) - Math.min(...vals) <= 1, 'boutons au même endroit dans toutes les activités (' + [...new Set(vals)].join(', ') + ' px)');
   console.log(bad ? 'ÉCHEC (' + bad + ')' : 'OK');
 });

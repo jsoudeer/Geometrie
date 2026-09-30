@@ -648,6 +648,7 @@
   function makeQuestionFlow(opts){
     var fb = typeof opts.feedback==='string' ? document.getElementById(opts.feedback) : opts.feedback;
     var row = fb.parentNode.querySelector('.btn-row');
+    function famWrap(){ return fb.closest('[id^="fam-"]') || fb.parentNode; }
     var flow = { tries:0, maxTries:opts.tries || 1, closed:false, fb:fb };
     // Accessibilité : annoncé par les lecteurs d'écran, atteignable au clavier,
     // Entrée/Espace fait la même chose qu'un toucher.
@@ -673,7 +674,7 @@
       flow.closed = true;
       // le bouton qu'on vient d'utiliser va disparaître : on garde le focus clavier
       // sur le retour, pour qu'Entrée passe à la question suivante (RGAA 12.8)
-      var ae = document.activeElement, hadFocus = !ae || ae === document.body || fb.parentNode.contains(ae);   // (un bouton de réponse désactivé perd le focus : il retombe sur la page)
+      var ae = document.activeElement, hadFocus = !ae || ae === document.body || famWrap().contains(ae);   // (un bouton de réponse désactivé perd le focus : il retombe sur la page)
       if(row) row.hidden = true;
       show(ok, html, true);
       if(hadFocus) fb.focus();
@@ -682,7 +683,7 @@
     }
     // Nouvelle question : tout est remis à zéro.
     flow.start = function(){
-      var q = fb.parentNode.querySelector('.coach-bubble');
+      var q = famWrap().querySelector('.coach-bubble');
       if(qfFocusNext && q){ q.tabIndex = -1; q.focus(); }   // on vient du retour (clavier) : on lit la nouvelle question
       qfFocusNext = false;
       flow.tries = 0; flow.closed = false;
@@ -834,6 +835,17 @@
     document.getElementById('practice-exercise').appendChild(wrap);
     FAMILIES.push(def);
     if(def.build) def.build(wrap);
+    // RÈGLE DE MISE EN PAGE commune à toutes les activités : la zone de réponse
+    // (réponses à choisir, retour, boutons Vérifier / Nouvelle activité) est
+    // regroupée en bas de l'écran, dans cet ordre, quelle que soit l'activité.
+    // Le haut (question, consigne, illustration) prend la place restante : d'une
+    // question à l'autre, les boutons et les réponses restent au même endroit.
+    var bottom = document.createElement('div');
+    bottom.className = 'q-bottom';
+    [].slice.call(wrap.children).filter(function(c){
+      return c.matches('.choices, .qcm-choices, .feedback, .btn-row');
+    }).forEach(function(c){ bottom.appendChild(c); });
+    wrap.appendChild(bottom);
     return wrap;
   }
   // Empreinte d'une question à choix (Quizz, Lire l'heure) pour l'anti-répétition.

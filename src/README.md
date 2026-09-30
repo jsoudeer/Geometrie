@@ -126,6 +126,14 @@ ou les patrons), ajouter `config:{ storageKey, defs(), groups()?, rebuild(overri
 `makeAtelier()` (`atelier.js`) fournit un écran tout prêt pour une activité où l'on touche
 des cases (question, consigne, dessin tactile, retour, Vérifier / Nouvelle activité).
 
+## Mise en page d'une activité : la zone de réponse est toujours en bas
+
+`registerFamily` range automatiquement, en bas de l'écran et dans cet ordre, les réponses à
+choisir (`.choices` / `.qcm-choices`), le retour (`.feedback`) et les boutons (`.btn-row`) :
+c'est la `.q-bottom`. Tout le reste (question, consigne, illustration) reste en haut. Une
+nouvelle activité n'a rien à faire de plus : il suffit que ces éléments soient au premier
+niveau de son écran. `uniform_check.js` vérifie que les boutons sont au même endroit partout.
+
 ## Retirer un thème
 
 L'orchestrateur ne nomme aucune activité : retirer `horloge.js`, `patron3d.js`,
