@@ -197,3 +197,6 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 - La **Boutique** affiche la mascotte du clan en pied ; toucher une carte ouvre l'aperçu plein pied du personnage.
 - **Pas de question répétée** dans une série : l'appli retient les ~80 dernières questions (aléatoire comme chronomètre) ; la mémoire repart à zéro au changement de niveau, de mode ou au départ d'un chrono.
 - Les **solides** sont dessinés en entier, arêtes cachées en pointillés (cube, pavé, pyramides, prismes, cylindre, cône).
+
+## Répartition des questions (tirage sans remise)
+En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horloge lire/régler, ateliers) sort une fois par tour avant qu'aucune ne revienne (le quiz compte triple), et jamais deux fois de suite. Dans le quiz, les **catégories** (formes, repère, solides, temps…) tournent aussi sans remise, puis les types à l'intérieur de chaque catégorie. Une question déjà vue dans la série est retirée (4 essais dans la même activité, puis changement d'activité).

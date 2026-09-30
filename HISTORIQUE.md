@@ -99,3 +99,6 @@ Régler l'heure et Déformer donnaient une étoile à CHAQUE clic sur Vérifier 
 ## 15. Avancement auto en Aléatoire, difficulté de la Bataille (30/09/2026)
 L'avancement automatique de niveau fonctionne aussi en mode Aléatoire (`onPracticeAnswered`, via `freeStreak`). Bataille : difficulté choisie avant le combat (`BT_DIFFS`, `btDiff`, clé `geo_bt_diff`) ; l'équipe adverse est tirée parmi les combinaisons dont le total de points est le plus proche de celui du joueur ×0,8 / ×1 / ×1,2 (`btBuildEnemyTeam`). Tests : `avance_check.js`, `bataille_diff_check.js`.
 
+## 16. Tirage sans remise des activités et des catégories de quiz (30/09/2026)
+`pickFamilyFresh` (sac de familles, sans doublon adjacent, retente 4 fois dans la même famille avant d'en changer) ; `genQuestion` tire la catégorie puis le type via `pickFresh`. Test : `fresh_check.js`.
+
