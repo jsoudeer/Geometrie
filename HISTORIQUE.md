@@ -87,3 +87,6 @@ Branche `variete-exercices` : horloge 24 h en Difficile ; Régler l'heure à 3 n
 ## 11. Clans, séries sans répétition, catégories (29/09/2026)
 Branche `evolutions-clans` : mémoire des questions déjà posées (`questionSignature`, `seenSigs` dans l'orchestrateur) ; mascotte par clan (`mascotIds`, clés `geo_mascot_cats` / `geo_mascot_brainrot`, l'ancienne clé `geo_mascot_id` est migrée) ; défis limités au clan actif (`completeChallenge`) ; mascotte en pied et aperçu dans la Boutique ; prismes redessinés en 3D complète avec pointillés (`drawSolidPrismeN`) ; sous-catégories de Quizz (`category` dans `registerQuizType`, `QCM_CATEGORIES` dans `noyau.js`) ; 6 nouveaux types (Dizaines et unités, Ordre des nombres, Calendrier, Mesures, Périmètre, Trouve l'intrus). Nouveaux tests : `clan_check.js`, `repeat_check.js`.
 
+## 12. Réponses dessinées et thèmes du mode Manuel (30/09/2026)
+Branche `visuel-categories` : une réponse de Quizz peut être un dessin (`choices[i].draw(svg)` + `viewBox`, voir `newQCM`) ; 4 types visuels (Fractions, Dénombrement, Choisir l'horloge, Symétrie : compléter) ; mode Manuel à deux étages (thème → activité, `FAMILY_THEMES`). Piste suivante : une vraie famille interactive (toucher des cases pour compléter une symétrie, colorier une fraction, tangram) avec son propre écran.
+
