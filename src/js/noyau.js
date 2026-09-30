@@ -36,8 +36,8 @@
   });
   updateSfxHint();
 
-  /* ---- Avancement automatique (mode Manuel) : monte de niveau toute seule
-     après X bonnes réponses d'affilée sur la même activité. ---- */
+  /* ---- Avancement automatique (modes Manuel et Aléatoire) : monte de niveau
+     toute seule après X bonnes réponses d'affilée. ---- */
   var autoAdvanceEnabled = false;
   var autoAdvanceThreshold = 5;
   var AUTO_ADVANCE_OPTIONS = [3,5,8,10];
