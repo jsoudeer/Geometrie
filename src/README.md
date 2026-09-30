@@ -132,7 +132,8 @@ des cases (question, consigne, dessin tactile, retour, Vérifier / Nouvelle acti
 choisir (`.choices` / `.qcm-choices`), le retour (`.feedback`) et les boutons (`.btn-row`) :
 c'est la `.q-bottom`. Tout le reste (question, consigne, illustration) reste en haut. Une
 nouvelle activité n'a rien à faire de plus : il suffit que ces éléments soient au premier
-niveau de son écran. `uniform_check.js` vérifie que les boutons sont au même endroit partout.
+niveau de son écran. Dans la rangée, « Nouvelle activité » (id en `-next` ou `-new`) est placée à gauche et
+« Vérifier » à sa droite. `uniform_check.js` vérifie que les boutons sont au même endroit partout.
 
 ## Retirer un thème
 

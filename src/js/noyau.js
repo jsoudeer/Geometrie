@@ -846,6 +846,14 @@
       return c.matches('.choices, .qcm-choices, .feedback, .btn-row');
     }).forEach(function(c){ bottom.appendChild(c); });
     wrap.appendChild(bottom);
+    // Dans la rangée de boutons : « Nouvelle activité » toujours à gauche,
+    // « Vérifier » à sa droite. On change l'ordre dans la page elle-même (pas
+    // seulement à l'affichage) pour que le clavier suive le même ordre (RGAA 12.8).
+    var row = bottom.querySelector('.btn-row');
+    if(row){
+      var next = [].slice.call(row.children).filter(function(b){ return /-(next|new)$/.test(b.id); })[0];
+      if(next) row.insertBefore(next, row.firstChild);
+    }
     return wrap;
   }
   // Empreinte d'une question à choix (Quizz, Lire l'heure) pour l'anti-répétition.

@@ -74,6 +74,12 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     btnBottoms[key] = pos.rowBottom;
     chk(pos.last && pos.inBottom, 'zone de réponse en bas (réponses + boutons)');
     if (pos.gap !== null) chk(pos.gap >= 0 && pos.gap <= 40, 'réponses juste au-dessus des boutons (écart ' + pos.gap + ' px)');
+    const order = await page.evaluate(k => {
+      const btns = [...document.querySelectorAll('#fam-' + k + ' .btn-row .btn')];
+      const next = btns.find(b => /-(next|new)$/.test(b.id)), check = btns.find(b => /-check$/.test(b.id));
+      return { first: btns[0] === next, rightOf: !check || check.getBoundingClientRect().left > next.getBoundingClientRect().right - 1, labels: btns.map(b => b.textContent.trim()).join(' | ') };
+    }, key);
+    chk(order.first && order.rightOf, 'Nouvelle activité à gauche, Vérifier à sa droite (' + order.labels + ')');
     const colors = await page.evaluate(k => [...document.querySelectorAll('#fam-' + k + ' .btn-row .btn')].map(b => getComputedStyle(b).backgroundColor), key);
     chk(colors.length > 0 && colors.every(c => c === colors[0]), 'boutons de la même couleur (' + [...new Set(colors)].join(' / ') + ')');
 

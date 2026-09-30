@@ -26,6 +26,8 @@ Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seu
 
 **Accessibilité (RGAA)** : contrastes vérifiés automatiquement dans les deux thèmes, focus visible, libellés pour lecteurs d'écran, boîtes de dialogue fermées par Échap, coins de la forme déplaçables au clavier, ✔ / ✘ en plus de la couleur, police Rubik pour le Brainrot (la police décorative n'est gardée que pour le titre).
 
+**Ordre des boutons** (01/10/2026) : « Nouvelle activité » toujours à gauche, « Vérifier » à sa droite (rangé par `registerFamily`, ordre du clavier identique).
+
 **Estimer une longueur** (01/10/2026) : nouvelle activité (`estimate`, `geometrie.js`), groupe 📐 Formes & mesures, aussi en Chronométré : règle de 10 cm avec seulement 0 et 10, estimation à l'œil ; graduations révélées après la réponse ; Difficile : trait décalé, demi-cm. Compte dans la compétence « Mesures » de la progression.
 
 **Zone de réponse en bas** (01/10/2026) : dans toutes les activités, réponses à choisir puis boutons Vérifier / Nouvelle activité sont collés en bas de l'écran (`.q-bottom`, rangée faite par `registerFamily`) ; le retour d'une question fermée prend la place des boutons. L'écran d'entraînement occupe toute la hauteur. Si le contenu dépasse (cas rares), la page défile : à traiter plus tard.
