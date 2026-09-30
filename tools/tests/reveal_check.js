@@ -11,18 +11,23 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 800 } }, asy
     await page.click('#stars-btn');
     await page.evaluate(() => [...document.querySelectorAll('#shop-grid .sp-buy:not(.sp-info):not([disabled])')][0].click());
     await page.waitForTimeout(300);
-    chk(await page.evaluate(() => !!document.getElementById('reveal-overlay') && !document.getElementById('reveal-overlay').classList.contains('shown')), side + ' : silhouette en cours');
-    const f0 = await page.evaluate(() => getComputedStyle(document.querySelector('.rv-art')).filter);
+    chk(await page.evaluate(() => { const o = document.getElementById('reveal-overlay'); return !!o && o.classList.contains('spinning'); }), side + ' : silhouette qui tourne');
+    const f0 = await page.evaluate(() => getComputedStyle(document.querySelector('.rv-art.sil')).filter);
     chk(/brightness\(0\)/.test(f0), side + ' : silhouette noire (' + f0 + ')');
     await page.screenshot({ path: SHOTS + 'rv_' + side + '_1.png' });
-    await page.waitForTimeout(1100);
+    await page.waitForTimeout(1900);          // t ≈ 2,2 s : rotation finie, pause de face
+    const pause = await page.evaluate(() => { const o = document.getElementById('reveal-overlay'); const m = new DOMMatrix(getComputedStyle(document.querySelector('.rv-spinner')).transform); return { cls: o.className, a: m.a, b: m.b, col: getComputedStyle(document.querySelector('.rv-art.col')).clipPath }; });
+    chk(Math.abs(pause.a - 1) < 0.02 && Math.abs(pause.b) < 0.02 && /spinning/.test(pause.cls) && /100%/.test(pause.col), side + ' : déjà de face, toujours en ombre (' + pause.cls.replace('reveal-overlay ', '') + ')');
     await page.screenshot({ path: SHOTS + 'rv_' + side + '_2.png' });
-    await page.waitForTimeout(1300);
+    await page.waitForTimeout(650);           // balayage en cours
+    chk(await page.evaluate(() => document.getElementById('reveal-overlay').classList.contains('scanning')), side + ' : balayage lumineux en cours');
+    await page.screenshot({ path: SHOTS + 'rv_' + side + '_scan.png' });
+    await page.waitForTimeout(1100);
     chk(await page.evaluate(() => document.getElementById('reveal-overlay').classList.contains('shown')), side + ' : personnage dévoilé');
-    await page.waitForTimeout(700);
+    await page.waitForTimeout(600);
     await page.screenshot({ path: SHOTS + 'rv_' + side + '_3.png' });
-    const f1 = await page.evaluate(() => getComputedStyle(document.querySelector('.rv-art')).filter);
-    chk(/brightness\(1\)|none/.test(f1), side + ' : pleine couleur (' + f1 + ')');
+    const f1 = await page.evaluate(() => getComputedStyle(document.querySelector('.rv-art.col')).clipPath);
+    chk(f1 === 'none', side + ' : pleine couleur (' + f1 + ')');
     await page.click('.rv-ok');
     await page.waitForTimeout(150);
     chk(await page.evaluate(() => !document.getElementById('reveal-overlay')), side + ' : se ferme');
@@ -33,6 +38,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 800 } }, asy
   await ev(`applyTheme('cats'); showReveal([CAT_REWARDS[0]], 'Défi réussi !')`);
   await page.waitForTimeout(200); await page.click('#reveal-overlay');
   chk(await page.evaluate(() => document.getElementById('reveal-overlay').classList.contains('shown')), 'un toucher passe directement au dévoilement');
+  chk(stings.length === 3, 'le son est bien joué même quand on passe l\'animation');
   await page.keyboard.press('Escape');
   chk(await page.evaluate(() => !document.getElementById('reveal-overlay')), 'Échap ferme');
   console.log(bad ? 'ÉCHEC' : 'OK');

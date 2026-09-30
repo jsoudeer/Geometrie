@@ -177,16 +177,31 @@
   .rv-stage{ position:relative; width:min(78vw,300px); height:min(58vh,380px); display:flex; align-items:center; justify-content:center; }
   .rv-glow{ position:absolute; inset:8%; border-radius:50%; background:radial-gradient(circle, rgba(255,214,235,.55), rgba(255,214,235,0) 68%); opacity:0; transform:scale(.4); }
   .reveal-overlay.brainrot .rv-glow{ background:radial-gradient(circle, rgba(140,255,120,.55), rgba(140,255,120,0) 68%); }
-  .rv-art{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; filter:brightness(0); transform:scale(.12); }
+  .rv-spinner{ position:relative; width:100%; height:100%; transform:scale(.12); transform-style:preserve-3d; }
+  .rv-art{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .rv-art.sil{ filter:brightness(0); }
+  .rv-art.col{ clip-path:inset(0 100% 0 0); }
   .rv-art .sp-full-img, .rv-art .fullbody-compose{ width:auto; max-width:100%; height:auto; max-height:100%; object-fit:contain; display:block; margin:0; }
   .rv-art .fullbody-compose{ width:min(60vw,220px); }
   .rv-art svg{ max-height:100%; }
-  .reveal-overlay.spinning .rv-art{ animation:rvSpin 2.1s cubic-bezier(.2,.7,.25,1) forwards; }
+  /* 1) l'ombre grossit en pivotant et s'arrête DE FACE (2 tours pleins) */
+  .reveal-overlay.spinning .rv-spinner{ animation:rvSpin 2.1s cubic-bezier(.2,.7,.25,1) forwards; }
   @keyframes rvSpin{
     0%{ transform:scale(.12) rotateY(0deg); }
-    100%{ transform:scale(1) rotateY(900deg); }
+    100%{ transform:scale(1) rotateY(720deg); }
   }
-  .reveal-overlay.shown .rv-art{ animation:none; transform:scale(1); filter:brightness(1); transition:filter .5s ease-out; }
+  .reveal-overlay.scanning .rv-spinner, .reveal-overlay.shown .rv-spinner{ transform:scale(1); }
+  /* 2) un trait de lumière balaye le personnage de gauche à droite et révèle la couleur */
+  .reveal-overlay.scanning .rv-art.col{ animation:rvScanClip 1s ease-in-out forwards; }
+  @keyframes rvScanClip{ from{ clip-path:inset(0 100% 0 0); } to{ clip-path:inset(0 0 0 0); } }
+  .rv-scan{ position:absolute; top:-4%; bottom:-4%; left:0; width:8px; margin-left:-4px; border-radius:6px; opacity:0; pointer-events:none;
+    background:linear-gradient(to bottom, rgba(255,255,255,0), #fff 18%, #fff 82%, rgba(255,255,255,0));
+    box-shadow:0 0 18px 8px rgba(255,235,250,.85), 0 0 46px 18px rgba(255,170,220,.55); }
+  .reveal-overlay.brainrot .rv-scan{ box-shadow:0 0 18px 8px rgba(225,255,215,.85), 0 0 46px 18px rgba(120,255,110,.55); }
+  .reveal-overlay.scanning .rv-scan{ animation:rvScanBar 1s ease-in-out forwards; }
+  @keyframes rvScanBar{ 0%{ left:0; opacity:0; } 8%{ opacity:1; } 92%{ opacity:1; } 100%{ left:100%; opacity:0; } }
+  .reveal-overlay.shown .rv-art.col{ animation:none; clip-path:none; }
+  .reveal-overlay.shown .rv-scan{ display:none; }
   .reveal-overlay.shown .rv-glow{ animation:rvGlow 1.4s ease-out forwards; }
   @keyframes rvGlow{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; transform:scale(1.15); } 100%{ opacity:.55; transform:scale(1); } }
   .rv-flash{ position:absolute; inset:-30%; background:#fff; opacity:0; pointer-events:none; border-radius:50%; }
@@ -199,6 +214,6 @@
   .rv-name{ font-family:var(--font-display); font-weight:900; font-size:26px; margin:0; }
   .rv-role{ margin:2px 0 10px; font-size:14px; opacity:.85; }
   @media (prefers-reduced-motion: reduce){
-    .reveal-overlay, .reveal-overlay.spinning .rv-art, .reveal-overlay.shown .rv-glow, .reveal-overlay.shown .rv-flash, .rv-spark{ animation:none; }
+    .reveal-overlay, .reveal-overlay.spinning .rv-spinner, .reveal-overlay.shown .rv-glow, .reveal-overlay.shown .rv-flash, .rv-spark{ animation:none; }
     .rv-spark{ display:none; } .rv-info{ transition:none; }
   }
