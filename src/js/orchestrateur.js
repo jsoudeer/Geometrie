@@ -47,11 +47,21 @@
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
     var poolTypes = lv.types;
-    if(m4CategoryFilter!=='all'){
-      var inCat = lv.types.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===m4CategoryFilter; });
+    var freeType = (m4TypeFilter==='random' || lv.types.indexOf(m4TypeFilter)===-1);
+    var cat = m4CategoryFilter;
+    if(cat==='all' && freeType){
+      // Tirage « sans remise » au niveau des catégories : chacune sort une fois
+      // avant qu'aucune ne revienne.
+      var cats = [];
+      lv.types.forEach(function(t){ var d = quizTypeById(t); var c = d && quizCategoryId(d); if(c && cats.indexOf(c)===-1) cats.push(c); });
+      if(cats.length) cat = pickFresh('qcmcat|' + globalLevel + '|' + cats.join(','), cats);
+    }
+    if(cat!=='all'){
+      var inCat = lv.types.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===cat; });
       if(inCat.length) poolTypes = inCat;
     }
-    var type = (m4TypeFilter!=='random' && lv.types.indexOf(m4TypeFilter)!==-1) ? m4TypeFilter : pickOther(poolTypes, lastQcmType);
+    // Idem pour les types au sein de la catégorie (sans remise).
+    var type = !freeType ? m4TypeFilter : pickFresh('qcmtype|' + globalLevel + '|' + poolTypes.join(','), poolTypes);
     lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     return (quizTypeById(type) || quizTypeById('image')).generate(globalLevel);
@@ -457,14 +467,45 @@
     for(var i=0;i<EXTRA_FAMILIES.length;i++){ if(EXTRA_FAMILIES[i].key===key) return EXTRA_FAMILIES[i]; }
     return null;
   }
+  // Choix de la famille « sans remise » : chaque famille sort (le quiz autant de
+  // fois que son poids) avant qu'aucune ne revienne ; jamais deux fois de suite
+  // la même famille quand il y a le choix.
+  var FAM_BAG = { sig:'', bag:[] };
+  function pickFamilyFresh(){
+    var keys = familyKeys(), sig = keys.join(',');
+    if(FAM_BAG.sig!==sig || !FAM_BAG.bag.length){
+      var order, ok, guard = 0, distinct = keys.filter(function(k,i){ return keys.indexOf(k)===i; }).length;
+      do {
+        order = shuffle(keys.slice());
+        ok = true;
+        if(distinct>1){
+          // on lit le sac par la fin (pop) : order[len-1] sort en premier
+          if(order[order.length-1]===lastFamily) ok = false;
+          for(var i=1;i<order.length && ok;i++){ if(order[i]===order[i-1]) ok = false; }
+        }
+      } while(!ok && ++guard<200);
+      FAM_BAG = { sig:sig, bag:order };
+    }
+    // on prend la première famille (par le haut du sac) différente de celle affichée
+    var bag = FAM_BAG.bag, at = bag.length-1;
+    while(at>0 && bag[at]===lastFamily) at--;
+    var key = bag.splice(at,1)[0];
+    return key;
+  }
   function nextPracticeQuestion(){
-    var sig = null;
+    var sig = null, prevShown = lastFamily;
     for(var tries=0; tries<15; tries++){
-      var key = (appMode==='manual' && manualFamily) ? manualFamily : pickOther(familyKeys(), lastFamily);
+      lastFamily = prevShown;   // on évite la famille réellement affichée, pas un essai rejeté
+      var key = (appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh();
       lastFamily = key;
-      generateFamilyQuestion(key);
-      sig = questionSignature(key);
-      if(seenSigs.indexOf(sig) === -1) break;
+      // d'abord on retente dans la même famille (elle garde son tour), puis on en change
+      var fresh = false;
+      for(var again=0; again<4 && !fresh; again++){
+        generateFamilyQuestion(key);
+        sig = questionSignature(key);
+        fresh = seenSigs.indexOf(sig) === -1;
+      }
+      if(fresh) break;
     }
     seenSigs.push(sig);
     if(seenSigs.length > SEEN_MAX) seenSigs.shift();
