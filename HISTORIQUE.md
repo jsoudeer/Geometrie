@@ -117,6 +117,5 @@ Deux panneaux distincts (`tab-shop`, `tab-battle`) ouverts par `#stars-btn` et `
 ## 21. Réinitialisation : seul le premier personnage reste (30/09/2026)
 `resetProgress` ne garde que le premier personnage de départ de chaque clan, redevenu mascotte. `loadOwned` n'ajoute plus les 5 personnages de départ que s'il n'y a aucune sauvegarde (sinon ils revenaient au rechargement). Test : `reset_check.js`.
 
-## 22. Personnages verrouillés en ombre chinoise (30/09/2026)
-Cartes `.locked` : `filter:brightness(0)`, nom « ??? », rôle « Mystère », libellé d'accessibilité neutre, pas d'aperçu au toucher ; fenêtre d'explication d'un défi en silhouette (`.info-art.silhouette`). Test : `silhouette_check.js`.
-
+## 22. Personnages verrouillés : image « ? » commune à chaque clan (30/09/2026)
+Première version en silhouette noire du vrai dessin (`brightness(0)`) : abandonnée (carré noir pour les photos, silhouettes différentes qui trahissent). Remplacée par `drawMysterySprite` / `renderMysteryVisual` (boutique.js) : une même image par clan (chat / brainrot noir avec « ? »), nom visible, rôle « Mystère », pas d'aperçu au toucher, fenêtre de défi avec la même image. Test : `silhouette_check.js`.

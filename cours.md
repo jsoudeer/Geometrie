@@ -212,5 +212,5 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 
 **Bouton « +50 ⭐ »** (Boutique, à droite du nombre d'étoiles) : ajoute 50 étoiles d'un clic, pour s'entraîner à débloquer des personnages.
 
-**Personnages verrouillés** : dans la Boutique, un personnage pas encore débloqué est une **ombre chinoise** entièrement noire, sans nom (« ??? ») ni rôle ni points (« ❔ Mystère ») ; seuls sa rareté et son prix (ou le défi à relever) restent visibles. Toucher sa carte n'ouvre pas d'aperçu : on le découvre au moment du reveal.
+**Personnages verrouillés** : dans la Boutique, un personnage pas encore débloqué s'affiche avec une **image commune à tout son clan** (un chat noir avec un « ? » pour les Chats kawaii, un brainrot noir avec un « ? » pour les Brainrots) : on ne devine rien de son dessin. Son **nom** reste visible, avec sa rareté et son prix (ou le défi à relever) ; son rôle et ses points sont cachés (« ❔ Mystère »). Toucher sa carte n'ouvre pas d'aperçu : on le découvre au moment du reveal.
 
