@@ -313,7 +313,9 @@
     });
   }
 
+  var m2Won = false;
   function newDeformQuestion(){
+    m2Won = false;
     m2ShapeIdx = randInt(0,2);
     document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
     var target = shapeTargetPoints(m2ShapeIdx);
@@ -335,7 +337,7 @@
     fb.textContent = res.msg;
     playSound(res.ok ? 'good' : 'bad');
     celebrate(res.ok ? 'good' : 'bad', fb);
-    if(res.ok) addStar(1);
+    if(res.ok && !m2Won){ m2Won = true; addStar(1); }   // une seule étoile par forme
   });
 
   function regularPoly(n, rot){

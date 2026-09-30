@@ -1962,7 +1962,9 @@
     });
   }
 
+  var m2Won = false;
   function newDeformQuestion(){
+    m2Won = false;
     m2ShapeIdx = randInt(0,2);
     document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
     var target = shapeTargetPoints(m2ShapeIdx);
@@ -1984,7 +1986,7 @@
     fb.textContent = res.msg;
     playSound(res.ok ? 'good' : 'bad');
     celebrate(res.ok ? 'good' : 'bad', fb);
-    if(res.ok) addStar(1);
+    if(res.ok && !m2Won){ m2Won = true; addStar(1); }   // une seule étoile par forme
   });
 
   function regularPoly(n, rot){
@@ -3121,14 +3123,26 @@
   // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
   // des crans qui dépendent du niveau (0 Facile, 1 Moyen, 2 Difficile) :
   //   Facile     heure pile ou demie      (petite : crans de 15°, grande : 2 positions)
-  //   Moyen      + les quarts d'heure     (petite : 7,5°,          grande : 4 positions)
-  //   Difficile  toutes les 5 minutes, heure de 0 h à 23 h (petite : 5°, grande : 12 positions)
+  //   Moyen      + les quarts d'heure     (petite : 15°,           grande : 4 positions)
+  //   Difficile  toutes les 5 minutes, heure de 0 h à 23 h (petite : 15°, grande : 12 positions)
   var m5Target = { hour:3, minute:0, level:0 };
   var m5rHourTick = 0, m5rMinTick = 0, m5rDragWhich = null;
-  var M5R_HOUR_STEP = [15, 7.5, 5];    // degrés par cran, petite aiguille
+  var m5rWon = false;   // une seule étoile par heure demandée, même si on clique plusieurs fois sur « Vérifier »
+  var M5R_HOUR_STEP = [15, 15, 15];    // degrés par cran, petite aiguille : 24 positions (heures pleines + demi-heures) à tous les niveaux
   var M5R_MIN_STEP = [180, 90, 30];    // degrés par cran, grande aiguille
-  var M5R_HOUR_TOL = [0.01, 4, 3];     // écart accepté (degrés) sur la petite aiguille
+  // écart accepté (degrés) sur la petite aiguille : la position exacte (heure + minutes/60) est
+  // arrondie au cran de 15° le plus proche ; à 15 ou 45 min, pile entre deux crans, les deux sont acceptés.
+  var M5R_HOUR_TOL = [7.51, 7.51, 7.51];
 
+  // Où se place la petite aiguille : sur une heure ou entre deux heures, selon les minutes.
+  function hourHandHint(h, m){
+    var a = h%12 || 12, b = a%12 + 1;
+    if(m<=10) return 'Indice : elle est juste sur le ' + a + '.';
+    if(m>=50) return 'Indice : il est presque ' + b + ' h, elle est presque sur le ' + b + ' (on la place sur le ' + b + ').';
+    if(m===15) return 'Indice : elle est un peu après le ' + a + ' (sur le ' + a + ' ou à mi-chemin vers le ' + b + ').';
+    if(m===45) return 'Indice : elle est presque au ' + b + ' (à mi-chemin entre le ' + a + ' et le ' + b + ', ou sur le ' + b + ').';
+    return 'Indice : elle est entre le ' + a + ' et le ' + b + ', à mi-chemin.';
+  }
   function m5rHourTip(){ return angleToXY(m5rHourTick*M5R_HOUR_STEP[m5Target.level] - 90, 42); }
   function m5rMinTip(){ return angleToXY(m5rMinTick*M5R_MIN_STEP[m5Target.level] - 90, 62); }
 
@@ -3165,6 +3179,7 @@
       label = minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' (' + periodOfDay(m5Target.hour).phrase + ')';
     }
     m5rHourTick = 0; m5rMinTick = 0; // les aiguilles repartent de midi bien net
+    m5rWon = false;
     document.getElementById('m5-target').textContent = label;
     drawSettableClock();
     var fb = document.getElementById('m5r-feedback'); fb.className='feedback'; fb.innerHTML='';
@@ -3208,12 +3223,12 @@
     if(hourOk && minOk){
       fb.className = 'feedback good show';
       fb.innerHTML = '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs;
-      addStar(1);
+      if(!m5rWon){ m5rWon = true; addStar(1); }
       setCoachReaction('good');
     } else {
       fb.className = 'feedback bad show';
       var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
-        : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée.'
+        : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée. ' + hourHandHint(m5Target.hour, m5Target.minute)
         : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
       fb.innerHTML = '<div>✘ ' + msg + '</div>' + readAs;
       setCoachReaction('bad');
@@ -5228,7 +5243,7 @@
     measure:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
     deform:'Une seule épreuve avec 3 formes cibles (losange, rectangle, parallélogramme) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins en Moyen, les 4 coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
     'clock-lire':'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
-    'clock-regler':'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h).'
+    'clock-regler':'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place sur 24 positions à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (à 15 ou 45 minutes, les deux positions voisines sont acceptées).'
   };
   var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
   // Familles déclarées par les thèmes (voir registerFamily dans noyau.js) : on les
