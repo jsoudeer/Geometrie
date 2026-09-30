@@ -95,3 +95,7 @@ Branche `ateliers` : `registerFamily` (noyau.js) permet à un thème de déclare
 
 ## 14. Correctifs horloge (30/09/2026)
 Régler l'heure et Déformer donnaient une étoile à CHAQUE clic sur Vérifier : désormais une seule par question (`m5rWon`, `m2Won`). Petite aiguille de Régler l'heure : 24 positions à tous les niveaux (crans de 15°, tolérance 7,5°) au lieu de 48/72 ; indice `hourHandHint` quand elle est mal placée. Test : `regler_check.js`.
+
+## 15. Avancement auto en Aléatoire, difficulté de la Bataille (30/09/2026)
+L'avancement automatique de niveau fonctionne aussi en mode Aléatoire (`onPracticeAnswered`, via `freeStreak`). Bataille : difficulté choisie avant le combat (`BT_DIFFS`, `btDiff`, clé `geo_bt_diff`) ; l'équipe adverse est tirée parmi les combinaisons dont le total de points est le plus proche de celui du joueur ×0,8 / ×1 / ×1,2 (`btBuildEnemyTeam`). Tests : `avance_check.js`, `bataille_diff_check.js`.
+

@@ -166,6 +166,8 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 ### Bataille
 Équipe de **3 classiques + 1 Soutien + 1 Archer** du clan actif. 3 cartes au hasard sur le terrain ; quand une carte est battue (0 point), une autre la remplace. Quand A attaque B : B perd autant de points que A en a, et A perd les points de B (sauf l'Archer). Victoire : **+3 ⭐**.
 
+**Difficulté** (choisie avant le combat) : le total des points ❤️ de l'équipe adverse vaut celui de la tienne en **Normal**, **20 % de moins en Facile**, **20 % de plus en Difficile** (l'adversaire garde 3 classiques + 1 soutien + 1 archer, tirés au plus près de cette cible ; le total est affiché avant et pendant le combat). Le choix est mémorisé.
+
 ### Défis (15 personnages par clan : un défi réussi débloque le personnage du clan dans lequel on joue)
 
 **Défis chronométrés** : bonnes réponses à obtenir avant la fin du temps.
@@ -185,6 +187,7 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 - **Avancement automatique (mode Manuel)** : passe au niveau suivant après 3, 5, 8 ou 10 bonnes réponses d'affilée.
 - **Affichage des personnages en Bataille** : tête ou plein pied.
 - **Configurer les activités** : chaque type de Quizz et chaque patron peut être ajouté ou retiré d'un niveau.
+- **Avancement automatique** : après 3, 5, 8 ou 10 bonnes réponses d'affilée, on passe au niveau supérieur, en mode **Manuel** comme en mode **Aléatoire** (jamais en Chronométré). Les défis « 20 bonnes réponses d'affilée » se jouent sur un seul niveau : pour les relever, il faut désactiver l'avancement.
 - **Effacer ma progression** : remet étoiles, personnages débloqués et mascotte à zéro (en deux étapes).
 
 

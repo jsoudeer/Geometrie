@@ -538,6 +538,16 @@
         if(fresh.length) showUnlockAnnouncement(fresh, 'Série sans faute réussie !');
       }
       updateStreakPill();
+      // Avancement automatique en mode Aléatoire : après X bonnes réponses d'affilée, niveau supérieur.
+      if(correct && autoAdvanceEnabled && freeStreak >= autoAdvanceThreshold && globalLevel < 2 && !countdownRunning){
+        var fromLevel = globalLevel;
+        setTimeout(function(){
+          if(appMode!=='auto' || practiceMode!=='free' || globalLevel!==fromLevel) return;
+          var tabName = ['facile','moyen','difficile'][fromLevel+1];
+          var tabBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+          if(tabBtn){ tabBtn.click(); showAutoAdvanceToast(LEVEL_NAMES[fromLevel+1]); }
+        }, 700);
+      }
     }
     if(appMode==='manual' && manualFamily){
       if(!correct){

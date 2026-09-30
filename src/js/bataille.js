@@ -94,6 +94,11 @@
       missEl.textContent = 'Il te manque encore : ' + missing.join(', ') + '. Va en débloquer à la boutique !';
     } else missEl.hidden = true;
     document.getElementById('bt-start').disabled = !ok;
+    var total = 0;
+    BT_ROLE_ORDER.forEach(function(role){ sel[role].forEach(function(id){ var sp = findSprite(btMyList(), id); if(sp) total += sp.pts; }); });
+    if(BT_DIFFS) document.getElementById('bt-diff-note').textContent = ok
+      ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points.'
+      : 'Complète ton équipe pour voir les points de tes adversaires.';
     document.getElementById('bt-intro').textContent = btSide()==='cats'
       ? 'Tu joues avec les Chats Kawaii contre les Brainrots. Forme ton équipe : 3 classiques, 1 soutien et 1 archer.'
       : 'Tu joues avec les Brainrots contre les Chats Kawaii. Forme ton équipe : 3 classiques, 1 soutien et 1 archer.';
@@ -136,25 +141,47 @@
     btOnArrive(sideObj, unit, notes);
     return unit;
   }
+  /* ---- Difficulté : le total des points ❤️ de l'équipe adverse vaut celui de la
+     tienne (Normal), 20 % de moins (Facile) ou 20 % de plus (Difficile). ---- */
+  var BT_DIFFS = [
+    { label:'Facile (−20 %)',    factor:0.8, name:'Facile' },
+    { label:'Normal',            factor:1,   name:'Normal' },
+    { label:'Difficile (+20 %)', factor:1.2, name:'Difficile' }
+  ];
+  var btDiff = 1;
+  try{ var savedDiff = parseInt(localStorage.getItem('geo_bt_diff'),10); if(savedDiff>=0 && savedDiff<BT_DIFFS.length) btDiff = savedDiff; }catch(e){}
+  function btTotal(units){ return units.reduce(function(sum, u){ return sum + u.sprite.pts; }, 0); }
+  // Équipe adverse : 3 classiques + 1 soutien + 1 archer du clan d'en face, tirés au hasard
+  // parmi les combinaisons dont le total est le plus proche de la cible (variété conservée).
   function btBuildEnemyTeam(myUnits){
-    var maxMine = Math.max.apply(null, myUnits.map(function(u){ return u.sprite.pts; }));
+    var target = btTotal(myUnits) * BT_DIFFS[btDiff].factor;
     var pool = btEnemyList();
-    function pickRole(role, n){
-      var all = pool.filter(function(s){ return s.role === role; });
-      // (équilibrage mesuré par simulation : avec 'pts <= meilleure carte du joueur', un
-      // joueur qui tape au hasard gagne ~50 % des combats, un joueur attentif ~70 %)
-      var cands = all.filter(function(s){ return s.pts <= maxMine; });
-      if(cands.length < n) cands = all.slice().sort(function(a,b){ return a.pts-b.pts; }).slice(0, Math.max(n,3));
-      return btShuffle(cands).slice(0, n);
+    function byRole(role){ return pool.filter(function(s){ return s.role === role; }); }
+    var classics = byRole('classic'), supports = byRole('support'), archers = byRole('archer');
+    var seen = {}, cands = [];
+    for(var i=0;i<900;i++){
+      var c3 = btShuffle(classics).slice(0,3), sp = supports[btRand(supports.length)], ar = archers[btRand(archers.length)];
+      var team = c3.concat([sp, ar]);
+      var key = team.map(function(x){ return x.id; }).sort().join(',');
+      if(seen[key]) continue;
+      seen[key] = true;
+      var total = team.reduce(function(sum, x){ return sum + x.pts; }, 0);
+      cands.push({ team:team, gap:Math.abs(total - target) });
     }
-    return pickRole('classic',3).concat(pickRole('support',1), pickRole('archer',1)).map(btMakeUnit);
+    cands.sort(function(a,b){ return a.gap - b.gap; });
+    var best = cands[0].gap;
+    var near = cands.filter(function(c){ return c.gap <= best; });    // ex æquo au plus près
+    if(near.length < 6) near = cands.slice(0, 6).filter(function(c){ return c.gap <= best + 1; });
+    return pick_(near).team.map(btMakeUnit);
   }
+  function pick_(arr){ return arr[btRand(arr.length)]; }
   function btStart(){
     var side = btSide(), sel = btSel[side];
     var ids = sel.classic.concat(sel.support, sel.archer);
     var myUnits = ids.map(function(id){ return btMakeUnit(findSprite(btMyList(), id)); });
     if(myUnits.length !== 5 || myUnits.some(function(u){ return !u.sprite; })) return;
     var enUnits = btBuildEnemyTeam(myUnits);
+    var myTotal = btTotal(myUnits), enTotal = btTotal(enUnits);   // avant que les cartes soient tirées sur le terrain
     bt = {
       side: side,
       pl: { field:[], reserve:myUnits },
@@ -166,8 +193,9 @@
     document.getElementById('bt-setup').hidden = true;
     document.getElementById('bt-over').hidden = true;
     document.getElementById('bt-arena').hidden = false;
-    document.getElementById('bt-enemy-title').textContent = side==='cats' ? 'Adversaires (Brainrots 👹)' : 'Adversaires (Chats Kawaii 🐱)';
-    btLog(notes.length ? notes : ['Le combat commence !'], true);
+    document.getElementById('bt-enemy-title').textContent = (side==='cats' ? 'Adversaires (Brainrots 👹)' : 'Adversaires (Chats Kawaii 🐱)') + ' · ❤️ ' + enTotal;
+    var intro = 'Difficulté ' + BT_DIFFS[btDiff].name + ' : équipe adverse ❤️ ' + enTotal + ' points, la tienne ❤️ ' + myTotal + '.';
+    btLog([intro].concat(notes), true);
     btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
     btRender();
   }
@@ -340,6 +368,11 @@
     renderBtSetup();
   }
   function onThemeChangedForBattle(){ btBackToSetup(); }
+  buildLevelRow(document.getElementById('bt-diff-row'), BT_DIFFS.map(function(d){ return d.label; }), btDiff, function(idx){
+    btDiff = idx;
+    try{ localStorage.setItem('geo_bt_diff', String(idx)); }catch(e){}
+    renderBtSetup();
+  });
   document.getElementById('bt-start').addEventListener('click', btStart);
   document.getElementById('bt-quit').addEventListener('click', btBackToSetup);
   document.getElementById('bt-change-team').addEventListener('click', btBackToSetup);
