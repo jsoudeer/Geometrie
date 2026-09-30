@@ -102,3 +102,6 @@ L'avancement automatique de niveau fonctionne aussi en mode Aléatoire (`onPract
 ## 16. Tirage sans remise des activités et des catégories de quiz (30/09/2026)
 `pickFamilyFresh` (sac de familles, sans doublon adjacent, retente 4 fois dans la même famille avant d'en changer) ; `genQuestion` tire la catégorie puis le type via `pickFresh`. Test : `fresh_check.js`.
 
+## 17. Bataille : équipe en un clic, cartes persistantes (30/09/2026)
+Cartes de choix et cartes de combat créées une seule fois (`btSetupCards`, `bt.cards`) et mises à jour en place (`btReconcile`, `btSyncCard`) au lieu d'être recréées à chaque rendu, cause du clignotement des images. Animations : `btLunge`, chiffres qui défilent (`btAnimatePts`), `btFloat`, `bDie`/`bArrive`. Choix d'équipe : `btToggleSetup` (le plus ancien sort), `btAutoTeam`. Test : `bataille_ui_check.js`.
+

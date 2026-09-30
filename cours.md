@@ -200,3 +200,8 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 
 ## Répartition des questions (tirage sans remise)
 En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horloge lire/régler, ateliers) sort une fois par tour avant qu'aucune ne revienne (le quiz compte triple), et jamais deux fois de suite. Dans le quiz, les **catégories** (formes, repère, solides, temps…) tournent aussi sans remise, puis les types à l'intérieur de chaque catégorie. Une question déjà vue dans la série est retirée (4 essais dans la même activité, puis changement d'activité).
+
+## Bataille : choix d'équipe et animations
+- **Choix d'équipe** : trois boutons — « ⚡ Équipe complète (les plus forts) », « 🎲 Au hasard » et « Vider ». Quand la place d'un rôle est pleine, choisir un personnage de plus fait sortir le **plus ancien** choisi de ce rôle.
+- **Combat** : chaque carte garde son image pendant tout le combat (plus de clignotement). L'attaquant fonce sur sa cible (l'archer tire une flèche), la cible tremble, les points défilent avec un « −8 » / « +5 » flottant, puis les cartes battues s'effacent et les remplaçants apparaissent.
+

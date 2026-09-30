@@ -47,20 +47,58 @@
       ['cats','brainrot'].forEach(function(side){ localStorage.setItem('geo_bt_team_'+side, JSON.stringify(btSel[side])); });
     }catch(e){}
   }
-  function btSpritePlain(sprite){ return sprite; }
-  function btSetupCard(sprite, picked, full, onClick){
-    var card = document.createElement('button');
-    card.type = 'button';
+  // Les cartes de choix sont créées UNE fois par personnage puis simplement
+  // mises à jour : recréer les images à chaque clic les faisait clignoter.
+  var btSetupCards = {};
+  function btReconcile(container, els){
+    Array.prototype.slice.call(container.children).forEach(function(el){ if(els.indexOf(el)===-1) container.removeChild(el); });
+    els.forEach(function(el, i){ if(container.children[i]!==el) container.insertBefore(el, container.children[i] || null); });
+  }
+  function btSetupCard(sprite){
+    var key = btSide() + '|' + sprite.id;
+    var card = btSetupCards[key];
+    if(!card){
+      card = btSetupCards[key] = document.createElement('button');
+      card.type = 'button';
+      renderSpriteVisual(card, sprite);
+      var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
+      card.appendChild(nameEl);
+      var pts = document.createElement('div'); pts.className='sp-role'; pts.textContent = '❤️ ' + sprite.pts + ' points';
+      card.appendChild(pts);
+      card.addEventListener('click', function(){ btToggleSetup(sprite); });
+    }
+    return card;
+  }
+  function btUpdateSetupCard(card, sprite, picked, full){
     card.className = 'sprite-card owned' + (picked ? ' selected' : '') + (full && !picked ? ' is-full' : '');
     card.setAttribute('aria-pressed', picked ? 'true' : 'false');
     card.setAttribute('aria-label', sprite.name + ', ' + BT_ROLE_META[sprite.role].label + ', ' + sprite.pts + ' points' + (picked ? ', choisi' : ''));
-    renderSpriteVisual(card, sprite);
-    var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
-    card.appendChild(nameEl);
-    var pts = document.createElement('div'); pts.className='sp-role'; pts.textContent = '❤️ ' + sprite.pts + ' points';
-    card.appendChild(pts);
-    card.addEventListener('click', onClick);
-    return card;
+  }
+  // Clic sur un personnage : on le retire s'il est choisi ; sinon on l'ajoute,
+  // et si la place est pleine, le PLUS ANCIEN choisi de ce rôle sort.
+  function btToggleSetup(sprite){
+    var sel = btSel[btSide()], role = sprite.role;
+    var pos = sel[role].indexOf(sprite.id);
+    if(pos !== -1) sel[role].splice(pos,1);
+    else {
+      sel[role].push(sprite.id);
+      while(sel[role].length > BT_LIMITS[role]) sel[role].shift();
+    }
+    saveBtSel();
+    renderBtSetup();
+  }
+  // Équipe complète en un clic : les plus forts, ou au hasard, ou tout vider.
+  function btAutoTeam(mode){
+    var side = btSide(), sel = btSel[side], owned = btMyOwned();
+    BT_ROLE_ORDER.forEach(function(role){
+      var mine = btMyList().filter(function(x){ return x.role===role && owned[x.id]; });
+      if(mode==='clear'){ sel[role] = []; return; }
+      if(mode==='random') mine = btShuffle(mine);
+      else mine = mine.slice().sort(function(x,y){ return y.pts - x.pts; });
+      sel[role] = mine.slice(0, BT_LIMITS[role]).map(function(x){ return x.id; });
+    });
+    saveBtSel();
+    renderBtSetup();
   }
   function renderBtSetup(){
     if(!document.getElementById('bt-grid-classic')) return;
@@ -70,20 +108,13 @@
       // on oublie les personnages choisis qui ne sont plus possédés (ex : effacement de la progression)
       sel[role] = sel[role].filter(function(id){ return !!owned[id]; });
       var container = document.getElementById('bt-grid-'+role);
-      container.innerHTML = '';
       var mine = btMyList().filter(function(s){ return s.role===role && owned[s.id]; });
-      mine.forEach(function(sprite){
-        var picked = sel[role].indexOf(sprite.id) !== -1;
-        var full = sel[role].length >= BT_LIMITS[role];
-        container.appendChild(btSetupCard(sprite, picked, full, function(){
-          var pos = sel[role].indexOf(sprite.id);
-          if(pos !== -1) sel[role].splice(pos,1);
-          else if(sel[role].length < BT_LIMITS[role]) sel[role].push(sprite.id);
-          else if(BT_LIMITS[role] === 1) sel[role] = [sprite.id]; // un seul emplacement : on remplace
-          saveBtSel();
-          renderBtSetup();
-        }));
-      });
+      var full = sel[role].length >= BT_LIMITS[role];
+      btReconcile(container, mine.map(function(sprite){
+        var card = btSetupCard(sprite);
+        btUpdateSetupCard(card, sprite, sel[role].indexOf(sprite.id) !== -1, full);
+        return card;
+      }));
       document.getElementById('bt-count-'+role).textContent = sel[role].length + '/' + BT_LIMITS[role];
       if(sel[role].length !== BT_LIMITS[role]) ok = false;
       if(mine.length < BT_LIMITS[role]) missing.push((BT_LIMITS[role]-mine.length) + ' ' + BT_ROLE_META[role].label.toLowerCase());
@@ -186,7 +217,7 @@
       side: side,
       pl: { field:[], reserve:myUnits },
       en: { field:[], reserve:enUnits },
-      phase: 'pick-attacker', selected: null, over: false, log: []
+      phase: 'pick-attacker', selected: null, over: false, log: [], cards: {}, animateArrivals: false
     };
     var notes = [];
     for(var i=0;i<BT_FIELD_SIZE;i++){ btDrawFromReserve(bt.pl, notes); btDrawFromReserve(bt.en, notes); }
@@ -209,62 +240,105 @@
       var p = document.createElement('p'); p.textContent = l; document.getElementById('bt-log').appendChild(p);
     });
   }
-  function btUnitCard(unit, isEnemy){
-    var card = document.createElement('button');
+  var BT_REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // Chaque unité garde SA carte (créée une seule fois) : on ne fait que la
+  // mettre à jour. Plus de clignotement des images, et les animations (secousse,
+  // chiffres qui défilent, « −5 » qui s'envole) ne sont plus coupées.
+  function btCardFor(unit, isEnemy){
+    var card = bt.cards[unit.uid];
+    if(card) return card;
+    card = bt.cards[unit.uid] = document.createElement('button');
     card.type = 'button';
     card.className = 'bcard' + (isEnemy ? ' enemy' : '');
     card.setAttribute('data-uid', String(unit.uid));
-    var m = BT_ROLE_META[unit.sprite.role];
-    card.setAttribute('aria-label', (isEnemy ? 'Adversaire : ' : 'Ta carte : ') + unit.sprite.name + ', ' + m.label + ', ' + unit.pts + ' points');
     var art = document.createElement('div'); art.className = 'bcard-art';
     renderCreatureVisual(art, unit.sprite, fighterDisplayMode);
     card.appendChild(art);
+    var m = BT_ROLE_META[unit.sprite.role];
     var nameEl = document.createElement('div'); nameEl.className = 'bcard-name'; nameEl.textContent = unit.sprite.name;
     card.appendChild(nameEl);
     var role = document.createElement('div'); role.className = 'bcard-role'; role.textContent = m.icon + ' ' + m.label;
     card.appendChild(role);
-    var pts = document.createElement('div'); pts.className = 'bcard-pts'; pts.textContent = '❤️ ' + unit.pts + (unit.buffed ? ' ⬆' : '');
+    var pts = document.createElement('div'); pts.className = 'bcard-pts';
     card.appendChild(pts);
-    return card;
-  }
-  function btRender(){
-    if(!bt) return;
-    var plField = document.getElementById('bt-player-field'), enField = document.getElementById('bt-enemy-field');
-    plField.innerHTML = ''; enField.innerHTML = '';
-    bt.pl.field.forEach(function(u){
-      var c = btUnitCard(u, false);
-      var isSel = bt.selected === u;
-      if(isSel){ c.classList.add('selected'); c.setAttribute('aria-pressed','true'); }
-      var canPick = !bt.over && ((bt.phase === 'pick-attacker') || (bt.phase === 'pick-target' && isSel));
-      c.disabled = !canPick;
-      c.addEventListener('click', function(){
-        if(bt.phase === 'pick-attacker'){
-          bt.selected = u; bt.phase = 'pick-target';
-          btSetStatus(u.sprite.name + ' est prêt : touche la carte adverse à attaquer (ou retouche ta carte pour changer).');
-          btRender();
-        } else if(bt.phase === 'pick-target' && bt.selected === u){
-          bt.selected = null; bt.phase = 'pick-attacker';
-          btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
-          btRender();
-        }
-      });
-      plField.appendChild(c);
-    });
-    bt.en.field.forEach(function(u){
-      var c = btUnitCard(u, true);
-      var canTarget = !bt.over && bt.phase === 'pick-target';
-      if(canTarget) c.classList.add('targetable');
-      c.disabled = !canTarget;
-      c.addEventListener('click', function(){
+    card._pts = pts; card._shown = Math.max(0, unit.pts); card._buffed = unit.buffed;
+    btSetPtsText(card, card._shown, unit.buffed);
+    if(bt.animateArrivals && !BT_REDUCED) card.classList.add('arrive');
+    card.addEventListener('click', function(){
+      if(!bt || bt.over) return;
+      if(isEnemy){
         if(bt.phase !== 'pick-target') return;
         var attacker = bt.selected;
         bt.selected = null; bt.phase = 'busy';
         btSetStatus('Attaque en cours…');
         btRender();
-        btResolveAttack(bt.pl, attacker, bt.en, u, false, btAfterPlayerAttack);
-      });
-      enField.appendChild(c);
+        btResolveAttack(bt.pl, attacker, bt.en, unit, false, btAfterPlayerAttack);
+      } else if(bt.phase === 'pick-attacker'){
+        bt.selected = unit; bt.phase = 'pick-target';
+        btSetStatus(unit.sprite.name + ' est prêt : touche la carte adverse à attaquer (ou retouche ta carte pour changer).');
+        btRender();
+      } else if(bt.phase === 'pick-target' && bt.selected === unit){
+        bt.selected = null; bt.phase = 'pick-attacker';
+        btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
+        btRender();
+      }
     });
+    return card;
+  }
+  function btSetPtsText(card, value, buffed){ card._pts.textContent = '❤️ ' + value + (buffed ? ' ⬆' : ''); }
+  function btFloat(card, text, cls){
+    var f = document.createElement('div');
+    f.className = 'dmg-float ' + cls; f.setAttribute('aria-hidden','true'); f.textContent = text;
+    card.appendChild(f);
+    setTimeout(function(){ if(f.parentNode) f.parentNode.removeChild(f); }, 1100);
+  }
+  // Fait défiler le nombre de points de `from` à `to` (et pose « −5 » / « +5 »).
+  function btAnimatePts(card, unit, from, to){
+    var delta = to - from;
+    btFloat(card, (delta>0 ? '+' : '−') + Math.abs(delta), delta>0 ? 'pos' : 'neg');
+    if(delta < 0 && !BT_REDUCED){
+      card.classList.remove('hit'); void card.offsetWidth; card.classList.add('hit');
+      setTimeout(function(){ card.classList.remove('hit'); }, 450);
+    }
+    if(BT_REDUCED){ btSetPtsText(card, to, unit.buffed); return; }
+    card._pts.classList.remove('tick'); void card._pts.offsetWidth; card._pts.classList.add('tick');
+    var steps = Math.min(12, Math.abs(delta)), i = 0;
+    if(card._timer) clearInterval(card._timer);
+    card._timer = setInterval(function(){
+      i++;
+      var v = i>=steps ? to : Math.round(from + delta*i/steps);
+      btSetPtsText(card, v, unit.buffed);
+      if(i>=steps){ clearInterval(card._timer); card._timer = null; }
+    }, 45);
+  }
+  function btSyncCard(card, unit, isEnemy, canPick, isSel, canTarget){
+    var m = BT_ROLE_META[unit.sprite.role], shown = Math.max(0, unit.pts);
+    card.setAttribute('aria-label', (isEnemy ? 'Adversaire : ' : 'Ta carte : ') + unit.sprite.name + ', ' + m.label + ', ' + shown + ' points');
+    card.classList.toggle('selected', isSel);
+    card.classList.toggle('targetable', canTarget);
+    if(isSel) card.setAttribute('aria-pressed','true'); else card.removeAttribute('aria-pressed');
+    card.disabled = isEnemy ? !canTarget : !canPick;
+    if(shown !== card._shown){
+      var from = card._shown; card._shown = shown; card._buffed = unit.buffed;
+      btAnimatePts(card, unit, from, shown);
+    } else if(unit.buffed !== card._buffed){
+      card._buffed = unit.buffed; btSetPtsText(card, shown, unit.buffed);
+    }
+  }
+  function btRender(){
+    if(!bt) return;
+    var plField = document.getElementById('bt-player-field'), enField = document.getElementById('bt-enemy-field');
+    btReconcile(plField, bt.pl.field.map(function(u){
+      var c = btCardFor(u, false), isSel = bt.selected === u;
+      btSyncCard(c, u, false, !bt.over && ((bt.phase === 'pick-attacker') || (bt.phase === 'pick-target' && isSel)), isSel, false);
+      return c;
+    }));
+    btReconcile(enField, bt.en.field.map(function(u){
+      var c = btCardFor(u, true);
+      btSyncCard(c, u, true, false, false, !bt.over && bt.phase === 'pick-target');
+      return c;
+    }));
+    bt.animateArrivals = true;
     document.getElementById('bt-player-reserve').textContent = 'Réserve : ' + bt.pl.reserve.length + ' carte' + (bt.pl.reserve.length>1 ? 's' : '');
     document.getElementById('bt-enemy-reserve').textContent = 'Réserve adverse : ' + bt.en.reserve.length + ' carte' + (bt.en.reserve.length>1 ? 's' : '');
   }
@@ -275,7 +349,12 @@
   function btResolveAttack(attSide, attacker, defSide, target, attackerIsEnemy, done){
     var archer = attacker.sprite.role === 'archer';
     var fromEl = btEl(attacker), toEl = btEl(target);
-    if(fromEl && toEl) playAttackAnim(fromEl, toEl, archer ? '🏹' : (attackerIsEnemy ? '💥' : '⚔️'));
+    // Archer : une flèche vole vers la cible. Corps à corps : la carte fonce
+    // sur sa cible puis revient (l'impact a lieu au milieu du mouvement).
+    if(fromEl && toEl){
+      if(archer) playAttackAnim(fromEl, toEl, '🏹');
+      else btLunge(fromEl, toEl);
+    }
     setTimeout(function(){
       var dmgToTarget = attacker.pts;
       var dmgToAttacker = archer ? 0 : target.pts;
@@ -287,34 +366,50 @@
       } else {
         lines.push(attacker.sprite.name + ' attaque ' + target.sprite.name + ' : ' + target.sprite.name + ' perd ' + dmgToTarget + ' points et ' + attacker.sprite.name + ' en perd ' + dmgToAttacker + '.');
       }
-      var hitEl = btEl(target); if(hitEl) hitEl.classList.add('hit');
-      if(!archer){ var hitA = btEl(attacker); if(hitA) hitA.classList.add('hit'); }
+      var hitEl = btEl(target); if(hitEl) btFloat(hitEl, archer ? '🏹' : (attackerIsEnemy ? '💥' : '⚔️'), 'impact');
       playSound(attackerIsEnemy ? 'bad' : 'good');
       btLog(lines);
-      btRender();
-      // Marque les cartes battues, puis les retire après un court instant.
+      btRender();   // les cartes gardent leur image : seuls les chiffres défilent
       var dead = [];
       [attSide, defSide].forEach(function(sd){
         sd.field.forEach(function(u){ if(u.pts <= 0) dead.push({ side:sd, unit:u }); });
       });
-      dead.forEach(function(d){ var e = btEl(d.unit); if(e) e.classList.add('dying'); });
+      // On laisse le temps de lire les points qui défilent, puis les cartes battues s'effacent.
       setTimeout(function(){
-        var notes = [];
-        dead.forEach(function(d){
-          d.side.field.splice(d.side.field.indexOf(d.unit), 1);
-          notes.push(d.unit.sprite.name + ' est battu' + (d.unit.sprite.role==='support' ? '' : '') + ' !');
-        });
-        dead.forEach(function(d){
-          var arrived = btDrawFromReserve(d.side, notes);
-          if(arrived) notes.push(arrived.sprite.name + ' entre sur le terrain.');
-        });
-        // Une carte qui reçoit un bonus après remplacement est déjà comptée dans btOnArrive ; on remplit aussi les places libres restantes.
-        [bt.pl, bt.en].forEach(function(sd){ while(sd.field.length < BT_FIELD_SIZE && sd.reserve.length){ var a = btDrawFromReserve(sd, notes); if(a) notes.push(a.sprite.name + ' entre sur le terrain.'); } });
-        if(notes.length) btLog(notes);
-        btRender();
-        done();
-      }, dead.length ? 650 : 350);
-    }, 480);
+        if(!dead.length){ done(); return; }
+        dead.forEach(function(d){ var e = btEl(d.unit); if(e) e.classList.add('dying'); });
+        setTimeout(function(){
+          var notes = [];
+          dead.forEach(function(d){
+            d.side.field.splice(d.side.field.indexOf(d.unit), 1);
+            notes.push(d.unit.sprite.name + ' est battu !');
+          });
+          dead.forEach(function(d){
+            var arrived = btDrawFromReserve(d.side, notes);
+            if(arrived) notes.push(arrived.sprite.name + ' entre sur le terrain.');
+          });
+          // Une carte qui reçoit un bonus après remplacement est déjà comptée dans btOnArrive ; on remplit aussi les places libres restantes.
+          [bt.pl, bt.en].forEach(function(sd){ while(sd.field.length < BT_FIELD_SIZE && sd.reserve.length){ var a = btDrawFromReserve(sd, notes); if(a) notes.push(a.sprite.name + ' entre sur le terrain.'); } });
+          if(notes.length) btLog(notes);
+          btRender();
+          setTimeout(done, 600);   // le temps de voir arriver les remplaçants
+        }, 650);
+      }, 750);
+    }, archer ? 480 : 300);
+  }
+  // Corps à corps : la carte fonce vers sa cible, puis revient à sa place.
+  function btLunge(fromEl, toEl){
+    if(BT_REDUCED || !fromEl.animate) return;
+    var a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+    var dx = (b.left + b.width/2 - (a.left + a.width/2)) * 0.6, dy = (b.top + b.height/2 - (a.top + a.height/2)) * 0.6;
+    fromEl.style.zIndex = '5';
+    var anim = fromEl.animate([
+      { transform:'translate(0,0) scale(1)' },
+      { transform:'translate(' + (-dx*0.08) + 'px,' + (-dy*0.08) + 'px) scale(1.04)', offset:0.18 },
+      { transform:'translate(' + dx + 'px,' + dy + 'px) scale(1.14)', offset:0.5 },
+      { transform:'translate(0,0) scale(1)' }
+    ], { duration:600, easing:'ease-in-out' });
+    anim.onfinish = function(){ fromEl.style.zIndex = ''; };
   }
   function btAlive(sd){ return sd.field.length + sd.reserve.length > 0; }
   function btCheckEnd(){
@@ -373,6 +468,9 @@
     try{ localStorage.setItem('geo_bt_diff', String(idx)); }catch(e){}
     renderBtSetup();
   });
+  document.getElementById('bt-auto-best').addEventListener('click', function(){ btAutoTeam('best'); });
+  document.getElementById('bt-auto-random').addEventListener('click', function(){ btAutoTeam('random'); });
+  document.getElementById('bt-auto-clear').addEventListener('click', function(){ btAutoTeam('clear'); });
   document.getElementById('bt-start').addEventListener('click', btStart);
   document.getElementById('bt-quit').addEventListener('click', btBackToSetup);
   document.getElementById('bt-change-team').addEventListener('click', btBackToSetup);
