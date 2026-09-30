@@ -100,20 +100,39 @@ l'historique, et masque la rangée `.btn-row` qui suit le retour quand la questi
 La question se met dans la bulle `.coach-bubble`, la consigne dans le `.muted` en dessous.
 `tools/tests/uniform_check.js` vérifie ces règles pour chaque activité.
 
-## Ajouter une activité interactive (écran propre)
+## Ajouter une activité à écran propre
 
-Voir `src/js/atelier.js` : `registerFamily({ key, tag, theme, note, build(wrap), generate(level), signature() })`.
-Elle est ajoutée automatiquement au tirage, au mode Manuel (dans le thème `theme`), au panneau
-« Activités & difficulté » et à l'anti-répétition. `makeAtelier()` fournit l'écran commun
-(question, consigne, dessin tactile, retour, boutons Vérifier / Nouvelle activité) déjà relié à `makeQuestionFlow`.
+Toutes les activités (Mesurer, Déformer, Patron, Quizz, Horloge, ateliers) sont déclarées
+par leur thème avec `registerFamily` (contrat complet en tête du registre, dans `noyau.js`) :
 
-## Ce qui n'est pas encore modulaire
+```js
+registerFamily({
+  key:'mon-activite', tag:'Mon activité', theme:'📐 Formes & mesures',
+  order:70,               // rang d'affichage et de tirage
+  weight:1,               // places dans le tirage aléatoire (le Quizz en a 3)
+  timed:false,            // true : aussi en Chronométré (réponse en un toucher)
+  note:'Ce que change le niveau…',            // panneau « Activités & difficulté »
+  markup:'<div class="coach-row">…</div>…',   // ou build:function(wrap){ … }
+  generate:function(level){ … },
+  signature:function(){ return '…'; }         // anti-répétition
+});
+```
 
-Les activités qui ont leur **propre écran** (Mesurer, Déformer, Patron → Solide, Lire
-l'heure, Régler l'heure) restent câblées en dur dans `orchestrateur.js` (listes de
-familles, niveaux, panneaux `fam-*` de la page). Retirer `horloge.js` ou `patron3d.js`
-du manifeste casse donc l'appli, alors que retirer `calcul.js` fonctionne. Pour pouvoir
-publier une appli par thème, il reste à migrer ces familles vers `registerFamily` (déjà utilisé par les ateliers).
+Le conteneur `#fam-mon-activite` existe dès le retour de `registerFamily` : on peut ensuite
+brancher ses boutons par leur id. L'activité apparaît alors seule dans le tirage, le
+Chronométré (si `timed`), le mode Manuel (groupe `theme`), le panneau de réglages et
+l'anti-répétition. Pour des épreuves réglables niveau par niveau (comme les types du Quizz
+ou les patrons), ajouter `config:{ storageKey, defs(), groups()?, rebuild(overrides) }`.
+`makeAtelier()` (`atelier.js`) fournit un écran tout prêt pour une activité où l'on touche
+des cases (question, consigne, dessin tactile, retour, Vérifier / Nouvelle activité).
+
+## Retirer un thème
+
+L'orchestrateur ne nomme aucune activité : retirer `horloge.js`, `patron3d.js`,
+`calcul.js`, `atelier.js` ou `geometrie.js` du manifeste retire simplement ses activités
+et ses questions de Quizz. Les outils de dessin utilisés par plusieurs thèmes (`palette`,
+`isoPoly`, `ngonPoints`, `drawEquation`, `svgText`…) vivent dans `noyau.js`.
+`tools/tests/theme_removal_check.js` le vérifie pour chaque thème.
 
 ## Vérifier qu'une modification ne casse rien
 

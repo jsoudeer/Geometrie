@@ -185,3 +185,7 @@
     .auto-advance-toast{ animation:none; }
   }
 
+
+  /* Retour d'une réponse (voir makeQuestionFlow) : titre ✔/✘, puis détail, puis explication. */
+  .feedback .fb-title{ font-weight:800; }
+  .feedback > div:not(.fb-title):not(.explain-line){ font-weight:700; }

@@ -569,6 +569,10 @@
     .auto-advance-toast{ animation:none; }
   }
 
+
+  /* Retour d'une réponse (voir makeQuestionFlow) : titre ✔/✘, puis détail, puis explication. */
+  .feedback .fb-title{ font-weight:800; }
+  .feedback > div:not(.fb-title):not(.explain-line){ font-weight:700; }
   /* ============ MODULE 6 : BOUTIQUE + BATAILLE ============ */
   .arena-star-note{
     display:flex; align-items:center; gap:8px; background:var(--surface2);
@@ -997,92 +1001,12 @@
           </div>
         </div>
 
-        <!-- Zone d'exercice partagée : un seul des blocs "fam-*" ci-dessous
-             est visible à la fois, choisi au hasard par nextPracticeQuestion(). -->
+        <!-- Zone d'exercice partagée : chaque activité y ajoute son écran
+             (#fam-<clé>) en se déclarant avec registerFamily (noyau.js) ; un
+             seul est visible à la fois, choisi par nextPracticeQuestion(). -->
         <div id="practice-exercise">
-          <span class="qtype-tag" id="practice-family-tag">Mesurer</span>
+          <span class="qtype-tag" id="practice-family-tag"></span>
           <span class="qtype-tag streak-pill" id="streak-pill" hidden></span>
-
-          <div id="fam-measure" hidden>
-            <div class="coach-row">
-              <div class="coach-bubble" id="m1-question">Combien mesure ce trait ?</div>
-            </div>
-            <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
-            <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>
-            <div class="choices" id="m1-choices"></div>
-            <div class="feedback" id="m1-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m1-next" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-deform" hidden>
-            <div class="coach-row">
-              <div class="coach-bubble" id="m2-question">Transforme la forme.</div>
-            </div>
-            <p class="muted" id="m2-instructions">Fais glisser les coins, puis vérifie.</p>
-            <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>
-            <div class="feedback" id="m2-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>
-              <button class="btn ghost" id="m2-next" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-net" hidden>
-            <div class="coach-row">
-              <div class="coach-bubble" id="m3-question">Quel solide peut-on fabriquer avec ce patron ?</div>
-            </div>
-            <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
-            <div class="stage" id="stage" role="img" aria-label="Patron à plat qui se plie pour former un solide">
-              <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
-            </div>
-            <div class="qcm-choices" id="m3-choices"></div>
-            <div class="feedback" id="m3-feedback"></div>
-            <div class="btn-row">
-              <button class="btn ghost" id="m3-next" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-qcm" hidden>
-            <div class="coach-row">
-              <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>
-            </div>
-            <p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>
-            <div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200" role="img" aria-label="Illustration de la question"></svg></div>
-            <div class="qcm-choices" id="m4-choices"></div>
-            <div class="feedback" id="m4-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m4-next" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-clock-lire" hidden>
-            <div class="coach-row">
-              <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>
-            </div>
-            <p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>
-            <div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200" role="img" aria-label="Horloge à lire"></svg></div>
-            <div class="qcm-choices" id="m5-choices"></div>
-            <div class="feedback" id="m5-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m5-next" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-clock-regler" hidden>
-            <div class="coach-row">
-              <div class="coach-bubble">Place les aiguilles sur <span id="m5-target">3 h</span></div>
-            </div>
-            <p class="muted">Fais glisser la petite et la grande aiguille, puis vérifie.</p>
-            <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>
-            <div class="feedback" id="m5r-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>
-              <button class="btn ghost" id="m5r-new" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>
@@ -1829,17 +1753,31 @@
     flow.clearHint = function(){
       if(!flow.closed){ fb.className = 'feedback'; fb.innerHTML = ''; }
     };
-    // ok : réponse juste ? html : retour à afficher ; lastHtml : retour quand
-    // c'était la dernière tentative (la bonne réponse y est donnée).
+    // Messages : l'activité fournit le CONTENU, le flux compose la FORME,
+    // identique partout :
+    //   réussite       ✔ <success>              / <detail> / explication
+    //   essai raté     ✘ Pas encore.            / <hint>   / 🔁 Essai n sur 3
+    //   échec final    ✘ Ce n'est pas ça.       / <solution> / explication
+    // msg = { success, detail, hint, solution, explain } (tout est facultatif
+    // sauf success, et solution pour un échec).
     // Renvoie 'solved', 'retry' (encore des essais) ou 'failed' (question fermée).
-    flow.answer = function(ok, html, lastHtml){
+    function line(cls, txt){ return txt ? '<div' + (cls ? ' class="' + cls + '"' : '') + '>' + txt + '</div>' : ''; }
+    flow.answer = function(ok, msg){
       if(flow.closed) return 'closed';
       flow.tries++;
-      if(ok){ close(true, html); return 'solved'; }
-      if(flow.tries >= flow.maxTries){ close(false, lastHtml || html); return 'failed'; }
+      var explain = line('explain-line', msg.explain);
+      if(ok){
+        close(true, line('fb-title', '✔ ' + msg.success) + line('', msg.detail) + explain);
+        return 'solved';
+      }
+      if(flow.tries >= flow.maxTries){
+        close(false, line('fb-title', '✘ Ce n\'est pas ça.') + line('', msg.solution) + explain);
+        return 'failed';
+      }
       var left = flow.maxTries - flow.tries;
-      show(false, html + '<div class="explain-line">🔁 Essai ' + flow.tries + ' sur ' + flow.maxTries +
-        ' : corrige puis vérifie encore (' + left + ' essai' + (left>1 ? 's' : '') + ' restant' + (left>1 ? 's' : '') + ').</div>', false);
+      show(false, line('fb-title', '✘ Pas encore.') + line('', msg.hint) +
+        line('explain-line', '🔁 Essai ' + flow.tries + ' sur ' + flow.maxTries + ' : corrige puis vérifie encore (' +
+          left + ' essai' + (left>1 ? 's' : '') + ' restant' + (left>1 ? 's' : '') + ').'), false);
       return 'retry';
     };
     // Bouton « Nouvelle activité ».
@@ -1875,6 +1813,27 @@
     t.textContent = txt;
     return t;
   }
+  // ---- Outils de dessin partagés par plusieurs thèmes ----
+  // (ils vivent ici pour qu'on puisse retirer un thème sans casser les autres)
+  var palette = ['var(--accent2)','var(--accent3)','var(--accent)','var(--accent2)','var(--accent3)'];
+  // Liste de points [[x,y],…] → attribut `points` d'un <polygon>.
+  function isoPoly(pts){ return pts.map(function(p){return p[0]+','+p[1];}).join(' '); }
+  // Sommets d'un polygone régulier (ou d'une ellipse, si rx ≠ ry) à n côtés.
+  function ngonPoints(n, cx, cy, rx, ry, rotDeg){
+    var pts=[];
+    for(var k=0;k<n;k++){
+      var ang=(rotDeg + k*360/n) * Math.PI/180;
+      pts.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
+    }
+    return pts;
+  }
+  // Illustration d'une question de Quizz réduite à un texte (ex. « 3 + 4 = ? »).
+  function drawEquation(txt){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    svg.appendChild(svgText(100,112,txt.length>11 ? 24 : 34,txt));
+  }
 
   // ---- Registre des types de Quizz ----
   // Chaque thème appelle registerQuizType() pour déclarer ses types de questions :
@@ -1907,17 +1866,46 @@
     return 'autres';
   }
   function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
-  // Familles d'activités à écran propre déclarées par un thème (les activités
-  // interactives : on touche, on place…). Contrat d'une famille :
-  //   { key, tag, theme, note, build(wrap), generate(level), signature() }
-  //  - key        identifiant unique (sert aussi à fabriquer l'id du conteneur fam-<key>)
-  //  - tag        nom affiché ; theme : libellé du thème du mode Manuel (ex. '✋ Ateliers')
-  //  - note       texte du panneau « Activités & difficulté »
-  //  - build      construit l'écran dans le conteneur `wrap` (une seule fois, au démarrage)
-  //  - generate   prépare une nouvelle question pour le niveau donné
-  //  - signature  empreinte de la question courante (évite les répétitions dans une série)
-  var EXTRA_FAMILIES = [];
-  function registerFamily(def){ EXTRA_FAMILIES.push(def); }
+  /* ===================== REGISTRE DES ACTIVITÉS (familles) =====================
+     TOUTES les activités (Mesurer, Déformer, Patron, Quizz, Horloge, ateliers…)
+     sont déclarées par leur thème avec registerFamily ; l'orchestrateur ne
+     connaît aucune activité par son nom. Retirer un thème du manifeste retire
+     simplement ses activités. Contrat d'une famille :
+       key        identifiant unique (conteneur d'écran : #fam-<key>)
+       tag        nom affiché ; theme : groupe du mode Manuel (ex. '🕒 Horloge')
+       order      rang d'affichage et de tirage (les plus petits d'abord)
+       weight     nombre de places dans le tirage aléatoire (1 par défaut ; 3 pour le Quizz)
+       timed      true : proposée aussi en mode Chronométré (réponse en un toucher)
+       note       texte du panneau « Activités & difficulté » (si pas de `config`)
+       config     facultatif : réglage des niveaux épreuve par épreuve
+                  { storageKey, defs(), groups()?, rebuild(overrides) } (voir orchestrateur)
+       markup     HTML de l'écran (mis dans le conteneur dès l'enregistrement)
+       build      facultatif : construit l'écran en JS dans le conteneur `wrap`
+       generate   prépare une nouvelle question pour le niveau donné
+       signature  empreinte de la question courante (évite les répétitions dans une série)
+     Le conteneur existe dès le retour de registerFamily : le thème peut ensuite
+     brancher ses boutons par leur id. */
+  var FAMILIES = [];
+  function registerFamily(def){
+    var wrap = document.createElement('div');
+    wrap.id = 'fam-' + def.key;
+    wrap.hidden = true;
+    if(def.markup) wrap.innerHTML = def.markup;
+    document.getElementById('practice-exercise').appendChild(wrap);
+    FAMILIES.push(def);
+    if(def.build) def.build(wrap);
+    return wrap;
+  }
+  // Empreinte d'une question à choix (Quizz, Lire l'heure) pour l'anti-répétition.
+  function quizSignature(q){
+    return q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
+  }
+  // Niveaux où apparaît une épreuve réglable (Quizz, patron…) : réglage manuel
+  // enregistré s'il existe, sinon ses niveaux par défaut.
+  function effectiveLevels(def, overrides){
+    var lv = overrides && overrides[def.id];
+    return (lv && lv.length) ? lv : def.defaultLevels;
+  }
   function quizTypeById(id){
     for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }
     return null;
@@ -1928,7 +1916,26 @@
      chasse aux formes, symétrie, scènes illustrées, énigmes.
   */
 
-  /* ===================== MODULE 1 : MESURER =====================
+  /* ===================== MODULE 1 : MESURER ===================== */
+  registerFamily({
+    key:'measure', tag:'Mesurer', theme:'📐 Formes & mesures', order:10, timed:true,
+    note:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m1-question">Combien mesure ce trait ?</div>',
+      '</div>',
+      '<p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>',
+      '<div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>',
+      '<div class="choices" id="m1-choices"></div>',
+      '<div class="feedback" id="m1-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m1-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newMeasureQuestion(); },
+    signature:function(){ return globalLevel + '|' + currentLen + '|' + m1RulerStart + '|' + m1SegStart; }
+  });
+  /* ---------------------------------------------------------------
      Le 0 doit toujours être visible sur la règle (demande explicite) :
      - Facile/Moyen : la règle commence à 0, seul le début du trait bouge.
      - Difficile : la règle peut s'étendre dans les négatifs, mais son
@@ -2038,17 +2045,35 @@
     var ok = Math.abs(v-currentLen)<0.001;
     if(ok){
       btn.classList.add('correct');
-      m1Flow.answer(true, '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>');
+      m1Flow.answer(true, { success:'Bravo, ce trait mesure bien ' + fmtNum(currentLen) + ' cm !', explain:measureExplain() });
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === (fmtNum(currentLen)+' cm')) b.classList.add('correct'); });
-      m1Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>');
+      m1Flow.answer(false, { solution:'Le trait mesure ' + fmtNum(currentLen) + ' cm : la bonne réponse est en vert.', explain:measureExplain() });
     }
   }
 
   document.getElementById('m1-next').addEventListener('click', function(){ m1Flow.skip(); });
 
   /* ===================== MODULE 2 : DEFORMER ===================== */
+  registerFamily({
+    key:'deform', tag:'Déformer', theme:'📐 Formes & mesures', order:20,
+    note:'Une seule épreuve avec 3 formes cibles (losange, rectangle, parallélogramme) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins en Moyen, les 4 coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m2-question">Transforme la forme.</div>',
+      '</div>',
+      '<p class="muted" id="m2-instructions">Fais glisser les coins, puis vérifie.</p>',
+      '<div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>',
+      '<div class="feedback" id="m2-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>',
+      '  <button class="btn ghost" id="m2-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newDeformQuestion(); },
+    signature:function(){ return m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';'); }
+  });
   var SCALE2 = 20; // px per cm
   var basePts = [[70,70],[190,70],[190,190],[70,190]];
   var pts = basePts.map(function(p){ return p.slice(); });
@@ -2091,9 +2116,9 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var maxDev = Math.max.apply(null, s.lens.map(function(l){ return Math.abs(l-avg); }));
     var rel = maxDev/avg;
-    if(rel <= tolGreat) return {ok:true, msg:'✔ Super, les 4 côtés sont égaux : bravo pour ce losange !'};
-    if(rel <= tolOk) return {ok:true, msg:'✔ Réussi ! Les côtés sont à peu près égaux, c\'est un losange. Tu peux essayer d\'être encore plus précis la prochaine fois.'};
-    return {ok:false, msg:'✘ Pas encore : les 4 côtés doivent avoir à peu près la même longueur.'};
+    if(rel <= tolGreat) return {ok:true, success:'Bravo, c\'est un losange !', detail:'Les 4 côtés sont égaux.'};
+    if(rel <= tolOk) return {ok:true, success:'Bravo, c\'est un losange !', detail:'Les côtés sont à peu près égaux. La prochaine fois, essaie d\'être encore plus précis.'};
+    return {ok:false, hint:'Les 4 côtés doivent avoir à peu près la même longueur.'};
   }
 
   function checkRectangle(tolGreat, tolOk){
@@ -2101,10 +2126,10 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
     var angleDevMax = Math.max.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
-    if(sideDevRel<=tolGreat.side && angleDevMax<=tolGreat.angle) return {ok:true, msg:'✔ Bravo, les côtés opposés sont égaux et les angles sont bien droits : c\'est un rectangle !'};
-    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, msg:'✔ Réussi ! C\'est globalement un rectangle, même si ce n\'est pas parfaitement précis. Essaie d\'ajuster encore un peu la prochaine fois.'};
-    if(angleDevMax>tolOk.angle) return {ok:false, msg:'✘ Presque : les 4 angles doivent redevenir à peu près droits.'};
-    return {ok:false, msg:'✘ Pas encore : les côtés opposés doivent être à peu près de la même longueur.'};
+    if(sideDevRel<=tolGreat.side && angleDevMax<=tolGreat.angle) return {ok:true, success:'Bravo, c\'est un rectangle !', detail:'Les côtés opposés sont égaux et les angles sont bien droits.'};
+    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, success:'Bravo, c\'est un rectangle !', detail:'Ce n\'est pas parfaitement précis. La prochaine fois, essaie d\'ajuster encore un peu.'};
+    if(angleDevMax>tolOk.angle) return {ok:false, hint:'Les 4 angles doivent redevenir à peu près droits.'};
+    return {ok:false, hint:'Les côtés opposés doivent être à peu près de la même longueur.'};
   }
 
   function checkParallelogram(tolGreat, tolOk){
@@ -2112,10 +2137,10 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
     var angleDevMin = Math.min.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
-    if(sideDevRel<=tolGreat.side && angleDevMin>=tolGreat.tilt) return {ok:true, msg:'✔ Bien joué, c\'est un vrai parallélogramme penché !'};
-    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, msg:'✔ Réussi ! C\'est un parallélogramme, même si ce n\'est pas parfaitement précis.'};
-    if(sideDevRel>tolOk.side) return {ok:false, msg:'✘ Pas encore : les côtés opposés doivent rester à peu près de la même longueur.'};
-    return {ok:false, msg:'✘ Il faut incliner un peu plus la forme pour que les angles ne soient plus droits.'};
+    if(sideDevRel<=tolGreat.side && angleDevMin>=tolGreat.tilt) return {ok:true, success:'Bravo, c\'est un parallélogramme !', detail:'Les côtés opposés sont égaux et la forme est bien penchée.'};
+    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, success:'Bravo, c\'est un parallélogramme !', detail:'Ce n\'est pas parfaitement précis. La prochaine fois, essaie d\'ajuster encore un peu.'};
+    if(sideDevRel>tolOk.side) return {ok:false, hint:'Les côtés opposés doivent rester à peu près de la même longueur.'};
+    return {ok:false, hint:'Penche un peu plus la forme : les angles ne doivent plus être droits.'};
   }
 
   // Construit une forme cible qui satisfait DÉJÀ le critère "great" du type
@@ -2256,9 +2281,9 @@
   document.getElementById('m2-check').addEventListener('click', function(){
     var lv = M2_LEVELS[m2ShapeIdx];
     var res = lv.check(lv.tolGreat, lv.tolOk);
-    var explain = '<div class="explain-line">' + M2_EXPLAIN[m2ShapeIdx] + '</div>';
-    var state = m2Flow.answer(res.ok, '<div>' + res.msg + '</div>' + explain,
-      '<div>' + res.msg + '</div><div>Voici un ' + M2_LEVELS[m2ShapeIdx].name.toLowerCase() + ' bien formé.</div>' + explain);
+    res.explain = M2_EXPLAIN[m2ShapeIdx];
+    res.solution = 'Voici un ' + M2_LEVELS[m2ShapeIdx].name.toLowerCase() + ' bien formé.';
+    var state = m2Flow.answer(res.ok, res);
     if(state==='failed'){
       deformFocusIdx = null;
       pts = m2Target.map(function(p){ return p.slice(); });
@@ -3204,7 +3229,7 @@
       tag:'Énigme',
       question: r.text,
       sub:'Lis bien l\'énigme et retrouve la bonne réponse.',
-      explain:'La réponse est « ' + r.answer + ' » : ' + (SOLID_FACTS[r.answer] || 'relis bien les indices de l\'énigme.'),
+      explain:'La réponse est « ' + r.answer + ' » : ' + ((typeof SOLID_FACTS!=='undefined' && SOLID_FACTS[r.answer]) || 'relis bien les indices de l\'énigme.'),
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         svg.appendChild(svgText(100,120,64,'?'));
@@ -3353,6 +3378,24 @@
   }
 
   // ---- Mode "Lire l'heure" (même moteur que le QCM, ciblé sur m5Svg) ----
+  registerFamily({
+    key:'clock-lire', tag:'Lire l\'heure', theme:'🕒 Horloge', order:50, timed:true,
+    note:'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>',
+      '</div>',
+      '<p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>',
+      '<div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200" role="img" aria-label="Horloge à lire"></svg></div>',
+      '<div class="qcm-choices" id="m5-choices"></div>',
+      '<div class="feedback" id="m5-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m5-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newM5Lire(); },
+    signature:function(){ return quizSignature(m5Current); }
+  });
   var m5Current = null;
   function newM5Lire(){
     m5Current = genHeureQuestion('m5Svg', globalLevel);
@@ -3379,17 +3422,35 @@
     buttons.forEach(function(b){ b.disabled = true; });
     if(choice.ok){
       btn.classList.add('correct');
-      m5Flow.answer(true, '<div>✔ Bravo, c\'est la bonne heure !</div><div class="explain-line">'+m5Current.explain+'</div>');
+      m5Flow.answer(true, { success:'Bravo, c\'est la bonne heure !', explain:m5Current.explain });
     } else {
       btn.classList.add('wrong');
       var okLabel = m5Current.choices.filter(function(c){return c.ok;})[0].label;
       buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
-      m5Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est en vert.</div><div class="explain-line">'+m5Current.explain+'</div>');
+      m5Flow.answer(false, { solution:'La bonne réponse est en vert.', explain:m5Current.explain });
     }
   }
   document.getElementById('m5-next').addEventListener('click', function(){ m5Flow.skip(); });
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
+  registerFamily({
+    key:'clock-regler', tag:'Régler l\'heure', theme:'🕒 Horloge', order:60,
+    note:'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place sur 24 positions à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (à 15 ou 45 minutes, les deux positions voisines sont acceptées).',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble">Place les aiguilles sur <span id="m5-target">3 h</span></div>',
+      '</div>',
+      '<p class="muted">Fais glisser la petite et la grande aiguille, puis vérifie.</p>',
+      '<div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>',
+      '<div class="feedback" id="m5r-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>',
+      '  <button class="btn ghost" id="m5r-new" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ m5rGenTarget(); },
+    signature:function(){ return m5Target.hour + ':' + m5Target.minute; }
+  });
   // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
   // des crans qui dépendent du niveau (0 Facile, 1 Moyen, 2 Difficile) :
   //   Facile     heure pile ou demie      (petite : crans de 15°, grande : 2 positions)
@@ -3489,17 +3550,16 @@
     var total = m5Target.hour*60 + m5Target.minute;
     // En Difficile, l'heure demandée est en 24 h : on rappelle comment elle se lit sur le cadran.
     var readAs = (lvl===2 && (m5Target.hour===0 || m5Target.hour>=13))
-      ? '<div class="explain-line">Sur le cadran, ' + minutesToLabel24(total) + ' se lit ' + minutesToClockLabel(total) + '.</div>' : '';
-    var explain = '<div class="explain-line">La petite aiguille montre les heures, la grande aiguille montre les minutes.</div>';
+      ? 'Sur le cadran, ' + minutesToLabel24(total) + ' se lit ' + minutesToClockLabel(total) + '.' : '';
+    var explain = 'La petite aiguille montre les heures, la grande aiguille montre les minutes.';
     if(hourOk && minOk){
-      m5rFlow.answer(true, '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs + explain);
+      m5rFlow.answer(true, { success:'Bravo, les aiguilles sont bien placées !', detail:readAs, explain:explain });
       return;
     }
-    var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
+    var hint = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
       : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée. ' + hourHandHint(m5Target.hour, m5Target.minute)
       : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
-    var state = m5rFlow.answer(false, '<div>✘ ' + msg + '</div>' + readAs,
-      '<div>✘ ' + msg + '</div><div>Voici les aiguilles bien placées.</div>' + readAs + explain);
+    var state = m5rFlow.answer(false, { hint:hint + (readAs ? ' ' + readAs : ''), solution:'Voici les aiguilles bien placées.' + (readAs ? ' ' + readAs : ''), explain:explain });
     if(state==='failed'){
       // on montre la bonne position des deux aiguilles
       m5rHourTick = Math.round(exactHourDeg / M5R_HOUR_STEP[lvl]) % Math.round(360 / M5R_HOUR_STEP[lvl]);
@@ -3818,13 +3878,6 @@
   /* ===================== THÈME CALCUL =====================
      Questions de Quizz de calcul : opérations, monnaie, maths de la vie.
   */
-
-  function drawEquation(txt){
-    var svg = document.getElementById('m4Svg');
-    svg.setAttribute('viewBox','0 0 200 200');
-    svg.innerHTML = "";
-    svg.appendChild(svgText(100,112,txt.length>11 ? 24 : 34,txt));
-  }
 
   // ===================== Monnaie =====================
   function drawMoneyItem(svg,cx,cy,value,isCoin){
@@ -4474,7 +4527,7 @@
   // Chaque patron ("épreuve" du module Patron→Solide) est déclaré une fois
   // ici avec ses niveaux PAR DÉFAUT ; le panneau de réglages "Activités &
   // difficulté" peut ensuite surcharger ces niveaux (voir netLevelOverrides
-  // / rebuildM3Pools plus bas dans l'orchestrateur), qui reconstruit alors
+  // / rebuildM3Pools ci-dessous, appelée par l'orchestrateur), qui reconstruit alors
   // M3_LEVELS[*].pool à partir de ces définitions.
   var NET_DEFS = [
     { id:'cross',        obj:NET_CROSS,        label:'Croix (6 faces en croix)',            defaultLevels:[0,1,2],
@@ -4503,6 +4556,33 @@
     { name:'Moyen',     pool:[] },
     { name:'Difficile', pool:[] }
   ];
+  function rebuildM3Pools(overrides){
+    M3_LEVELS.forEach(function(lv, idx){
+      lv.pool = NET_DEFS.filter(function(d){ return effectiveLevels(d, overrides).indexOf(idx)!==-1; })
+        .map(function(d){ return d.obj; });
+    });
+  }
+  registerFamily({
+    key:'net', tag:'Patron → Solide', theme:'📦 Solides', order:30,
+    // Chaque patron se règle niveau par niveau dans « Activités & difficulté ».
+    config:{ storageKey:'geo_net_level_overrides', defs:function(){ return NET_DEFS; }, rebuild:rebuildM3Pools },
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m3-question">Quel solide peut-on fabriquer avec ce patron ?</div>',
+      '</div>',
+      '<p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>',
+      '<div class="stage" id="stage" role="img" aria-label="Patron à plat qui se plie pour former un solide">',
+      '  <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>',
+      '</div>',
+      '<div class="qcm-choices" id="m3-choices"></div>',
+      '<div class="feedback" id="m3-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn ghost" id="m3-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(level){ loadNet(pickNetForLevel(level)); },
+    signature:function(){ return NET_DEFS.map(function(n){ return n.obj; }).indexOf(currentNet); }
+  });
 
   function foldRule(dx,dy){
     if(dx===1 && dy===0)  return {origin:'0% 50%',   axis:'Y', angle:-90};
@@ -4518,7 +4598,6 @@
     return 'polygon(0% 0%, 0% 100%, 100% 50%)'; // 'right'
   }
 
-  var palette = ['var(--accent2)','var(--accent3)','var(--accent)','var(--accent2)','var(--accent3)'];
   // Palette fixe (indépendante du thème) pour le patron 3D : une couleur
   // par face numérotée (1 à 6), pour bien voir quel petit carré devient
   // quelle face du solide une fois le pliage terminé.
@@ -4714,11 +4793,11 @@
     var correct = (userChoice === currentNet.answer);
     if(correct){
       btn.classList.add('correct');
-      m3Flow.answer(true, '<div>✔ Exact, c\'est bien "' + M3_ANSWER_LABELS[currentNet.answer] + '" !</div><div class="explain-line">'+netExplain(currentNet)+'</div>');
+      m3Flow.answer(true, { success:'Bravo, c\'est bien « ' + M3_ANSWER_LABELS[currentNet.answer] + ' » !', explain:netExplain(currentNet) });
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === M3_ANSWER_LABELS[currentNet.answer]) b.classList.add('correct'); });
-      m3Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse était "' + M3_ANSWER_LABELS[currentNet.answer] + '".</div><div class="explain-line">'+netExplain(currentNet)+'</div>');
+      m3Flow.answer(false, { solution:'La bonne réponse est « ' + M3_ANSWER_LABELS[currentNet.answer] + ' », en vert.', explain:netExplain(currentNet) });
     }
 
     var maxDepth = foldNet(currentElems, currentRootId, true);
@@ -4757,7 +4836,6 @@
   // solide) sont en pointillés, et les faces visibles sont translucides.
   // Ça permet à l'enfant de voir ET de compter les arêtes/sommets cachés,
   // au lieu d'avoir à "deviner" ce qu'il y a derrière.
-  function isoPoly(pts){ return pts.map(function(p){return p[0]+','+p[1];}).join(' '); }
   function solidFace(svg,pts,color){
     svg.appendChild(el('polygon',{points:isoPoly(pts), fill:color, 'fill-opacity':0.5, stroke:'none'}));
   }
@@ -4873,14 +4951,7 @@
   // dessous dont seule la moitié avant (les sommets les plus bas) est
   // tracée — plutôt que de gérer arête par arête laquelle des n faces
   // latérales est visible ou cachée, inutilement complexe à cet âge.
-  function ngonPoints(n, cx, cy, rx, ry, rotDeg){
-    var pts=[];
-    for(var k=0;k<n;k++){
-      var ang=(rotDeg + k*360/n) * Math.PI/180;
-      pts.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
-    }
-    return pts;
-  }
+  // (ngonPoints, isoPoly : outils de dessin partagés, dans noyau.js)
   // Prisme droit à base régulière à n côtés, en perspective : on le dessine EN
   // ENTIER, comme les autres solides (cube, pyramide…) — les arêtes cachées
   // sont en pointillés. Vue de dessus légère : une face rectangulaire est
@@ -5066,7 +5137,7 @@
   // Fabrique l'écran commun (question dans la bulle, consigne, dessin tactile,
   // retour, boutons Vérifier / Nouvelle activité) et le relie au déroulé commun
   // des questions (makeQuestionFlow, 3 tentatives). onCheck(ui) appelle
-  // ui.answer(ok, html, lastHtml) et, si c'est raté pour de bon, montre la solution.
+  // ui.answer(ok, msg) (voir makeQuestionFlow) et, si c'est raté pour de bon, montre la solution.
   function makeAtelier(key, wrap, onCheck){
     wrap.innerHTML =
       '<div class="coach-row"><div class="coach-bubble" id="at-' + key + '-q"></div></div>' +
@@ -5176,12 +5247,12 @@
   function atSymCheck(ui){
     var wrong = 0, r, c;
     for(r=0;r<atSym.half.rows;r++) for(c=0;c<atSym.half.cols;c++) if(atSym.mine[r][c] !== atSym.solution[r][c]) wrong++;
-    var explain = '<div class="explain-line">Chaque case a sa jumelle de l\'autre côté de la ligne rouge, à la même distance.</div>';
-    if(wrong===0){ atSymDraw(false); ui.answer(true, '<div>✔ Bravo, la figure est bien symétrique !</div>' + explain); return; }
-    var msg = '<div>✘ ' + (wrong===1 ? 'Il y a 1 case à corriger' : 'Il y a ' + wrong + ' cases à corriger') + '.</div>';
+    var explain = 'Chaque case a sa jumelle de l\'autre côté de la ligne rouge, à la même distance.';
+    if(wrong===0){ atSymDraw(false); ui.answer(true, { success:'Bravo, la figure est bien symétrique !', explain:explain }); return; }
     atSymDraw(true);
-    var state = ui.answer(false, msg.replace('.</div>', ' (entourées en rouge).</div>') + '<div class="explain-line">Astuce : la case juste à côté de la ligne rouge se retrouve juste de l\'autre côté.</div>',
-      msg + '<div>Voici la figure complétée.</div>' + explain);
+    var state = ui.answer(false, {
+      hint:(wrong===1 ? 'Il y a 1 case à corriger' : 'Il y a ' + wrong + ' cases à corriger') + ', entourée' + (wrong>1?'s':'') + ' en rouge. Astuce : la case juste à côté de la ligne rouge se retrouve juste de l\'autre côté.',
+      solution:'Voici la figure complétée.', explain:explain });
     if(state==='failed'){ atSym.mine = atSym.solution.map(function(row){ return row.slice(); }); atSymDraw(false); }
   }
   registerFamily({
@@ -5239,12 +5310,12 @@
   }
   function atFracCheck(ui){
     var got = atFrac.on.filter(function(v){ return v; }).length, need = atFrac.k, n = atFrac.n;
-    var explain = '<div class="explain-line">La figure a ' + n + ' parts égales : ' + atFrac.label + ' de la figure, c\'est ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + ' (' + need + '/' + n + ').</div>';
-    if(got===need){ ui.answer(true, '<div>✔ Bravo !</div>' + explain); return; }
-    var msg = got<need ? '<div>✘ Il manque ' + (need-got) + ' part' + (need-got>1?'s':'') + ' à colorier.</div>'
-                       : '<div>✘ Il y a ' + (got-need) + ' part' + (got-need>1?'s':'') + ' de trop.</div>';
-    var state = ui.answer(false, msg + '<div class="explain-line">Compte les parts coloriées : il en faut ' + need + ' sur ' + n + '.</div>',
-      msg + '<div>Voici une bonne façon de colorier.</div>' + explain);
+    var explain = 'La figure a ' + n + ' parts égales : ' + atFrac.label + ' de la figure, c\'est ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + ' (' + need + '/' + n + ').';
+    if(got===need){ ui.answer(true, { success:'Bravo, tu as bien colorié ' + atFrac.label + ' !', explain:explain }); return; }
+    var hint = (got<need ? 'Il manque ' + (need-got) + ' part' + (need-got>1?'s':'') + ' à colorier.'
+                         : 'Il y a ' + (got-need) + ' part' + (got-need>1?'s':'') + ' de trop.') +
+      ' Compte les parts coloriées : il en faut ' + need + ' sur ' + n + '.';
+    var state = ui.answer(false, { hint:hint, solution:'Voici une bonne façon de colorier.', explain:explain });
     if(state==='failed'){ atFrac.on = atFrac.on.map(function(v, i){ return i < need; }); atFracDraw(); }
   }
   registerFamily({
@@ -5294,12 +5365,12 @@
   function atCopyCheck(ui){
     var wrong = 0, r, c;
     for(r=0;r<atCopy.n;r++) for(c=0;c<atCopy.n;c++) if(atCopy.mine[r][c] !== atCopy.model[r][c]) wrong++;
-    var explain = '<div class="explain-line">Compare ligne par ligne, en partant du haut.</div>';
-    if(wrong===0){ atCopyDraw(false); ui.answer(true, '<div>✔ Bravo, ta grille est identique au modèle !</div>'); return; }
-    var msg = '<div>✘ Il y a ' + wrong + ' case' + (wrong>1?'s':'') + ' différente' + (wrong>1?'s':'') + ' du modèle.</div>';
+    var explain = 'Compare ligne par ligne, en partant du haut.';
+    if(wrong===0){ atCopyDraw(false); ui.answer(true, { success:'Bravo, ta grille est identique au modèle !', explain:explain }); return; }
     atCopyDraw(true);
-    var state = ui.answer(false, msg.replace(' du modèle.', ' du modèle (entourée' + (wrong>1?'s':'') + ' en rouge).') + explain,
-      msg + '<div>Voici la grille recopiée.</div>' + explain);
+    var state = ui.answer(false, {
+      hint:'Il y a ' + wrong + ' case' + (wrong>1?'s':'') + ' différente' + (wrong>1?'s':'') + ' du modèle, entourée' + (wrong>1?'s':'') + ' en rouge. ' + explain,
+      solution:'Voici la grille recopiée.', explain:explain });
     if(state==='failed'){ atCopy.mine = atCopy.model.map(function(row){ return row.slice(); }); atCopyDraw(false); }
   }
   registerFamily({
@@ -5341,6 +5412,42 @@
     { name:'Moyen',     types:[] },
     { name:'Difficile', types:[] }
   ];
+  function rebuildM4Types(overrides){
+    M4_LEVELS.forEach(function(lv, idx){
+      lv.types = QCM_TYPE_DEFS.filter(function(d){ return effectiveLevels(d, overrides).indexOf(idx)!==-1; })
+        .map(function(d){ return d.id; });
+    });
+  }
+  // Le Quizz est une famille comme les autres ; il pèse 3 places dans le
+  // tirage aléatoire (il regroupe à lui seul une vingtaine de types).
+  registerFamily({
+    key:'qcm', tag:'Quizz', theme:'🧠 Quizz', order:40, weight:3, timed:true,
+    // Chaque type de question se règle niveau par niveau, regroupé par sous-catégorie.
+    config:{
+      storageKey:'geo_qcm_level_overrides',
+      defs:function(){ return QCM_TYPE_DEFS; },
+      groups:function(){
+        return QCM_CATEGORIES.map(function(cat){
+          return { id:cat.id, label:cat.icon + ' ' + cat.label, defs:QCM_TYPE_DEFS.filter(function(d){ return quizCategoryId(d)===cat.id; }) };
+        });
+      },
+      rebuild:rebuildM4Types
+    },
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>',
+      '</div>',
+      '<p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>',
+      '<div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200" role="img" aria-label="Illustration de la question"></svg></div>',
+      '<div class="qcm-choices" id="m4-choices"></div>',
+      '<div class="feedback" id="m4-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m4-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newQCM(); },
+    signature:function(){ return quizSignature(m4Current); }
+  });
   var m4TypeFilter = 'random';
   var m4CategoryFilter = 'all';   // mode Manuel : « Aléatoire » se limite à cette sous-catégorie
   var m4Current = null;
@@ -5422,26 +5529,22 @@
     buttons.forEach(function(b){ b.disabled = true; });
     if(choice.ok){
       btn.classList.add('correct');
-      m4Flow.answer(true, '<div>✔ Bravo, c\'est la bonne réponse !</div><div class="explain-line">'+m4Current.explain+'</div>');
+      m4Flow.answer(true, { success:'Bravo, c\'est la bonne réponse !', explain:m4Current.explain });
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b._ok) b.classList.add('correct'); });
-      m4Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est en vert.</div><div class="explain-line">'+m4Current.explain+'</div>');
+      m4Flow.answer(false, { solution:'La bonne réponse est en vert.', explain:m4Current.explain });
     }
   }
 
   document.getElementById('m4-next').addEventListener('click', function(){ m4Flow.skip(); });
 
   /* ===================== ENTRAINEMENT : ORCHESTRATEUR =====================
-     Fusionne les anciens modules 1 à 5 en un seul menu à 3 niveaux (Facile/
-     Moyen/Difficile). Le niveau choisi pilote directement M1_LEVELS,
-     M2_LEVELS (via perturbForLevel), M3_LEVELS.pool, M4_LEVELS et
-     genHeureQuestion — chacun lisait auparavant sa propre variable de
-     niveau (m1Level, m3Level, m4Level...), remplacée ici par un seul
-     "globalLevel" partagé. À chaque nouvelle question, une "famille"
-     d'exercice est tirée au hasard et affichée dans #practice-exercise ;
-     tout le reste (génération, correction, dessin) est inchangé et reste
-     dans chaque module. */
+     Un seul menu à 3 niveaux (Facile/Moyen/Difficile) : le niveau choisi
+     (« globalLevel ») est transmis à la famille tirée. À chaque nouvelle
+     question, une famille (registerFamily, noyau.js) est tirée et affichée
+     dans #practice-exercise ; génération, correction et dessin restent dans
+     le thème qui l'a déclarée. L'orchestrateur ne nomme aucune activité. */
   var globalLevel = 0;
   var practiceMode = 'free'; // 'free' | 'countdown'  (utilisé seulement en mode 'auto')
   var appMode = 'auto'; // 'auto' (Facile/Moyen/Difficile) | 'manual' (activité choisie à la main)
@@ -5450,83 +5553,35 @@
   var countdownScore = { correct:0, total:0 };
   var countdownRunning = false, countdownInterval = null, countdownEndAt = 0, countdownSeconds = 60;
 
-  var FAMILY_TAGS = {
-    measure:'Mesurer', deform:'Déformer', net:'Patron → Solide',
-    qcm:'Quizz', 'clock-lire':'Lire l\'heure', 'clock-regler':'Régler l\'heure'
-  };
-  var FAMILY_WRAP_IDS = {
-    measure:'fam-measure', deform:'fam-deform', net:'fam-net',
-    qcm:'fam-qcm', 'clock-lire':'fam-clock-lire', 'clock-regler':'fam-clock-regler'
-  };
-  var MANUAL_FAMILY_LIST = ['measure','deform','net','qcm','clock-lire','clock-regler'];
-  // Activités qui ont de vrais paliers de difficulté : en mode Manuel, le
-  // sélecteur de niveau est masqué pour les autres (aucune à ce jour).
-  var FAMILIES_WITH_LEVELS = {
-    measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':true
-  };
-  // La famille "Quizz" (QCM) regroupe à elle seule ~20 types de questions
-  // (M4_LEVELS[*].types) qui étaient auparavant sélectionnables un par un.
-  // On les réexpose ici en mode Manuel via l'ancien mécanisme m4TypeFilter
-  // (déjà lu par genQuestion, mais plus jamais réglé depuis la fusion).
+  // Tout est calculé à partir du registre (registerFamily, noyau.js) : aucune
+  // activité n'est nommée ici. Ordre = champ `order` de chaque famille.
+  FAMILIES.sort(function(a, b){ return (a.order || 100) - (b.order || 100); });
+  var FAMILY_TAGS = {};
+  FAMILIES.forEach(function(f){ FAMILY_TAGS[f.key] = f.tag; });
+  var MANUAL_FAMILY_LIST = FAMILIES.map(function(f){ return f.key; });
   var LEVEL_NAMES = ['Facile','Moyen','Difficile'];
   var LEVEL_SHORT = ['Fa','Mo','Di'];
+  function familyDef(key){
+    for(var i=0;i<FAMILIES.length;i++){ if(FAMILIES[i].key===key) return FAMILIES[i]; }
+    return null;
+  }
+  var extraFamily = familyDef;   // ancien nom, gardé pour les tests
 
   /* ===================== CONFIGURATION DES ACTIVITÉS =====================
      Panneau de réglages avancé (⚙️ → "Configurer les activités et leur
-     difficulté") : pour Quizz (QCM_TYPE_DEFS) et Patron→Solide (NET_DEFS),
-     affiche chaque épreuve avec les niveaux où elle apparaît actuellement et
-     permet de les cocher/décocher à la main (au moins un niveau doit rester
-     coché). Les surcharges sont persistées et fusionnées par-dessus
-     defaultLevels via effectiveLevels(), puis rebuildM4Types()/
-     rebuildM3Pools() reconstruisent M4_LEVELS[*].types / M3_LEVELS[*].pool à
-     partir du résultat — tout le reste du code (qcmTypeLevels, genQuestion,
-     pickNetForLevel...) continue de lire ces tableaux normalement, sans
-     rien savoir des surcharges. */
-  var typeLevelOverrides = {}, netLevelOverrides = {};
-  try{ typeLevelOverrides = JSON.parse(localStorage.getItem('geo_qcm_level_overrides') || '{}'); }catch(e){}
-  try{ netLevelOverrides = JSON.parse(localStorage.getItem('geo_net_level_overrides') || '{}'); }catch(e){}
-  function effectiveLevels(def, kind){
-    var overrides = kind==='qcm' ? typeLevelOverrides : netLevelOverrides;
-    var lv = overrides[def.id];
-    return (lv && lv.length) ? lv : def.defaultLevels;
-  }
-  function rebuildM4Types(){
-    M4_LEVELS.forEach(function(lv, idx){
-      lv.types = QCM_TYPE_DEFS.filter(function(d){ return effectiveLevels(d,'qcm').indexOf(idx)!==-1; })
-        .map(function(d){ return d.id; });
-    });
-  }
-  function rebuildM3Pools(){
-    M3_LEVELS.forEach(function(lv, idx){
-      lv.pool = NET_DEFS.filter(function(d){ return effectiveLevels(d,'net').indexOf(idx)!==-1; })
-        .map(function(d){ return d.obj; });
-    });
-  }
-  rebuildM4Types();
-  rebuildM3Pools();
-
-  var STATIC_FAMILY_NOTES = {
-    measure:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
-    deform:'Une seule épreuve avec 3 formes cibles (losange, rectangle, parallélogramme) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins en Moyen, les 4 coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
-    'clock-lire':'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
-    'clock-regler':'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place sur 24 positions à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (à 15 ou 45 minutes, les deux positions voisines sont acceptées).'
-  };
-  var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
-  // Familles déclarées par les thèmes (voir registerFamily dans noyau.js) : on les
-  // ajoute aux listes ci-dessus et on leur crée un conteneur d'écran.
-  EXTRA_FAMILIES.forEach(function(f){
-    FAMILY_TAGS[f.key] = f.tag;
-    FAMILY_WRAP_IDS[f.key] = 'fam-' + f.key;
-    MANUAL_FAMILY_LIST.push(f.key);
-    FAMILIES_WITH_LEVELS[f.key] = true;
-    STATIC_FAMILY_NOTES[f.key] = f.note;
-    ACTIVITY_CONFIG_FAMILIES.push(f.key);
-    var wrap = document.createElement('div');
-    wrap.id = 'fam-' + f.key; wrap.hidden = true;
-    var host = document.getElementById('fam-clock-regler');
-    host.parentNode.insertBefore(wrap, host.nextSibling);
-    f.build(wrap);
+     difficulté") : pour une famille qui a un `config` (Quizz, Patron →
+     Solide…), affiche chaque épreuve avec les niveaux où elle apparaît et
+     permet de les cocher/décocher (au moins un niveau reste coché). Les
+     surcharges sont enregistrées (config.storageKey), puis config.rebuild()
+     reconstruit les tirages de la famille ; le reste du code ne sait rien
+     des surcharges. Une famille sans `config` affiche son texte `note`. */
+  FAMILIES.forEach(function(f){
+    if(!f.config) return;
+    f.config.overrides = {};
+    try{ f.config.overrides = JSON.parse(localStorage.getItem(f.config.storageKey) || '{}'); }catch(e){}
+    f.config.rebuild(f.config.overrides);
   });
+  var ACTIVITY_CONFIG_FAMILIES = MANUAL_FAMILY_LIST;
   var currentAconfFamily = 'qcm';
   var aconfOpenCats = {};
   function flashAconfWarning(){
@@ -5536,9 +5591,8 @@
     wrap.classList.add('shake');
     setTimeout(function(){ wrap.classList.remove('shake'); }, 420);
   }
-  function toggleAconfLevel(def, kind, idx){
-    var overrides = kind==='qcm' ? typeLevelOverrides : netLevelOverrides;
-    var current = effectiveLevels(def, kind).slice();
+  function toggleAconfLevel(def, cfg, idx){
+    var current = effectiveLevels(def, cfg.overrides).slice();
     var pos = current.indexOf(idx);
     if(pos!==-1){
       if(current.length===1){ flashAconfWarning(); return; } // au moins un niveau doit rester coché
@@ -5547,21 +5601,19 @@
       current.push(idx);
       current.sort();
     }
-    overrides[def.id] = current;
-    try{
-      localStorage.setItem(kind==='qcm' ? 'geo_qcm_level_overrides' : 'geo_net_level_overrides', JSON.stringify(overrides));
-    }catch(e){}
-    if(kind==='qcm') rebuildM4Types(); else rebuildM3Pools();
+    cfg.overrides[def.id] = current;
+    try{ localStorage.setItem(cfg.storageKey, JSON.stringify(cfg.overrides)); }catch(e){}
+    cfg.rebuild(cfg.overrides);
     renderActivityConfig(currentAconfFamily);
   }
-  function buildAconfItem(def, kind){
+  function buildAconfItem(def, cfg){
     var item = document.createElement('div');
     item.className = 'aconf-item';
     var head = document.createElement('div'); head.className = 'aconf-item-head';
     var nameSpan = document.createElement('span'); nameSpan.textContent = def.label;
     head.appendChild(nameSpan);
     var toggles = document.createElement('div'); toggles.className = 'aconf-level-toggles';
-    var levels = effectiveLevels(def, kind);
+    var levels = effectiveLevels(def, cfg.overrides);
     LEVEL_SHORT.forEach(function(short, idx){
       var b = document.createElement('button');
       b.type = 'button';
@@ -5569,7 +5621,7 @@
       b.textContent = short;
       b.title = LEVEL_NAMES[idx];
       b.setAttribute('aria-label', LEVEL_NAMES[idx]);
-      b.addEventListener('click', function(){ toggleAconfLevel(def, kind, idx); });
+      b.addEventListener('click', function(){ toggleAconfLevel(def, cfg, idx); });
       toggles.appendChild(b);
     });
     head.appendChild(toggles);
@@ -5581,26 +5633,25 @@
   function renderActivityConfig(familyKey){
     var wrap = document.getElementById('activity-config-list');
     wrap.innerHTML = '';
-    if(familyKey === 'qcm'){
+    var fam = familyDef(familyKey), cfg = fam && fam.config;
+    if(cfg && cfg.groups){
       // regroupé par sous-catégorie, chaque groupe repliable (le premier ouvert)
-      QCM_CATEGORIES.forEach(function(cat, ci){
-        var defs = QCM_TYPE_DEFS.filter(function(d){ return quizCategoryId(d)===cat.id; });
-        if(!defs.length) return;
+      cfg.groups().filter(function(g){ return g.defs.length; }).forEach(function(g, gi){
         var det = document.createElement('details'); det.className = 'aconf-cat';
-        if(aconfOpenCats[cat.id] === undefined ? ci===0 : aconfOpenCats[cat.id]) det.open = true;
+        if(aconfOpenCats[g.id] === undefined ? gi===0 : aconfOpenCats[g.id]) det.open = true;
         var sum = document.createElement('summary');
-        sum.textContent = cat.icon + ' ' + cat.label + ' (' + defs.length + ')';
+        sum.textContent = g.label + ' (' + g.defs.length + ')';
         det.appendChild(sum);
-        det.addEventListener('toggle', function(){ aconfOpenCats[cat.id] = det.open; });
-        defs.forEach(function(def){ det.appendChild(buildAconfItem(def, 'qcm')); });
+        det.addEventListener('toggle', function(){ aconfOpenCats[g.id] = det.open; });
+        g.defs.forEach(function(def){ det.appendChild(buildAconfItem(def, cfg)); });
         wrap.appendChild(det);
       });
-    } else if(familyKey === 'net'){
-      NET_DEFS.forEach(function(def){ wrap.appendChild(buildAconfItem(def, 'net')); });
+    } else if(cfg){
+      cfg.defs().forEach(function(def){ wrap.appendChild(buildAconfItem(def, cfg)); });
     } else {
       var card = document.createElement('div'); card.className = 'aconf-static-card';
       var h3 = document.createElement('h3'); h3.textContent = FAMILY_TAGS[familyKey];
-      var p = document.createElement('p'); p.textContent = STATIC_FAMILY_NOTES[familyKey];
+      var p = document.createElement('p'); p.textContent = (fam && fam.note) || '';
       card.appendChild(h3); card.appendChild(p);
       wrap.appendChild(card);
     }
@@ -5608,7 +5659,7 @@
   buildLevelRow(
     document.getElementById('activity-config-family-row'),
     ACTIVITY_CONFIG_FAMILIES.map(function(k){ return FAMILY_TAGS[k]; }),
-    ACTIVITY_CONFIG_FAMILIES.indexOf('qcm'),
+    Math.max(0, ACTIVITY_CONFIG_FAMILIES.indexOf('qcm')),
     function(idx){
       currentAconfFamily = ACTIVITY_CONFIG_FAMILIES[idx];
       renderActivityConfig(currentAconfFamily);
@@ -5720,21 +5771,23 @@
   document.getElementById('manual-show-activities-btn').addEventListener('click', function(){
     if(document.getElementById('manual-activity-picker').hidden) expandManualActivities(); else collapseManualActivities();
   });
-  // Manipulations plus lentes (glisser des coins, régler des aiguilles) sont
-  // réservées au mode Aléatoire : un compte à rebours mélange seulement les
-  // familles qui se répondent en un tap. Le patron 3D en est exclu aussi :
-  // l'animation de pliage n'a pas le temps de se jouer correctement avant
-  // l'enchaînement automatique de la question suivante.
+  // Sac de tirage : chaque famille y figure `weight` fois (1 par défaut).
+  // En mode Chronométré, seules les familles `timed` (réponse en un toucher)
+  // sont tirées, une fois chacune : les manipulations lentes et le patron 3D
+  // (dont l'animation de pliage n'aurait pas le temps de se jouer) en sont exclus.
   function familyKeys(){
-    return practiceMode==='countdown'
-      ? ['measure','qcm','clock-lire']
-      : ['measure','deform','net','qcm','qcm','qcm','clock-lire','clock-regler'].concat(EXTRA_FAMILIES.map(function(f){ return f.key; }));
+    var keys = [];
+    FAMILIES.forEach(function(f){
+      if(practiceMode==='countdown'){ if(f.timed) keys.push(f.key); return; }
+      for(var i=0;i<(f.weight || 1);i++) keys.push(f.key);
+    });
+    return keys;
   }
   function showFamily(key){
     currentFamily = key;
-    Object.keys(FAMILY_WRAP_IDS).forEach(function(k){
-      var wrap = document.getElementById(FAMILY_WRAP_IDS[k]);
-      if(wrap) wrap.hidden = (k!==key);
+    FAMILIES.forEach(function(f){
+      var wrap = document.getElementById('fam-' + f.key);
+      if(wrap) wrap.hidden = (f.key!==key);
     });
     document.getElementById('practice-family-tag').textContent = FAMILY_TAGS[key];
     updateStreakPill();
@@ -5756,27 +5809,11 @@
   var seenSigs = [];
   function resetSeenQuestions(){ seenSigs = []; }
   function questionSignature(key){
-    if(key==='measure') return 'measure|' + globalLevel + '|' + currentLen + '|' + m1RulerStart + '|' + m1SegStart;
-    if(key==='deform') return 'deform|' + m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';');
-    if(key==='net') return 'net|' + NET_DEFS.map(function(n){ return n.obj; }).indexOf(currentNet);
-    if(key==='clock-regler') return 'regler|' + m5Target.hour + ':' + m5Target.minute;
-    if(extraFamily(key)) return key + '|' + extraFamily(key).signature();
-    var q = key==='qcm' ? m4Current : m5Current;
-    return key + '|' + q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
+    return key + '|' + familyDef(key).signature();
   }
   function generateFamilyQuestion(key){
     showFamily(key);
-    if(key==='measure') newMeasureQuestion();
-    else if(key==='deform') newDeformQuestion();
-    else if(key==='net') loadNet(pickNetForLevel(globalLevel));
-    else if(key==='qcm') newQCM();
-    else if(key==='clock-lire') newM5Lire();
-    else if(key==='clock-regler') m5rGenTarget();
-    else extraFamily(key).generate(globalLevel);
-  }
-  function extraFamily(key){
-    for(var i=0;i<EXTRA_FAMILIES.length;i++){ if(EXTRA_FAMILIES[i].key===key) return EXTRA_FAMILIES[i]; }
-    return null;
+    familyDef(key).generate(globalLevel);
   }
   // Choix de la famille « sans remise » : chaque famille sort (le quiz autant de
   // fois que son poids) avant qu'aucune ne revienne ; jamais deux fois de suite
@@ -6070,23 +6107,26 @@
   // elle n'existe pas en Facile et/ou en Moyen (voir rebuildManualLevelRow).
   // Deux étages : d'abord un THÈME (Quizz, Formes & mesures, Solides, Horloge),
   // puis, s'il en contient plusieurs, l'activité précise.
-  var FAMILY_THEMES = [
-    { label:'🧠 Quizz',            families:['qcm'] },
-    { label:'📐 Formes & mesures', families:['measure','deform'] },
-    { label:'📦 Solides',          families:['net'] },
-    { label:'🕒 Horloge',          families:['clock-lire','clock-regler'] }
-  ];
-  EXTRA_FAMILIES.forEach(function(f){
+  // Les groupes viennent du champ `theme` de chaque famille ; cet ordre
+  // d'affichage est une simple préférence (un groupe inconnu va à la suite).
+  var THEME_DISPLAY_ORDER = ['🧠 Quizz', '📐 Formes & mesures', '📦 Solides', '🕒 Horloge'];
+  var FAMILY_THEMES = [];
+  FAMILIES.forEach(function(f){
     var th = null;
     FAMILY_THEMES.forEach(function(t){ if(t.label===f.theme) th = t; });
     if(!th){ th = { label:f.theme, families:[] }; FAMILY_THEMES.push(th); }
     th.families.push(f.key);
   });
+  FAMILY_THEMES.forEach(function(t, i){
+    var r = THEME_DISPLAY_ORDER.indexOf(t.label);
+    t.rank = r===-1 ? THEME_DISPLAY_ORDER.length + i : r;
+  });
+  FAMILY_THEMES.sort(function(a, b){ return a.rank - b.rank; });
   function startManualFamily(key){
     manualFamily = key;
     refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
     if(manualFamily !== 'qcm'){
-      rebuildManualLevelRow(FAMILIES_WITH_LEVELS[manualFamily] ? [0,1,2] : []);
+      rebuildManualLevelRow(familyDef(manualFamily).levels || [0,1,2]);
     }
     // Sans niveaux à choisir, l'épreuve démarre tout de suite ; sinon elle attend le choix du niveau.
     if(!manualAvailableLevels.length) showManualExercise();

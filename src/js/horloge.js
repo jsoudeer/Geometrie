@@ -13,6 +13,24 @@
   }
 
   // ---- Mode "Lire l'heure" (même moteur que le QCM, ciblé sur m5Svg) ----
+  registerFamily({
+    key:'clock-lire', tag:'Lire l\'heure', theme:'🕒 Horloge', order:50, timed:true,
+    note:'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>',
+      '</div>',
+      '<p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>',
+      '<div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200" role="img" aria-label="Horloge à lire"></svg></div>',
+      '<div class="qcm-choices" id="m5-choices"></div>',
+      '<div class="feedback" id="m5-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m5-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newM5Lire(); },
+    signature:function(){ return quizSignature(m5Current); }
+  });
   var m5Current = null;
   function newM5Lire(){
     m5Current = genHeureQuestion('m5Svg', globalLevel);
@@ -39,17 +57,35 @@
     buttons.forEach(function(b){ b.disabled = true; });
     if(choice.ok){
       btn.classList.add('correct');
-      m5Flow.answer(true, '<div>✔ Bravo, c\'est la bonne heure !</div><div class="explain-line">'+m5Current.explain+'</div>');
+      m5Flow.answer(true, { success:'Bravo, c\'est la bonne heure !', explain:m5Current.explain });
     } else {
       btn.classList.add('wrong');
       var okLabel = m5Current.choices.filter(function(c){return c.ok;})[0].label;
       buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
-      m5Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est en vert.</div><div class="explain-line">'+m5Current.explain+'</div>');
+      m5Flow.answer(false, { solution:'La bonne réponse est en vert.', explain:m5Current.explain });
     }
   }
   document.getElementById('m5-next').addEventListener('click', function(){ m5Flow.skip(); });
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
+  registerFamily({
+    key:'clock-regler', tag:'Régler l\'heure', theme:'🕒 Horloge', order:60,
+    note:'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place sur 24 positions à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (à 15 ou 45 minutes, les deux positions voisines sont acceptées).',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble">Place les aiguilles sur <span id="m5-target">3 h</span></div>',
+      '</div>',
+      '<p class="muted">Fais glisser la petite et la grande aiguille, puis vérifie.</p>',
+      '<div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>',
+      '<div class="feedback" id="m5r-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>',
+      '  <button class="btn ghost" id="m5r-new" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ m5rGenTarget(); },
+    signature:function(){ return m5Target.hour + ':' + m5Target.minute; }
+  });
   // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
   // des crans qui dépendent du niveau (0 Facile, 1 Moyen, 2 Difficile) :
   //   Facile     heure pile ou demie      (petite : crans de 15°, grande : 2 positions)
@@ -149,17 +185,16 @@
     var total = m5Target.hour*60 + m5Target.minute;
     // En Difficile, l'heure demandée est en 24 h : on rappelle comment elle se lit sur le cadran.
     var readAs = (lvl===2 && (m5Target.hour===0 || m5Target.hour>=13))
-      ? '<div class="explain-line">Sur le cadran, ' + minutesToLabel24(total) + ' se lit ' + minutesToClockLabel(total) + '.</div>' : '';
-    var explain = '<div class="explain-line">La petite aiguille montre les heures, la grande aiguille montre les minutes.</div>';
+      ? 'Sur le cadran, ' + minutesToLabel24(total) + ' se lit ' + minutesToClockLabel(total) + '.' : '';
+    var explain = 'La petite aiguille montre les heures, la grande aiguille montre les minutes.';
     if(hourOk && minOk){
-      m5rFlow.answer(true, '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs + explain);
+      m5rFlow.answer(true, { success:'Bravo, les aiguilles sont bien placées !', detail:readAs, explain:explain });
       return;
     }
-    var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
+    var hint = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
       : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée. ' + hourHandHint(m5Target.hour, m5Target.minute)
       : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
-    var state = m5rFlow.answer(false, '<div>✘ ' + msg + '</div>' + readAs,
-      '<div>✘ ' + msg + '</div><div>Voici les aiguilles bien placées.</div>' + readAs + explain);
+    var state = m5rFlow.answer(false, { hint:hint + (readAs ? ' ' + readAs : ''), solution:'Voici les aiguilles bien placées.' + (readAs ? ' ' + readAs : ''), explain:explain });
     if(state==='failed'){
       // on montre la bonne position des deux aiguilles
       m5rHourTick = Math.round(exactHourDeg / M5R_HOUR_STEP[lvl]) % Math.round(360 / M5R_HOUR_STEP[lvl]);

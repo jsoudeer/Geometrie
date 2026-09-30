@@ -632,17 +632,31 @@
     flow.clearHint = function(){
       if(!flow.closed){ fb.className = 'feedback'; fb.innerHTML = ''; }
     };
-    // ok : réponse juste ? html : retour à afficher ; lastHtml : retour quand
-    // c'était la dernière tentative (la bonne réponse y est donnée).
+    // Messages : l'activité fournit le CONTENU, le flux compose la FORME,
+    // identique partout :
+    //   réussite       ✔ <success>              / <detail> / explication
+    //   essai raté     ✘ Pas encore.            / <hint>   / 🔁 Essai n sur 3
+    //   échec final    ✘ Ce n'est pas ça.       / <solution> / explication
+    // msg = { success, detail, hint, solution, explain } (tout est facultatif
+    // sauf success, et solution pour un échec).
     // Renvoie 'solved', 'retry' (encore des essais) ou 'failed' (question fermée).
-    flow.answer = function(ok, html, lastHtml){
+    function line(cls, txt){ return txt ? '<div' + (cls ? ' class="' + cls + '"' : '') + '>' + txt + '</div>' : ''; }
+    flow.answer = function(ok, msg){
       if(flow.closed) return 'closed';
       flow.tries++;
-      if(ok){ close(true, html); return 'solved'; }
-      if(flow.tries >= flow.maxTries){ close(false, lastHtml || html); return 'failed'; }
+      var explain = line('explain-line', msg.explain);
+      if(ok){
+        close(true, line('fb-title', '✔ ' + msg.success) + line('', msg.detail) + explain);
+        return 'solved';
+      }
+      if(flow.tries >= flow.maxTries){
+        close(false, line('fb-title', '✘ Ce n\'est pas ça.') + line('', msg.solution) + explain);
+        return 'failed';
+      }
       var left = flow.maxTries - flow.tries;
-      show(false, html + '<div class="explain-line">🔁 Essai ' + flow.tries + ' sur ' + flow.maxTries +
-        ' : corrige puis vérifie encore (' + left + ' essai' + (left>1 ? 's' : '') + ' restant' + (left>1 ? 's' : '') + ').</div>', false);
+      show(false, line('fb-title', '✘ Pas encore.') + line('', msg.hint) +
+        line('explain-line', '🔁 Essai ' + flow.tries + ' sur ' + flow.maxTries + ' : corrige puis vérifie encore (' +
+          left + ' essai' + (left>1 ? 's' : '') + ' restant' + (left>1 ? 's' : '') + ').'), false);
       return 'retry';
     };
     // Bouton « Nouvelle activité ».
@@ -678,6 +692,27 @@
     t.textContent = txt;
     return t;
   }
+  // ---- Outils de dessin partagés par plusieurs thèmes ----
+  // (ils vivent ici pour qu'on puisse retirer un thème sans casser les autres)
+  var palette = ['var(--accent2)','var(--accent3)','var(--accent)','var(--accent2)','var(--accent3)'];
+  // Liste de points [[x,y],…] → attribut `points` d'un <polygon>.
+  function isoPoly(pts){ return pts.map(function(p){return p[0]+','+p[1];}).join(' '); }
+  // Sommets d'un polygone régulier (ou d'une ellipse, si rx ≠ ry) à n côtés.
+  function ngonPoints(n, cx, cy, rx, ry, rotDeg){
+    var pts=[];
+    for(var k=0;k<n;k++){
+      var ang=(rotDeg + k*360/n) * Math.PI/180;
+      pts.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
+    }
+    return pts;
+  }
+  // Illustration d'une question de Quizz réduite à un texte (ex. « 3 + 4 = ? »).
+  function drawEquation(txt){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    svg.appendChild(svgText(100,112,txt.length>11 ? 24 : 34,txt));
+  }
 
   // ---- Registre des types de Quizz ----
   // Chaque thème appelle registerQuizType() pour déclarer ses types de questions :
@@ -710,17 +745,46 @@
     return 'autres';
   }
   function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
-  // Familles d'activités à écran propre déclarées par un thème (les activités
-  // interactives : on touche, on place…). Contrat d'une famille :
-  //   { key, tag, theme, note, build(wrap), generate(level), signature() }
-  //  - key        identifiant unique (sert aussi à fabriquer l'id du conteneur fam-<key>)
-  //  - tag        nom affiché ; theme : libellé du thème du mode Manuel (ex. '✋ Ateliers')
-  //  - note       texte du panneau « Activités & difficulté »
-  //  - build      construit l'écran dans le conteneur `wrap` (une seule fois, au démarrage)
-  //  - generate   prépare une nouvelle question pour le niveau donné
-  //  - signature  empreinte de la question courante (évite les répétitions dans une série)
-  var EXTRA_FAMILIES = [];
-  function registerFamily(def){ EXTRA_FAMILIES.push(def); }
+  /* ===================== REGISTRE DES ACTIVITÉS (familles) =====================
+     TOUTES les activités (Mesurer, Déformer, Patron, Quizz, Horloge, ateliers…)
+     sont déclarées par leur thème avec registerFamily ; l'orchestrateur ne
+     connaît aucune activité par son nom. Retirer un thème du manifeste retire
+     simplement ses activités. Contrat d'une famille :
+       key        identifiant unique (conteneur d'écran : #fam-<key>)
+       tag        nom affiché ; theme : groupe du mode Manuel (ex. '🕒 Horloge')
+       order      rang d'affichage et de tirage (les plus petits d'abord)
+       weight     nombre de places dans le tirage aléatoire (1 par défaut ; 3 pour le Quizz)
+       timed      true : proposée aussi en mode Chronométré (réponse en un toucher)
+       note       texte du panneau « Activités & difficulté » (si pas de `config`)
+       config     facultatif : réglage des niveaux épreuve par épreuve
+                  { storageKey, defs(), groups()?, rebuild(overrides) } (voir orchestrateur)
+       markup     HTML de l'écran (mis dans le conteneur dès l'enregistrement)
+       build      facultatif : construit l'écran en JS dans le conteneur `wrap`
+       generate   prépare une nouvelle question pour le niveau donné
+       signature  empreinte de la question courante (évite les répétitions dans une série)
+     Le conteneur existe dès le retour de registerFamily : le thème peut ensuite
+     brancher ses boutons par leur id. */
+  var FAMILIES = [];
+  function registerFamily(def){
+    var wrap = document.createElement('div');
+    wrap.id = 'fam-' + def.key;
+    wrap.hidden = true;
+    if(def.markup) wrap.innerHTML = def.markup;
+    document.getElementById('practice-exercise').appendChild(wrap);
+    FAMILIES.push(def);
+    if(def.build) def.build(wrap);
+    return wrap;
+  }
+  // Empreinte d'une question à choix (Quizz, Lire l'heure) pour l'anti-répétition.
+  function quizSignature(q){
+    return q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
+  }
+  // Niveaux où apparaît une épreuve réglable (Quizz, patron…) : réglage manuel
+  // enregistré s'il existe, sinon ses niveaux par défaut.
+  function effectiveLevels(def, overrides){
+    var lv = overrides && overrides[def.id];
+    return (lv && lv.length) ? lv : def.defaultLevels;
+  }
   function quizTypeById(id){
     for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }
     return null;

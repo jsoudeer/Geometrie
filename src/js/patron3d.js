@@ -173,7 +173,7 @@
   // Chaque patron ("épreuve" du module Patron→Solide) est déclaré une fois
   // ici avec ses niveaux PAR DÉFAUT ; le panneau de réglages "Activités &
   // difficulté" peut ensuite surcharger ces niveaux (voir netLevelOverrides
-  // / rebuildM3Pools plus bas dans l'orchestrateur), qui reconstruit alors
+  // / rebuildM3Pools ci-dessous, appelée par l'orchestrateur), qui reconstruit alors
   // M3_LEVELS[*].pool à partir de ces définitions.
   var NET_DEFS = [
     { id:'cross',        obj:NET_CROSS,        label:'Croix (6 faces en croix)',            defaultLevels:[0,1,2],
@@ -202,6 +202,33 @@
     { name:'Moyen',     pool:[] },
     { name:'Difficile', pool:[] }
   ];
+  function rebuildM3Pools(overrides){
+    M3_LEVELS.forEach(function(lv, idx){
+      lv.pool = NET_DEFS.filter(function(d){ return effectiveLevels(d, overrides).indexOf(idx)!==-1; })
+        .map(function(d){ return d.obj; });
+    });
+  }
+  registerFamily({
+    key:'net', tag:'Patron → Solide', theme:'📦 Solides', order:30,
+    // Chaque patron se règle niveau par niveau dans « Activités & difficulté ».
+    config:{ storageKey:'geo_net_level_overrides', defs:function(){ return NET_DEFS; }, rebuild:rebuildM3Pools },
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m3-question">Quel solide peut-on fabriquer avec ce patron ?</div>',
+      '</div>',
+      '<p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>',
+      '<div class="stage" id="stage" role="img" aria-label="Patron à plat qui se plie pour former un solide">',
+      '  <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>',
+      '</div>',
+      '<div class="qcm-choices" id="m3-choices"></div>',
+      '<div class="feedback" id="m3-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn ghost" id="m3-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(level){ loadNet(pickNetForLevel(level)); },
+    signature:function(){ return NET_DEFS.map(function(n){ return n.obj; }).indexOf(currentNet); }
+  });
 
   function foldRule(dx,dy){
     if(dx===1 && dy===0)  return {origin:'0% 50%',   axis:'Y', angle:-90};
@@ -217,7 +244,6 @@
     return 'polygon(0% 0%, 0% 100%, 100% 50%)'; // 'right'
   }
 
-  var palette = ['var(--accent2)','var(--accent3)','var(--accent)','var(--accent2)','var(--accent3)'];
   // Palette fixe (indépendante du thème) pour le patron 3D : une couleur
   // par face numérotée (1 à 6), pour bien voir quel petit carré devient
   // quelle face du solide une fois le pliage terminé.
@@ -413,11 +439,11 @@
     var correct = (userChoice === currentNet.answer);
     if(correct){
       btn.classList.add('correct');
-      m3Flow.answer(true, '<div>✔ Exact, c\'est bien "' + M3_ANSWER_LABELS[currentNet.answer] + '" !</div><div class="explain-line">'+netExplain(currentNet)+'</div>');
+      m3Flow.answer(true, { success:'Bravo, c\'est bien « ' + M3_ANSWER_LABELS[currentNet.answer] + ' » !', explain:netExplain(currentNet) });
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === M3_ANSWER_LABELS[currentNet.answer]) b.classList.add('correct'); });
-      m3Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse était "' + M3_ANSWER_LABELS[currentNet.answer] + '".</div><div class="explain-line">'+netExplain(currentNet)+'</div>');
+      m3Flow.answer(false, { solution:'La bonne réponse est « ' + M3_ANSWER_LABELS[currentNet.answer] + ' », en vert.', explain:netExplain(currentNet) });
     }
 
     var maxDepth = foldNet(currentElems, currentRootId, true);
@@ -456,7 +482,6 @@
   // solide) sont en pointillés, et les faces visibles sont translucides.
   // Ça permet à l'enfant de voir ET de compter les arêtes/sommets cachés,
   // au lieu d'avoir à "deviner" ce qu'il y a derrière.
-  function isoPoly(pts){ return pts.map(function(p){return p[0]+','+p[1];}).join(' '); }
   function solidFace(svg,pts,color){
     svg.appendChild(el('polygon',{points:isoPoly(pts), fill:color, 'fill-opacity':0.5, stroke:'none'}));
   }
@@ -572,14 +597,7 @@
   // dessous dont seule la moitié avant (les sommets les plus bas) est
   // tracée — plutôt que de gérer arête par arête laquelle des n faces
   // latérales est visible ou cachée, inutilement complexe à cet âge.
-  function ngonPoints(n, cx, cy, rx, ry, rotDeg){
-    var pts=[];
-    for(var k=0;k<n;k++){
-      var ang=(rotDeg + k*360/n) * Math.PI/180;
-      pts.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
-    }
-    return pts;
-  }
+  // (ngonPoints, isoPoly : outils de dessin partagés, dans noyau.js)
   // Prisme droit à base régulière à n côtés, en perspective : on le dessine EN
   // ENTIER, comme les autres solides (cube, pyramide…) — les arêtes cachées
   // sont en pointillés. Vue de dessus légère : une face rectangulaire est

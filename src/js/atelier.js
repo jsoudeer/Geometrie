@@ -11,7 +11,7 @@
   // Fabrique l'écran commun (question dans la bulle, consigne, dessin tactile,
   // retour, boutons Vérifier / Nouvelle activité) et le relie au déroulé commun
   // des questions (makeQuestionFlow, 3 tentatives). onCheck(ui) appelle
-  // ui.answer(ok, html, lastHtml) et, si c'est raté pour de bon, montre la solution.
+  // ui.answer(ok, msg) (voir makeQuestionFlow) et, si c'est raté pour de bon, montre la solution.
   function makeAtelier(key, wrap, onCheck){
     wrap.innerHTML =
       '<div class="coach-row"><div class="coach-bubble" id="at-' + key + '-q"></div></div>' +
@@ -121,12 +121,12 @@
   function atSymCheck(ui){
     var wrong = 0, r, c;
     for(r=0;r<atSym.half.rows;r++) for(c=0;c<atSym.half.cols;c++) if(atSym.mine[r][c] !== atSym.solution[r][c]) wrong++;
-    var explain = '<div class="explain-line">Chaque case a sa jumelle de l\'autre côté de la ligne rouge, à la même distance.</div>';
-    if(wrong===0){ atSymDraw(false); ui.answer(true, '<div>✔ Bravo, la figure est bien symétrique !</div>' + explain); return; }
-    var msg = '<div>✘ ' + (wrong===1 ? 'Il y a 1 case à corriger' : 'Il y a ' + wrong + ' cases à corriger') + '.</div>';
+    var explain = 'Chaque case a sa jumelle de l\'autre côté de la ligne rouge, à la même distance.';
+    if(wrong===0){ atSymDraw(false); ui.answer(true, { success:'Bravo, la figure est bien symétrique !', explain:explain }); return; }
     atSymDraw(true);
-    var state = ui.answer(false, msg.replace('.</div>', ' (entourées en rouge).</div>') + '<div class="explain-line">Astuce : la case juste à côté de la ligne rouge se retrouve juste de l\'autre côté.</div>',
-      msg + '<div>Voici la figure complétée.</div>' + explain);
+    var state = ui.answer(false, {
+      hint:(wrong===1 ? 'Il y a 1 case à corriger' : 'Il y a ' + wrong + ' cases à corriger') + ', entourée' + (wrong>1?'s':'') + ' en rouge. Astuce : la case juste à côté de la ligne rouge se retrouve juste de l\'autre côté.',
+      solution:'Voici la figure complétée.', explain:explain });
     if(state==='failed'){ atSym.mine = atSym.solution.map(function(row){ return row.slice(); }); atSymDraw(false); }
   }
   registerFamily({
@@ -184,12 +184,12 @@
   }
   function atFracCheck(ui){
     var got = atFrac.on.filter(function(v){ return v; }).length, need = atFrac.k, n = atFrac.n;
-    var explain = '<div class="explain-line">La figure a ' + n + ' parts égales : ' + atFrac.label + ' de la figure, c\'est ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + ' (' + need + '/' + n + ').</div>';
-    if(got===need){ ui.answer(true, '<div>✔ Bravo !</div>' + explain); return; }
-    var msg = got<need ? '<div>✘ Il manque ' + (need-got) + ' part' + (need-got>1?'s':'') + ' à colorier.</div>'
-                       : '<div>✘ Il y a ' + (got-need) + ' part' + (got-need>1?'s':'') + ' de trop.</div>';
-    var state = ui.answer(false, msg + '<div class="explain-line">Compte les parts coloriées : il en faut ' + need + ' sur ' + n + '.</div>',
-      msg + '<div>Voici une bonne façon de colorier.</div>' + explain);
+    var explain = 'La figure a ' + n + ' parts égales : ' + atFrac.label + ' de la figure, c\'est ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + ' (' + need + '/' + n + ').';
+    if(got===need){ ui.answer(true, { success:'Bravo, tu as bien colorié ' + atFrac.label + ' !', explain:explain }); return; }
+    var hint = (got<need ? 'Il manque ' + (need-got) + ' part' + (need-got>1?'s':'') + ' à colorier.'
+                         : 'Il y a ' + (got-need) + ' part' + (got-need>1?'s':'') + ' de trop.') +
+      ' Compte les parts coloriées : il en faut ' + need + ' sur ' + n + '.';
+    var state = ui.answer(false, { hint:hint, solution:'Voici une bonne façon de colorier.', explain:explain });
     if(state==='failed'){ atFrac.on = atFrac.on.map(function(v, i){ return i < need; }); atFracDraw(); }
   }
   registerFamily({
@@ -239,12 +239,12 @@
   function atCopyCheck(ui){
     var wrong = 0, r, c;
     for(r=0;r<atCopy.n;r++) for(c=0;c<atCopy.n;c++) if(atCopy.mine[r][c] !== atCopy.model[r][c]) wrong++;
-    var explain = '<div class="explain-line">Compare ligne par ligne, en partant du haut.</div>';
-    if(wrong===0){ atCopyDraw(false); ui.answer(true, '<div>✔ Bravo, ta grille est identique au modèle !</div>'); return; }
-    var msg = '<div>✘ Il y a ' + wrong + ' case' + (wrong>1?'s':'') + ' différente' + (wrong>1?'s':'') + ' du modèle.</div>';
+    var explain = 'Compare ligne par ligne, en partant du haut.';
+    if(wrong===0){ atCopyDraw(false); ui.answer(true, { success:'Bravo, ta grille est identique au modèle !', explain:explain }); return; }
     atCopyDraw(true);
-    var state = ui.answer(false, msg.replace(' du modèle.', ' du modèle (entourée' + (wrong>1?'s':'') + ' en rouge).') + explain,
-      msg + '<div>Voici la grille recopiée.</div>' + explain);
+    var state = ui.answer(false, {
+      hint:'Il y a ' + wrong + ' case' + (wrong>1?'s':'') + ' différente' + (wrong>1?'s':'') + ' du modèle, entourée' + (wrong>1?'s':'') + ' en rouge. ' + explain,
+      solution:'Voici la grille recopiée.', explain:explain });
     if(state==='failed'){ atCopy.mine = atCopy.model.map(function(row){ return row.slice(); }); atCopyDraw(false); }
   }
   registerFamily({

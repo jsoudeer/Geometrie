@@ -4,7 +4,26 @@
      chasse aux formes, symétrie, scènes illustrées, énigmes.
   */
 
-  /* ===================== MODULE 1 : MESURER =====================
+  /* ===================== MODULE 1 : MESURER ===================== */
+  registerFamily({
+    key:'measure', tag:'Mesurer', theme:'📐 Formes & mesures', order:10, timed:true,
+    note:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m1-question">Combien mesure ce trait ?</div>',
+      '</div>',
+      '<p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>',
+      '<div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>',
+      '<div class="choices" id="m1-choices"></div>',
+      '<div class="feedback" id="m1-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m1-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newMeasureQuestion(); },
+    signature:function(){ return globalLevel + '|' + currentLen + '|' + m1RulerStart + '|' + m1SegStart; }
+  });
+  /* ---------------------------------------------------------------
      Le 0 doit toujours être visible sur la règle (demande explicite) :
      - Facile/Moyen : la règle commence à 0, seul le début du trait bouge.
      - Difficile : la règle peut s'étendre dans les négatifs, mais son
@@ -114,17 +133,35 @@
     var ok = Math.abs(v-currentLen)<0.001;
     if(ok){
       btn.classList.add('correct');
-      m1Flow.answer(true, '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>');
+      m1Flow.answer(true, { success:'Bravo, ce trait mesure bien ' + fmtNum(currentLen) + ' cm !', explain:measureExplain() });
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === (fmtNum(currentLen)+' cm')) b.classList.add('correct'); });
-      m1Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>');
+      m1Flow.answer(false, { solution:'Le trait mesure ' + fmtNum(currentLen) + ' cm : la bonne réponse est en vert.', explain:measureExplain() });
     }
   }
 
   document.getElementById('m1-next').addEventListener('click', function(){ m1Flow.skip(); });
 
   /* ===================== MODULE 2 : DEFORMER ===================== */
+  registerFamily({
+    key:'deform', tag:'Déformer', theme:'📐 Formes & mesures', order:20,
+    note:'Une seule épreuve avec 3 formes cibles (losange, rectangle, parallélogramme) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins en Moyen, les 4 coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m2-question">Transforme la forme.</div>',
+      '</div>',
+      '<p class="muted" id="m2-instructions">Fais glisser les coins, puis vérifie.</p>',
+      '<div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>',
+      '<div class="feedback" id="m2-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>',
+      '  <button class="btn ghost" id="m2-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newDeformQuestion(); },
+    signature:function(){ return m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';'); }
+  });
   var SCALE2 = 20; // px per cm
   var basePts = [[70,70],[190,70],[190,190],[70,190]];
   var pts = basePts.map(function(p){ return p.slice(); });
@@ -167,9 +204,9 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var maxDev = Math.max.apply(null, s.lens.map(function(l){ return Math.abs(l-avg); }));
     var rel = maxDev/avg;
-    if(rel <= tolGreat) return {ok:true, msg:'✔ Super, les 4 côtés sont égaux : bravo pour ce losange !'};
-    if(rel <= tolOk) return {ok:true, msg:'✔ Réussi ! Les côtés sont à peu près égaux, c\'est un losange. Tu peux essayer d\'être encore plus précis la prochaine fois.'};
-    return {ok:false, msg:'✘ Pas encore : les 4 côtés doivent avoir à peu près la même longueur.'};
+    if(rel <= tolGreat) return {ok:true, success:'Bravo, c\'est un losange !', detail:'Les 4 côtés sont égaux.'};
+    if(rel <= tolOk) return {ok:true, success:'Bravo, c\'est un losange !', detail:'Les côtés sont à peu près égaux. La prochaine fois, essaie d\'être encore plus précis.'};
+    return {ok:false, hint:'Les 4 côtés doivent avoir à peu près la même longueur.'};
   }
 
   function checkRectangle(tolGreat, tolOk){
@@ -177,10 +214,10 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
     var angleDevMax = Math.max.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
-    if(sideDevRel<=tolGreat.side && angleDevMax<=tolGreat.angle) return {ok:true, msg:'✔ Bravo, les côtés opposés sont égaux et les angles sont bien droits : c\'est un rectangle !'};
-    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, msg:'✔ Réussi ! C\'est globalement un rectangle, même si ce n\'est pas parfaitement précis. Essaie d\'ajuster encore un peu la prochaine fois.'};
-    if(angleDevMax>tolOk.angle) return {ok:false, msg:'✘ Presque : les 4 angles doivent redevenir à peu près droits.'};
-    return {ok:false, msg:'✘ Pas encore : les côtés opposés doivent être à peu près de la même longueur.'};
+    if(sideDevRel<=tolGreat.side && angleDevMax<=tolGreat.angle) return {ok:true, success:'Bravo, c\'est un rectangle !', detail:'Les côtés opposés sont égaux et les angles sont bien droits.'};
+    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, success:'Bravo, c\'est un rectangle !', detail:'Ce n\'est pas parfaitement précis. La prochaine fois, essaie d\'ajuster encore un peu.'};
+    if(angleDevMax>tolOk.angle) return {ok:false, hint:'Les 4 angles doivent redevenir à peu près droits.'};
+    return {ok:false, hint:'Les côtés opposés doivent être à peu près de la même longueur.'};
   }
 
   function checkParallelogram(tolGreat, tolOk){
@@ -188,10 +225,10 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
     var angleDevMin = Math.min.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
-    if(sideDevRel<=tolGreat.side && angleDevMin>=tolGreat.tilt) return {ok:true, msg:'✔ Bien joué, c\'est un vrai parallélogramme penché !'};
-    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, msg:'✔ Réussi ! C\'est un parallélogramme, même si ce n\'est pas parfaitement précis.'};
-    if(sideDevRel>tolOk.side) return {ok:false, msg:'✘ Pas encore : les côtés opposés doivent rester à peu près de la même longueur.'};
-    return {ok:false, msg:'✘ Il faut incliner un peu plus la forme pour que les angles ne soient plus droits.'};
+    if(sideDevRel<=tolGreat.side && angleDevMin>=tolGreat.tilt) return {ok:true, success:'Bravo, c\'est un parallélogramme !', detail:'Les côtés opposés sont égaux et la forme est bien penchée.'};
+    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, success:'Bravo, c\'est un parallélogramme !', detail:'Ce n\'est pas parfaitement précis. La prochaine fois, essaie d\'ajuster encore un peu.'};
+    if(sideDevRel>tolOk.side) return {ok:false, hint:'Les côtés opposés doivent rester à peu près de la même longueur.'};
+    return {ok:false, hint:'Penche un peu plus la forme : les angles ne doivent plus être droits.'};
   }
 
   // Construit une forme cible qui satisfait DÉJÀ le critère "great" du type
@@ -332,9 +369,9 @@
   document.getElementById('m2-check').addEventListener('click', function(){
     var lv = M2_LEVELS[m2ShapeIdx];
     var res = lv.check(lv.tolGreat, lv.tolOk);
-    var explain = '<div class="explain-line">' + M2_EXPLAIN[m2ShapeIdx] + '</div>';
-    var state = m2Flow.answer(res.ok, '<div>' + res.msg + '</div>' + explain,
-      '<div>' + res.msg + '</div><div>Voici un ' + M2_LEVELS[m2ShapeIdx].name.toLowerCase() + ' bien formé.</div>' + explain);
+    res.explain = M2_EXPLAIN[m2ShapeIdx];
+    res.solution = 'Voici un ' + M2_LEVELS[m2ShapeIdx].name.toLowerCase() + ' bien formé.';
+    var state = m2Flow.answer(res.ok, res);
     if(state==='failed'){
       deformFocusIdx = null;
       pts = m2Target.map(function(p){ return p.slice(); });
@@ -1280,7 +1317,7 @@
       tag:'Énigme',
       question: r.text,
       sub:'Lis bien l\'énigme et retrouve la bonne réponse.',
-      explain:'La réponse est « ' + r.answer + ' » : ' + (SOLID_FACTS[r.answer] || 'relis bien les indices de l\'énigme.'),
+      explain:'La réponse est « ' + r.answer + ' » : ' + ((typeof SOLID_FACTS!=='undefined' && SOLID_FACTS[r.answer]) || 'relis bien les indices de l\'énigme.'),
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         svg.appendChild(svgText(100,120,64,'?'));
