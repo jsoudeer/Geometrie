@@ -36,6 +36,7 @@
 
   // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
   var lastQcmType = null;
+  var forcedQcmCat = null;   // catégorie de quiz imposée pour la prochaine question (sujet à travailler)
   var lastFamily = null;
   function pickOther(arr, last){
     if(arr.length>1 && last!==null){
@@ -48,7 +49,7 @@
     var lv = M4_LEVELS[globalLevel];
     var poolTypes = lv.types;
     var freeType = (m4TypeFilter==='random' || lv.types.indexOf(m4TypeFilter)===-1);
-    var cat = m4CategoryFilter;
+    var cat = forcedQcmCat || m4CategoryFilter;     // forcedQcmCat : sujet à travailler (voir progression.js)
     if(cat==='all' && freeType){
       // Tirage « sans remise » au niveau des catégories : chacune sort une fois
       // avant qu'aucune ne revienne.
@@ -64,7 +65,10 @@
     var type = !freeType ? m4TypeFilter : pickFresh('qcmtype|' + globalLevel + '|' + poolTypes.join(','), poolTypes);
     lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
-    return (quizTypeById(type) || quizTypeById('image')).generate(globalLevel);
+    var qdef = quizTypeById(type) || quizTypeById('image');
+    var q = qdef.generate(globalLevel);
+    q.typeId = qdef.id; q.cat = quizCategoryId(qdef);   // pour l'historique de progression
+    return q;
   }
 
   function newQCM(){
@@ -497,11 +501,19 @@
     var key = bag.splice(at,1)[0];
     return key;
   }
+  // Défi « 20 bonnes réponses d'affilée » : les 3 dernières questions (18e, 19e, 20e) sont posées
+  // dans les sujets où l'enfant a le plus de mal (historique de progression).
+  function challengeFocusActive(){
+    return appMode==='auto' && practiceMode==='free' && !countdownRunning &&
+      freeStreak >= STREAK_TARGET - 3 && freeStreak < STREAK_TARGET && !isChallengeDone(12 + globalLevel);
+  }
   function nextPracticeQuestion(){
     var sig = null, prevShown = lastFamily;
+    var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, cat} ou null
     for(var tries=0; tries<15; tries++){
       lastFamily = prevShown;   // on évite la famille réellement affichée, pas un essai rejeté
-      var key = (appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh();
+      var key = focus ? focus.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh());
+      forcedQcmCat = (focus && focus.key==='qcm') ? focus.cat : null;
       lastFamily = key;
       // d'abord on retente dans la même famille (elle garde son tour), puis on en change
       var fresh = false;
@@ -511,6 +523,11 @@
         fresh = seenSigs.indexOf(sig) === -1;
       }
       if(fresh) break;
+    }
+    forcedQcmCat = null;
+    if(focus){
+      var tagEl = document.getElementById('practice-family-tag');
+      tagEl.textContent += ' · 🎯 à travailler';
     }
     seenSigs.push(sig);
     if(seenSigs.length > SEEN_MAX) seenSigs.shift();
@@ -563,7 +580,9 @@
   // 20 bonnes réponses d'affilée débloquent les personnages du défi "série"
   // du niveau en cours (voir CHALLENGES / completeChallenge).
   var freeStreak = 0;
-  function resetFreeStreak(){ freeStreak = 0; updateStreakPill(); }
+  var levelStreak = 0;      // bonnes réponses d'affilée dans le niveau en cours (avancement automatique)
+  var streakLevels = [];    // niveaux traversés pendant la série sans faute en cours
+  function resetFreeStreak(){ freeStreak = 0; levelStreak = 0; streakLevels = []; updateStreakPill(); }
   function updateStreakPill(){
     var pill = document.getElementById('streak-pill');
     // (au tout premier affichage, le catalogue des personnages n'est pas
@@ -577,21 +596,34 @@
     }
   }
   function onPracticeAnswered(correct){
+    progRecord(correct);   // historique de progression (progression.js)
     if(appMode==='auto' && practiceMode==='free'){
-      if(correct) freeStreak++; else freeStreak = 0;
+      if(correct){
+        freeStreak++; levelStreak++;
+        if(streakLevels.indexOf(globalLevel) === -1) streakLevels.push(globalLevel);
+      } else { freeStreak = 0; levelStreak = 0; streakLevels = []; }
       if(correct && freeStreak >= STREAK_TARGET){
-        var fresh = completeChallenge(12 + globalLevel);
+        // La série compte pour chaque niveau traversé pendant la série (montée automatique comprise).
+        var fresh = [];
+        streakLevels.forEach(function(lv){ completeChallenge(12 + lv).forEach(function(sp){ fresh.push(sp); }); });
         if(fresh.length) showUnlockAnnouncement(fresh, 'Série sans faute réussie !');
       }
       updateStreakPill();
-      // Avancement automatique en mode Aléatoire : après X bonnes réponses d'affilée, niveau supérieur.
-      if(correct && autoAdvanceEnabled && freeStreak >= autoAdvanceThreshold && globalLevel < 2 && !countdownRunning){
+      // Avancement automatique en mode Aléatoire : après X bonnes réponses d'affilée DANS CE NIVEAU, niveau supérieur.
+      // La série sans faute (freeStreak) continue, elle, à travers les niveaux.
+      if(correct && autoAdvanceEnabled && levelStreak >= autoAdvanceThreshold && globalLevel < 2 && !countdownRunning){
         var fromLevel = globalLevel;
         setTimeout(function(){
           if(appMode!=='auto' || practiceMode!=='free' || globalLevel!==fromLevel) return;
           var tabName = ['facile','moyen','difficile'][fromLevel+1];
           var tabBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
-          if(tabBtn){ tabBtn.click(); showAutoAdvanceToast(LEVEL_NAMES[fromLevel+1]); }
+          if(tabBtn){
+            var keepStreak = freeStreak, keepLevels = streakLevels.slice();
+            tabBtn.click();                                   // (remet les séries à zéro...)
+            freeStreak = keepStreak; streakLevels = keepLevels; // ...sauf la série sans faute
+            updateStreakPill();
+            showAutoAdvanceToast(LEVEL_NAMES[fromLevel+1]);
+          }
         }, 700);
       }
     }

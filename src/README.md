@@ -31,6 +31,7 @@ src/
     images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py)
     boutique.js         personnages, défis, boutique, mascotte
     bataille.js         combat de cartes
+    progression.js      historique des réponses, radar, détail, sujets à travailler
 ```
 
 Les fichiers de thèmes (`geometrie`, `horloge`, `calcul`, `patron3d`) sont chargés **avant**

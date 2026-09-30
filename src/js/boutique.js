@@ -512,7 +512,7 @@
   });
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
-    ['info-overlay','activity-config-overlay','settings-overlay'].some(function(id){
+    ['info-overlay','progress-overlay','activity-config-overlay','settings-overlay'].some(function(id){
       var o = document.getElementById(id);
       if(o && !o.hidden){
         if(id==='info-overlay') closeInfoDialog(); else o.hidden = true;

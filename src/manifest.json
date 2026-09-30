@@ -17,6 +17,7 @@
     "js/orchestrateur.js",
     "js/images-data.js",
     "js/boutique.js",
-    "js/bataille.js"
+    "js/bataille.js",
+    "js/progression.js"
   ]
 }

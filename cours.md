@@ -214,3 +214,6 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 
 **Personnages verrouillés** : dans la Boutique, un personnage pas encore débloqué s'affiche avec une **image commune à tout son clan** (un chat noir avec un « ? » pour les Chats kawaii, un brainrot noir avec un « ? » pour les Brainrots) : on ne devine rien de son dessin. Son **nom** reste visible, avec sa rareté et son prix (ou le défi à relever) ; son rôle et ses points sont cachés (« ❔ Mystère »). Toucher sa carte n'ouvre pas d'aperçu : on le découvre au moment du reveal.
 
+
+## Progression de l'enfant (Réglages → 📈 Progression)
+Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma progression »). Trois vues : **Synthèse** (radar de 8 compétences, points forts, à travailler), **Détail** (par activité et niveau), **Activité** (14 derniers jours). La série de 20 bonnes réponses continue quand le niveau monte tout seul, et valide le défi de chaque niveau traversé. Pour les 3 dernières questions de cette série, le jeu pioche dans les sujets les plus faibles (il faut au moins 20 réponses enregistrées).

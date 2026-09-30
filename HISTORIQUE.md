@@ -127,3 +127,8 @@ Première version en silhouette noire du vrai dessin (`brightness(0)`) : abandon
 ## 24. Reveal : balayage lumineux (30/09/2026)
 Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner` tourne de 720° (s'arrête de face) avec le calque noir `.rv-art.sil`, puis un trait de lumière `.rv-scan` balaie le calque couleur `.rv-art.col` (`clip-path` animé) ; le son du clan part au début du balayage, éclat/étincelles à la fin (`reveal()` puis `burst()` dans `showReveal`). Test : `reveal_check.js`.
 
+
+## 25. Historique de progression ; série des 20 qui survit à la montée de niveau (30/09/2026)
+- **Bug** : en avancement automatique, monter de niveau remettait la série à zéro. `freeStreak` (série des 20) est désormais conservée ; `levelStreak` compte les bonnes réponses du niveau courant pour déclencher la montée ; `streakLevels` mémorise les niveaux traversés, et à 20 d'affilée `completeChallenge(12+niveau)` est validé pour chacun.
+- **Historique** (`src/js/progression.js`, clé `geo_history`, 3000 réponses max) : `progRecord` enregistre `[date, compétence, famille, type, niveau, juste]` à chaque réponse. Écran **⚙️ Réglages → 📈 Progression** : Synthèse (radar 8 compétences, niveau récent sur 40 réponses vs depuis le début, points forts / à travailler), Détail (par compétence et activité, par niveau), Activité (14 derniers jours). Bouton Effacer séparé de « Effacer ma progression ».
+- **Ciblage** : pendant les 18e, 19e et 20e réponses d'une série du défi (mode auto, Aléatoire, défi du niveau non réussi, ≥ 20 réponses enregistrées), `progWeakPick` choisit parmi les compétences les plus faibles (`nextPracticeQuestion`, `forcedQcmCat`) ; étiquette « 🎯 à travailler ». Test : `progress_check.js`.
