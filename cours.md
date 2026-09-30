@@ -18,7 +18,7 @@ En chronométré, à la fin : +1 ⭐ pour 2 bonnes réponses (au moins 1 ⭐).
 
 ---
 
-## 2. Les 6 familles d'activités
+## 2. Les 9 familles d'activités
 
 ### 📏 Mesurer
 Lire la longueur d'un trait sur une règle graduée (4 choix). Le 0 est toujours visible.
@@ -131,6 +131,15 @@ On place soi-même les aiguilles sur une heure donnée.
 | D | Toutes les 5 minutes, heures de 0 h à 23 h : l'énoncé rappelle l'heure sur l'horloge à 12 h |
 
 **Variété :** l'appli ne propose jamais deux fois de suite le même type de Quizz ni la même famille d'activités.
+
+### ✋ Ateliers (on touche pour construire)
+Trois activités interactives, sans chronomètre. On touche les cases ou les parts, puis on appuie sur **Vérifier** ; en cas d'erreur, les cases fausses sont entourées en rouge et on peut corriger. **Une seule étoile** par exercice réussi.
+
+| Atelier | Consigne | F | M | D |
+|---|---|---|---|---|
+| Compléter la symétrie | Colorier de l'autre côté de la ligne rouge | 4 cases (3×4) | 6 cases (3×5) | 9 cases, ligne verticale **ou horizontale** |
+| Colorier une fraction | « Colorie la moitié / le quart / les trois quarts / le tiers… » | 2 ou 4 parts | + 3 parts | 4, 6 ou 8 parts, parfois « 5/8 » |
+| Reproduire le modèle | Copier un motif sur une grille vide | 4×4, 5 cases | 5×5, 8 cases | 6×6, 12 cases |
 
 ---
 

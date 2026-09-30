@@ -579,6 +579,17 @@
     return 'autres';
   }
   function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
+  // Familles d'activités à écran propre déclarées par un thème (les activités
+  // interactives : on touche, on place…). Contrat d'une famille :
+  //   { key, tag, theme, note, build(wrap), generate(level), signature() }
+  //  - key        identifiant unique (sert aussi à fabriquer l'id du conteneur fam-<key>)
+  //  - tag        nom affiché ; theme : libellé du thème du mode Manuel (ex. '✋ Ateliers')
+  //  - note       texte du panneau « Activités & difficulté »
+  //  - build      construit l'écran dans le conteneur `wrap` (une seule fois, au démarrage)
+  //  - generate   prépare une nouvelle question pour le niveau donné
+  //  - signature  empreinte de la question courante (évite les répétitions dans une série)
+  var EXTRA_FAMILIES = [];
+  function registerFamily(def){ EXTRA_FAMILIES.push(def); }
   function quizTypeById(id){
     for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }
     return null;

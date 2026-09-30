@@ -13,6 +13,7 @@
     "js/horloge.js",
     "js/calcul.js",
     "js/patron3d.js",
+    "js/atelier.js",
     "js/orchestrateur.js",
     "js/images-data.js",
     "js/boutique.js",

@@ -25,6 +25,7 @@ src/
     geometrie.js        Mesurer, Déformer + questions de Quizz de géométrie
     horloge.js          Lire l'heure, Régler l'heure + questions « Lire l'heure » et « Durées »
     calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
+    atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
     images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py)
@@ -78,14 +79,20 @@ activités ». Les paramètres propres à un niveau vivent dans le thème (`GEO_
 Un type déjà connu n'a pas besoin d'être ajouté à `QCM_DISPLAY_ORDER` : les nouveaux
 types s'affichent à la suite des existants.
 
+## Ajouter une activité interactive (écran propre)
+
+Voir `src/js/atelier.js` : `registerFamily({ key, tag, theme, note, build(wrap), generate(level), signature() })`.
+Elle est ajoutée automatiquement au tirage, au mode Manuel (dans le thème `theme`), au panneau
+« Activités & difficulté » et à l'anti-répétition. `makeAtelier()` fournit l'écran commun
+(consigne, dessin tactile, retour, boutons Vérifier / Nouvelle activité).
+
 ## Ce qui n'est pas encore modulaire
 
 Les activités qui ont leur **propre écran** (Mesurer, Déformer, Patron → Solide, Lire
 l'heure, Régler l'heure) restent câblées en dur dans `orchestrateur.js` (listes de
 familles, niveaux, panneaux `fam-*` de la page). Retirer `horloge.js` ou `patron3d.js`
 du manifeste casse donc l'appli, alors que retirer `calcul.js` fonctionne. Pour pouvoir
-publier une appli par thème, l'étape suivante est un registre des « familles »
-d'activités, sur le même modèle que `registerQuizType`.
+publier une appli par thème, il reste à migrer ces familles vers `registerFamily` (déjà utilisé par les ateliers).
 
 ## Vérifier qu'une modification ne casse rien
 
