@@ -386,8 +386,14 @@
       JSON.parse(localStorage.getItem('geo_owned_cats')||'[]').forEach(function(id){ ownedCats[id]=true; });
       JSON.parse(localStorage.getItem('geo_owned_brain')||'[]').forEach(function(id){ ownedBrain[id]=true; });
     }catch(e){}
-    CAT_SPRITES.forEach(function(s){ if(s.starter) ownedCats[s.id]=true; });
-    BRAINROT_SPRITES.forEach(function(s){ if(s.starter) ownedBrain[s.id]=true; });
+    // Première partie (rien de sauvegardé) : les 5 personnages de départ de chaque clan.
+    // Après une sauvegarde (y compris une réinitialisation), on respecte ce qui est enregistré.
+    var saved = false;
+    try{ saved = localStorage.getItem('geo_owned_cats')!==null && localStorage.getItem('geo_owned_brain')!==null; }catch(e){}
+    if(!saved){
+      CAT_SPRITES.forEach(function(s){ if(s.starter) ownedCats[s.id]=true; });
+      BRAINROT_SPRITES.forEach(function(s){ if(s.starter) ownedBrain[s.id]=true; });
+    }
   })();
   function saveOwned(){
     try{
@@ -810,9 +816,12 @@
     document.getElementById('starCount').textContent = '0';
     Object.keys(ownedCats).forEach(function(k){ delete ownedCats[k]; });
     Object.keys(ownedBrain).forEach(function(k){ delete ownedBrain[k]; });
-    CAT_SPRITES.forEach(function(sp){ if(sp.starter) ownedCats[sp.id] = true; });
-    BRAINROT_SPRITES.forEach(function(sp){ if(sp.starter) ownedBrain[sp.id] = true; });
-    mascotIds = { cats:null, brainrot:null };
+    // On ne garde que le PREMIER personnage de chaque clan, qui redevient la mascotte.
+    var firstCat = CAT_SPRITES.filter(function(sp){ return sp.starter; })[0];
+    var firstBrain = BRAINROT_SPRITES.filter(function(sp){ return sp.starter; })[0];
+    ownedCats[firstCat.id] = true; ownedBrain[firstBrain.id] = true;
+    mascotIds = { cats:firstCat.id, brainrot:firstBrain.id };
+    saveMascot();
     btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
     if(typeof resetFreeStreak === 'function') resetFreeStreak();
     saveOwned();

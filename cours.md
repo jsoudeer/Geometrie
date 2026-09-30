@@ -190,7 +190,7 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 - **Affichage des personnages en Bataille** : tête ou plein pied.
 - **Configurer les activités** : chaque type de Quizz et chaque patron peut être ajouté ou retiré d'un niveau.
 - **Avancement automatique** : après 3, 5, 8 ou 10 bonnes réponses d'affilée, on passe au niveau supérieur, en mode **Manuel** comme en mode **Aléatoire** (jamais en Chronométré). Les défis « 20 bonnes réponses d'affilée » se jouent sur un seul niveau : pour les relever, il faut désactiver l'avancement.
-- **Effacer ma progression** : remet étoiles, personnages débloqués et mascotte à zéro (en deux étapes).
+- **Effacer ma progression** : remet les étoiles à zéro et fait perdre tous les personnages débloqués **sauf le premier de chaque clan**, qui redevient la mascotte (en deux étapes). Il faut ensuite en débloquer d'autres (avec le bouton « +50 ⭐ » par exemple) pour pouvoir lancer une bataille.
 
 
 ## 5. Un clan = sa propre progression
