@@ -111,3 +111,6 @@ Deux panneaux distincts (`tab-shop`, `tab-battle`) ouverts par `#stars-btn` et `
 ## 19. Reveal des nouveaux personnages (30/09/2026)
 `showReveal` (boutique.js) : silhouette (`filter:brightness(0)`) qui grossit et pivote (`rvSpin`), puis dévoilement (`.shown`) ; sons `playRevealWhoosh` / `playRevealSting(side)` (noyau.js), un par clan. Utilisé par l'achat et par `showUnlockAnnouncement` (défis). Test : `reveal_check.js`.
 
+## 20. Bouton +50 étoiles (30/09/2026)
+`#shop-plus50` dans la Boutique : `addStar(50)` puis `renderShop()`. Test : `plus50_check.js`.
+

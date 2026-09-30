@@ -687,6 +687,12 @@
     txt.lastChild.textContent = roleLine(sprite);
     panel.appendChild(art); panel.appendChild(txt);
   }
+  // Bouton d'entraînement : +50 étoiles d'un clic pour essayer les déblocages.
+  document.getElementById('shop-plus50').addEventListener('click', function(){
+    addStar(50);
+    playSound('good');
+    renderShop();
+  });
   function renderShop(){
     syncShopThemeToAppTheme();
     renderShopMascot();
