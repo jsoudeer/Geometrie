@@ -166,6 +166,26 @@
   .settings-checkbox-row input{ width:18px; height:18px; accent-color:var(--accent); flex:none; }
 
   /* ============ CONFIGURATION DES ACTIVITÉS (settings avancés) ============ */
+  .progress-panel{ max-width:520px; max-height:90vh; overflow-y:auto; }
+  .prog-radar{ width:100%; max-width:380px; display:block; margin:6px auto 0; }
+  .prog-days{ width:100%; display:block; margin:4px 0 8px; }
+  .prog-summary{ margin:8px 0; font-size:14px; }
+  .prog-legend{ text-align:center; font-size:12px; margin:0 0 8px; }
+  .prog-key{ display:inline-block; width:18px; height:0; vertical-align:middle; border-top:3px solid var(--accent); }
+  .prog-key.all{ border-top:2px dashed var(--text-soft); }
+  .prog-points{ margin:6px 0; padding-left:18px; line-height:1.5; font-size:14px; }
+  .prog-skill{ border:1.5px solid var(--border); background:var(--surface2); border-radius:12px; padding:8px 12px; margin:8px 0; }
+  .prog-skill summary{ display:flex; justify-content:space-between; gap:8px; cursor:pointer; font-weight:800; font-size:14px; }
+  .prog-skill-val{ white-space:nowrap; color:var(--good); }
+  .prog-skill-val.weak{ color:var(--bad); }
+  .prog-bar{ height:8px; border-radius:6px; background:var(--border); margin:8px 0 4px; overflow:hidden; }
+  .prog-bar-fill{ height:100%; background:var(--good); border-radius:6px; }
+  .prog-bar-fill.weak{ background:var(--bad); }
+  .prog-line{ font-size:12px; margin:4px 0; }
+  .prog-acts{ list-style:none; margin:6px 0 2px; padding:0; font-size:13px; }
+  .prog-acts li{ display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px dashed var(--border); }
+  .prog-acts li.weak .prog-act-val{ color:var(--bad); font-weight:800; }
+  .prog-act-val{ white-space:nowrap; color:var(--text-soft); }
   .activity-config-panel{ max-width:520px; max-height:88vh; overflow-y:auto; }
   .aconf-item{
     background:var(--surface2); border:1.5px solid var(--border); border-radius:12px;

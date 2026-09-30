@@ -53,7 +53,7 @@
         <input type="checkbox" id="auto-advance-toggle">
         <span>Avancement automatique (modes Manuel et Aléatoire)</span>
       </label>
-      <p class="muted settings-hint">Monte automatiquement au niveau supérieur après plusieurs bonnes réponses d'affilée, en mode Manuel comme en mode Aléatoire (pas en Chronométré). Attention : les défis « 20 bonnes réponses d'affilée » se jouent sur un seul niveau ; pour les relever, désactive l'avancement.</p>
+      <p class="muted settings-hint">Monte automatiquement au niveau supérieur après plusieurs bonnes réponses d'affilée, en mode Manuel comme en mode Aléatoire (pas en Chronométré). La série des « 20 bonnes réponses d'affilée » continue pendant les montées de niveau : chaque niveau traversé compte pour son défi.</p>
       <div id="auto-advance-count-wrap" hidden>
         <p class="muted">Bonnes réponses d'affilée nécessaires :</p>
         <div class="level-row" id="auto-advance-count-row"></div>
@@ -66,6 +66,7 @@
 
       <hr class="settings-divider">
 
+      <button class="btn ghost" id="open-progress-btn" type="button" style="width:100%;margin-bottom:8px;">📈 Progression de l'enfant</button>
       <button class="btn ghost" id="open-activity-config-btn" type="button" style="width:100%;">🎚️ Configurer les activités et leur difficulté</button>
 
       <hr class="settings-divider">
@@ -104,6 +105,27 @@
        et Patron→Solide, leurs sous-types) avec les niveaux où chacune
        apparaît actuellement, modifiables à la main, et une note expliquant
        ce qui est tiré au hasard vs fixe pour chaque épreuve. -->
+  <!-- Progression : radar de synthèse, détail par compétence, activité des derniers jours -->
+  <div class="settings-overlay" id="progress-overlay" hidden>
+    <div class="settings-panel progress-panel" role="dialog" aria-modal="true" aria-labelledby="progress-title">
+      <div class="settings-panel-head">
+        <h2 id="progress-title">📈 Progression</h2>
+        <button class="settings-close" id="progress-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <div class="level-row" id="progress-tabs"></div>
+      <div id="progress-body"></div>
+      <hr class="settings-divider">
+      <button class="btn ghost" id="progress-clear" type="button" style="width:100%;">🗑️ Effacer l'historique</button>
+      <div id="progress-confirm" hidden>
+        <p class="muted settings-hint" role="alert">Effacer tous les résultats enregistrés ? Les étoiles et les personnages ne changent pas. Cette action est définitive.</p>
+        <div class="btn-row">
+          <button class="btn primary" id="progress-clear-yes" type="button">Oui, effacer</button>
+          <button class="btn ghost" id="progress-clear-no" type="button">Non, je garde</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="settings-overlay" id="activity-config-overlay" hidden>
     <div class="settings-panel activity-config-panel" role="dialog" aria-modal="true" aria-labelledby="aconf-title">
       <div class="settings-panel-head">

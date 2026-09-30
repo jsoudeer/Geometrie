@@ -31,6 +31,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   for (let i = 0; i < 12; i++) await page.evaluate(() => window.__t.onPracticeAnswered(true));
   await page.waitForTimeout(900);
   assert.equal(await lvl(), 2, 'Difficile est le dernier niveau');
+  // (la série de 20 a pu déclencher une annonce de récompense : on la ferme)
+  await page.evaluate(() => { var r=document.getElementById('reveal-overlay'); if(r) r.remove(); });
   // chrono : jamais
   await page.evaluate(() => document.getElementById('menu-btn').click());
   await page.click('.tab-btn[data-tab="facile"]');
