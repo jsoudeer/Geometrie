@@ -57,8 +57,8 @@ const AUDIT = () => {
         ['home-measure', async () => {}],
         ['menu-open', async () => { await page.click('#menu-btn'); }],
         ['settings', async () => { await page.click('#settings-btn'); }],
-        ['shop', async () => { await page.evaluate(() => document.getElementById('settings-overlay').hidden = true); await openTab('arena'); }],
-        ['battle-setup', async () => { await page.evaluate(() => [...document.querySelectorAll('#arena-modes .level-btn')].find(x => x.textContent.includes('Bataille')).click()); }],
+        ['shop', async () => { await page.evaluate(() => document.getElementById('settings-overlay').hidden = true); await page.click('#stars-btn'); }],
+        ['battle-setup', async () => { await page.click('#battle-btn'); }],
         ['manual-quizz', async () => {
           await openTab('manuel');
           await page.evaluate(() => [...document.querySelectorAll('#manual-family-row .level-btn')].find(x => x.textContent.includes('Quizz')).click());

@@ -22,9 +22,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   }
   // UI : la difficulté est demandée dans la préparation du combat
   await ev(`applyTheme('cats')`);
-  await page.evaluate(() => document.getElementById('menu-btn').click());
-  await page.click('.tab-btn[data-tab="arena"]');
-  await page.evaluate(() => [...document.querySelectorAll('#arena-modes .level-btn')].find(x => /Bataille/.test(x.textContent)).click());
+  await page.click('#battle-btn');
   await ev(`(function(){ var sel=btSel.cats; sel.classic=btMyList().filter(function(s){return s.role==='classic';}).slice(0,3).map(function(s){return s.id;}); sel.support=btMyList().filter(function(s){return s.role==='support';}).slice(0,1).map(function(s){return s.id;}); sel.archer=btMyList().filter(function(s){return s.role==='archer';}).slice(0,1).map(function(s){return s.id;}); renderBtSetup(); })()`);
   await page.evaluate(() => [...document.querySelectorAll('#bt-diff-row .level-btn')].find(x => /Difficile/.test(x.textContent)).click());
   console.log('note :', await page.evaluate(() => document.getElementById('bt-diff-note').textContent));

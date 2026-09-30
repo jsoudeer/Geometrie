@@ -1,8 +1,7 @@
 const { withPage, SHOTS } = require('./lib');
 withPage({ viewport: { width: 390, height: 900 } }, async (page) => {
   async function openArena() {
-    await page.click('#menu-btn');
-    await page.click('.tab-btn[data-tab="arena"]');
+    await page.click('#stars-btn');
     await page.waitForTimeout(150);
   }
   await openArena();
@@ -21,7 +20,7 @@ withPage({ viewport: { width: 390, height: 900 } }, async (page) => {
   console.log('closed with Escape:', await page.evaluate(() => document.getElementById('info-overlay').hidden));
 
   // battle setup
-  await page.evaluate(() => [...document.querySelectorAll('#arena-modes .level-btn')].find(x => x.textContent.includes('Bataille')).click());
+  await page.click('#battle-btn');
   await page.waitForTimeout(150);
   // team pick: all starters should be selectable
   const counts = await page.evaluate(() => ['classic','support','archer'].map(r => document.querySelectorAll('#bt-grid-' + r + ' .sprite-card').length));

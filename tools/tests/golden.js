@@ -121,19 +121,13 @@ async function record(outFile) {
       }
       await ev(`m4TypeFilter='random'`);
       await ev(`setAppMode('manual')`); await shot(`${theme}_manual`); await ev(`setAppMode('auto')`);
-      const arena = await page.$('.tab-btn[data-tab="arena"]');
-      if (arena) {
-        await page.click('#menu-btn').catch(() => {});
-        await arena.click().catch(() => {});
-        await page.waitForTimeout(150);
-        await shot(`${theme}_arena_shop`);
-        await ev(`Array.prototype.slice.call(document.querySelectorAll('#arena-modes .level-btn'))[1].click()`).catch(() => {});
-        await page.waitForTimeout(150);
-        await shot(`${theme}_arena_battle`);
-        await ev(`Array.prototype.slice.call(document.querySelectorAll('#arena-modes .level-btn'))[0].click()`).catch(() => {});
-        const back = await page.$('.tab-btn[data-tab="facile"]');
-        if (back) { await page.click('#menu-btn').catch(() => {}); await back.click().catch(() => {}); }
-      }
+      await page.click('#stars-btn').catch(() => {});
+      await page.waitForTimeout(150);
+      await shot(`${theme}_arena_shop`);
+      await page.click('#battle-btn').catch(() => {});
+      await page.waitForTimeout(150);
+      await shot(`${theme}_arena_battle`);
+      await page.click('#battle-btn').catch(() => {});   // referme : retour aux exercices
     }
   });
   put0(snaps, 'page-errors', errors);

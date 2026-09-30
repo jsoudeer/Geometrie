@@ -22,8 +22,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 800 } }, asy
   await ev(`applyTheme('cats')`); assert.equal(await ev('activeMascotId()'), 'cat03');
   console.log('mascottes par clan OK');
   // Boutique : panneau plein pied
-  await page.evaluate(() => document.getElementById('menu-btn').click());
-  await page.click('.tab-btn[data-tab="arena"]').catch(()=>{});
+  await page.click('#stars-btn');
   await page.waitForTimeout(400);
   console.log('panneau mascotte visible:', await page.evaluate(() => !document.getElementById('shop-mascot-panel').hidden), await page.evaluate(() => document.getElementById('shop-mascot-panel').textContent));
   await page.screenshot({ path: SHOTS + 'clan_shop.png' });

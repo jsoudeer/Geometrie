@@ -115,6 +115,19 @@
     font-weight:800; font-size:14px; flex:none;
     font-variant-numeric: tabular-nums;
   }
+  button.stars{ cursor:pointer; font-family:inherit; transition:transform .15s; }
+  button.stars:active, .battle-btn:active{ transform:scale(.93); }
+  button.stars.active, .battle-btn.active{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .battle-btn{
+    flex:none; width:38px; height:38px; border-radius:50%;
+    background:var(--surface2); border:1px solid var(--border); color:var(--text);
+    font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  .vh{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .panel-head h2{ margin:0; }
+  .btn.small{ padding:6px 10px; font-size:13px; }
   .topbar-right{ display:flex; align-items:center; gap:8px; flex:none; }
   .settings-btn{
     flex:none; width:38px; height:38px; border-radius:50%;

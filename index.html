@@ -120,6 +120,19 @@
     font-weight:800; font-size:14px; flex:none;
     font-variant-numeric: tabular-nums;
   }
+  button.stars{ cursor:pointer; font-family:inherit; transition:transform .15s; }
+  button.stars:active, .battle-btn:active{ transform:scale(.93); }
+  button.stars.active, .battle-btn.active{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .battle-btn{
+    flex:none; width:38px; height:38px; border-radius:50%;
+    background:var(--surface2); border:1px solid var(--border); color:var(--text);
+    font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  .vh{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .panel-head h2{ margin:0; }
+  .btn.small{ padding:6px 10px; font-size:13px; }
   .topbar-right{ display:flex; align-items:center; gap:8px; flex:none; }
   .settings-btn{
     flex:none; width:38px; height:38px; border-radius:50%;
@@ -728,7 +741,8 @@
     </div>
     <div class="topbar-right">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Passer en mode Brainrot" title="Changer de clan">👹</button>
-      <div class="stars" role="status" aria-label="Tes étoiles">⭐ <span id="starCount">0</span></div>
+      <button class="stars" id="stars-btn" type="button" title="Boutique" aria-pressed="false"><span aria-hidden="true">⭐</span> <span id="starCount">0</span><span class="vh"> étoiles — ouvrir la boutique</span></button>
+      <button class="battle-btn" id="battle-btn" type="button" title="Bataille" aria-label="Bataille" aria-pressed="false">⚔️</button>
       <button class="settings-btn" id="settings-btn" type="button" aria-label="Réglages">⚙️</button>
     </div>
   </header>
@@ -818,7 +832,6 @@
     <button class="tab-btn" data-tab="moyen" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🤔</span>Moyen</button>
     <button class="tab-btn" data-tab="difficile" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🔥</span>Difficile</button>
     <button class="tab-btn" data-tab="manuel" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎯</span>Manuel</button>
-    <button class="tab-btn" data-tab="arena" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎮</span>Boutique</button>
   </nav>
 
   <main id="tabContent">
@@ -966,17 +979,11 @@
       </div>
     </section>
 
-    <!-- MODULE 6 : BOUTIQUE + BATAILLE -->
-    <section class="tabpanel" id="tab-arena" hidden>
+    <!-- BOUTIQUE : ouverte par le compteur d'étoiles (en haut à droite) -->
+    <section class="tabpanel" id="tab-shop" hidden>
       <div class="card">
-        <h2>Boutique &amp; Bataille</h2>
-        <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis, puis forme une équipe pour affronter l'autre clan !</p>
-        <div class="level-row" id="arena-modes"></div>
-
-        <!-- ===== BOUTIQUE =====
-             Le clan affiché suit le clan actif (bouton à gauche des
-             étoiles). Personnages débloqués et à obtenir sont côte à côte
-             dans la même grille. -->
+        <div class="panel-head"><h2>Boutique 🛒</h2><button class="btn ghost small" type="button" data-back>↩️ Retour aux exercices</button></div>
+        <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis. Le clan affiché est le clan actif (bouton 👹 / 🐱 en haut).</p>
         <div id="arena-shop-wrap">
           <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
           <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
@@ -984,6 +991,13 @@
           <div class="sprite-grid" id="shop-grid"></div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- BATAILLE : ouverte par l'icône ⚔️ (à droite du compteur d'étoiles) -->
+    <section class="tabpanel" id="tab-battle" hidden>
+      <div class="card">
+        <div class="panel-head"><h2>Bataille ⚔️</h2><button class="btn ghost small" type="button" data-back>↩️ Retour aux exercices</button></div>
         <!-- ===== BATAILLE (équipes de cartes) =====
              Tu joues avec le clan actif (celui du bouton en haut : Chats
              Kawaii ou Brainrot) et tu affrontes l'autre clan. Une seule
@@ -991,7 +1005,7 @@
              fois d'attaque et d'énergie. Équipe : 3 classiques, 1 soutien
              et 1 archer ; 3 cartes sont posées au hasard sur le terrain, et
              une nouvelle carte entre quand l'une est battue. -->
-        <div id="arena-battle-wrap" hidden>
+        <div id="arena-battle-wrap">
 
           <!-- ----- Choix de l'équipe ----- -->
           <div id="bt-setup">
@@ -1000,7 +1014,7 @@
               <ul>
                 <li>Chaque personnage a des <strong>points ❤️</strong> : c'est sa force d'attaque <em>et</em> son énergie.</li>
                 <li>Quand tu attaques, la carte visée perd autant de points que ton attaquant en a, et ton attaquant perd autant de points que la carte adverse en avait. Une carte à 0 est battue.</li>
-                <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain.</li>
+                <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain, puis <strong>+2 points à chaque allié à la fin de chaque tour</strong> de son camp.</li>
                 <li>🏹 L'<strong>Archer</strong> attaque de loin : il n'est jamais blessé en retour.</li>
                 <li>Ton équipe : 3 classiques, 1 soutien, 1 archer. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
               </ul>
@@ -1249,7 +1263,7 @@
   }
 
   var DIFFICULTY_TABS = { facile:0, moyen:1, difficile:2 };
-  // La ligne d'onglets (Facile/Moyen/Difficile/Manuel/Boutique) est repliée
+  // La ligne d'onglets (Facile/Moyen/Difficile/Manuel) est repliée
   // par défaut pour alléger l'écran : le bouton "☰ Menu" (juste sous l'image
   // de la mascotte) la fait apparaître, et elle se referme dès qu'on a choisi.
   function setMenuOpen(open){
@@ -1259,28 +1273,48 @@
   document.getElementById('menu-btn').addEventListener('click', function(){
     setMenuOpen(document.getElementById('main-nav').hidden);
   });
-  document.querySelectorAll('.tab-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
-      btn.classList.add('active');
-      btn.setAttribute('aria-pressed','true');
-      setMenuOpen(false);
-      var tab = btn.getAttribute('data-tab');
-      document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
-      if(tab in DIFFICULTY_TABS){
-        document.getElementById('tab-practice').hidden = false;
-        document.getElementById('mascot-dock').hidden = false;
-        setAppMode('auto');
-        setGlobalLevel(DIFFICULTY_TABS[tab]);
-      } else if(tab === 'manuel'){
-        document.getElementById('tab-practice').hidden = false;
-        document.getElementById('mascot-dock').hidden = false;
-        setAppMode('manual');
-      } else {
-        document.getElementById('tab-'+tab).hidden = false;
-        document.getElementById('mascot-dock').hidden = true;
-      }
+  // Navigation : les exercices (Facile/Moyen/Difficile/Manuel) passent par le
+  // menu ; la Boutique (compteur d'étoiles) et la Bataille (icône ⚔️) s'ouvrent
+  // depuis l'en-tête et se referment en retouchant leur bouton ou « Retour ».
+  var lastPracticeTab = 'facile';
+  function showTab(tab){
+    document.querySelectorAll('.tab-btn').forEach(function(b){
+      var on = b.getAttribute('data-tab') === tab;
+      b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    document.getElementById('stars-btn').setAttribute('aria-pressed', tab==='shop' ? 'true' : 'false');
+    document.getElementById('battle-btn').setAttribute('aria-pressed', tab==='battle' ? 'true' : 'false');
+    document.getElementById('stars-btn').classList.toggle('active', tab==='shop');
+    document.getElementById('battle-btn').classList.toggle('active', tab==='battle');
+    setMenuOpen(false);
+    document.querySelectorAll('.tabpanel').forEach(function(p){ p.hidden = true; });
+    if(tab in DIFFICULTY_TABS){
+      lastPracticeTab = tab;
+      document.getElementById('tab-practice').hidden = false;
+      document.getElementById('mascot-dock').hidden = false;
+      setAppMode('auto');
+      setGlobalLevel(DIFFICULTY_TABS[tab]);
+    } else if(tab === 'manuel'){
+      lastPracticeTab = tab;
+      document.getElementById('tab-practice').hidden = false;
+      document.getElementById('mascot-dock').hidden = false;
+      setAppMode('manual');
+    } else {
+      document.getElementById('tab-'+tab).hidden = false;
+      document.getElementById('mascot-dock').hidden = true;
+      if(tab === 'battle') renderBtSetup();
+    }
+  }
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ showTab(btn.getAttribute('data-tab')); });
+  });
+  function toggleSidePanel(tab){
+    showTab(document.getElementById('tab-'+tab).hidden ? tab : lastPracticeTab);
+  }
+  document.getElementById('stars-btn').addEventListener('click', function(){ toggleSidePanel('shop'); });
+  document.getElementById('battle-btn').addEventListener('click', function(){ toggleSidePanel('battle'); });
+  document.querySelectorAll('[data-back]').forEach(function(b){
+    b.addEventListener('click', function(){ showTab(lastPracticeTab); });
   });
 
   var svgNS = "http://www.w3.org/2000/svg";
@@ -6659,7 +6693,8 @@
      - Archer : il attaque sans jamais perdre de points en retour ;
      - Soutien : il ajoute +5 points à tous ses alliés (ceux déjà sur le
        terrain quand il arrive, puis chaque allié qui arrive ensuite tant
-       qu'il est là) ;
+       qu'il est là) ; et, à la fin de chaque tour de son camp, il donne en plus
+       +2 points (BT_SUPPORT_TURN) à chacun de ses alliés présents ;
      - équipe = 3 classiques + 1 soutien + 1 archer ; 3 cartes tirées au
        hasard sont posées sur le terrain, et une carte de la réserve entre
        dès qu'une carte est battue (à 0 point ou moins) ;
@@ -6669,7 +6704,7 @@
     support:{ label:'Soutien',   icon:'💖' },
     archer: { label:'Archer',    icon:'🏹' }
   };
-  var BT_FIELD_SIZE = 3, BT_SUPPORT_BONUS = 5;
+  var BT_FIELD_SIZE = 3, BT_SUPPORT_BONUS = 5, BT_SUPPORT_TURN = 2;
   var BT_ROLE_ORDER = ['classic','support','archer'];
   var BT_LIMITS = { classic:3, support:1, archer:1 };
 
@@ -6816,6 +6851,16 @@
       unit.pts += BT_SUPPORT_BONUS; unit.buffed = true;
       notes.push(unit.sprite.name + ' reçoit +' + BT_SUPPORT_BONUS + ' points du soutien.');
     }
+  }
+  // Fin de tour d'un camp : son Soutien (s'il est encore là) donne des points à ses alliés.
+  function btSupportTick(sideObj){
+    var sup = sideObj.field.filter(function(u){ return u.sprite.role==='support' && u.pts>0; })[0];
+    if(!sup) return false;
+    var allies = sideObj.field.filter(function(u){ return u!==sup && u.pts>0; });
+    if(!allies.length) return false;
+    allies.forEach(function(u){ u.pts += BT_SUPPORT_TURN; u.buffed = true; });
+    btLog([sup.sprite.name + ' soutient son équipe : +' + BT_SUPPORT_TURN + ' points à chaque allié.']);
+    return true;
   }
   function btDrawFromReserve(sideObj, notes){
     if(!sideObj.reserve.length || sideObj.field.length >= BT_FIELD_SIZE) return null;
@@ -7027,8 +7072,12 @@
         sd.field.forEach(function(u){ if(u.pts <= 0) dead.push({ side:sd, unit:u }); });
       });
       // On laisse le temps de lire les points qui défilent, puis les cartes battues s'effacent.
+      // Fin du tour : le Soutien de ce camp donne ses points, puis on passe la main.
+      function finish(){
+        if(btSupportTick(attSide)){ btRender(); setTimeout(done, 800); } else done();
+      }
       setTimeout(function(){
-        if(!dead.length){ done(); return; }
+        if(!dead.length){ finish(); return; }
         dead.forEach(function(d){ var e = btEl(d.unit); if(e) e.classList.add('dying'); });
         setTimeout(function(){
           var notes = [];
@@ -7044,7 +7093,7 @@
           [bt.pl, bt.en].forEach(function(sd){ while(sd.field.length < BT_FIELD_SIZE && sd.reserve.length){ var a = btDrawFromReserve(sd, notes); if(a) notes.push(a.sprite.name + ' entre sur le terrain.'); } });
           if(notes.length) btLog(notes);
           btRender();
-          setTimeout(done, 600);   // le temps de voir arriver les remplaçants
+          setTimeout(finish, 600);   // le temps de voir arriver les remplaçants
         }, 650);
       }, 750);
     }, archer ? 480 : 300);
@@ -7128,11 +7177,6 @@
   document.getElementById('bt-change-team').addEventListener('click', btBackToSetup);
   document.getElementById('bt-again').addEventListener('click', btStart);
 
-  buildLevelRow(document.getElementById('arena-modes'), ['Boutique 🛒','Bataille ⚔️'], 0, function(idx){
-    document.getElementById('arena-shop-wrap').hidden = idx!==0;
-    document.getElementById('arena-battle-wrap').hidden = idx!==1;
-    if(idx===1) renderBtSetup();
-  });
   renderShop();
   renderBtSetup();
   renderMascotDock();

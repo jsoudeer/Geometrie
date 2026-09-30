@@ -7,7 +7,8 @@
      - Archer : il attaque sans jamais perdre de points en retour ;
      - Soutien : il ajoute +5 points à tous ses alliés (ceux déjà sur le
        terrain quand il arrive, puis chaque allié qui arrive ensuite tant
-       qu'il est là) ;
+       qu'il est là) ; et, à la fin de chaque tour de son camp, il donne en plus
+       +2 points (BT_SUPPORT_TURN) à chacun de ses alliés présents ;
      - équipe = 3 classiques + 1 soutien + 1 archer ; 3 cartes tirées au
        hasard sont posées sur le terrain, et une carte de la réserve entre
        dès qu'une carte est battue (à 0 point ou moins) ;
@@ -17,7 +18,7 @@
     support:{ label:'Soutien',   icon:'💖' },
     archer: { label:'Archer',    icon:'🏹' }
   };
-  var BT_FIELD_SIZE = 3, BT_SUPPORT_BONUS = 5;
+  var BT_FIELD_SIZE = 3, BT_SUPPORT_BONUS = 5, BT_SUPPORT_TURN = 2;
   var BT_ROLE_ORDER = ['classic','support','archer'];
   var BT_LIMITS = { classic:3, support:1, archer:1 };
 
@@ -164,6 +165,16 @@
       unit.pts += BT_SUPPORT_BONUS; unit.buffed = true;
       notes.push(unit.sprite.name + ' reçoit +' + BT_SUPPORT_BONUS + ' points du soutien.');
     }
+  }
+  // Fin de tour d'un camp : son Soutien (s'il est encore là) donne des points à ses alliés.
+  function btSupportTick(sideObj){
+    var sup = sideObj.field.filter(function(u){ return u.sprite.role==='support' && u.pts>0; })[0];
+    if(!sup) return false;
+    var allies = sideObj.field.filter(function(u){ return u!==sup && u.pts>0; });
+    if(!allies.length) return false;
+    allies.forEach(function(u){ u.pts += BT_SUPPORT_TURN; u.buffed = true; });
+    btLog([sup.sprite.name + ' soutient son équipe : +' + BT_SUPPORT_TURN + ' points à chaque allié.']);
+    return true;
   }
   function btDrawFromReserve(sideObj, notes){
     if(!sideObj.reserve.length || sideObj.field.length >= BT_FIELD_SIZE) return null;
@@ -375,8 +386,12 @@
         sd.field.forEach(function(u){ if(u.pts <= 0) dead.push({ side:sd, unit:u }); });
       });
       // On laisse le temps de lire les points qui défilent, puis les cartes battues s'effacent.
+      // Fin du tour : le Soutien de ce camp donne ses points, puis on passe la main.
+      function finish(){
+        if(btSupportTick(attSide)){ btRender(); setTimeout(done, 800); } else done();
+      }
       setTimeout(function(){
-        if(!dead.length){ done(); return; }
+        if(!dead.length){ finish(); return; }
         dead.forEach(function(d){ var e = btEl(d.unit); if(e) e.classList.add('dying'); });
         setTimeout(function(){
           var notes = [];
@@ -392,7 +407,7 @@
           [bt.pl, bt.en].forEach(function(sd){ while(sd.field.length < BT_FIELD_SIZE && sd.reserve.length){ var a = btDrawFromReserve(sd, notes); if(a) notes.push(a.sprite.name + ' entre sur le terrain.'); } });
           if(notes.length) btLog(notes);
           btRender();
-          setTimeout(done, 600);   // le temps de voir arriver les remplaçants
+          setTimeout(finish, 600);   // le temps de voir arriver les remplaçants
         }, 650);
       }, 750);
     }, archer ? 480 : 300);
@@ -476,11 +491,6 @@
   document.getElementById('bt-change-team').addEventListener('click', btBackToSetup);
   document.getElementById('bt-again').addEventListener('click', btStart);
 
-  buildLevelRow(document.getElementById('arena-modes'), ['Boutique 🛒','Bataille ⚔️'], 0, function(idx){
-    document.getElementById('arena-shop-wrap').hidden = idx!==0;
-    document.getElementById('arena-battle-wrap').hidden = idx!==1;
-    if(idx===1) renderBtSetup();
-  });
   renderShop();
   renderBtSetup();
   renderMascotDock();
