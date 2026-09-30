@@ -446,7 +446,6 @@
       saveOwned();
       renderShop();
       renderBtSetup();
-      playSound('good');
     }
     return fresh;
   }
@@ -521,24 +520,76 @@
       body.appendChild(role);
     });
   }
-  function showUnlockAnnouncement(fresh, headline){
-    openInfoDialog('🎉 ' + (headline || 'Nouveaux personnages !'), function(body){
-      var row = document.createElement('div');
-      row.className = 'info-art-row';
-      fresh.forEach(function(sp){
-        var box = document.createElement('div');
-        box.className = 'info-art';
-        renderSpriteVisual(box, sp);
-        var nm = document.createElement('div');
-        nm.className = 'sp-name'; nm.textContent = sp.name;
-        box.appendChild(nm);
-        row.appendChild(box);
+  /* ---- Reveal d'un nouveau personnage ----
+     Plein écran : sa silhouette noire (ombre chinoise, en pied) grossit au
+     milieu de l'écran en pivotant sur elle-même, puis s'arrête et se dévoile
+     en pleine couleur avec un petit son propre à son clan. Un toucher pendant
+     l'animation passe directement à la fin. Plusieurs personnages : à la suite. */
+  var revealTimers = [];
+  function revealClearTimers(){ revealTimers.forEach(clearTimeout); revealTimers = []; }
+  function showReveal(list, headline, onClose){
+    var queue = list.slice();
+    function closeAll(){
+      revealClearTimers();
+      var o = document.getElementById('reveal-overlay'); if(o) o.remove();
+      document.removeEventListener('keydown', onKey);
+      if(onClose) onClose();
+    }
+    function onKey(e){ if(e.key==='Escape') closeAll(); }
+    document.addEventListener('keydown', onKey);
+    function next(){
+      revealClearTimers();
+      var old = document.getElementById('reveal-overlay'); if(old) old.remove();
+      if(!queue.length){ document.removeEventListener('keydown', onKey); if(onClose) onClose(); return; }
+      var sp = queue.shift(), side = spriteSide(sp), done = false;
+      var ov = document.createElement('div');
+      ov.id = 'reveal-overlay'; ov.className = 'reveal-overlay ' + side;
+      ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label', 'Nouveau personnage : ' + sp.name);
+      var head = document.createElement('p'); head.className = 'rv-head'; head.textContent = '🎉 ' + (headline || 'Nouveau personnage !');
+      var stage = document.createElement('div'); stage.className = 'rv-stage';
+      var glow = document.createElement('div'); glow.className = 'rv-glow';
+      var art = document.createElement('div'); art.className = 'rv-art';
+      renderCreatureVisual(art, sp, 'full');
+      var flash = document.createElement('div'); flash.className = 'rv-flash';
+      stage.appendChild(glow); stage.appendChild(art); stage.appendChild(flash);
+      var info = document.createElement('div'); info.className = 'rv-info';
+      var nm = document.createElement('p'); nm.className = 'rv-name'; nm.textContent = sp.name;
+      var rl = document.createElement('p'); rl.className = 'rv-role'; rl.textContent = roleLine(sp) + ' · ' + RARITY_META[sp.rarity].label;
+      var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn primary rv-ok';
+      ok.textContent = queue.length ? 'Suivant ➜' : 'Super !';
+      info.appendChild(nm); info.appendChild(rl); info.appendChild(ok);
+      ov.appendChild(head); ov.appendChild(stage); ov.appendChild(info);
+      document.body.appendChild(ov);
+      function reveal(){
+        if(done) return; done = true;
+        revealClearTimers();
+        ov.classList.add('shown');
+        playRevealSting(side);
+        for(var i=0;i<12;i++){
+          var sparkle = document.createElement('span');
+          sparkle.className = 'rv-spark'; sparkle.setAttribute('aria-hidden','true');
+          sparkle.textContent = side==='brainrot' ? ['💥','⚡','🔥'][i%3] : ['✨','⭐','💖'][i%3];
+          var ang = (i/12)*Math.PI*2, dist = 110 + (i%3)*30;
+          sparkle.style.setProperty('--dx', Math.round(Math.cos(ang)*dist)+'px');
+          sparkle.style.setProperty('--dy', Math.round(Math.sin(ang)*dist)+'px');
+          stage.appendChild(sparkle);
+        }
+        ok.focus();
+      }
+      ov.addEventListener('click', function(e){
+        if(!done){ reveal(); return; }
+        if(e.target === ok || e.target === ov) next();
       });
-      body.appendChild(row);
-      var p = document.createElement('p');
-      p.textContent = fresh.map(function(sp){ return sp.name; }).join(' et ') + ' rejoi' + (fresh.length>1 ? 'gnent' : 'nt') + ' ta collection ! Retrouve-' + (fresh.length>1 ? 'les' : 'le') + ' dans la boutique.';
-      body.appendChild(p);
-    });
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(reduced){ reveal(); return; }
+      ov.classList.add('spinning');
+      playRevealWhoosh();
+      revealTimers.push(setTimeout(reveal, 2100));
+    }
+    next();
+  }
+  function showUnlockAnnouncement(fresh, headline){
+    showReveal(fresh, headline || 'Nouveau personnage !');
   }
 
   /* ---- Boutique ----
@@ -612,10 +663,9 @@
         if(trySpendStars(sprite.cost)){
           owned[sprite.id] = true;
           saveOwned();
-          playSound('good');
-          celebrate('good', card);
           renderShop();
           renderBtSetup();
+          showReveal([sprite], 'Nouveau personnage !');
         }
       });
       card.appendChild(buyBtn);

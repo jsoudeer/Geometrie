@@ -108,3 +108,6 @@ Cartes de choix et cartes de combat créées une seule fois (`btSetupCards`, `bt
 ## 18. Boutique et Bataille sorties du menu ; Soutien à chaque tour (30/09/2026)
 Deux panneaux distincts (`tab-shop`, `tab-battle`) ouverts par `#stars-btn` et `#battle-btn` (`showTab`, `toggleSidePanel` dans noyau.js) ; le menu ne garde que les 3 niveaux et Manuel. Le Soutien ajoute `BT_SUPPORT_TURN` (+2) à chaque allié à la fin de chaque tour de son camp (`btSupportTick`), en plus du +5 d'arrivée. Test : `nav_check.js`.
 
+## 19. Reveal des nouveaux personnages (30/09/2026)
+`showReveal` (boutique.js) : silhouette (`filter:brightness(0)`) qui grossit et pivote (`rvSpin`), puis dévoilement (`.shown`) ; sons `playRevealWhoosh` / `playRevealSting(side)` (noyau.js), un par clan. Utilisé par l'achat et par `showUnlockAnnouncement` (défis). Test : `reveal_check.js`.
+

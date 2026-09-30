@@ -207,3 +207,6 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 - **Choix d'équipe** : trois boutons — « ⚡ Équipe complète (les plus forts) », « 🎲 Au hasard » et « Vider ». Quand la place d'un rôle est pleine, choisir un personnage de plus fait sortir le **plus ancien** choisi de ce rôle.
 - **Combat** : chaque carte garde son image pendant tout le combat (plus de clignotement). L'attaquant fonce sur sa cible (l'archer tire une flèche), la cible tremble, les points défilent avec un « −8 » / « +5 » flottant, puis les cartes battues s'effacent et les remplaçants apparaissent.
 
+## Reveal d'un nouveau personnage
+À chaque déblocage (achat en boutique ou défi réussi), un écran plein écran révèle le personnage : sa **silhouette noire** en pied grossit au milieu de l'écran en pivotant sur elle-même, puis s'arrête et se dévoile en pleine couleur (éclair, étincelles, nom et rôle). Le petit son du dévoilement change selon le clan : arpège de harpe et « miaou » pour les Chats kawaii, boum grave et bips « glitch » pour les Brainrots. Un toucher pendant l'animation passe directement au dévoilement ; « Super ! » ou Échap ferme. Les animations sont supprimées si l'appareil demande de réduire les animations.
+

@@ -165,3 +165,41 @@
   .shop-mascot .sm-txt strong{ font-family:var(--font-display); font-size:15px; display:block; }
   .info-art.full{ width:160px; }
   .info-art.full .sp-full-img, .info-art.full .fullbody-compose{ width:160px; height:auto; max-height:260px; object-fit:contain; }
+
+  /* ===== Reveal d'un nouveau personnage ===== */
+  .reveal-overlay{
+    position:fixed; inset:0; z-index:120; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    background:radial-gradient(ellipse at center, #3b2a4d 0%, #120d1a 75%); color:#fff; padding:16px; text-align:center;
+    animation:rvFade .3s ease-out; perspective:900px; cursor:pointer;
+  }
+  .reveal-overlay.brainrot{ background:radial-gradient(ellipse at center, #1d3a2a 0%, #07110b 78%); }
+  @keyframes rvFade{ from{ opacity:0; } to{ opacity:1; } }
+  .rv-head{ font-family:var(--font-display); font-weight:900; font-size:20px; margin:0; text-shadow:0 2px 8px rgba(0,0,0,.5); }
+  .rv-stage{ position:relative; width:min(78vw,300px); height:min(58vh,380px); display:flex; align-items:center; justify-content:center; }
+  .rv-glow{ position:absolute; inset:8%; border-radius:50%; background:radial-gradient(circle, rgba(255,214,235,.55), rgba(255,214,235,0) 68%); opacity:0; transform:scale(.4); }
+  .reveal-overlay.brainrot .rv-glow{ background:radial-gradient(circle, rgba(140,255,120,.55), rgba(140,255,120,0) 68%); }
+  .rv-art{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; filter:brightness(0); transform:scale(.12); }
+  .rv-art .sp-full-img, .rv-art .fullbody-compose{ width:auto; max-width:100%; height:auto; max-height:100%; object-fit:contain; display:block; margin:0; }
+  .rv-art .fullbody-compose{ width:min(60vw,220px); }
+  .rv-art svg{ max-height:100%; }
+  .reveal-overlay.spinning .rv-art{ animation:rvSpin 2.1s cubic-bezier(.2,.7,.25,1) forwards; }
+  @keyframes rvSpin{
+    0%{ transform:scale(.12) rotateY(0deg); }
+    100%{ transform:scale(1) rotateY(900deg); }
+  }
+  .reveal-overlay.shown .rv-art{ animation:none; transform:scale(1); filter:brightness(1); transition:filter .5s ease-out; }
+  .reveal-overlay.shown .rv-glow{ animation:rvGlow 1.4s ease-out forwards; }
+  @keyframes rvGlow{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; transform:scale(1.15); } 100%{ opacity:.55; transform:scale(1); } }
+  .rv-flash{ position:absolute; inset:-30%; background:#fff; opacity:0; pointer-events:none; border-radius:50%; }
+  .reveal-overlay.shown .rv-flash{ animation:rvFlash .6s ease-out; }
+  @keyframes rvFlash{ 0%{ opacity:.95; transform:scale(.3); } 100%{ opacity:0; transform:scale(1.2); } }
+  .rv-spark{ position:absolute; left:50%; top:50%; font-size:22px; pointer-events:none; animation:rvSpark 1.2s ease-out forwards; }
+  @keyframes rvSpark{ 0%{ transform:translate(-50%,-50%) scale(.3); opacity:1; } 100%{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2); opacity:0; } }
+  .rv-info{ min-height:120px; opacity:0; transform:translateY(12px); transition:opacity .4s .25s, transform .4s .25s; }
+  .reveal-overlay.shown .rv-info{ opacity:1; transform:none; }
+  .rv-name{ font-family:var(--font-display); font-weight:900; font-size:26px; margin:0; }
+  .rv-role{ margin:2px 0 10px; font-size:14px; opacity:.85; }
+  @media (prefers-reduced-motion: reduce){
+    .reveal-overlay, .reveal-overlay.spinning .rv-art, .reveal-overlay.shown .rv-glow, .reveal-overlay.shown .rv-flash, .rv-spark{ animation:none; }
+    .rv-spark{ display:none; } .rv-info{ transition:none; }
+  }
