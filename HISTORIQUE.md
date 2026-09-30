@@ -7,7 +7,7 @@ Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seu
 
 - Dépôt : `jsoudeer/geometrie` (branche `main`).
 - Aperçu publié : artifact Claude `https://claude.ai/artifact/77Awfhh3EpPUAUGj2XgaVs` (à republier après chaque changement ; version 28 au moment de l'écriture).
-- `cours.md` : liste des exercices, niveaux, défis. `README.md` : présentation. `src/README.md` : organisation des sources et comment ajouter un thème. `assets/MANIFEST.md` : noms de fichiers des personnages.
+- `PROJETS.md` : projets d'avenir (ce qui reste à faire). `cours.md` : liste des exercices, niveaux, défis. `README.md` : présentation. `src/README.md` : organisation des sources et comment ajouter un thème. `assets/MANIFEST.md` : noms de fichiers des personnages.
 
 ## 2. Règle de travail convenue
 À chaque évolution : **modifier `src/` → `python3 tools/build.py` → tester dans un vrai navigateur → commit → push → republier l'aperçu → rendre compte en français** (court, l'essentiel d'abord). L'utilisateur n'est pas développeur : pas de jargon.
@@ -83,12 +83,7 @@ Playwright + Chromium (`/opt/pw-browsers/chromium`). `lib.js` sert le dépôt en
 - Republier l'aperçu : l'outil exige de relire la version en ligne avant d'écraser (elle était identique à la dernière publication).
 
 ## 8. Idées restantes
-- Illustrer les 58 personnages restants (priorité aux défis difficiles).
-- Renard à nœud bleu (deux plein pied sans visage) : à confirmer avec l'utilisateur.
-- Pas de réglage général du décor de l'écran de démarrage.
-- Registre des « familles » d'activités (Mesurer, Déformer, Patron, Horloge) pour une appli par thème, avec une option `--themes` dans `tools/build.py`.
-- Polices Google Fonts (`index.template.html`) chargées depuis internet : à embarquer pour l'usage hors ligne (Tauri/Capacitor).
-- Nettoyer `wip/` (11 Mo d'images brutes versionnées).
+Déplacées dans **`PROJETS.md`** (projets d'avenir : référentiels à suivre en plus du RGAA, ergonomie, idées en attente).
 
 ## 9. Refonte modulaire (29/09/2026)
 Du fichier unique éditable à `src/` + `tools/build.py`, en trois étapes vérifiées par `tools/tests/golden.js` (résultat identique à l'avant sur 1650 éléments) : (A) découpe sans changement, `index.html` identique octet pour octet ; (B1) regroupement du JS par thème ; (B2) registre des types de Quizz (`registerQuizType`). Les scripts de migration jetables ont été retirés (voir l'historique git : commits « Découpe index.html… », « Regroupe le JS… », « Registre des types de Quizz… »).
