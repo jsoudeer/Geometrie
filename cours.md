@@ -210,3 +210,5 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 ## Reveal d'un nouveau personnage
 À chaque déblocage (achat en boutique ou défi réussi), un écran plein écran révèle le personnage : sa **silhouette noire** en pied grossit au milieu de l'écran en pivotant sur elle-même, puis s'arrête et se dévoile en pleine couleur (éclair, étincelles, nom et rôle). Le petit son du dévoilement change selon le clan : arpège de harpe et « miaou » pour les Chats kawaii, boum grave et bips « glitch » pour les Brainrots. Un toucher pendant l'animation passe directement au dévoilement ; « Super ! » ou Échap ferme. Les animations sont supprimées si l'appareil demande de réduire les animations.
 
+**Bouton « +50 ⭐ »** (Boutique, à droite du nombre d'étoiles) : ajoute 50 étoiles d'un clic, pour s'entraîner à débloquer des personnages.
+

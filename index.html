@@ -132,7 +132,8 @@
   .vh{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
   .panel-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
   .panel-head h2{ margin:0; }
-  .btn.small{ padding:6px 10px; font-size:13px; }
+  .btn.small{ padding:6px 10px; font-size:13px; white-space:nowrap; }
+  #shop-plus50{ margin-left:auto; flex:none; }
   .topbar-right{ display:flex; align-items:center; gap:8px; flex:none; }
   .settings-btn{
     flex:none; width:38px; height:38px; border-radius:50%;
@@ -1023,7 +1024,7 @@
         <div class="panel-head"><h2>Boutique 🛒</h2><button class="btn ghost small" type="button" data-back>↩️ Retour aux exercices</button></div>
         <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis. Le clan affiché est le clan actif (bouton 👹 / 🐱 en haut).</p>
         <div id="arena-shop-wrap">
-          <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
+          <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span><button class="btn ghost small" id="shop-plus50" type="button" title="Pour s'entraîner à débloquer des personnages">+50 ⭐</button></div>
           <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
           <div class="shop-mascot" id="shop-mascot-panel"></div>
           <div class="sprite-grid" id="shop-grid"></div>
@@ -6683,6 +6684,12 @@
     txt.lastChild.textContent = roleLine(sprite);
     panel.appendChild(art); panel.appendChild(txt);
   }
+  // Bouton d'entraînement : +50 étoiles d'un clic pour essayer les déblocages.
+  document.getElementById('shop-plus50').addEventListener('click', function(){
+    addStar(50);
+    playSound('good');
+    renderShop();
+  });
   function renderShop(){
     syncShopThemeToAppTheme();
     renderShopMascot();
