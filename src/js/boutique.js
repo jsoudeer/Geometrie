@@ -573,10 +573,17 @@
       var head = document.createElement('p'); head.className = 'rv-head'; head.textContent = '🎉 ' + (headline || 'Nouveau personnage !');
       var stage = document.createElement('div'); stage.className = 'rv-stage';
       var glow = document.createElement('div'); glow.className = 'rv-glow';
-      var art = document.createElement('div'); art.className = 'rv-art';
+      // Deux calques superposés : l'ombre chinoise (noire) et la version couleur, masquée
+      // jusqu'au balayage lumineux qui la dévoile de gauche à droite.
+      var spinner = document.createElement('div'); spinner.className = 'rv-spinner';
+      var art = document.createElement('div'); art.className = 'rv-art sil';
       renderCreatureVisual(art, sp, 'full');
+      var artCol = document.createElement('div'); artCol.className = 'rv-art col'; artCol.setAttribute('aria-hidden','true');
+      renderCreatureVisual(artCol, sp, 'full');
+      var scan = document.createElement('div'); scan.className = 'rv-scan'; scan.setAttribute('aria-hidden','true');
+      spinner.appendChild(art); spinner.appendChild(artCol); spinner.appendChild(scan);
       var flash = document.createElement('div'); flash.className = 'rv-flash';
-      stage.appendChild(glow); stage.appendChild(art); stage.appendChild(flash);
+      stage.appendChild(glow); stage.appendChild(spinner); stage.appendChild(flash);
       var info = document.createElement('div'); info.className = 'rv-info';
       var nm = document.createElement('p'); nm.className = 'rv-name'; nm.textContent = sp.name;
       var rl = document.createElement('p'); rl.className = 'rv-role'; rl.textContent = roleLine(sp) + ' · ' + RARITY_META[sp.rarity].label;
@@ -585,11 +592,12 @@
       info.appendChild(nm); info.appendChild(rl); info.appendChild(ok);
       ov.appendChild(head); ov.appendChild(stage); ov.appendChild(info);
       document.body.appendChild(ov);
-      function reveal(){
+      // Étape 1 : le personnage, déjà de face en ombre chinoise, est balayé par un trait de
+      // lumière qui fait apparaître ses couleurs (+ son du clan). Étape 2 : éclat, étincelles, nom.
+      function burst(){
         if(done) return; done = true;
         revealClearTimers();
-        ov.classList.add('shown');
-        playRevealSting(side);
+        ov.classList.remove('scanning'); ov.classList.add('shown');
         for(var i=0;i<12;i++){
           var sparkle = document.createElement('span');
           sparkle.className = 'rv-spark'; sparkle.setAttribute('aria-hidden','true');
@@ -601,15 +609,24 @@
         }
         ok.focus();
       }
+      var scanning = false;
+      function reveal(){
+        if(scanning || done) return; scanning = true;
+        revealClearTimers();
+        ov.classList.remove('spinning'); ov.classList.add('scanning');
+        playRevealSting(side);
+        revealTimers.push(setTimeout(burst, 1000));
+      }
+      function skip(){ if(!scanning) playRevealSting(side); scanning = true; burst(); }
       ov.addEventListener('click', function(e){
-        if(!done){ reveal(); return; }
+        if(!done){ skip(); return; }
         if(e.target === ok || e.target === ov) next();
       });
       var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if(reduced){ reveal(); return; }
+      if(reduced){ skip(); return; }
       ov.classList.add('spinning');
       playRevealWhoosh();
-      revealTimers.push(setTimeout(reveal, 2100));
+      revealTimers.push(setTimeout(reveal, 2350));   // 2,1 s de rotation + une courte pause, de face
     }
     next();
   }
