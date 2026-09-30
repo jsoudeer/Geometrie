@@ -212,3 +212,5 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 
 **Bouton « +50 ⭐ »** (Boutique, à droite du nombre d'étoiles) : ajoute 50 étoiles d'un clic, pour s'entraîner à débloquer des personnages.
 
+**Personnages verrouillés** : dans la Boutique, un personnage pas encore débloqué est une **ombre chinoise** entièrement noire, sans nom (« ??? ») ni rôle ni points (« ❔ Mystère ») ; seuls sa rareté et son prix (ou le défi à relever) restent visibles. Toucher sa carte n'ouvre pas d'aperçu : on le découvre au moment du reveal.
+

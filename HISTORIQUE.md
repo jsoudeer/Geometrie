@@ -117,3 +117,6 @@ Deux panneaux distincts (`tab-shop`, `tab-battle`) ouverts par `#stars-btn` et `
 ## 21. Réinitialisation : seul le premier personnage reste (30/09/2026)
 `resetProgress` ne garde que le premier personnage de départ de chaque clan, redevenu mascotte. `loadOwned` n'ajoute plus les 5 personnages de départ que s'il n'y a aucune sauvegarde (sinon ils revenaient au rechargement). Test : `reset_check.js`.
 
+## 22. Personnages verrouillés en ombre chinoise (30/09/2026)
+Cartes `.locked` : `filter:brightness(0)`, nom « ??? », rôle « Mystère », libellé d'accessibilité neutre, pas d'aperçu au toucher ; fenêtre d'explication d'un défi en silhouette (`.info-art.silhouette`). Test : `silhouette_check.js`.
+

@@ -21,7 +21,8 @@
   }
   .sprite-card .sp-cost{ font-size:11px; font-weight:800; color:var(--text-soft); }
   /* Pas d'opacité réduite sur le texte (contraste) : c'est l'illustration seule qui est grisée. */
-  .sprite-card.locked svg, .sprite-card.locked .sp-custom-img{ filter:grayscale(.85) opacity(.75); }
+  /* ombre chinoise : tout le dessin en noir, on ne devine rien (léger liseré pour le thème sombre) */
+  .sprite-card.locked svg, .sprite-card.locked .sp-custom-img, .info-art.silhouette svg, .info-art.silhouette .sp-custom-img{ filter:brightness(0) drop-shadow(0 0 1.5px rgba(255,255,255,.55)); }
   .sprite-card.owned{ border-color:var(--good); }
   .sprite-card.selected{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 18%, var(--surface2)); transform:scale(1.03); }
   .sprite-card.affordable:active{ transform:scale(.95); }
