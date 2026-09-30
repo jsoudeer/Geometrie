@@ -387,9 +387,7 @@
       b.addEventListener('click', function(){ answerNet(key, b); });
       wrap.appendChild(b);
     });
-    document.getElementById('m3-next').hidden = true;
-    var fb = document.getElementById('m3-feedback');
-    fb.className='feedback'; fb.textContent='';
+    m3Flow.start();
     document.getElementById('m3-sub').textContent = 'Observe les faces à plat, puis choisis le bon solide.';
   }
 
@@ -406,27 +404,21 @@
     return 'Ce patron ne se referme pas en un solide.';
   }
 
+  var m3Flow = makeQuestionFlow({ feedback:'m3-feedback', tries:1 });
   function answerNet(userChoice, btn){
     if(answered) return;
     answered = true;
     var buttons = document.querySelectorAll('#m3-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
     var correct = (userChoice === currentNet.answer);
-    var fb = document.getElementById('m3-feedback');
     if(correct){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Exact, c\'est bien "' + M3_ANSWER_LABELS[currentNet.answer] + '" !</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
-      addStar(1);
+      m3Flow.answer(true, '<div>✔ Exact, c\'est bien "' + M3_ANSWER_LABELS[currentNet.answer] + '" !</div><div class="explain-line">'+netExplain(currentNet)+'</div>');
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === M3_ANSWER_LABELS[currentNet.answer]) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait : la bonne réponse était "' + M3_ANSWER_LABELS[currentNet.answer] + '".</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
+      m3Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse était "' + M3_ANSWER_LABELS[currentNet.answer] + '".</div><div class="explain-line">'+netExplain(currentNet)+'</div>');
     }
-    playSound(correct?'good':'bad');
-    celebrate(correct?'good':'bad', fb);
-    onPracticeAnswered(correct);
 
     var maxDepth = foldNet(currentElems, currentRootId, true);
     var genAtAnswer = m3Gen;
@@ -435,7 +427,6 @@
     } else {
       document.getElementById('m3-sub').textContent = 'Regarde-le se refermer doucement...';
     }
-    document.getElementById('m3-next').hidden = false;
 
     var totalMs = 220*maxDepth + 1800 + 300;
     setTimeout(function(){
@@ -457,9 +448,7 @@
     }, totalMs);
   }
 
-  document.getElementById('m3-next').addEventListener('click', nextPracticeQuestion);
-  // Toucher l'explication passe à la question suivante (comme dans les autres familles).
-  enableTapToContinue('m3-feedback', nextPracticeQuestion);
+  document.getElementById('m3-next').addEventListener('click', function(){ m3Flow.skip(); });
 
   // ===================== Solides =====================
   // Représentation "perspective cavalière", comme dans les cahiers : les

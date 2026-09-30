@@ -80,12 +80,32 @@ activités ». Les paramètres propres à un niveau vivent dans le thème (`GEO_
 Un type déjà connu n'a pas besoin d'être ajouté à `QCM_DISPLAY_ORDER` : les nouveaux
 types s'affichent à la suite des existants.
 
+## Règle commune pour corriger une réponse
+
+Toutes les activités corrigent avec `makeQuestionFlow` (`noyau.js`), jamais à la main :
+
+```js
+var flow = makeQuestionFlow({ feedback:'mon-feedback', tries:1 });   // QCM : 1 ; manipulation : MANIP_TRIES (3)
+flow.start();                                   // à chaque nouvelle question
+flow.answer(ok, html, lastHtml);                // renvoie 'solved', 'retry' ou 'failed'
+flow.skip();                                    // bouton « Nouvelle activité »
+flow.clearHint();                               // l'enfant recommence à manipuler après un raté
+```
+
+Le flux gère seul le retour, le son, les effets, la mascotte, l'étoile, la série sans faute,
+l'historique, et masque la rangée `.btn-row` qui suit le retour quand la question se ferme
+(réussite, ou dernier essai raté : c'est alors à l'activité d'afficher la solution si
+`answer` renvoie `'failed'`). Toucher le retour d'une question fermée = question suivante.
+« Nouvelle activité » est neutre avant tout essai, et compte comme une erreur après un raté.
+La question se met dans la bulle `.coach-bubble`, la consigne dans le `.muted` en dessous.
+`tools/tests/uniform_check.js` vérifie ces règles pour chaque activité.
+
 ## Ajouter une activité interactive (écran propre)
 
 Voir `src/js/atelier.js` : `registerFamily({ key, tag, theme, note, build(wrap), generate(level), signature() })`.
 Elle est ajoutée automatiquement au tirage, au mode Manuel (dans le thème `theme`), au panneau
 « Activités & difficulté » et à l'anti-répétition. `makeAtelier()` fournit l'écran commun
-(consigne, dessin tactile, retour, boutons Vérifier / Nouvelle activité).
+(question, consigne, dessin tactile, retour, boutons Vérifier / Nouvelle activité) déjà relié à `makeQuestionFlow`.
 
 ## Ce qui n'est pas encore modulaire
 

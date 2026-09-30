@@ -1004,6 +1004,9 @@
           <span class="qtype-tag streak-pill" id="streak-pill" hidden></span>
 
           <div id="fam-measure" hidden>
+            <div class="coach-row">
+              <div class="coach-bubble" id="m1-question">Combien mesure ce trait ?</div>
+            </div>
             <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
             <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>
             <div class="choices" id="m1-choices"></div>
@@ -1014,7 +1017,10 @@
           </div>
 
           <div id="fam-deform" hidden>
-            <p class="muted" id="m2-instructions">Fais glisser les coins pour transformer la forme.</p>
+            <div class="coach-row">
+              <div class="coach-bubble" id="m2-question">Transforme la forme.</div>
+            </div>
+            <p class="muted" id="m2-instructions">Fais glisser les coins, puis vérifie.</p>
             <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>
             <div class="feedback" id="m2-feedback"></div>
             <div class="btn-row">
@@ -1024,6 +1030,9 @@
           </div>
 
           <div id="fam-net" hidden>
+            <div class="coach-row">
+              <div class="coach-bubble" id="m3-question">Quel solide peut-on fabriquer avec ce patron ?</div>
+            </div>
             <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
             <div class="stage" id="stage" role="img" aria-label="Patron à plat qui se plie pour former un solide">
               <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
@@ -1031,7 +1040,7 @@
             <div class="qcm-choices" id="m3-choices"></div>
             <div class="feedback" id="m3-feedback"></div>
             <div class="btn-row">
-              <button class="btn ghost" id="m3-next" type="button" hidden>Nouvelle activité ↻</button>
+              <button class="btn ghost" id="m3-next" type="button">Nouvelle activité ↻</button>
             </div>
           </div>
 
@@ -1062,7 +1071,10 @@
           </div>
 
           <div id="fam-clock-regler" hidden>
-            <p class="muted">Place les aiguilles sur : <strong id="m5-target">3 h</strong></p>
+            <div class="coach-row">
+              <div class="coach-bubble">Place les aiguilles sur <span id="m5-target">3 h</span></div>
+            </div>
+            <p class="muted">Fais glisser la petite et la grande aiguille, puis vérifie.</p>
             <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>
             <div class="feedback" id="m5r-feedback"></div>
             <div class="btn-row">
@@ -1764,23 +1776,78 @@
     });
   }
 
-  // Permet de toucher n'importe où sur la boîte de feedback pour relancer
-  // une nouvelle question (en plus du bouton dédié) : plus pratique pour un
-  // enfant que de devoir viser un petit bouton après chaque réponse.
-  function enableTapToContinue(feedbackId, nextFn){
-    var fb = document.getElementById(feedbackId);
-    if(!fb) return;
-    fb.classList.add('tappable');
-    // Accessibilité : annoncé par les lecteurs d'écran dès qu'il apparaît,
-    // atteignable au clavier, et Entrée/Espace fait la même chose qu'un clic.
+  /* ===================== DÉROULÉ COMMUN D'UNE QUESTION =====================
+     TOUTES les activités passent par ici pour corriger une réponse, afin que
+     les règles soient les mêmes partout :
+     - une question est « ouverte » tant qu'on peut répondre ;
+     - QCM (on touche une réponse) : 1 seule tentative ;
+       manipulations (Déformer, Régler l'heure, ateliers) : 3 tentatives ;
+     - elle se « ferme » dès que la réponse est juste, ou après la dernière
+       tentative ratée. À la fermeture : retour + explication, son, effets,
+       mascotte, étoile si c'est juste, série sans faute et historique
+       (onPracticeAnswered), et la rangée de boutons (Vérifier / Nouvelle
+       activité) disparaît : on touche le retour pour passer à la suite ;
+     - « Nouvelle activité » avant tout essai = question passée, sans effet ;
+       après un essai raté = erreur (on ne peut pas fuir pour garder sa série).
+     opts : { feedback: id ou élément, tries: 1|3 }
+     La rangée de boutons masquée est la .btn-row qui suit le retour. */
+  var MANIP_TRIES = 3;
+  function makeQuestionFlow(opts){
+    var fb = typeof opts.feedback==='string' ? document.getElementById(opts.feedback) : opts.feedback;
+    var row = fb.parentNode.querySelector('.btn-row');
+    var flow = { tries:0, maxTries:opts.tries || 1, closed:false, fb:fb };
+    // Accessibilité : annoncé par les lecteurs d'écran, atteignable au clavier,
+    // Entrée/Espace fait la même chose qu'un toucher.
     fb.setAttribute('aria-live','polite');
     fb.tabIndex = 0;
-    fb.addEventListener('click', function(){
-      if(fb.classList.contains('show')) nextFn();
-    });
+    function goNext(){ if(flow.closed) nextPracticeQuestion(); }
+    fb.addEventListener('click', goNext);
     fb.addEventListener('keydown', function(e){
-      if((e.key==='Enter' || e.key===' ') && fb.classList.contains('show')){ e.preventDefault(); nextFn(); }
+      if((e.key==='Enter' || e.key===' ') && flow.closed){ e.preventDefault(); goNext(); }
     });
+    function show(ok, html, closing){
+      fb.className = 'feedback show ' + (ok ? 'good' : 'bad') + (closing ? ' tappable' : '');
+      fb.innerHTML = html;
+      playSound(ok ? 'good' : 'bad');
+      celebrate(ok ? 'good' : 'bad', fb);
+      setCoachReaction(ok ? 'good' : 'bad');
+    }
+    function close(ok, html){
+      flow.closed = true;
+      if(row) row.hidden = true;
+      show(ok, html, true);
+      if(ok) addStar(1);
+      onPracticeAnswered(ok);
+    }
+    // Nouvelle question : tout est remis à zéro.
+    flow.start = function(){
+      flow.tries = 0; flow.closed = false;
+      fb.className = 'feedback'; fb.innerHTML = '';
+      if(row) row.hidden = false;
+    };
+    // Efface le retour d'un essai raté dès que l'enfant recommence à manipuler.
+    flow.clearHint = function(){
+      if(!flow.closed){ fb.className = 'feedback'; fb.innerHTML = ''; }
+    };
+    // ok : réponse juste ? html : retour à afficher ; lastHtml : retour quand
+    // c'était la dernière tentative (la bonne réponse y est donnée).
+    // Renvoie 'solved', 'retry' (encore des essais) ou 'failed' (question fermée).
+    flow.answer = function(ok, html, lastHtml){
+      if(flow.closed) return 'closed';
+      flow.tries++;
+      if(ok){ close(true, html); return 'solved'; }
+      if(flow.tries >= flow.maxTries){ close(false, lastHtml || html); return 'failed'; }
+      var left = flow.maxTries - flow.tries;
+      show(false, html + '<div class="explain-line">🔁 Essai ' + flow.tries + ' sur ' + flow.maxTries +
+        ' : corrige puis vérifie encore (' + left + ' essai' + (left>1 ? 's' : '') + ' restant' + (left>1 ? 's' : '') + ').</div>', false);
+      return 'retry';
+    };
+    // Bouton « Nouvelle activité ».
+    flow.skip = function(){
+      if(!flow.closed && flow.tries > 0){ flow.closed = true; onPracticeAnswered(false); }
+      nextPracticeQuestion();
+    };
+    return flow;
   }
 
 
@@ -1952,8 +2019,7 @@
       b.addEventListener('click', function(){ checkMeasure(v, b); });
       wrap.appendChild(b);
     });
-    var fb = document.getElementById('m1-feedback');
-    fb.className = 'feedback'; fb.innerHTML = '';
+    m1Flow.start();
   }
 
   function measureExplain(){
@@ -1964,29 +2030,23 @@
       + fmtNum(m1SegEnd) + ' − ' + fmtNum(m1SegStart) + ' = ' + fmtNum(currentLen) + ' cm.';
   }
 
+  var m1Flow = makeQuestionFlow({ feedback:'m1-feedback', tries:1 });
   function checkMeasure(v, btn){
+    if(m1Flow.closed) return;
     var buttons = document.querySelectorAll('#m1-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
-    var fb = document.getElementById('m1-feedback');
     var ok = Math.abs(v-currentLen)<0.001;
     if(ok){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>';
+      m1Flow.answer(true, '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>');
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === (fmtNum(currentLen)+' cm')) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait. La bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>';
+      m1Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>');
     }
-    playSound(ok?'good':'bad');
-    celebrate(ok?'good':'bad', fb);
-    if(ok) addStar(1);
-    onPracticeAnswered(ok);
   }
 
-  document.getElementById('m1-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m1-feedback', nextPracticeQuestion);
+  document.getElementById('m1-next').addEventListener('click', function(){ m1Flow.skip(); });
 
   /* ===================== MODULE 2 : DEFORMER ===================== */
   var SCALE2 = 20; // px per cm
@@ -2002,9 +2062,9 @@
   // décalés en Moyen, les 4 coins très décalés en Difficile — voir
   // perturbForLevel() plus bas.
   var M2_LEVELS = [
-    { name:'Losange',      instr:"Fais glisser les coins pour transformer la forme en losange : les 4 côtés doivent rester à peu près égaux.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
-    { name:'Rectangle',    instr:"Transforme la forme en rectangle : les côtés opposés doivent être à peu près égaux, et les 4 angles doivent rester à peu près droits.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
-    { name:'Parallélogramme', instr:"Transforme la forme en parallélogramme : les côtés opposés doivent rester à peu près égaux, mais les angles ne doivent plus être droits.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} }
+    { name:'Losange',      question:'Transforme la forme en losange.', instr:"Fais glisser les coins : les 4 côtés doivent être à peu près égaux. Puis vérifie.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
+    { name:'Rectangle',    question:'Transforme la forme en rectangle.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, et les 4 angles à peu près droits. Puis vérifie.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
+    { name:'Parallélogramme', question:'Transforme la forme en parallélogramme.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, mais des angles qui ne sont pas droits. Puis vérifie.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} }
   ];
 
   function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
@@ -2138,12 +2198,16 @@
         else if(ev.key==='ArrowUp') dy = -step; else if(ev.key==='ArrowDown') dy = step;
         else return;
         ev.preventDefault();
+        if(m2Flow.closed) return;
+        m2Flow.clearHint();
         pts[idx][0] = Math.max(20, Math.min(240, pts[idx][0] + dx));
         pts[idx][1] = Math.max(20, Math.min(240, pts[idx][1] + dy));
         deformFocusIdx = idx;
         drawDeform();
       });
       c.addEventListener('pointerdown', function(ev){
+        if(m2Flow.closed) return;
+        m2Flow.clearHint();
         deformFocusIdx = null;
         c.setPointerCapture(ev.pointerId);
         function toSvgPoint(clientX, clientY){
@@ -2170,31 +2234,36 @@
     });
   }
 
-  var m2Won = false;
+  var m2Target = null;   // une forme juste, montrée si les 3 essais sont ratés
+  var M2_EXPLAIN = [
+    'Un losange a 4 côtés de la même longueur.',
+    'Un rectangle a ses côtés opposés de même longueur et 4 angles droits.',
+    'Un parallélogramme a ses côtés opposés de même longueur, mais ses angles ne sont pas droits.'
+  ];
   function newDeformQuestion(){
-    m2Won = false;
     m2ShapeIdx = randInt(0,2);
+    document.getElementById('m2-question').textContent = M2_LEVELS[m2ShapeIdx].question;
     document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
-    var target = shapeTargetPoints(m2ShapeIdx);
-    m2StartPts = perturbForLevel(target, globalLevel);
+    m2Target = shapeTargetPoints(m2ShapeIdx);
+    m2StartPts = perturbForLevel(m2Target, globalLevel);
     pts = m2StartPts.map(function(p){ return p.slice(); });
     drawDeform();
-    var fb = document.getElementById('m2-feedback');
-    fb.className='feedback'; fb.textContent='';
+    m2Flow.start();
   }
 
-  document.getElementById('m2-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m2-feedback', nextPracticeQuestion);
-
+  var m2Flow = makeQuestionFlow({ feedback:'m2-feedback', tries:MANIP_TRIES });
+  document.getElementById('m2-next').addEventListener('click', function(){ m2Flow.skip(); });
   document.getElementById('m2-check').addEventListener('click', function(){
     var lv = M2_LEVELS[m2ShapeIdx];
     var res = lv.check(lv.tolGreat, lv.tolOk);
-    var fb = document.getElementById('m2-feedback');
-    fb.className = 'feedback tappable ' + (res.ok ? 'good' : 'bad') + ' show';
-    fb.textContent = res.msg;
-    playSound(res.ok ? 'good' : 'bad');
-    celebrate(res.ok ? 'good' : 'bad', fb);
-    if(res.ok && !m2Won){ m2Won = true; addStar(1); }   // une seule étoile par forme
+    var explain = '<div class="explain-line">' + M2_EXPLAIN[m2ShapeIdx] + '</div>';
+    var state = m2Flow.answer(res.ok, '<div>' + res.msg + '</div>' + explain,
+      '<div>' + res.msg + '</div><div>Voici un ' + M2_LEVELS[m2ShapeIdx].name.toLowerCase() + ' bien formé.</div>' + explain);
+    if(state==='failed'){
+      deformFocusIdx = null;
+      pts = m2Target.map(function(p){ return p.slice(); });
+      drawDeform();
+    }
   });
 
   function regularPoly(n, rot){
@@ -3301,31 +3370,24 @@
       b.addEventListener('click', function(){ checkM5Lire(c, b); });
       wrap.appendChild(b);
     });
-    var fb = document.getElementById('m5-feedback'); fb.className='feedback'; fb.innerHTML='';
+    m5Flow.start();
   }
+  var m5Flow = makeQuestionFlow({ feedback:'m5-feedback', tries:1 });
   function checkM5Lire(choice, btn){
+    if(m5Flow.closed) return;
     var buttons = document.querySelectorAll('#m5-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
-    var fb = document.getElementById('m5-feedback');
     if(choice.ok){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Bravo, c\'est la bonne heure !</div><div class="explain-line">'+m5Current.explain+'</div>';
-      addStar(1);
-      setCoachReaction('good');
+      m5Flow.answer(true, '<div>✔ Bravo, c\'est la bonne heure !</div><div class="explain-line">'+m5Current.explain+'</div>');
     } else {
       btn.classList.add('wrong');
       var okLabel = m5Current.choices.filter(function(c){return c.ok;})[0].label;
       buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m5Current.explain+'</div>';
-      setCoachReaction('bad');
+      m5Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est en vert.</div><div class="explain-line">'+m5Current.explain+'</div>');
     }
-    playSound(choice.ok?'good':'bad');
-    celebrate(choice.ok?'good':'bad', fb);
-    onPracticeAnswered(choice.ok);
   }
-  document.getElementById('m5-next').addEventListener('click', nextPracticeQuestion);
+  document.getElementById('m5-next').addEventListener('click', function(){ m5Flow.skip(); });
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
   // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
@@ -3335,7 +3397,6 @@
   //   Difficile  toutes les 5 minutes, heure de 0 h à 23 h (petite : 15°, grande : 12 positions)
   var m5Target = { hour:3, minute:0, level:0 };
   var m5rHourTick = 0, m5rMinTick = 0, m5rDragWhich = null;
-  var m5rWon = false;   // une seule étoile par heure demandée, même si on clique plusieurs fois sur « Vérifier »
   var M5R_HOUR_STEP = [15, 15, 15];    // degrés par cran, petite aiguille : 24 positions (heures pleines + demi-heures) à tous les niveaux
   var M5R_MIN_STEP = [180, 90, 30];    // degrés par cran, grande aiguille
   // écart accepté (degrés) sur la petite aiguille : la position exacte (heure + minutes/60) est
@@ -3387,10 +3448,9 @@
       label = minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' (' + periodOfDay(m5Target.hour).phrase + ')';
     }
     m5rHourTick = 0; m5rMinTick = 0; // les aiguilles repartent de midi bien net
-    m5rWon = false;
     document.getElementById('m5-target').textContent = label;
     drawSettableClock();
-    var fb = document.getElementById('m5r-feedback'); fb.className='feedback'; fb.innerHTML='';
+    m5rFlow.start();
   }
 
   (function initClockDrag(){
@@ -3398,7 +3458,8 @@
     svg.style.touchAction = 'none';
     svg.addEventListener('pointerdown', function(evt){
       var which = evt.target && evt.target.getAttribute && evt.target.getAttribute('data-hand');
-      if(!which) return;
+      if(!which || m5rFlow.closed) return;
+      m5rFlow.clearHint();
       m5rDragWhich = which;
       svg.setPointerCapture(evt.pointerId);
     });
@@ -3417,35 +3478,35 @@
     svg.addEventListener('pointercancel', endDrag);
   })();
 
-  document.getElementById('m5r-new').addEventListener('click', nextPracticeQuestion);
+  var m5rFlow = makeQuestionFlow({ feedback:'m5r-feedback', tries:MANIP_TRIES });
+  document.getElementById('m5r-new').addEventListener('click', function(){ m5rFlow.skip(); });
   document.getElementById('m5r-check').addEventListener('click', function(){
     var lvl = m5Target.level;
     function angGap(a, b){ var d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); }
     var exactHourDeg = ((m5Target.hour % 12) + m5Target.minute/60) * 30;
     var hourOk = angGap(m5rHourTick * M5R_HOUR_STEP[lvl], exactHourDeg) <= M5R_HOUR_TOL[lvl];
     var minOk = angGap(m5rMinTick * M5R_MIN_STEP[lvl], m5Target.minute * 6) < 0.01;
+    var total = m5Target.hour*60 + m5Target.minute;
     // En Difficile, l'heure demandée est en 24 h : on rappelle comment elle se lit sur le cadran.
     var readAs = (lvl===2 && (m5Target.hour===0 || m5Target.hour>=13))
-      ? '<div class="explain-line">Sur le cadran, ' + minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' se lit ' + minutesToClockLabel(m5Target.hour*60 + m5Target.minute) + '.</div>' : '';
-    var fb = document.getElementById('m5r-feedback');
+      ? '<div class="explain-line">Sur le cadran, ' + minutesToLabel24(total) + ' se lit ' + minutesToClockLabel(total) + '.</div>' : '';
+    var explain = '<div class="explain-line">La petite aiguille montre les heures, la grande aiguille montre les minutes.</div>';
     if(hourOk && minOk){
-      fb.className = 'feedback good show';
-      fb.innerHTML = '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs;
-      if(!m5rWon){ m5rWon = true; addStar(1); }
-      setCoachReaction('good');
-    } else {
-      fb.className = 'feedback bad show';
-      var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
-        : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée. ' + hourHandHint(m5Target.hour, m5Target.minute)
-        : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
-      fb.innerHTML = '<div>✘ ' + msg + '</div>' + readAs;
-      setCoachReaction('bad');
+      m5rFlow.answer(true, '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs + explain);
+      return;
     }
-    playSound(hourOk && minOk ? 'good' : 'bad');
-    celebrate(hourOk && minOk ? 'good' : 'bad', fb);
+    var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
+      : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée. ' + hourHandHint(m5Target.hour, m5Target.minute)
+      : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
+    var state = m5rFlow.answer(false, '<div>✘ ' + msg + '</div>' + readAs,
+      '<div>✘ ' + msg + '</div><div>Voici les aiguilles bien placées.</div>' + readAs + explain);
+    if(state==='failed'){
+      // on montre la bonne position des deux aiguilles
+      m5rHourTick = Math.round(exactHourDeg / M5R_HOUR_STEP[lvl]) % Math.round(360 / M5R_HOUR_STEP[lvl]);
+      m5rMinTick = Math.round(m5Target.minute * 6 / M5R_MIN_STEP[lvl]) % Math.round(360 / M5R_MIN_STEP[lvl]);
+      drawSettableClock();
+    }
   });
-
-  enableTapToContinue('m5-feedback', nextPracticeQuestion);
 
   // ===================== Lire l'heure =====================
   function angleToXY(deg,len,cx,cy){ var rad=deg*Math.PI/180; return [(cx||100)+len*Math.cos(rad), (cy||100)+len*Math.sin(rad)]; }
@@ -4627,9 +4688,7 @@
       b.addEventListener('click', function(){ answerNet(key, b); });
       wrap.appendChild(b);
     });
-    document.getElementById('m3-next').hidden = true;
-    var fb = document.getElementById('m3-feedback');
-    fb.className='feedback'; fb.textContent='';
+    m3Flow.start();
     document.getElementById('m3-sub').textContent = 'Observe les faces à plat, puis choisis le bon solide.';
   }
 
@@ -4646,27 +4705,21 @@
     return 'Ce patron ne se referme pas en un solide.';
   }
 
+  var m3Flow = makeQuestionFlow({ feedback:'m3-feedback', tries:1 });
   function answerNet(userChoice, btn){
     if(answered) return;
     answered = true;
     var buttons = document.querySelectorAll('#m3-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
     var correct = (userChoice === currentNet.answer);
-    var fb = document.getElementById('m3-feedback');
     if(correct){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Exact, c\'est bien "' + M3_ANSWER_LABELS[currentNet.answer] + '" !</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
-      addStar(1);
+      m3Flow.answer(true, '<div>✔ Exact, c\'est bien "' + M3_ANSWER_LABELS[currentNet.answer] + '" !</div><div class="explain-line">'+netExplain(currentNet)+'</div>');
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === M3_ANSWER_LABELS[currentNet.answer]) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait : la bonne réponse était "' + M3_ANSWER_LABELS[currentNet.answer] + '".</div><div class="explain-line">'+netExplain(currentNet)+'</div>';
+      m3Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse était "' + M3_ANSWER_LABELS[currentNet.answer] + '".</div><div class="explain-line">'+netExplain(currentNet)+'</div>');
     }
-    playSound(correct?'good':'bad');
-    celebrate(correct?'good':'bad', fb);
-    onPracticeAnswered(correct);
 
     var maxDepth = foldNet(currentElems, currentRootId, true);
     var genAtAnswer = m3Gen;
@@ -4675,7 +4728,6 @@
     } else {
       document.getElementById('m3-sub').textContent = 'Regarde-le se refermer doucement...';
     }
-    document.getElementById('m3-next').hidden = false;
 
     var totalMs = 220*maxDepth + 1800 + 300;
     setTimeout(function(){
@@ -4697,9 +4749,7 @@
     }, totalMs);
   }
 
-  document.getElementById('m3-next').addEventListener('click', nextPracticeQuestion);
-  // Toucher l'explication passe à la question suivante (comme dans les autres familles).
-  enableTapToContinue('m3-feedback', nextPracticeQuestion);
+  document.getElementById('m3-next').addEventListener('click', function(){ m3Flow.skip(); });
 
   // ===================== Solides =====================
   // Représentation "perspective cavalière", comme dans les cahiers : les
@@ -5013,9 +5063,13 @@
   //  temps.
   // =====================================================================
 
-  // Fabrique l'écran commun et renvoie { instr, svg, feedback, setSolved, ... }
+  // Fabrique l'écran commun (question dans la bulle, consigne, dessin tactile,
+  // retour, boutons Vérifier / Nouvelle activité) et le relie au déroulé commun
+  // des questions (makeQuestionFlow, 3 tentatives). onCheck(ui) appelle
+  // ui.answer(ok, html, lastHtml) et, si c'est raté pour de bon, montre la solution.
   function makeAtelier(key, wrap, onCheck){
     wrap.innerHTML =
+      '<div class="coach-row"><div class="coach-bubble" id="at-' + key + '-q"></div></div>' +
       '<p class="muted" id="at-' + key + '-instr"></p>' +
       '<div class="deform-wrap"><svg id="at-' + key + '-svg" viewBox="0 0 260 260" role="group"></svg></div>' +
       '<div class="feedback" id="at-' + key + '-fb"></div>' +
@@ -5023,39 +5077,28 @@
       '<button class="btn primary" id="at-' + key + '-check" type="button">Vérifier ✅</button>' +
       '<button class="btn ghost" id="at-' + key + '-next" type="button">Nouvelle activité ↻</button></div>';
     var ui = {
+      q: wrap.querySelector('#at-' + key + '-q'),
       instr: wrap.querySelector('#at-' + key + '-instr'),
       svg: wrap.querySelector('#at-' + key + '-svg'),
-      fb: wrap.querySelector('#at-' + key + '-fb'),
-      solved: false
+      fb: wrap.querySelector('#at-' + key + '-fb')
     };
-    ui.reset = function(instruction, ariaLabel, viewBox){
-      ui.solved = false;
+    var flow = makeQuestionFlow({ feedback:ui.fb, tries:MANIP_TRIES });
+    ui.flow = flow;
+    ui.isClosed = function(){ return flow.closed; };
+    ui.reset = function(question, instruction, ariaLabel, viewBox){
+      ui.q.textContent = question;
       ui.instr.textContent = instruction;
       ui.svg.setAttribute('aria-label', ariaLabel);
       ui.svg.setAttribute('viewBox', viewBox || '0 0 260 260');
       ui.svg.innerHTML = '';
-      ui.fb.className = 'feedback'; ui.fb.innerHTML = '';
+      flow.start();
     };
-    ui.say = function(ok, html){
-      ui.fb.className = 'feedback ' + (ok ? 'good' : 'bad') + ' show';
-      ui.fb.innerHTML = html;
-      setCoachReaction(ok ? 'good' : 'bad');
-      playSound(ok ? 'good' : 'bad');
-      celebrate(ok ? 'good' : 'bad', ui.fb);
-    };
-    wrap.querySelector('#at-' + key + '-check').addEventListener('click', function(){ onCheck(ui); });
-    wrap.querySelector('#at-' + key + '-next').addEventListener('click', nextPracticeQuestion);
-    // Une fois réussi, toucher le retour passe à la suite (jamais avant : on
-    // ne veut pas quitter un exercice raté par un effleurement).
-    ui.fb.tabIndex = 0;
-    ui.fb.setAttribute('aria-live', 'polite');
-    ui.fb.addEventListener('click', function(){ if(ui.solved) nextPracticeQuestion(); });
+    // L'enfant recommence à toucher après un essai raté : on efface le retour.
+    ui.touched = function(){ flow.clearHint(); };
+    ui.answer = flow.answer;
+    wrap.querySelector('#at-' + key + '-check').addEventListener('click', function(){ if(!flow.closed) onCheck(ui); });
+    wrap.querySelector('#at-' + key + '-next').addEventListener('click', function(){ flow.skip(); });
     return ui;
-  }
-  // Récompense une seule fois par exercice.
-  function atelierWin(ui, html){
-    if(!ui.solved){ ui.solved = true; addStar(1); }
-    ui.say(true, html);
   }
 
   // Rectangle tactile (souris, doigt, clavier). onToggle() est appelée à chaque activation.
@@ -5118,9 +5161,9 @@
         var bad = showErrors && atSym.mine[rr][cc] !== atSym.solution[rr][cc];
         var rect = atelierCell(ui.svg, x, y, cell, cell, atSym.mine[rr][cc] ? AT_COLORS.mine : AT_COLORS.empty,
           'case ' + (rr+1) + ', ' + (cc+1) + (atSym.mine[rr][cc] ? ', coloriée' : ', vide'), function(){
-            if(ui.solved) return;
+            if(ui.isClosed()) return;
             atSym.mine[rr][cc] = !atSym.mine[rr][cc];
-            ui.fb.className = 'feedback'; ui.fb.innerHTML = '';
+            ui.touched();
             atSymDraw(false);
           });
         if(bad){ rect.setAttribute('stroke', '#d33'); rect.setAttribute('stroke-width', 4); }
@@ -5133,15 +5176,20 @@
   function atSymCheck(ui){
     var wrong = 0, r, c;
     for(r=0;r<atSym.half.rows;r++) for(c=0;c<atSym.half.cols;c++) if(atSym.mine[r][c] !== atSym.solution[r][c]) wrong++;
-    if(wrong===0){ atSymDraw(false); atelierWin(ui, '<div>✔ Bravo, la figure est bien symétrique !</div><div class="explain-line">Chaque case a sa jumelle de l\'autre côté de la ligne rouge, à la même distance.</div>'); }
-    else { atSymDraw(true); ui.say(false, '<div>✘ ' + (wrong===1 ? 'Il y a 1 case à corriger' : 'Il y a ' + wrong + ' cases à corriger') + ' (entourées en rouge).</div><div class="explain-line">Astuce : la case juste à côté de la ligne rouge se retrouve juste de l\'autre côté.</div>'); }
+    var explain = '<div class="explain-line">Chaque case a sa jumelle de l\'autre côté de la ligne rouge, à la même distance.</div>';
+    if(wrong===0){ atSymDraw(false); ui.answer(true, '<div>✔ Bravo, la figure est bien symétrique !</div>' + explain); return; }
+    var msg = '<div>✘ ' + (wrong===1 ? 'Il y a 1 case à corriger' : 'Il y a ' + wrong + ' cases à corriger') + '.</div>';
+    atSymDraw(true);
+    var state = ui.answer(false, msg.replace('.</div>', ' (entourées en rouge).</div>') + '<div class="explain-line">Astuce : la case juste à côté de la ligne rouge se retrouve juste de l\'autre côté.</div>',
+      msg + '<div>Voici la figure complétée.</div>' + explain);
+    if(state==='failed'){ atSym.mine = atSym.solution.map(function(row){ return row.slice(); }); atSymDraw(false); }
   }
   registerFamily({
     key:'atelier-sym', tag:'Compléter la symétrie', theme:'✋ Ateliers',
     note:'Une moitié de figure est donnée ; on touche les cases de l\'autre côté de la ligne rouge pour la compléter en miroir. Facile : 4 cases sur 3×4 ; Moyen : 6 cases sur 3×5 ; Difficile : 9 cases, et la ligne peut être verticale OU horizontale. La figure est tirée au hasard (au moins une case touche la ligne).',
     build:function(wrap){ atSym.ui = makeAtelier('atelier-sym', wrap, atSymCheck); },
     generate:function(level){
-      atSym.ui.reset('Complète la figure de l\'autre côté de la ligne rouge, comme dans un miroir. Touche les cases à colorier.', 'Figure à compléter en symétrie : touche les cases');
+      atSym.ui.reset('Complète la figure comme dans un miroir.', 'Touche les cases à colorier de l\'autre côté de la ligne rouge, puis vérifie.', 'Figure à compléter en symétrie : touche les cases');
       atSymGenerate(level);
     },
     signature:function(){ return (atSym.horizontal ? 'H' : 'V') + JSON.stringify(atSym.given); }
@@ -5165,13 +5213,13 @@
     if(level===2 && Math.random()<0.4){ n = 8; k = randInt(1,7); label = k + '/8'; }
     atFrac.n = n; atFrac.k = k; atFrac.kind = pick(['pie','bar']); atFrac.label = label;
     atFrac.on = []; for(var i=0;i<n;i++) atFrac.on.push(false);
-    atFrac.ui.reset('Colorie ' + label + ' de la figure. Touche les parts pour les colorier.', 'Figure partagée en ' + n + ' parts égales : touche les parts à colorier');
+    atFrac.ui.reset('Colorie ' + label + ' de la figure.', 'Touche les parts pour les colorier, puis vérifie.', 'Figure partagée en ' + n + ' parts égales : touche les parts à colorier');
     atFracDraw();
   }
   function atFracDraw(){
     var ui = atFrac.ui, n = atFrac.n, i;
     ui.svg.innerHTML = '';
-    function toggle(idx){ return function(){ if(ui.solved) return; atFrac.on[idx] = !atFrac.on[idx]; ui.fb.className = 'feedback'; ui.fb.innerHTML = ''; atFracDraw(); }; }
+    function toggle(idx){ return function(){ if(ui.isClosed()) return; atFrac.on[idx] = !atFrac.on[idx]; ui.touched(); atFracDraw(); }; }
     for(i=0;i<n;i++){
       var fill = atFrac.on[i] ? AT_COLORS.mine : AT_COLORS.empty, part;
       if(atFrac.kind==='pie'){
@@ -5191,13 +5239,13 @@
   }
   function atFracCheck(ui){
     var got = atFrac.on.filter(function(v){ return v; }).length, need = atFrac.k, n = atFrac.n;
-    if(got===need){
-      atelierWin(ui, '<div>✔ Bravo !</div><div class="explain-line">La figure a ' + n + ' parts égales : ' + atFrac.label + ' de la figure, c\'est ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + ' (' + need + '/' + n + ').</div>');
-    } else if(got<need){
-      ui.say(false, '<div>✘ Il manque ' + (need-got) + ' part' + (need-got>1?'s':'') + ' à colorier.</div><div class="explain-line">Compte les parts coloriées : il en faut ' + need + ' sur ' + n + '.</div>');
-    } else {
-      ui.say(false, '<div>✘ Il y a ' + (got-need) + ' part' + (got-need>1?'s':'') + ' de trop.</div><div class="explain-line">Il faut colorier ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + '.</div>');
-    }
+    var explain = '<div class="explain-line">La figure a ' + n + ' parts égales : ' + atFrac.label + ' de la figure, c\'est ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + ' (' + need + '/' + n + ').</div>';
+    if(got===need){ ui.answer(true, '<div>✔ Bravo !</div>' + explain); return; }
+    var msg = got<need ? '<div>✘ Il manque ' + (need-got) + ' part' + (need-got>1?'s':'') + ' à colorier.</div>'
+                       : '<div>✘ Il y a ' + (got-need) + ' part' + (got-need>1?'s':'') + ' de trop.</div>';
+    var state = ui.answer(false, msg + '<div class="explain-line">Compte les parts coloriées : il en faut ' + need + ' sur ' + n + '.</div>',
+      msg + '<div>Voici une bonne façon de colorier.</div>' + explain);
+    if(state==='failed'){ atFrac.on = atFrac.on.map(function(v, i){ return i < need; }); atFracDraw(); }
   }
   registerFamily({
     key:'atelier-fraction', tag:'Colorier une fraction', theme:'✋ Ateliers',
@@ -5219,7 +5267,7 @@
     while(placed<count && guard++<300){ r = randInt(0,n-1); c = randInt(0,n-1); if(!model[r][c]){ model[r][c] = true; placed++; } }
     atCopy.n = n; atCopy.model = model;
     atCopy.mine = model.map(function(row){ return row.map(function(){ return false; }); });
-    atCopy.ui.reset('Reproduis le modèle (à gauche) sur la grille vide (à droite). Touche les cases à colorier.', 'Modèle à reproduire et grille vide : touche les cases', '0 0 260 150');
+    atCopy.ui.reset('Reproduis le modèle sur la grille vide.', 'Le modèle est à gauche. Touche les cases de la grille de droite, puis vérifie.', 'Modèle à reproduire et grille vide : touche les cases', '0 0 260 150');
     atCopyDraw(false);
   }
   function atCopyDraw(showErrors){
@@ -5234,9 +5282,9 @@
         var bad = showErrors && atCopy.mine[rr][cc] !== atCopy.model[rr][cc];
         var rect = atelierCell(ui.svg, xp + cc*cell, y0 + rr*cell, cell, cell, atCopy.mine[rr][cc] ? AT_COLORS.mine : AT_COLORS.empty,
           'case ' + (rr+1) + ', ' + (cc+1) + (atCopy.mine[rr][cc] ? ', coloriée' : ', vide'), function(){
-            if(ui.solved) return;
+            if(ui.isClosed()) return;
             atCopy.mine[rr][cc] = !atCopy.mine[rr][cc];
-            ui.fb.className = 'feedback'; ui.fb.innerHTML = '';
+            ui.touched();
             atCopyDraw(false);
           });
         if(bad){ rect.setAttribute('stroke', '#d33'); rect.setAttribute('stroke-width', 3.5); }
@@ -5246,8 +5294,13 @@
   function atCopyCheck(ui){
     var wrong = 0, r, c;
     for(r=0;r<atCopy.n;r++) for(c=0;c<atCopy.n;c++) if(atCopy.mine[r][c] !== atCopy.model[r][c]) wrong++;
-    if(wrong===0){ atCopyDraw(false); atelierWin(ui, '<div>✔ Bravo, ta grille est identique au modèle !</div>'); }
-    else { atCopyDraw(true); ui.say(false, '<div>✘ Il y a ' + wrong + ' case' + (wrong>1?'s':'') + ' différente' + (wrong>1?'s':'') + ' du modèle (entourée' + (wrong>1?'s':'') + ' en rouge).</div><div class="explain-line">Compare ligne par ligne, en partant du haut.</div>'); }
+    var explain = '<div class="explain-line">Compare ligne par ligne, en partant du haut.</div>';
+    if(wrong===0){ atCopyDraw(false); ui.answer(true, '<div>✔ Bravo, ta grille est identique au modèle !</div>'); return; }
+    var msg = '<div>✘ Il y a ' + wrong + ' case' + (wrong>1?'s':'') + ' différente' + (wrong>1?'s':'') + ' du modèle.</div>';
+    atCopyDraw(true);
+    var state = ui.answer(false, msg.replace(' du modèle.', ' du modèle (entourée' + (wrong>1?'s':'') + ' en rouge).') + explain,
+      msg + '<div>Voici la grille recopiée.</div>' + explain);
+    if(state==='failed'){ atCopy.mine = atCopy.model.map(function(row){ return row.slice(); }); atCopyDraw(false); }
   }
   registerFamily({
     key:'atelier-copie', tag:'Reproduire le modèle', theme:'✋ Ateliers',
@@ -5359,34 +5412,25 @@
       b.addEventListener('click', function(){ checkQCM(c, b); });
       wrap.appendChild(b);
     });
-    var fb = document.getElementById('m4-feedback');
-    fb.className='feedback'; fb.innerHTML='';
+    m4Flow.start();
   }
 
+  var m4Flow = makeQuestionFlow({ feedback:'m4-feedback', tries:1 });
   function checkQCM(choice, btn){
+    if(m4Flow.closed) return;
     var buttons = document.querySelectorAll('#m4-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
-    var fb = document.getElementById('m4-feedback');
     if(choice.ok){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Bravo, c\'est la bonne réponse !</div><div class="explain-line">'+m4Current.explain+'</div>';
-      addStar(1);
-      setCoachReaction('good');
+      m4Flow.answer(true, '<div>✔ Bravo, c\'est la bonne réponse !</div><div class="explain-line">'+m4Current.explain+'</div>');
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b._ok) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m4Current.explain+'</div>';
-      setCoachReaction('bad');
+      m4Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est en vert.</div><div class="explain-line">'+m4Current.explain+'</div>');
     }
-    playSound(choice.ok?'good':'bad');
-    celebrate(choice.ok?'good':'bad', fb);
-    onPracticeAnswered(choice.ok);
   }
 
-  document.getElementById('m4-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m4-feedback', nextPracticeQuestion);
+  document.getElementById('m4-next').addEventListener('click', function(){ m4Flow.skip(); });
 
   /* ===================== ENTRAINEMENT : ORCHESTRATEUR =====================
      Fusionne les anciens modules 1 à 5 en un seul menu à 3 niveaux (Facile/

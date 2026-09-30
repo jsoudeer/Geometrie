@@ -8,9 +8,13 @@
   //  temps.
   // =====================================================================
 
-  // Fabrique l'écran commun et renvoie { instr, svg, feedback, setSolved, ... }
+  // Fabrique l'écran commun (question dans la bulle, consigne, dessin tactile,
+  // retour, boutons Vérifier / Nouvelle activité) et le relie au déroulé commun
+  // des questions (makeQuestionFlow, 3 tentatives). onCheck(ui) appelle
+  // ui.answer(ok, html, lastHtml) et, si c'est raté pour de bon, montre la solution.
   function makeAtelier(key, wrap, onCheck){
     wrap.innerHTML =
+      '<div class="coach-row"><div class="coach-bubble" id="at-' + key + '-q"></div></div>' +
       '<p class="muted" id="at-' + key + '-instr"></p>' +
       '<div class="deform-wrap"><svg id="at-' + key + '-svg" viewBox="0 0 260 260" role="group"></svg></div>' +
       '<div class="feedback" id="at-' + key + '-fb"></div>' +
@@ -18,39 +22,28 @@
       '<button class="btn primary" id="at-' + key + '-check" type="button">Vérifier ✅</button>' +
       '<button class="btn ghost" id="at-' + key + '-next" type="button">Nouvelle activité ↻</button></div>';
     var ui = {
+      q: wrap.querySelector('#at-' + key + '-q'),
       instr: wrap.querySelector('#at-' + key + '-instr'),
       svg: wrap.querySelector('#at-' + key + '-svg'),
-      fb: wrap.querySelector('#at-' + key + '-fb'),
-      solved: false
+      fb: wrap.querySelector('#at-' + key + '-fb')
     };
-    ui.reset = function(instruction, ariaLabel, viewBox){
-      ui.solved = false;
+    var flow = makeQuestionFlow({ feedback:ui.fb, tries:MANIP_TRIES });
+    ui.flow = flow;
+    ui.isClosed = function(){ return flow.closed; };
+    ui.reset = function(question, instruction, ariaLabel, viewBox){
+      ui.q.textContent = question;
       ui.instr.textContent = instruction;
       ui.svg.setAttribute('aria-label', ariaLabel);
       ui.svg.setAttribute('viewBox', viewBox || '0 0 260 260');
       ui.svg.innerHTML = '';
-      ui.fb.className = 'feedback'; ui.fb.innerHTML = '';
+      flow.start();
     };
-    ui.say = function(ok, html){
-      ui.fb.className = 'feedback ' + (ok ? 'good' : 'bad') + ' show';
-      ui.fb.innerHTML = html;
-      setCoachReaction(ok ? 'good' : 'bad');
-      playSound(ok ? 'good' : 'bad');
-      celebrate(ok ? 'good' : 'bad', ui.fb);
-    };
-    wrap.querySelector('#at-' + key + '-check').addEventListener('click', function(){ onCheck(ui); });
-    wrap.querySelector('#at-' + key + '-next').addEventListener('click', nextPracticeQuestion);
-    // Une fois réussi, toucher le retour passe à la suite (jamais avant : on
-    // ne veut pas quitter un exercice raté par un effleurement).
-    ui.fb.tabIndex = 0;
-    ui.fb.setAttribute('aria-live', 'polite');
-    ui.fb.addEventListener('click', function(){ if(ui.solved) nextPracticeQuestion(); });
+    // L'enfant recommence à toucher après un essai raté : on efface le retour.
+    ui.touched = function(){ flow.clearHint(); };
+    ui.answer = flow.answer;
+    wrap.querySelector('#at-' + key + '-check').addEventListener('click', function(){ if(!flow.closed) onCheck(ui); });
+    wrap.querySelector('#at-' + key + '-next').addEventListener('click', function(){ flow.skip(); });
     return ui;
-  }
-  // Récompense une seule fois par exercice.
-  function atelierWin(ui, html){
-    if(!ui.solved){ ui.solved = true; addStar(1); }
-    ui.say(true, html);
   }
 
   // Rectangle tactile (souris, doigt, clavier). onToggle() est appelée à chaque activation.
@@ -113,9 +106,9 @@
         var bad = showErrors && atSym.mine[rr][cc] !== atSym.solution[rr][cc];
         var rect = atelierCell(ui.svg, x, y, cell, cell, atSym.mine[rr][cc] ? AT_COLORS.mine : AT_COLORS.empty,
           'case ' + (rr+1) + ', ' + (cc+1) + (atSym.mine[rr][cc] ? ', coloriée' : ', vide'), function(){
-            if(ui.solved) return;
+            if(ui.isClosed()) return;
             atSym.mine[rr][cc] = !atSym.mine[rr][cc];
-            ui.fb.className = 'feedback'; ui.fb.innerHTML = '';
+            ui.touched();
             atSymDraw(false);
           });
         if(bad){ rect.setAttribute('stroke', '#d33'); rect.setAttribute('stroke-width', 4); }
@@ -128,15 +121,20 @@
   function atSymCheck(ui){
     var wrong = 0, r, c;
     for(r=0;r<atSym.half.rows;r++) for(c=0;c<atSym.half.cols;c++) if(atSym.mine[r][c] !== atSym.solution[r][c]) wrong++;
-    if(wrong===0){ atSymDraw(false); atelierWin(ui, '<div>✔ Bravo, la figure est bien symétrique !</div><div class="explain-line">Chaque case a sa jumelle de l\'autre côté de la ligne rouge, à la même distance.</div>'); }
-    else { atSymDraw(true); ui.say(false, '<div>✘ ' + (wrong===1 ? 'Il y a 1 case à corriger' : 'Il y a ' + wrong + ' cases à corriger') + ' (entourées en rouge).</div><div class="explain-line">Astuce : la case juste à côté de la ligne rouge se retrouve juste de l\'autre côté.</div>'); }
+    var explain = '<div class="explain-line">Chaque case a sa jumelle de l\'autre côté de la ligne rouge, à la même distance.</div>';
+    if(wrong===0){ atSymDraw(false); ui.answer(true, '<div>✔ Bravo, la figure est bien symétrique !</div>' + explain); return; }
+    var msg = '<div>✘ ' + (wrong===1 ? 'Il y a 1 case à corriger' : 'Il y a ' + wrong + ' cases à corriger') + '.</div>';
+    atSymDraw(true);
+    var state = ui.answer(false, msg.replace('.</div>', ' (entourées en rouge).</div>') + '<div class="explain-line">Astuce : la case juste à côté de la ligne rouge se retrouve juste de l\'autre côté.</div>',
+      msg + '<div>Voici la figure complétée.</div>' + explain);
+    if(state==='failed'){ atSym.mine = atSym.solution.map(function(row){ return row.slice(); }); atSymDraw(false); }
   }
   registerFamily({
     key:'atelier-sym', tag:'Compléter la symétrie', theme:'✋ Ateliers',
     note:'Une moitié de figure est donnée ; on touche les cases de l\'autre côté de la ligne rouge pour la compléter en miroir. Facile : 4 cases sur 3×4 ; Moyen : 6 cases sur 3×5 ; Difficile : 9 cases, et la ligne peut être verticale OU horizontale. La figure est tirée au hasard (au moins une case touche la ligne).',
     build:function(wrap){ atSym.ui = makeAtelier('atelier-sym', wrap, atSymCheck); },
     generate:function(level){
-      atSym.ui.reset('Complète la figure de l\'autre côté de la ligne rouge, comme dans un miroir. Touche les cases à colorier.', 'Figure à compléter en symétrie : touche les cases');
+      atSym.ui.reset('Complète la figure comme dans un miroir.', 'Touche les cases à colorier de l\'autre côté de la ligne rouge, puis vérifie.', 'Figure à compléter en symétrie : touche les cases');
       atSymGenerate(level);
     },
     signature:function(){ return (atSym.horizontal ? 'H' : 'V') + JSON.stringify(atSym.given); }
@@ -160,13 +158,13 @@
     if(level===2 && Math.random()<0.4){ n = 8; k = randInt(1,7); label = k + '/8'; }
     atFrac.n = n; atFrac.k = k; atFrac.kind = pick(['pie','bar']); atFrac.label = label;
     atFrac.on = []; for(var i=0;i<n;i++) atFrac.on.push(false);
-    atFrac.ui.reset('Colorie ' + label + ' de la figure. Touche les parts pour les colorier.', 'Figure partagée en ' + n + ' parts égales : touche les parts à colorier');
+    atFrac.ui.reset('Colorie ' + label + ' de la figure.', 'Touche les parts pour les colorier, puis vérifie.', 'Figure partagée en ' + n + ' parts égales : touche les parts à colorier');
     atFracDraw();
   }
   function atFracDraw(){
     var ui = atFrac.ui, n = atFrac.n, i;
     ui.svg.innerHTML = '';
-    function toggle(idx){ return function(){ if(ui.solved) return; atFrac.on[idx] = !atFrac.on[idx]; ui.fb.className = 'feedback'; ui.fb.innerHTML = ''; atFracDraw(); }; }
+    function toggle(idx){ return function(){ if(ui.isClosed()) return; atFrac.on[idx] = !atFrac.on[idx]; ui.touched(); atFracDraw(); }; }
     for(i=0;i<n;i++){
       var fill = atFrac.on[i] ? AT_COLORS.mine : AT_COLORS.empty, part;
       if(atFrac.kind==='pie'){
@@ -186,13 +184,13 @@
   }
   function atFracCheck(ui){
     var got = atFrac.on.filter(function(v){ return v; }).length, need = atFrac.k, n = atFrac.n;
-    if(got===need){
-      atelierWin(ui, '<div>✔ Bravo !</div><div class="explain-line">La figure a ' + n + ' parts égales : ' + atFrac.label + ' de la figure, c\'est ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + ' (' + need + '/' + n + ').</div>');
-    } else if(got<need){
-      ui.say(false, '<div>✘ Il manque ' + (need-got) + ' part' + (need-got>1?'s':'') + ' à colorier.</div><div class="explain-line">Compte les parts coloriées : il en faut ' + need + ' sur ' + n + '.</div>');
-    } else {
-      ui.say(false, '<div>✘ Il y a ' + (got-need) + ' part' + (got-need>1?'s':'') + ' de trop.</div><div class="explain-line">Il faut colorier ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + '.</div>');
-    }
+    var explain = '<div class="explain-line">La figure a ' + n + ' parts égales : ' + atFrac.label + ' de la figure, c\'est ' + need + ' part' + (need>1?'s':'') + ' sur ' + n + ' (' + need + '/' + n + ').</div>';
+    if(got===need){ ui.answer(true, '<div>✔ Bravo !</div>' + explain); return; }
+    var msg = got<need ? '<div>✘ Il manque ' + (need-got) + ' part' + (need-got>1?'s':'') + ' à colorier.</div>'
+                       : '<div>✘ Il y a ' + (got-need) + ' part' + (got-need>1?'s':'') + ' de trop.</div>';
+    var state = ui.answer(false, msg + '<div class="explain-line">Compte les parts coloriées : il en faut ' + need + ' sur ' + n + '.</div>',
+      msg + '<div>Voici une bonne façon de colorier.</div>' + explain);
+    if(state==='failed'){ atFrac.on = atFrac.on.map(function(v, i){ return i < need; }); atFracDraw(); }
   }
   registerFamily({
     key:'atelier-fraction', tag:'Colorier une fraction', theme:'✋ Ateliers',
@@ -214,7 +212,7 @@
     while(placed<count && guard++<300){ r = randInt(0,n-1); c = randInt(0,n-1); if(!model[r][c]){ model[r][c] = true; placed++; } }
     atCopy.n = n; atCopy.model = model;
     atCopy.mine = model.map(function(row){ return row.map(function(){ return false; }); });
-    atCopy.ui.reset('Reproduis le modèle (à gauche) sur la grille vide (à droite). Touche les cases à colorier.', 'Modèle à reproduire et grille vide : touche les cases', '0 0 260 150');
+    atCopy.ui.reset('Reproduis le modèle sur la grille vide.', 'Le modèle est à gauche. Touche les cases de la grille de droite, puis vérifie.', 'Modèle à reproduire et grille vide : touche les cases', '0 0 260 150');
     atCopyDraw(false);
   }
   function atCopyDraw(showErrors){
@@ -229,9 +227,9 @@
         var bad = showErrors && atCopy.mine[rr][cc] !== atCopy.model[rr][cc];
         var rect = atelierCell(ui.svg, xp + cc*cell, y0 + rr*cell, cell, cell, atCopy.mine[rr][cc] ? AT_COLORS.mine : AT_COLORS.empty,
           'case ' + (rr+1) + ', ' + (cc+1) + (atCopy.mine[rr][cc] ? ', coloriée' : ', vide'), function(){
-            if(ui.solved) return;
+            if(ui.isClosed()) return;
             atCopy.mine[rr][cc] = !atCopy.mine[rr][cc];
-            ui.fb.className = 'feedback'; ui.fb.innerHTML = '';
+            ui.touched();
             atCopyDraw(false);
           });
         if(bad){ rect.setAttribute('stroke', '#d33'); rect.setAttribute('stroke-width', 3.5); }
@@ -241,8 +239,13 @@
   function atCopyCheck(ui){
     var wrong = 0, r, c;
     for(r=0;r<atCopy.n;r++) for(c=0;c<atCopy.n;c++) if(atCopy.mine[r][c] !== atCopy.model[r][c]) wrong++;
-    if(wrong===0){ atCopyDraw(false); atelierWin(ui, '<div>✔ Bravo, ta grille est identique au modèle !</div>'); }
-    else { atCopyDraw(true); ui.say(false, '<div>✘ Il y a ' + wrong + ' case' + (wrong>1?'s':'') + ' différente' + (wrong>1?'s':'') + ' du modèle (entourée' + (wrong>1?'s':'') + ' en rouge).</div><div class="explain-line">Compare ligne par ligne, en partant du haut.</div>'); }
+    var explain = '<div class="explain-line">Compare ligne par ligne, en partant du haut.</div>';
+    if(wrong===0){ atCopyDraw(false); ui.answer(true, '<div>✔ Bravo, ta grille est identique au modèle !</div>'); return; }
+    var msg = '<div>✘ Il y a ' + wrong + ' case' + (wrong>1?'s':'') + ' différente' + (wrong>1?'s':'') + ' du modèle.</div>';
+    atCopyDraw(true);
+    var state = ui.answer(false, msg.replace(' du modèle.', ' du modèle (entourée' + (wrong>1?'s':'') + ' en rouge).') + explain,
+      msg + '<div>Voici la grille recopiée.</div>' + explain);
+    if(state==='failed'){ atCopy.mine = atCopy.model.map(function(row){ return row.slice(); }); atCopyDraw(false); }
   }
   registerFamily({
     key:'atelier-copie', tag:'Reproduire le modèle', theme:'✋ Ateliers',

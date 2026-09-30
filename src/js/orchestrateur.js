@@ -101,34 +101,25 @@
       b.addEventListener('click', function(){ checkQCM(c, b); });
       wrap.appendChild(b);
     });
-    var fb = document.getElementById('m4-feedback');
-    fb.className='feedback'; fb.innerHTML='';
+    m4Flow.start();
   }
 
+  var m4Flow = makeQuestionFlow({ feedback:'m4-feedback', tries:1 });
   function checkQCM(choice, btn){
+    if(m4Flow.closed) return;
     var buttons = document.querySelectorAll('#m4-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
-    var fb = document.getElementById('m4-feedback');
     if(choice.ok){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Bravo, c\'est la bonne réponse !</div><div class="explain-line">'+m4Current.explain+'</div>';
-      addStar(1);
-      setCoachReaction('good');
+      m4Flow.answer(true, '<div>✔ Bravo, c\'est la bonne réponse !</div><div class="explain-line">'+m4Current.explain+'</div>');
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b._ok) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m4Current.explain+'</div>';
-      setCoachReaction('bad');
+      m4Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est en vert.</div><div class="explain-line">'+m4Current.explain+'</div>');
     }
-    playSound(choice.ok?'good':'bad');
-    celebrate(choice.ok?'good':'bad', fb);
-    onPracticeAnswered(choice.ok);
   }
 
-  document.getElementById('m4-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m4-feedback', nextPracticeQuestion);
+  document.getElementById('m4-next').addEventListener('click', function(){ m4Flow.skip(); });
 
   /* ===================== ENTRAINEMENT : ORCHESTRATEUR =====================
      Fusionne les anciens modules 1 à 5 en un seul menu à 3 niveaux (Facile/

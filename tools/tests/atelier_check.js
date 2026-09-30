@@ -1,4 +1,5 @@
-// Ateliers interactifs : on résout par de vrais clics, on vérifie réussite, échec et une seule étoile par exercice.
+// Ateliers interactifs : on résout par de vrais clics, on vérifie réussite, échec et une seule étoile par exercice
+// (une fois réussi, la rangée Vérifier / Nouvelle activité disparaît).
 const { withPage, SHOTS } = require('./lib');
 const assert = require('assert');
 withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, async (page) => {
@@ -8,6 +9,9 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   async function clickIdx(key, idxs){ const cs = await cells(key); for (const i of idxs) await cs[i].dispatchEvent('click'); }
   const fbText = key => page.evaluate(k => document.getElementById('at-' + k + '-fb').textContent, key);
   const check = key => page.click(`#at-${key}-check`);
+  // les ateliers comptent désormais dans la série : on neutralise la montée de niveau
+  // automatique et les annonces de déblocage, qui changeraient l'écran pendant le test
+  await ev(`appMode='manual'; manualFamily=null;`);
   for (let lvl = 0; lvl < 3; lvl++) {
     for (const [key, solveExpr] of [
       ['atelier-sym', `(function(){ var o=[]; var s=atSym.solution; for(var r=0;r<s.length;r++) for(var c=0;c<s[r].length;c++) if(s[r][c]) o.push(r*s[r].length+c); return o; })()`],
@@ -28,7 +32,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
         await check(key);
         assert(/✔/.test(await fbText(key)), key + ' L' + lvl + ' : la bonne solution devrait réussir : ' + await fbText(key));
         assert.equal(await stars(), s0 + 1, 'une étoile');
-        await check(key);
+        const rowHidden = await page.evaluate(k => document.getElementById('at-' + k + '-check').closest('.btn-row').hidden, key);
+        assert(rowHidden, key + ' : les boutons disparaissent après la réussite');
         assert.equal(await stars(), s0 + 1, 'pas de 2e étoile');
       }
     }

@@ -220,6 +220,9 @@
           <span class="qtype-tag streak-pill" id="streak-pill" hidden></span>
 
           <div id="fam-measure" hidden>
+            <div class="coach-row">
+              <div class="coach-bubble" id="m1-question">Combien mesure ce trait ?</div>
+            </div>
             <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
             <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>
             <div class="choices" id="m1-choices"></div>
@@ -230,7 +233,10 @@
           </div>
 
           <div id="fam-deform" hidden>
-            <p class="muted" id="m2-instructions">Fais glisser les coins pour transformer la forme.</p>
+            <div class="coach-row">
+              <div class="coach-bubble" id="m2-question">Transforme la forme.</div>
+            </div>
+            <p class="muted" id="m2-instructions">Fais glisser les coins, puis vérifie.</p>
             <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>
             <div class="feedback" id="m2-feedback"></div>
             <div class="btn-row">
@@ -240,6 +246,9 @@
           </div>
 
           <div id="fam-net" hidden>
+            <div class="coach-row">
+              <div class="coach-bubble" id="m3-question">Quel solide peut-on fabriquer avec ce patron ?</div>
+            </div>
             <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
             <div class="stage" id="stage" role="img" aria-label="Patron à plat qui se plie pour former un solide">
               <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
@@ -247,7 +256,7 @@
             <div class="qcm-choices" id="m3-choices"></div>
             <div class="feedback" id="m3-feedback"></div>
             <div class="btn-row">
-              <button class="btn ghost" id="m3-next" type="button" hidden>Nouvelle activité ↻</button>
+              <button class="btn ghost" id="m3-next" type="button">Nouvelle activité ↻</button>
             </div>
           </div>
 
@@ -278,7 +287,10 @@
           </div>
 
           <div id="fam-clock-regler" hidden>
-            <p class="muted">Place les aiguilles sur : <strong id="m5-target">3 h</strong></p>
+            <div class="coach-row">
+              <div class="coach-bubble">Place les aiguilles sur <span id="m5-target">3 h</span></div>
+            </div>
+            <p class="muted">Fais glisser la petite et la grande aiguille, puis vérifie.</p>
             <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>
             <div class="feedback" id="m5r-feedback"></div>
             <div class="btn-row">

@@ -95,8 +95,7 @@
       b.addEventListener('click', function(){ checkMeasure(v, b); });
       wrap.appendChild(b);
     });
-    var fb = document.getElementById('m1-feedback');
-    fb.className = 'feedback'; fb.innerHTML = '';
+    m1Flow.start();
   }
 
   function measureExplain(){
@@ -107,29 +106,23 @@
       + fmtNum(m1SegEnd) + ' − ' + fmtNum(m1SegStart) + ' = ' + fmtNum(currentLen) + ' cm.';
   }
 
+  var m1Flow = makeQuestionFlow({ feedback:'m1-feedback', tries:1 });
   function checkMeasure(v, btn){
+    if(m1Flow.closed) return;
     var buttons = document.querySelectorAll('#m1-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
-    var fb = document.getElementById('m1-feedback');
     var ok = Math.abs(v-currentLen)<0.001;
     if(ok){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>';
+      m1Flow.answer(true, '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>');
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === (fmtNum(currentLen)+' cm')) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait. La bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>';
+      m1Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>');
     }
-    playSound(ok?'good':'bad');
-    celebrate(ok?'good':'bad', fb);
-    if(ok) addStar(1);
-    onPracticeAnswered(ok);
   }
 
-  document.getElementById('m1-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m1-feedback', nextPracticeQuestion);
+  document.getElementById('m1-next').addEventListener('click', function(){ m1Flow.skip(); });
 
   /* ===================== MODULE 2 : DEFORMER ===================== */
   var SCALE2 = 20; // px per cm
@@ -145,9 +138,9 @@
   // décalés en Moyen, les 4 coins très décalés en Difficile — voir
   // perturbForLevel() plus bas.
   var M2_LEVELS = [
-    { name:'Losange',      instr:"Fais glisser les coins pour transformer la forme en losange : les 4 côtés doivent rester à peu près égaux.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
-    { name:'Rectangle',    instr:"Transforme la forme en rectangle : les côtés opposés doivent être à peu près égaux, et les 4 angles doivent rester à peu près droits.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
-    { name:'Parallélogramme', instr:"Transforme la forme en parallélogramme : les côtés opposés doivent rester à peu près égaux, mais les angles ne doivent plus être droits.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} }
+    { name:'Losange',      question:'Transforme la forme en losange.', instr:"Fais glisser les coins : les 4 côtés doivent être à peu près égaux. Puis vérifie.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
+    { name:'Rectangle',    question:'Transforme la forme en rectangle.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, et les 4 angles à peu près droits. Puis vérifie.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
+    { name:'Parallélogramme', question:'Transforme la forme en parallélogramme.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, mais des angles qui ne sont pas droits. Puis vérifie.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} }
   ];
 
   function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
@@ -281,12 +274,16 @@
         else if(ev.key==='ArrowUp') dy = -step; else if(ev.key==='ArrowDown') dy = step;
         else return;
         ev.preventDefault();
+        if(m2Flow.closed) return;
+        m2Flow.clearHint();
         pts[idx][0] = Math.max(20, Math.min(240, pts[idx][0] + dx));
         pts[idx][1] = Math.max(20, Math.min(240, pts[idx][1] + dy));
         deformFocusIdx = idx;
         drawDeform();
       });
       c.addEventListener('pointerdown', function(ev){
+        if(m2Flow.closed) return;
+        m2Flow.clearHint();
         deformFocusIdx = null;
         c.setPointerCapture(ev.pointerId);
         function toSvgPoint(clientX, clientY){
@@ -313,31 +310,36 @@
     });
   }
 
-  var m2Won = false;
+  var m2Target = null;   // une forme juste, montrée si les 3 essais sont ratés
+  var M2_EXPLAIN = [
+    'Un losange a 4 côtés de la même longueur.',
+    'Un rectangle a ses côtés opposés de même longueur et 4 angles droits.',
+    'Un parallélogramme a ses côtés opposés de même longueur, mais ses angles ne sont pas droits.'
+  ];
   function newDeformQuestion(){
-    m2Won = false;
     m2ShapeIdx = randInt(0,2);
+    document.getElementById('m2-question').textContent = M2_LEVELS[m2ShapeIdx].question;
     document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
-    var target = shapeTargetPoints(m2ShapeIdx);
-    m2StartPts = perturbForLevel(target, globalLevel);
+    m2Target = shapeTargetPoints(m2ShapeIdx);
+    m2StartPts = perturbForLevel(m2Target, globalLevel);
     pts = m2StartPts.map(function(p){ return p.slice(); });
     drawDeform();
-    var fb = document.getElementById('m2-feedback');
-    fb.className='feedback'; fb.textContent='';
+    m2Flow.start();
   }
 
-  document.getElementById('m2-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m2-feedback', nextPracticeQuestion);
-
+  var m2Flow = makeQuestionFlow({ feedback:'m2-feedback', tries:MANIP_TRIES });
+  document.getElementById('m2-next').addEventListener('click', function(){ m2Flow.skip(); });
   document.getElementById('m2-check').addEventListener('click', function(){
     var lv = M2_LEVELS[m2ShapeIdx];
     var res = lv.check(lv.tolGreat, lv.tolOk);
-    var fb = document.getElementById('m2-feedback');
-    fb.className = 'feedback tappable ' + (res.ok ? 'good' : 'bad') + ' show';
-    fb.textContent = res.msg;
-    playSound(res.ok ? 'good' : 'bad');
-    celebrate(res.ok ? 'good' : 'bad', fb);
-    if(res.ok && !m2Won){ m2Won = true; addStar(1); }   // une seule étoile par forme
+    var explain = '<div class="explain-line">' + M2_EXPLAIN[m2ShapeIdx] + '</div>';
+    var state = m2Flow.answer(res.ok, '<div>' + res.msg + '</div>' + explain,
+      '<div>' + res.msg + '</div><div>Voici un ' + M2_LEVELS[m2ShapeIdx].name.toLowerCase() + ' bien formé.</div>' + explain);
+    if(state==='failed'){
+      deformFocusIdx = null;
+      pts = m2Target.map(function(p){ return p.slice(); });
+      drawDeform();
+    }
   });
 
   function regularPoly(n, rot){

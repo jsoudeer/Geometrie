@@ -26,6 +26,8 @@ Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seu
 
 **Accessibilité (RGAA)** : contrastes vérifiés automatiquement dans les deux thèmes, focus visible, libellés pour lecteurs d'écran, boîtes de dialogue fermées par Échap, coins de la forme déplaçables au clavier, ✔ / ✘ en plus de la couleur, police Rubik pour le Brainrot (la police décorative n'est gardée que pour le titre).
 
+**Uniformisation des activités** (30/09/2026) : une seule façon de corriger pour les 9 activités (`makeQuestionFlow` dans `src/js/noyau.js`). Question toujours dans la bulle, consigne en dessous. QCM (Mesurer, Quizz, Lire l'heure, Patron) : 1 tentative ; manipulations (Déformer, Régler l'heure, 3 ateliers) : 3 tentatives, puis la solution est montrée. Toute réponse compte dans la série sans faute et l'historique (Déformer, Régler l'heure et les ateliers ne comptaient pas). Une question fermée masque Vérifier / Nouvelle activité ; toucher le retour = question suivante (le retour de Régler l'heure n'était pas cliquable). « Nouvelle activité » après un raté compte comme une erreur. Test : `tools/tests/uniform_check.js`.
+
 **Horloge Difficile en 24 h** (29/09/2026) : « Lire l'heure » et le type de Quizz « Lire l'heure » tirent les heures de 0 h à 23 h 59 au niveau Difficile ; l'énoncé donne le moment de la journée (nuit, matin, après-midi, soir), la réponse est en format 24 h, et le piège « oublier d'ajouter 12 h » est toujours proposé (`genHeure24Question` dans `src/js/horloge.js`). « Régler l'heure » reste à heure pile ou demie.
 
 **Pédagogie** : chaque question a une explication propre (patrons, horloge, alignement, solides, énigmes, angles) ; plus de « ou alors il y a un trou ».

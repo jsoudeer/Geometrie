@@ -579,23 +579,78 @@
     });
   }
 
-  // Permet de toucher n'importe où sur la boîte de feedback pour relancer
-  // une nouvelle question (en plus du bouton dédié) : plus pratique pour un
-  // enfant que de devoir viser un petit bouton après chaque réponse.
-  function enableTapToContinue(feedbackId, nextFn){
-    var fb = document.getElementById(feedbackId);
-    if(!fb) return;
-    fb.classList.add('tappable');
-    // Accessibilité : annoncé par les lecteurs d'écran dès qu'il apparaît,
-    // atteignable au clavier, et Entrée/Espace fait la même chose qu'un clic.
+  /* ===================== DÉROULÉ COMMUN D'UNE QUESTION =====================
+     TOUTES les activités passent par ici pour corriger une réponse, afin que
+     les règles soient les mêmes partout :
+     - une question est « ouverte » tant qu'on peut répondre ;
+     - QCM (on touche une réponse) : 1 seule tentative ;
+       manipulations (Déformer, Régler l'heure, ateliers) : 3 tentatives ;
+     - elle se « ferme » dès que la réponse est juste, ou après la dernière
+       tentative ratée. À la fermeture : retour + explication, son, effets,
+       mascotte, étoile si c'est juste, série sans faute et historique
+       (onPracticeAnswered), et la rangée de boutons (Vérifier / Nouvelle
+       activité) disparaît : on touche le retour pour passer à la suite ;
+     - « Nouvelle activité » avant tout essai = question passée, sans effet ;
+       après un essai raté = erreur (on ne peut pas fuir pour garder sa série).
+     opts : { feedback: id ou élément, tries: 1|3 }
+     La rangée de boutons masquée est la .btn-row qui suit le retour. */
+  var MANIP_TRIES = 3;
+  function makeQuestionFlow(opts){
+    var fb = typeof opts.feedback==='string' ? document.getElementById(opts.feedback) : opts.feedback;
+    var row = fb.parentNode.querySelector('.btn-row');
+    var flow = { tries:0, maxTries:opts.tries || 1, closed:false, fb:fb };
+    // Accessibilité : annoncé par les lecteurs d'écran, atteignable au clavier,
+    // Entrée/Espace fait la même chose qu'un toucher.
     fb.setAttribute('aria-live','polite');
     fb.tabIndex = 0;
-    fb.addEventListener('click', function(){
-      if(fb.classList.contains('show')) nextFn();
-    });
+    function goNext(){ if(flow.closed) nextPracticeQuestion(); }
+    fb.addEventListener('click', goNext);
     fb.addEventListener('keydown', function(e){
-      if((e.key==='Enter' || e.key===' ') && fb.classList.contains('show')){ e.preventDefault(); nextFn(); }
+      if((e.key==='Enter' || e.key===' ') && flow.closed){ e.preventDefault(); goNext(); }
     });
+    function show(ok, html, closing){
+      fb.className = 'feedback show ' + (ok ? 'good' : 'bad') + (closing ? ' tappable' : '');
+      fb.innerHTML = html;
+      playSound(ok ? 'good' : 'bad');
+      celebrate(ok ? 'good' : 'bad', fb);
+      setCoachReaction(ok ? 'good' : 'bad');
+    }
+    function close(ok, html){
+      flow.closed = true;
+      if(row) row.hidden = true;
+      show(ok, html, true);
+      if(ok) addStar(1);
+      onPracticeAnswered(ok);
+    }
+    // Nouvelle question : tout est remis à zéro.
+    flow.start = function(){
+      flow.tries = 0; flow.closed = false;
+      fb.className = 'feedback'; fb.innerHTML = '';
+      if(row) row.hidden = false;
+    };
+    // Efface le retour d'un essai raté dès que l'enfant recommence à manipuler.
+    flow.clearHint = function(){
+      if(!flow.closed){ fb.className = 'feedback'; fb.innerHTML = ''; }
+    };
+    // ok : réponse juste ? html : retour à afficher ; lastHtml : retour quand
+    // c'était la dernière tentative (la bonne réponse y est donnée).
+    // Renvoie 'solved', 'retry' (encore des essais) ou 'failed' (question fermée).
+    flow.answer = function(ok, html, lastHtml){
+      if(flow.closed) return 'closed';
+      flow.tries++;
+      if(ok){ close(true, html); return 'solved'; }
+      if(flow.tries >= flow.maxTries){ close(false, lastHtml || html); return 'failed'; }
+      var left = flow.maxTries - flow.tries;
+      show(false, html + '<div class="explain-line">🔁 Essai ' + flow.tries + ' sur ' + flow.maxTries +
+        ' : corrige puis vérifie encore (' + left + ' essai' + (left>1 ? 's' : '') + ' restant' + (left>1 ? 's' : '') + ').</div>', false);
+      return 'retry';
+    };
+    // Bouton « Nouvelle activité ».
+    flow.skip = function(){
+      if(!flow.closed && flow.tries > 0){ flow.closed = true; onPracticeAnswered(false); }
+      nextPracticeQuestion();
+    };
+    return flow;
   }
 
 

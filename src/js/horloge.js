@@ -30,31 +30,24 @@
       b.addEventListener('click', function(){ checkM5Lire(c, b); });
       wrap.appendChild(b);
     });
-    var fb = document.getElementById('m5-feedback'); fb.className='feedback'; fb.innerHTML='';
+    m5Flow.start();
   }
+  var m5Flow = makeQuestionFlow({ feedback:'m5-feedback', tries:1 });
   function checkM5Lire(choice, btn){
+    if(m5Flow.closed) return;
     var buttons = document.querySelectorAll('#m5-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
-    var fb = document.getElementById('m5-feedback');
     if(choice.ok){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Bravo, c\'est la bonne heure !</div><div class="explain-line">'+m5Current.explain+'</div>';
-      addStar(1);
-      setCoachReaction('good');
+      m5Flow.answer(true, '<div>✔ Bravo, c\'est la bonne heure !</div><div class="explain-line">'+m5Current.explain+'</div>');
     } else {
       btn.classList.add('wrong');
       var okLabel = m5Current.choices.filter(function(c){return c.ok;})[0].label;
       buttons.forEach(function(b){ if(b.textContent.toLowerCase()===okLabel.toLowerCase()) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m5Current.explain+'</div>';
-      setCoachReaction('bad');
+      m5Flow.answer(false, '<div>✘ Pas tout à fait : la bonne réponse est en vert.</div><div class="explain-line">'+m5Current.explain+'</div>');
     }
-    playSound(choice.ok?'good':'bad');
-    celebrate(choice.ok?'good':'bad', fb);
-    onPracticeAnswered(choice.ok);
   }
-  document.getElementById('m5-next').addEventListener('click', nextPracticeQuestion);
+  document.getElementById('m5-next').addEventListener('click', function(){ m5Flow.skip(); });
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
   // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
@@ -64,7 +57,6 @@
   //   Difficile  toutes les 5 minutes, heure de 0 h à 23 h (petite : 15°, grande : 12 positions)
   var m5Target = { hour:3, minute:0, level:0 };
   var m5rHourTick = 0, m5rMinTick = 0, m5rDragWhich = null;
-  var m5rWon = false;   // une seule étoile par heure demandée, même si on clique plusieurs fois sur « Vérifier »
   var M5R_HOUR_STEP = [15, 15, 15];    // degrés par cran, petite aiguille : 24 positions (heures pleines + demi-heures) à tous les niveaux
   var M5R_MIN_STEP = [180, 90, 30];    // degrés par cran, grande aiguille
   // écart accepté (degrés) sur la petite aiguille : la position exacte (heure + minutes/60) est
@@ -116,10 +108,9 @@
       label = minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' (' + periodOfDay(m5Target.hour).phrase + ')';
     }
     m5rHourTick = 0; m5rMinTick = 0; // les aiguilles repartent de midi bien net
-    m5rWon = false;
     document.getElementById('m5-target').textContent = label;
     drawSettableClock();
-    var fb = document.getElementById('m5r-feedback'); fb.className='feedback'; fb.innerHTML='';
+    m5rFlow.start();
   }
 
   (function initClockDrag(){
@@ -127,7 +118,8 @@
     svg.style.touchAction = 'none';
     svg.addEventListener('pointerdown', function(evt){
       var which = evt.target && evt.target.getAttribute && evt.target.getAttribute('data-hand');
-      if(!which) return;
+      if(!which || m5rFlow.closed) return;
+      m5rFlow.clearHint();
       m5rDragWhich = which;
       svg.setPointerCapture(evt.pointerId);
     });
@@ -146,35 +138,35 @@
     svg.addEventListener('pointercancel', endDrag);
   })();
 
-  document.getElementById('m5r-new').addEventListener('click', nextPracticeQuestion);
+  var m5rFlow = makeQuestionFlow({ feedback:'m5r-feedback', tries:MANIP_TRIES });
+  document.getElementById('m5r-new').addEventListener('click', function(){ m5rFlow.skip(); });
   document.getElementById('m5r-check').addEventListener('click', function(){
     var lvl = m5Target.level;
     function angGap(a, b){ var d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); }
     var exactHourDeg = ((m5Target.hour % 12) + m5Target.minute/60) * 30;
     var hourOk = angGap(m5rHourTick * M5R_HOUR_STEP[lvl], exactHourDeg) <= M5R_HOUR_TOL[lvl];
     var minOk = angGap(m5rMinTick * M5R_MIN_STEP[lvl], m5Target.minute * 6) < 0.01;
+    var total = m5Target.hour*60 + m5Target.minute;
     // En Difficile, l'heure demandée est en 24 h : on rappelle comment elle se lit sur le cadran.
     var readAs = (lvl===2 && (m5Target.hour===0 || m5Target.hour>=13))
-      ? '<div class="explain-line">Sur le cadran, ' + minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' se lit ' + minutesToClockLabel(m5Target.hour*60 + m5Target.minute) + '.</div>' : '';
-    var fb = document.getElementById('m5r-feedback');
+      ? '<div class="explain-line">Sur le cadran, ' + minutesToLabel24(total) + ' se lit ' + minutesToClockLabel(total) + '.</div>' : '';
+    var explain = '<div class="explain-line">La petite aiguille montre les heures, la grande aiguille montre les minutes.</div>';
     if(hourOk && minOk){
-      fb.className = 'feedback good show';
-      fb.innerHTML = '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs;
-      if(!m5rWon){ m5rWon = true; addStar(1); }
-      setCoachReaction('good');
-    } else {
-      fb.className = 'feedback bad show';
-      var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
-        : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée. ' + hourHandHint(m5Target.hour, m5Target.minute)
-        : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
-      fb.innerHTML = '<div>✘ ' + msg + '</div>' + readAs;
-      setCoachReaction('bad');
+      m5rFlow.answer(true, '<div>✔ Bravo, les aiguilles sont bien placées !</div>' + readAs + explain);
+      return;
     }
-    playSound(hourOk && minOk ? 'good' : 'bad');
-    celebrate(hourOk && minOk ? 'good' : 'bad', fb);
+    var msg = (!hourOk && !minOk) ? 'Les deux aiguilles ne sont pas encore au bon endroit.'
+      : (!hourOk ? 'La petite aiguille (les heures) n\'est pas encore bien placée. ' + hourHandHint(m5Target.hour, m5Target.minute)
+      : 'La grande aiguille (les minutes) n\'est pas encore bien placée.');
+    var state = m5rFlow.answer(false, '<div>✘ ' + msg + '</div>' + readAs,
+      '<div>✘ ' + msg + '</div><div>Voici les aiguilles bien placées.</div>' + readAs + explain);
+    if(state==='failed'){
+      // on montre la bonne position des deux aiguilles
+      m5rHourTick = Math.round(exactHourDeg / M5R_HOUR_STEP[lvl]) % Math.round(360 / M5R_HOUR_STEP[lvl]);
+      m5rMinTick = Math.round(m5Target.minute * 6 / M5R_MIN_STEP[lvl]) % Math.round(360 / M5R_MIN_STEP[lvl]);
+      drawSettableClock();
+    }
   });
-
-  enableTapToContinue('m5-feedback', nextPracticeQuestion);
 
   // ===================== Lire l'heure =====================
   function angleToXY(deg,len,cx,cy){ var rad=deg*Math.PI/180; return [(cx||100)+len*Math.cos(rad), (cy||100)+len*Math.sin(rad)]; }
