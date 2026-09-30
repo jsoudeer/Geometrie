@@ -114,3 +114,6 @@ Deux panneaux distincts (`tab-shop`, `tab-battle`) ouverts par `#stars-btn` et `
 ## 20. Bouton +50 étoiles (30/09/2026)
 `#shop-plus50` dans la Boutique : `addStar(50)` puis `renderShop()`. Test : `plus50_check.js`.
 
+## 21. Réinitialisation : seul le premier personnage reste (30/09/2026)
+`resetProgress` ne garde que le premier personnage de départ de chaque clan, redevenu mascotte. `loadOwned` n'ajoute plus les 5 personnages de départ que s'il n'y a aucune sauvegarde (sinon ils revenaient au rechargement). Test : `reset_check.js`.
+
