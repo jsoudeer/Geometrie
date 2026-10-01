@@ -20,3 +20,10 @@
   .guide-actions{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
   .guide-actions .btn{ min-height:44px; }
   @media (prefers-reduced-motion: reduce){ .guide-spot{ transition:none; } }
+  .guide-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .guide-head h2:empty{ display:none; }
+  .guide-mascot{
+    flex:none; width:56px; height:56px; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center;
+    background:var(--surface2); border:1.5px solid var(--border); font-size:2rem;
+  }
+  .guide-mascot > *{ max-width:100%; max-height:100%; }
