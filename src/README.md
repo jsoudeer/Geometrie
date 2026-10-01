@@ -31,7 +31,7 @@ src/
     images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py)
     boutique.js         personnages, défis, boutique, mascotte
     bataille.js         combat de cartes
-    progression.js      historique des réponses, radar, détail, sujets à travailler
+    progression.js      historique des réponses, radar, détail, sujets à travailler, tirage du mode Révision (`progReviewPick`)
     guide.js            tutoriels en surbrillance (accueil, boutique, bataille, série) + Réglages → Guides
     chaleur.js          effet « heat » Overload (15/20/25 d'affilée) par clan, + css/chaleur.css
 ```

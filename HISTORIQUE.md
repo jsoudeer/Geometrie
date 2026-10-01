@@ -175,3 +175,9 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 
 ## 31. Le jeu devient « Kawaii vs Brainrot » (01/10/2026)
 - Renommage partout (écran de lancement, titre de page et de l'artefact, `README.md`, `PROJETS.md`, `CLAUDE.md`). Le titre par clan (`THEMES[...].title`) est supprimé : le titre masqué `#appTitle` est fixe. Les clans sont nommés par leur univers (kawaii / brainrot) pour accueillir d'autres personnages kawaii (chiens, lapins) sans renommer à nouveau. Les identifiants internes (`cats`, `brainrot`, `cat01`…) ne changent pas.
+
+## 32. Mode Révision (01/10/2026)
+- Troisième bouton « Révision » dans `#practice-mode` (Aléatoire · Révision · Chronométré) : `practiceMode='review'`. `nextPracticeQuestion` appelle `progReviewPick` (progression.js) : unités = familles + types de quiz au niveau en cours ; poids = 3 si jamais faite, sinon 0,25 + 4 × (part d'erreurs sur les 10 dernières) + 1 si la dernière était fausse. Tirage en deux étages (famille, puis type de quiz ; le quiz pèse la moyenne de ses types × 1,5), jamais deux fois la même famille de suite. `forcedQcmType` impose le type de quiz choisi. Étiquette « 🔁 à revoir » / « ✨ pas encore fait ».
+- Hors série sans faute, hors chaleur, hors montée de niveau automatique (conditions `practiceMode==='free'` conservées) ; les réponses alimentent bien l'historique.
+- `cours.md` : ligne du tableau + règle de poids ; correction d'une phrase périmée sur l'avancement automatique et la série. Étape du guide d'accueil mise à jour.
+- Test : `revision_check.js`.

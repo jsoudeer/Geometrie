@@ -72,6 +72,7 @@
 
   // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
   var lastQcmType = null;
+  var forcedQcmType = null;  // type de quiz imposé pour la prochaine question (mode Révision)
   var forcedQcmCat = null;   // catégorie de quiz imposée pour la prochaine question (sujet à travailler)
   var lastFamily = null;
   function pickOther(arr, last){
@@ -84,7 +85,8 @@
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
     var poolTypes = lv.types;
-    var freeType = (m4TypeFilter==='random' || lv.types.indexOf(m4TypeFilter)===-1);
+    var typeSel = forcedQcmType || m4TypeFilter;
+    var freeType = (typeSel==='random' || lv.types.indexOf(typeSel)===-1);
     var cat = forcedQcmCat || m4CategoryFilter;     // forcedQcmCat : sujet à travailler (voir progression.js)
     if(cat==='all' && freeType){
       // Tirage « sans remise » au niveau des catégories : chacune sort une fois
@@ -98,7 +100,7 @@
       if(inCat.length) poolTypes = inCat;
     }
     // Idem pour les types au sein de la catégorie (sans remise).
-    var type = !freeType ? m4TypeFilter : pickFresh('qcmtype|' + globalLevel + '|' + poolTypes.join(','), poolTypes);
+    var type = !freeType ? typeSel : pickFresh('qcmtype|' + globalLevel + '|' + poolTypes.join(','), poolTypes);
     lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     var qdef = quizTypeById(type) || quizTypeById('image');
@@ -164,7 +166,7 @@
      dans #practice-exercise ; génération, correction et dessin restent dans
      le thème qui l'a déclarée. L'orchestrateur ne nomme aucune activité. */
   var globalLevel = 0;
-  var practiceMode = 'free'; // 'free' | 'countdown'  (utilisé seulement en mode 'auto')
+  var practiceMode = 'free'; // 'free' (Aléatoire) | 'review' (Révision) | 'countdown' (Chronométré)  (utilisé seulement en mode 'auto')
   var appMode = 'auto'; // 'auto' (Facile/Moyen/Difficile) | 'manual' (activité choisie à la main)
   var manualFamily = null;
   var currentFamily = null;
@@ -469,10 +471,14 @@
   function nextPracticeQuestion(){
     var sig = null, prevShown = lastFamily;
     var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, cat} ou null
+    var review = null;                                               // mode Révision : {key, type, why}
+    var reviewing = (appMode==='auto' && practiceMode==='review');
     for(var tries=0; tries<15; tries++){
       lastFamily = prevShown;   // on évite la famille réellement affichée, pas un essai rejeté
-      var key = focus ? focus.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh());
+      if(reviewing) review = progReviewPick();
+      var key = focus ? focus.key : (review ? review.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh()));
       forcedQcmCat = (focus && focus.key==='qcm') ? focus.cat : null;
+      forcedQcmType = (review && review.type) ? review.type : null;
       lastFamily = key;
       // d'abord on retente dans la même famille (elle garde son tour), puis on en change
       var fresh = false;
@@ -483,7 +489,10 @@
       }
       if(fresh) break;
     }
-    forcedQcmCat = null;
+    forcedQcmCat = null; forcedQcmType = null;
+    if(review && review.why){
+      document.getElementById('practice-family-tag').textContent += review.why==='raté' ? ' · 🔁 à revoir' : ' · ✨ pas encore fait';
+    }
     if(focus){
       var tagEl = document.getElementById('practice-family-tag');
       tagEl.textContent += ' · 🎯 à travailler';
@@ -496,7 +505,7 @@
     globalLevel = idx;
     resetFreeStreak();
     if(appMode!=='auto') return;
-    if(practiceMode==='free'){
+    if(practiceMode!=='countdown'){
       nextPracticeQuestion();
     } else if(countdownRunning){
       endCountdown(); // le niveau a changé en pleine partie : on clôt la manche en cours
@@ -525,7 +534,7 @@
       // Retour en mode auto (Facile/Moyen/Difficile) : jamais de type QCM
       // forcé, le mélange redevient entièrement aléatoire.
       m4TypeFilter = 'random';
-      if(practiceMode==='free'){
+      if(practiceMode!=='countdown'){
         document.getElementById('countdown-setup').hidden = true;
         document.getElementById('practice-exercise').hidden = false;
       } else if(!countdownRunning){
@@ -695,15 +704,15 @@
     updateStreakPill();
   }
 
-  buildLevelRow(document.getElementById('practice-mode'), ['Aléatoire','Chronométré'], 0, function(idx){
-    practiceMode = idx===0 ? 'free' : 'countdown';
+  buildLevelRow(document.getElementById('practice-mode'), ['Aléatoire','Révision','Chronométré'], 0, function(idx){
+    practiceMode = ['free','review','countdown'][idx];
     resetFreeStreak();
     clearInterval(countdownInterval);
     countdownRunning = false;
     setChronoCompact(false);
     document.getElementById('countdown-hud').hidden = true;
     document.getElementById('countdown-results').hidden = true;
-    if(practiceMode==='free'){
+    if(practiceMode!=='countdown'){
       document.getElementById('countdown-setup').hidden = true;
       document.getElementById('practice-exercise').hidden = false;
       nextPracticeQuestion();

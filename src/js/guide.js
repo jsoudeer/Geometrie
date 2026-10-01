@@ -41,7 +41,7 @@
       steps:[
         { text:'Bienvenue ! Je te montre en une minute à quoi servent les boutons. Tu pourras revoir ce guide quand tu veux dans les réglages ⚙️.' },
         { sel:'#menu-btn', text:'Touche ton personnage, en haut à gauche, pour ouvrir le menu : choisis ton niveau (Facile, Moyen ou Difficile), ou le mode Manuel pour choisir toi-même l\'activité.' },
-        { sel:'#practice-mode', text:'Aléatoire : les activités changent toutes seules. Chronométré : tu réponds à un maximum de questions avant la fin du temps.' },
+        { sel:'#practice-mode', text:'Aléatoire : les activités changent toutes seules. Révision : le jeu te repose surtout les exercices ratés ou pas encore faits. Chronométré : tu réponds à un maximum de questions avant la fin du temps.' },
         { sel:'#streak-pill', text:'La série : réponds juste 20 fois de suite, sans te tromper, pour débloquer un nouveau personnage ! Et si tu continues jusqu\'à 25 puis 30, d\'autres personnages t\'attendent.' },
         { sel:'#stars-btn', text:'Chaque bonne réponse te donne des étoiles ⭐. Touche ce bouton pour ouvrir la boutique et acheter de nouveaux personnages.' },
         { sel:'#battle-btn', text:'La Bataille : fais combattre tes personnages contre l\'autre clan.' },

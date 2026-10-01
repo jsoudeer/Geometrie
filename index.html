@@ -6570,6 +6570,7 @@
 
   // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
   var lastQcmType = null;
+  var forcedQcmType = null;  // type de quiz imposé pour la prochaine question (mode Révision)
   var forcedQcmCat = null;   // catégorie de quiz imposée pour la prochaine question (sujet à travailler)
   var lastFamily = null;
   function pickOther(arr, last){
@@ -6582,7 +6583,8 @@
   function genQuestion(){
     var lv = M4_LEVELS[globalLevel];
     var poolTypes = lv.types;
-    var freeType = (m4TypeFilter==='random' || lv.types.indexOf(m4TypeFilter)===-1);
+    var typeSel = forcedQcmType || m4TypeFilter;
+    var freeType = (typeSel==='random' || lv.types.indexOf(typeSel)===-1);
     var cat = forcedQcmCat || m4CategoryFilter;     // forcedQcmCat : sujet à travailler (voir progression.js)
     if(cat==='all' && freeType){
       // Tirage « sans remise » au niveau des catégories : chacune sort une fois
@@ -6596,7 +6598,7 @@
       if(inCat.length) poolTypes = inCat;
     }
     // Idem pour les types au sein de la catégorie (sans remise).
-    var type = !freeType ? m4TypeFilter : pickFresh('qcmtype|' + globalLevel + '|' + poolTypes.join(','), poolTypes);
+    var type = !freeType ? typeSel : pickFresh('qcmtype|' + globalLevel + '|' + poolTypes.join(','), poolTypes);
     lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     var qdef = quizTypeById(type) || quizTypeById('image');
@@ -6662,7 +6664,7 @@
      dans #practice-exercise ; génération, correction et dessin restent dans
      le thème qui l'a déclarée. L'orchestrateur ne nomme aucune activité. */
   var globalLevel = 0;
-  var practiceMode = 'free'; // 'free' | 'countdown'  (utilisé seulement en mode 'auto')
+  var practiceMode = 'free'; // 'free' (Aléatoire) | 'review' (Révision) | 'countdown' (Chronométré)  (utilisé seulement en mode 'auto')
   var appMode = 'auto'; // 'auto' (Facile/Moyen/Difficile) | 'manual' (activité choisie à la main)
   var manualFamily = null;
   var currentFamily = null;
@@ -6967,10 +6969,14 @@
   function nextPracticeQuestion(){
     var sig = null, prevShown = lastFamily;
     var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, cat} ou null
+    var review = null;                                               // mode Révision : {key, type, why}
+    var reviewing = (appMode==='auto' && practiceMode==='review');
     for(var tries=0; tries<15; tries++){
       lastFamily = prevShown;   // on évite la famille réellement affichée, pas un essai rejeté
-      var key = focus ? focus.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh());
+      if(reviewing) review = progReviewPick();
+      var key = focus ? focus.key : (review ? review.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh()));
       forcedQcmCat = (focus && focus.key==='qcm') ? focus.cat : null;
+      forcedQcmType = (review && review.type) ? review.type : null;
       lastFamily = key;
       // d'abord on retente dans la même famille (elle garde son tour), puis on en change
       var fresh = false;
@@ -6981,7 +6987,10 @@
       }
       if(fresh) break;
     }
-    forcedQcmCat = null;
+    forcedQcmCat = null; forcedQcmType = null;
+    if(review && review.why){
+      document.getElementById('practice-family-tag').textContent += review.why==='raté' ? ' · 🔁 à revoir' : ' · ✨ pas encore fait';
+    }
     if(focus){
       var tagEl = document.getElementById('practice-family-tag');
       tagEl.textContent += ' · 🎯 à travailler';
@@ -6994,7 +7003,7 @@
     globalLevel = idx;
     resetFreeStreak();
     if(appMode!=='auto') return;
-    if(practiceMode==='free'){
+    if(practiceMode!=='countdown'){
       nextPracticeQuestion();
     } else if(countdownRunning){
       endCountdown(); // le niveau a changé en pleine partie : on clôt la manche en cours
@@ -7023,7 +7032,7 @@
       // Retour en mode auto (Facile/Moyen/Difficile) : jamais de type QCM
       // forcé, le mélange redevient entièrement aléatoire.
       m4TypeFilter = 'random';
-      if(practiceMode==='free'){
+      if(practiceMode!=='countdown'){
         document.getElementById('countdown-setup').hidden = true;
         document.getElementById('practice-exercise').hidden = false;
       } else if(!countdownRunning){
@@ -7193,15 +7202,15 @@
     updateStreakPill();
   }
 
-  buildLevelRow(document.getElementById('practice-mode'), ['Aléatoire','Chronométré'], 0, function(idx){
-    practiceMode = idx===0 ? 'free' : 'countdown';
+  buildLevelRow(document.getElementById('practice-mode'), ['Aléatoire','Révision','Chronométré'], 0, function(idx){
+    practiceMode = ['free','review','countdown'][idx];
     resetFreeStreak();
     clearInterval(countdownInterval);
     countdownRunning = false;
     setChronoCompact(false);
     document.getElementById('countdown-hud').hidden = true;
     document.getElementById('countdown-results').hidden = true;
-    if(practiceMode==='free'){
+    if(practiceMode!=='countdown'){
       document.getElementById('countdown-setup').hidden = true;
       document.getElementById('practice-exercise').hidden = false;
       nextPracticeQuestion();
@@ -8797,6 +8806,58 @@
     options.sort(function(a,b){ return (optionRate(a) - optionRate(b)) || (Math.random() - .5); });
     return { key:options[0].key, cat:options[0].cat };
   }
+  /* ---- Mode Révision : mettre en avant les exercices ratés et ceux jamais faits ----
+     Une « unité » = une activité au niveau en cours (une famille, ou un type de quiz précis).
+     Poids de tirage : jamais faite à ce niveau = 3 ; sinon 0,25 + 4 × (part d'erreurs sur ses
+     10 dernières réponses), +1 si la toute dernière réponse était fausse. Une activité
+     toujours réussie reste possible (poids faible), pour ne pas tourner en rond.
+     Renvoie { key, type (quiz seulement), why : 'raté' | 'nouveau' | '' }. Jamais deux fois de suite
+     la même famille quand il y a le choix. */
+  var REVIEW_RECENT = 10, REVIEW_NEW_WEIGHT = 3;
+  var reviewLast = null;
+  function progReviewUnits(){
+    var units = [];
+    FAMILIES.forEach(function(f){
+      if(f.key==='qcm') M4_LEVELS[globalLevel].types.forEach(function(t){ units.push({ key:'qcm', type:t, id:'qcm|' + t }); });
+      else units.push({ key:f.key, type:null, id:f.key });
+    });
+    return units;
+  }
+  function progReviewWeight(u){
+    var ev = (progEvents || []).filter(function(e){
+      return e[4]===globalLevel && (u.type ? (e[2]==='qcm' && e[3]===u.type) : e[2]===u.key);
+    });
+    if(!ev.length) return { w:REVIEW_NEW_WEIGHT, why:'nouveau' };
+    var last = ev.slice(-REVIEW_RECENT), errs = last.filter(function(e){ return !e[5]; }).length;
+    var w = 0.25 + 4 * errs / last.length + (last[last.length-1][5] ? 0 : 1);
+    return { w:w, why: errs ? 'raté' : '' };
+  }
+  function weightedPick(list){
+    var total = list.reduce(function(s,u){ return s + u.w; }, 0), x = Math.random() * total;
+    for(var i=0;i<list.length;i++){ x -= list[i].w; if(x <= 0) return list[i]; }
+    return list[list.length-1];
+  }
+  // Deux étages : d'abord la famille (le quiz pèse la moyenne de ses types × 1,5 : il en contient
+  // une vingtaine, il ne doit pas écraser le reste), puis, pour le quiz, le type précis.
+  function progReviewPick(){
+    var units = progReviewUnits().map(function(u){ var r = progReviewWeight(u); u.w = r.w; u.why = r.why; return u; });
+    var fams = [], byKey = {};
+    units.forEach(function(u){
+      var f = byKey[u.key];
+      if(!f){ f = byKey[u.key] = { key:u.key, units:[], w:0, why:'' }; fams.push(f); }
+      f.units.push(u);
+    });
+    fams.forEach(function(f){
+      f.w = f.units.reduce(function(s,u){ return s + u.w; }, 0) / f.units.length * (f.key==='qcm' ? 1.5 : 1);
+      f.why = f.units.some(function(u){ return u.why==='raté'; }) ? 'raté' : (f.units.every(function(u){ return u.why==='nouveau'; }) ? 'nouveau' : '');
+    });
+    var pool = fams.filter(function(f){ return f.key !== reviewLast; });
+    if(!pool.length) pool = fams;
+    var fam = weightedPick(pool);
+    reviewLast = fam.key;
+    var u = weightedPick(fam.units);
+    return { key:u.key, type:u.type, why:u.why };
+  }
   // catégorie de quiz d'un événement, retrouvée à partir de son type
   function eventCat(e){ var d = e[3] ? quizTypeById(e[3]) : null; return d ? quizCategoryId(d) : null; }
 
@@ -8997,7 +9058,7 @@
       steps:[
         { text:'Bienvenue ! Je te montre en une minute à quoi servent les boutons. Tu pourras revoir ce guide quand tu veux dans les réglages ⚙️.' },
         { sel:'#menu-btn', text:'Touche ton personnage, en haut à gauche, pour ouvrir le menu : choisis ton niveau (Facile, Moyen ou Difficile), ou le mode Manuel pour choisir toi-même l\'activité.' },
-        { sel:'#practice-mode', text:'Aléatoire : les activités changent toutes seules. Chronométré : tu réponds à un maximum de questions avant la fin du temps.' },
+        { sel:'#practice-mode', text:'Aléatoire : les activités changent toutes seules. Révision : le jeu te repose surtout les exercices ratés ou pas encore faits. Chronométré : tu réponds à un maximum de questions avant la fin du temps.' },
         { sel:'#streak-pill', text:'La série : réponds juste 20 fois de suite, sans te tromper, pour débloquer un nouveau personnage ! Et si tu continues jusqu\'à 25 puis 30, d\'autres personnages t\'attendent.' },
         { sel:'#stars-btn', text:'Chaque bonne réponse te donne des étoiles ⭐. Touche ce bouton pour ouvrir la boutique et acheter de nouveaux personnages.' },
         { sel:'#battle-btn', text:'La Bataille : fais combattre tes personnages contre l\'autre clan.' },

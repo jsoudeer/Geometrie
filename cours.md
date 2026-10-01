@@ -11,6 +11,7 @@ Ce fichier reprend, sur le même modèle que **⚙️ Réglages → Configurer l
 | Mode | Comment | Ce qui est proposé |
 |---|---|---|
 | **Aléatoire** (onglets Facile / Moyen / Difficile) | Une activité tirée au hasard à chaque question | Les 6 familles ci-dessous |
+| **Révision** (à côté d'Aléatoire) | Le jeu repose surtout les exercices ratés, avec aussi des exercices jamais faits | Mêmes activités ; étiquette « 🔁 à revoir » ou « ✨ pas encore fait » |
 | **Chronométré** (1, 2, 3 ou 5 min) | Un maximum de bonnes réponses avant la fin du temps | Seulement Mesurer, Quizz et Lire l'heure (réponse en un geste) |
 | **Manuel** | On choisit une activité (et, pour le Quizz, un type de question précis), puis un niveau : **aucun niveau n'est choisi d'office et aucune épreuve n'apparaît** tant qu'on n'a pas touché Facile, Moyen ou Difficile ; ce toucher affiche l'épreuve et replie la liste des activités (bouton « Afficher / Masquer les activités », plus de minuterie) | Toutes les familles |
 
@@ -200,7 +201,7 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 - **Avancement automatique (mode Manuel)** : passe au niveau suivant après 3, 5, 8 ou 10 bonnes réponses d'affilée.
 - **Affichage des personnages en Bataille** : tête ou plein pied.
 - **Configurer les activités** : chaque type de Quizz et chaque patron peut être ajouté ou retiré d'un niveau.
-- **Avancement automatique** : après 3, 5, 8 ou 10 bonnes réponses d'affilée, on passe au niveau supérieur, en mode **Manuel** comme en mode **Aléatoire** (jamais en Chronométré). Les défis « 20 bonnes réponses d'affilée » se jouent sur un seul niveau : pour les relever, il faut désactiver l'avancement.
+- **Avancement automatique** : après 3, 5, 8 ou 10 bonnes réponses d'affilée, on passe au niveau supérieur, en mode **Manuel** comme en mode **Aléatoire** (jamais en Chronométré). La série sans faute continue d'un niveau à l'autre.
 - **Effacer ma progression** : remet les étoiles à zéro et fait perdre tous les personnages débloqués **sauf le premier de chaque clan**, qui redevient la mascotte (en deux étapes). Il faut ensuite en débloquer d'autres (avec le bouton « +50 ⭐ » par exemple) pour pouvoir lancer une bataille.
 
 
@@ -212,6 +213,8 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 - Les **solides** sont dessinés en entier, arêtes cachées en pointillés (cube, pavé, pyramides, prismes, cylindre, cône).
 
 ## Répartition des questions (tirage sans remise)
+**Révision** : pour chaque activité (une famille, ou un type de quiz) au niveau en cours, le jeu regarde les 10 dernières réponses : une activité ratée pèse jusqu'à 5 fois plus qu'une activité toujours réussie, une activité jamais faite pèse 3 (donc entre les deux). Rien n'est exclu, et jamais deux fois de suite la même famille. La révision ne compte ni pour la série sans faute ni pour la montée de niveau automatique.
+
 En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horloge lire/régler, ateliers) sort une fois par tour avant qu'aucune ne revienne (le quiz compte triple), et jamais deux fois de suite. Dans le quiz, les **catégories** (formes, repère, solides, temps…) tournent aussi sans remise, puis les types à l'intérieur de chaque catégorie. Une question déjà vue dans la série est retirée (4 essais dans la même activité, puis changement d'activité).
 
 ## Bataille : choix d'équipe et animations
