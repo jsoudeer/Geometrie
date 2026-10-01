@@ -512,7 +512,7 @@
   });
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
-    ['info-overlay','progress-overlay','activity-config-overlay','settings-overlay'].some(function(id){
+    ['info-overlay','guides-overlay','progress-overlay','activity-config-overlay','settings-overlay'].some(function(id){
       var o = document.getElementById(id);
       if(o && !o.hidden){
         if(id==='info-overlay') closeInfoDialog(); else o.hidden = true;
@@ -705,6 +705,7 @@
       buyBtn.addEventListener('click', function(){
         if(trySpendStars(sprite.cost)){
           owned[sprite.id] = true;
+          guideMarkBought();
           saveOwned();
           renderShop();
           renderBtSetup();
@@ -846,7 +847,7 @@
      débloqués, mascotte, équipes de bataille et série en cours. Les
      réglages (thème, effets, affichage) sont conservés. ---- */
   function resetProgress(){
-    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot'].forEach(function(k){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
       try{ localStorage.removeItem(k); }catch(e){}
     });
     stars = 0;
@@ -861,6 +862,7 @@
     saveMascot();
     btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
     if(typeof resetFreeStreak === 'function') resetFreeStreak();
+    guideResetContextual();
     saveOwned();
     renderShop();
     renderMascotDock();

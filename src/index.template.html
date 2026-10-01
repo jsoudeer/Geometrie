@@ -77,6 +77,7 @@
 
       <hr class="settings-divider">
 
+      <button class="btn ghost" id="open-guides-btn" type="button" style="width:100%;margin-bottom:8px;">📖 Guides</button>
       <button class="btn ghost" id="open-progress-btn" type="button" style="width:100%;margin-bottom:8px;">📈 Progression de l'enfant</button>
       <button class="btn ghost" id="open-activity-config-btn" type="button" style="width:100%;">🎚️ Configurer les activités et leur difficulté</button>
 
@@ -116,6 +117,20 @@
        et Patron→Solide, leurs sous-types) avec les niveaux où chacune
        apparaît actuellement, modifiables à la main, et une note expliquant
        ce qui est tiré au hasard vs fixe pour chaque épreuve. -->
+  <!-- Guides : rejouer chaque tutoriel (voir guide.js) -->
+  <div class="settings-overlay" id="guides-overlay" hidden>
+    <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="guides-title">
+      <div class="settings-panel-head">
+        <h2 id="guides-title">📖 Guides</h2>
+        <button class="settings-close" id="guides-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <p class="muted settings-hint">Relance l'explication que tu veux. Les guides se lancent aussi tout seuls : au premier lancement, à 50 étoiles quand on n'a rien acheté, et après 5 personnages débloqués.</p>
+      <button class="btn ghost" type="button" data-guide="accueil" style="width:100%;margin-bottom:8px;">👋 Découvrir le jeu</button>
+      <button class="btn ghost" type="button" data-guide="boutique" style="width:100%;margin-bottom:8px;">⭐ Acheter un personnage</button>
+      <button class="btn ghost" type="button" data-guide="bataille" style="width:100%;">⚔️ Combattre</button>
+    </div>
+  </div>
+
   <!-- Progression : radar de synthèse, détail par compétence, activité des derniers jours -->
   <div class="settings-overlay" id="progress-overlay" hidden>
     <div class="settings-panel progress-panel" role="dialog" aria-modal="true" aria-labelledby="progress-title">
@@ -255,8 +270,8 @@
              Tu joues avec le clan actif (celui du bouton en haut : Chats
              Kawaii ou Brainrot) et tu affrontes l'autre clan. Une seule
              caractéristique par personnage : ses points, qui servent à la
-             fois d'attaque et d'énergie. Équipe : 3 classiques, 1 soutien
-             et 1 archer ; 3 cartes sont posées au hasard sur le terrain, et
+             fois d'attaque et d'énergie. Équipe : jusqu'à 3 classiques, 1 soutien
+             et 1 archer (aucun n'est obligatoire) ; 3 cartes sont posées au hasard sur le terrain, et
              une nouvelle carte entre quand l'une est battue. -->
         <div id="arena-battle-wrap">
 
@@ -269,10 +284,10 @@
                 <li>Quand tu attaques, la carte visée perd autant de points que ton attaquant en a, et ton attaquant perd autant de points que la carte adverse en avait. Une carte à 0 est battue.</li>
                 <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain, puis <strong>+2 points à chaque allié à la fin de chaque tour</strong> de son camp.</li>
                 <li>🏹 L'<strong>Archer</strong> attaque de loin : il n'est jamais blessé en retour.</li>
-                <li>Ton équipe : 3 classiques, 1 soutien, 1 archer. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
+                <li>Ton équipe : jusqu'à 3 classiques, 1 soutien et 1 archer. Soutien et archer ne sont pas obligatoires : à toi de choisir ! L'équipe adverse a la même composition que la tienne. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
               </ul>
             </details>
-            <p class="muted" id="bt-intro">Forme ton équipe : 3 classiques, 1 soutien et 1 archer.</p>
+            <p class="muted" id="bt-intro">Forme ton équipe : jusqu'à 3 classiques, 1 soutien et 1 archer.</p>
             <div class="btn-row bt-auto-row">
               <button class="btn ghost" id="bt-auto-best" type="button">⚡ Équipe complète (les plus forts)</button>
               <button class="btn ghost" id="bt-auto-random" type="button">🎲 Au hasard</button>

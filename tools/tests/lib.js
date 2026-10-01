@@ -35,6 +35,9 @@ async function withPage(opts, fn) {
   const { srv, port } = await serve();
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const ctx = await browser.newContext({ viewport: opts.viewport || { width: 390, height: 780 } });
+  // Les guides (tutoriels) se lancent tout seuls et voilent l'écran : on les marque « déjà vus »,
+  // sauf pour un test de guide (opts.guides === true).
+  if (!opts.guides) await ctx.addInitScript(() => { try { if (localStorage.getItem('geo_guides') === null) localStorage.setItem('geo_guides', '{"accueil":1,"boutique":1,"bataille":1}'); } catch (e) {} });
   if (opts.init) await ctx.addInitScript(opts.init);
   const page = await ctx.newPage();
   const errors = [];
