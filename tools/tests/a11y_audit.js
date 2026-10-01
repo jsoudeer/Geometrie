@@ -42,6 +42,9 @@ const FAMS = ['measure', 'estimate', 'deform', 'net', 'qcm', 'clock-lire', 'cloc
       await page.click('#settings-btn'); await run('réglages');
       await page.click('#open-progress-btn'); await run('progression');
       await page.click('#progress-close');
+      await page.click('#settings-btn'); await page.click('#open-guides-btn'); await run('guides (réglages)');
+      await page.click('[data-guide="accueil"]'); await page.click('#guide-next'); await page.waitForTimeout(400); await run('guide en cours (étape sur un bouton)');
+      await page.keyboard.press('Escape');
       await page.click('#settings-btn'); await page.click('#open-activity-config-btn'); await run('activités & difficulté');
       await page.click('#activity-config-close');
       await page.click('#stars-btn'); await run('boutique');

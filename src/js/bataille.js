@@ -9,8 +9,9 @@
        terrain quand il arrive, puis chaque allié qui arrive ensuite tant
        qu'il est là) ; et, à la fin de chaque tour de son camp, il donne en plus
        +2 points (BT_SUPPORT_TURN) à chacun de ses alliés présents ;
-     - équipe = 3 classiques + 1 soutien + 1 archer ; 3 cartes tirées au
-       hasard sont posées sur le terrain, et une carte de la réserve entre
+     - équipe = jusqu'à 3 classiques + 1 soutien + 1 archer (aucun rôle n'est
+       obligatoire, il faut au moins 1 carte) ; l'équipe adverse a la même
+       composition ; 3 cartes tirées au hasard sont posées sur le terrain, et une carte de la réserve entre
        dès qu'une carte est battue (à 0 point ou moins) ;
      - le camp qui n'a plus aucune carte (terrain + réserve) a perdu. */
   var BT_ROLE_META = {
@@ -117,23 +118,26 @@
         return card;
       }));
       document.getElementById('bt-count-'+role).textContent = sel[role].length + '/' + BT_LIMITS[role];
-      if(sel[role].length !== BT_LIMITS[role]) ok = false;
-      if(mine.length < BT_LIMITS[role]) missing.push((BT_LIMITS[role]-mine.length) + ' ' + BT_ROLE_META[role].label.toLowerCase());
     });
+    var teamSize = BT_ROLE_ORDER.reduce(function(n, role){ return n + sel[role].length; }, 0);
+    ok = teamSize >= 1;
+    if(sel.support.length === 0) missing.push('de soutien');
+    if(sel.archer.length === 0) missing.push('d\'archer');
     var missEl = document.getElementById('bt-missing');
     if(missing.length){
       missEl.hidden = false;
-      missEl.textContent = 'Il te manque encore : ' + missing.join(', ') + '. Va en débloquer à la boutique !';
+      missEl.textContent = teamSize === 0 ? 'Choisis au moins une carte pour commencer.'
+        : 'Pas ' + missing.join(' ni ') + ' dans ton équipe : c\'est ton choix, à toi de l\'assumer ! (Ils aident beaucoup, et la boutique en propose.)';
     } else missEl.hidden = true;
     document.getElementById('bt-start').disabled = !ok;
     var total = 0;
     BT_ROLE_ORDER.forEach(function(role){ sel[role].forEach(function(id){ var sp = findSprite(btMyList(), id); if(sp) total += sp.pts; }); });
     if(BT_DIFFS) document.getElementById('bt-diff-note').textContent = ok
       ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points.'
-      : 'Complète ton équipe pour voir les points de tes adversaires.';
+      : 'Choisis au moins une carte pour voir les points de tes adversaires.';
     document.getElementById('bt-intro').textContent = btSide()==='cats'
-      ? 'Tu joues avec les Chats Kawaii contre les Brainrots. Forme ton équipe : 3 classiques, 1 soutien et 1 archer.'
-      : 'Tu joues avec les Brainrots contre les Chats Kawaii. Forme ton équipe : 3 classiques, 1 soutien et 1 archer.';
+      ? 'Tu joues avec les Chats Kawaii contre les Brainrots. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.'
+      : 'Tu joues avec les Brainrots contre les Chats Kawaii. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.';
   }
 
   // Petite flèche/éclair qui vole de l'attaquant vers la carte visée.
@@ -193,17 +197,19 @@
   var btDiff = 1;
   try{ var savedDiff = parseInt(localStorage.getItem('geo_bt_diff'),10); if(savedDiff>=0 && savedDiff<BT_DIFFS.length) btDiff = savedDiff; }catch(e){}
   function btTotal(units){ return units.reduce(function(sum, u){ return sum + u.sprite.pts; }, 0); }
-  // Équipe adverse : 3 classiques + 1 soutien + 1 archer du clan d'en face, tirés au hasard
-  // parmi les combinaisons dont le total est le plus proche de la cible (variété conservée).
+  // Équipe adverse : même composition que la tienne (mêmes nombres de classiques, soutien, archer),
+  // tirée au hasard parmi les combinaisons dont le total est le plus proche de la cible (variété conservée).
   function btBuildEnemyTeam(myUnits){
     var target = btTotal(myUnits) * BT_DIFFS[btDiff].factor;
     var pool = btEnemyList();
     function byRole(role){ return pool.filter(function(s){ return s.role === role; }); }
     var classics = byRole('classic'), supports = byRole('support'), archers = byRole('archer');
+    var nC = myUnits.filter(function(u){ return u.sprite.role==='classic'; }).length;
+    var nS = myUnits.filter(function(u){ return u.sprite.role==='support'; }).length;
+    var nA = myUnits.filter(function(u){ return u.sprite.role==='archer'; }).length;
     var seen = {}, cands = [];
     for(var i=0;i<900;i++){
-      var c3 = btShuffle(classics).slice(0,3), sp = supports[btRand(supports.length)], ar = archers[btRand(archers.length)];
-      var team = c3.concat([sp, ar]);
+      var team = btShuffle(classics).slice(0,nC).concat(btShuffle(supports).slice(0,nS), btShuffle(archers).slice(0,nA));
       var key = team.map(function(x){ return x.id; }).sort().join(',');
       if(seen[key]) continue;
       seen[key] = true;
@@ -221,7 +227,7 @@
     var side = btSide(), sel = btSel[side];
     var ids = sel.classic.concat(sel.support, sel.archer);
     var myUnits = ids.map(function(id){ return btMakeUnit(findSprite(btMyList(), id)); });
-    if(myUnits.length !== 5 || myUnits.some(function(u){ return !u.sprite; })) return;
+    if(myUnits.length < 1 || myUnits.some(function(u){ return !u.sprite; })) return;
     var enUnits = btBuildEnemyTeam(myUnits);
     var myTotal = btTotal(myUnits), enTotal = btTotal(enUnits);   // avant que les cartes soient tirées sur le terrain
     bt = {

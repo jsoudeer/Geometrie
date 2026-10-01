@@ -87,7 +87,7 @@ Chats Kawaii et Brainrot) contre l'autre clan.
 - 💖 **Soutien** : donne +5 points à tous ses alliés (ceux déjà sur le terrain
   quand il arrive, puis chaque allié qui arrive ensuite tant qu'il est là).
 - 🏹 **Archer** : attaque sans jamais perdre de points en retour.
-- Équipe : **3 classiques + 1 soutien + 1 archer**. 3 cartes tirées au hasard
+- Équipe : **jusqu'à 3 classiques + 1 soutien + 1 archer** (aucun rôle n'est obligatoire, il faut au moins 1 carte ; l'adversaire a la même composition). 3 cartes tirées au hasard
   sont posées sur le terrain ; quand une carte est battue, une carte de la
   réserve la remplace. Le camp qui n'a plus aucune carte a perdu (+3 ⭐ pour
   une victoire).

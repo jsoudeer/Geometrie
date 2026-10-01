@@ -25,6 +25,7 @@ Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction c
   `fresh_check`, `atelier_check`, `atelier2_check`, `challenge_check`, `nav_check`. Les « ✘ » affichés sont souvent des
   messages d'erreur voulus du jeu : se fier à « ÉCHEC »/« AssertionError »/« PAGE ERRORS ».
 - Un test instable est un défaut à corriger tout de suite (ex. attendre la fin des animations avant de mesurer).
+- `lib.js` marque les guides (tutoriels) comme déjà vus : sinon ils voileraient l'écran ; `withPage({guides:true})` pour les tester.
 - Tout nouveau comportement reçoit un `*_check.js`. Captures dans `/tmp/geo_tests/`.
 
 ## Déroulé d'une évolution

@@ -177,7 +177,7 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 - 🏹 **Archer** : attaque sans jamais perdre de points en retour.
 
 ### Bataille
-Équipe de **3 classiques + 1 Soutien + 1 Archer** du clan actif. 3 cartes au hasard sur le terrain ; quand une carte est battue (0 point), une autre la remplace. Quand A attaque B : B perd autant de points que A en a, et A perd les points de B (sauf l'Archer). Victoire : **+3 ⭐**.
+Équipe de **jusqu'à 3 classiques + 1 Soutien + 1 Archer** du clan actif (on peut se passer du Soutien ou de l'Archer, à soi d'assumer ce choix ; il faut au moins 1 carte, et l'équipe adverse a la même composition). 3 cartes au hasard sur le terrain ; quand une carte est battue (0 point), une autre la remplace. Quand A attaque B : B perd autant de points que A en a, et A perd les points de B (sauf l'Archer). Victoire : **+3 ⭐**.
 
 **Difficulté** (choisie avant le combat) : le total des points ❤️ de l'équipe adverse vaut celui de la tienne en **Normal**, **20 % de moins en Facile**, **20 % de plus en Difficile** (l'adversaire garde 3 classiques + 1 soutien + 1 archer, tirés au plus près de cette cible ; le total est affiché avant et pendant le combat). Le choix est mémorisé.
 
@@ -235,3 +235,6 @@ Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma p
 - **Ateliers** : « Trouver l'erreur » (toucher la case en trop ou manquante) et « Axes de symétrie » (toucher les lignes de pliage qui sont de vrais axes, de 0 à 4 axes).
 - **Alignement** : en plus de « ces 3 points sont-ils alignés ? », on peut chercher les 3 points alignés parmi 4, ou le point numéroté aligné avec A et B (règle posée sur A et B).
 - **Angles** : on compare des angles (la longueur des branches ne compte pas ; deux angles peuvent être égaux), on compte les angles droits d'une figure, ou on classe un angle (droit, aigu, obtus).
+
+## Guides (tutoriels)
+Trois guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 50 étoiles quand on n'a jamais rien acheté, **Combattre** après 5 personnages débloqués (sans compter ceux de départ). Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.

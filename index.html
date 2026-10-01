@@ -830,6 +830,28 @@
       transition-duration:.01ms !important; scroll-behavior:auto !important;
     }
   }
+  /* ===================== GUIDES (tutoriels en surbrillance) =====================
+     Un voile sombre avec un « trou » autour de l'élément expliqué (ombre géante du
+     cadre .guide-spot), et une bulle d'explication. Au-dessus de tout (z-index 6000). */
+  .guide-layer{ position:fixed; inset:0; z-index:6000; }
+  .guide-layer[hidden]{ display:none; }
+  .guide-spot{
+    position:fixed; border-radius:14px; pointer-events:none;
+    box-shadow:0 0 0 200vmax rgba(30,15,45,.66); outline:3px solid var(--accent);
+    transition:left .25s, top .25s, width .25s, height .25s;
+  }
+  .guide-spot.none{ width:0 !important; height:0 !important; outline:none; left:50%; top:50%; }
+  .guide-bubble{
+    position:fixed; width:min(340px, calc(100vw - 24px)); box-sizing:border-box;
+    background:var(--surface); color:var(--text); border:2px solid var(--accent); border-radius:16px;
+    box-shadow:var(--shadow); padding:14px 16px;
+  }
+  .guide-bubble h2{ margin:0 0 6px; font-size:1.05rem; }
+  .guide-bubble p{ margin:0 0 10px; line-height:1.4; }
+  .guide-step{ font-size:.8rem; color:var(--text-soft); margin-bottom:4px; }
+  .guide-actions{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
+  .guide-actions .btn{ min-height:44px; }
+  @media (prefers-reduced-motion: reduce){ .guide-spot{ transition:none; } }
 </style>
 
 <div class="app" id="app" lang="fr">
@@ -903,6 +925,7 @@
 
       <hr class="settings-divider">
 
+      <button class="btn ghost" id="open-guides-btn" type="button" style="width:100%;margin-bottom:8px;">📖 Guides</button>
       <button class="btn ghost" id="open-progress-btn" type="button" style="width:100%;margin-bottom:8px;">📈 Progression de l'enfant</button>
       <button class="btn ghost" id="open-activity-config-btn" type="button" style="width:100%;">🎚️ Configurer les activités et leur difficulté</button>
 
@@ -942,6 +965,20 @@
        et Patron→Solide, leurs sous-types) avec les niveaux où chacune
        apparaît actuellement, modifiables à la main, et une note expliquant
        ce qui est tiré au hasard vs fixe pour chaque épreuve. -->
+  <!-- Guides : rejouer chaque tutoriel (voir guide.js) -->
+  <div class="settings-overlay" id="guides-overlay" hidden>
+    <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="guides-title">
+      <div class="settings-panel-head">
+        <h2 id="guides-title">📖 Guides</h2>
+        <button class="settings-close" id="guides-close" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <p class="muted settings-hint">Relance l'explication que tu veux. Les guides se lancent aussi tout seuls : au premier lancement, à 50 étoiles quand on n'a rien acheté, et après 5 personnages débloqués.</p>
+      <button class="btn ghost" type="button" data-guide="accueil" style="width:100%;margin-bottom:8px;">👋 Découvrir le jeu</button>
+      <button class="btn ghost" type="button" data-guide="boutique" style="width:100%;margin-bottom:8px;">⭐ Acheter un personnage</button>
+      <button class="btn ghost" type="button" data-guide="bataille" style="width:100%;">⚔️ Combattre</button>
+    </div>
+  </div>
+
   <!-- Progression : radar de synthèse, détail par compétence, activité des derniers jours -->
   <div class="settings-overlay" id="progress-overlay" hidden>
     <div class="settings-panel progress-panel" role="dialog" aria-modal="true" aria-labelledby="progress-title">
@@ -1081,8 +1118,8 @@
              Tu joues avec le clan actif (celui du bouton en haut : Chats
              Kawaii ou Brainrot) et tu affrontes l'autre clan. Une seule
              caractéristique par personnage : ses points, qui servent à la
-             fois d'attaque et d'énergie. Équipe : 3 classiques, 1 soutien
-             et 1 archer ; 3 cartes sont posées au hasard sur le terrain, et
+             fois d'attaque et d'énergie. Équipe : jusqu'à 3 classiques, 1 soutien
+             et 1 archer (aucun n'est obligatoire) ; 3 cartes sont posées au hasard sur le terrain, et
              une nouvelle carte entre quand l'une est battue. -->
         <div id="arena-battle-wrap">
 
@@ -1095,10 +1132,10 @@
                 <li>Quand tu attaques, la carte visée perd autant de points que ton attaquant en a, et ton attaquant perd autant de points que la carte adverse en avait. Une carte à 0 est battue.</li>
                 <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain, puis <strong>+2 points à chaque allié à la fin de chaque tour</strong> de son camp.</li>
                 <li>🏹 L'<strong>Archer</strong> attaque de loin : il n'est jamais blessé en retour.</li>
-                <li>Ton équipe : 3 classiques, 1 soutien, 1 archer. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
+                <li>Ton équipe : jusqu'à 3 classiques, 1 soutien et 1 archer. Soutien et archer ne sont pas obligatoires : à toi de choisir ! L'équipe adverse a la même composition que la tienne. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
               </ul>
             </details>
-            <p class="muted" id="bt-intro">Forme ton équipe : 3 classiques, 1 soutien et 1 archer.</p>
+            <p class="muted" id="bt-intro">Forme ton équipe : jusqu'à 3 classiques, 1 soutien et 1 archer.</p>
             <div class="btn-row bt-auto-row">
               <button class="btn ghost" id="bt-auto-best" type="button">⚡ Équipe complète (les plus forts)</button>
               <button class="btn ghost" id="bt-auto-random" type="button">🎲 Au hasard</button>
@@ -7564,7 +7601,7 @@
   });
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
-    ['info-overlay','progress-overlay','activity-config-overlay','settings-overlay'].some(function(id){
+    ['info-overlay','guides-overlay','progress-overlay','activity-config-overlay','settings-overlay'].some(function(id){
       var o = document.getElementById(id);
       if(o && !o.hidden){
         if(id==='info-overlay') closeInfoDialog(); else o.hidden = true;
@@ -7757,6 +7794,7 @@
       buyBtn.addEventListener('click', function(){
         if(trySpendStars(sprite.cost)){
           owned[sprite.id] = true;
+          guideMarkBought();
           saveOwned();
           renderShop();
           renderBtSetup();
@@ -7898,7 +7936,7 @@
      débloqués, mascotte, équipes de bataille et série en cours. Les
      réglages (thème, effets, affichage) sont conservés. ---- */
   function resetProgress(){
-    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot'].forEach(function(k){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
       try{ localStorage.removeItem(k); }catch(e){}
     });
     stars = 0;
@@ -7913,6 +7951,7 @@
     saveMascot();
     btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
     if(typeof resetFreeStreak === 'function') resetFreeStreak();
+    guideResetContextual();
     saveOwned();
     renderShop();
     renderMascotDock();
@@ -7947,8 +7986,9 @@
        terrain quand il arrive, puis chaque allié qui arrive ensuite tant
        qu'il est là) ; et, à la fin de chaque tour de son camp, il donne en plus
        +2 points (BT_SUPPORT_TURN) à chacun de ses alliés présents ;
-     - équipe = 3 classiques + 1 soutien + 1 archer ; 3 cartes tirées au
-       hasard sont posées sur le terrain, et une carte de la réserve entre
+     - équipe = jusqu'à 3 classiques + 1 soutien + 1 archer (aucun rôle n'est
+       obligatoire, il faut au moins 1 carte) ; l'équipe adverse a la même
+       composition ; 3 cartes tirées au hasard sont posées sur le terrain, et une carte de la réserve entre
        dès qu'une carte est battue (à 0 point ou moins) ;
      - le camp qui n'a plus aucune carte (terrain + réserve) a perdu. */
   var BT_ROLE_META = {
@@ -8055,23 +8095,26 @@
         return card;
       }));
       document.getElementById('bt-count-'+role).textContent = sel[role].length + '/' + BT_LIMITS[role];
-      if(sel[role].length !== BT_LIMITS[role]) ok = false;
-      if(mine.length < BT_LIMITS[role]) missing.push((BT_LIMITS[role]-mine.length) + ' ' + BT_ROLE_META[role].label.toLowerCase());
     });
+    var teamSize = BT_ROLE_ORDER.reduce(function(n, role){ return n + sel[role].length; }, 0);
+    ok = teamSize >= 1;
+    if(sel.support.length === 0) missing.push('de soutien');
+    if(sel.archer.length === 0) missing.push('d\'archer');
     var missEl = document.getElementById('bt-missing');
     if(missing.length){
       missEl.hidden = false;
-      missEl.textContent = 'Il te manque encore : ' + missing.join(', ') + '. Va en débloquer à la boutique !';
+      missEl.textContent = teamSize === 0 ? 'Choisis au moins une carte pour commencer.'
+        : 'Pas ' + missing.join(' ni ') + ' dans ton équipe : c\'est ton choix, à toi de l\'assumer ! (Ils aident beaucoup, et la boutique en propose.)';
     } else missEl.hidden = true;
     document.getElementById('bt-start').disabled = !ok;
     var total = 0;
     BT_ROLE_ORDER.forEach(function(role){ sel[role].forEach(function(id){ var sp = findSprite(btMyList(), id); if(sp) total += sp.pts; }); });
     if(BT_DIFFS) document.getElementById('bt-diff-note').textContent = ok
       ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points.'
-      : 'Complète ton équipe pour voir les points de tes adversaires.';
+      : 'Choisis au moins une carte pour voir les points de tes adversaires.';
     document.getElementById('bt-intro').textContent = btSide()==='cats'
-      ? 'Tu joues avec les Chats Kawaii contre les Brainrots. Forme ton équipe : 3 classiques, 1 soutien et 1 archer.'
-      : 'Tu joues avec les Brainrots contre les Chats Kawaii. Forme ton équipe : 3 classiques, 1 soutien et 1 archer.';
+      ? 'Tu joues avec les Chats Kawaii contre les Brainrots. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.'
+      : 'Tu joues avec les Brainrots contre les Chats Kawaii. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.';
   }
 
   // Petite flèche/éclair qui vole de l'attaquant vers la carte visée.
@@ -8131,17 +8174,19 @@
   var btDiff = 1;
   try{ var savedDiff = parseInt(localStorage.getItem('geo_bt_diff'),10); if(savedDiff>=0 && savedDiff<BT_DIFFS.length) btDiff = savedDiff; }catch(e){}
   function btTotal(units){ return units.reduce(function(sum, u){ return sum + u.sprite.pts; }, 0); }
-  // Équipe adverse : 3 classiques + 1 soutien + 1 archer du clan d'en face, tirés au hasard
-  // parmi les combinaisons dont le total est le plus proche de la cible (variété conservée).
+  // Équipe adverse : même composition que la tienne (mêmes nombres de classiques, soutien, archer),
+  // tirée au hasard parmi les combinaisons dont le total est le plus proche de la cible (variété conservée).
   function btBuildEnemyTeam(myUnits){
     var target = btTotal(myUnits) * BT_DIFFS[btDiff].factor;
     var pool = btEnemyList();
     function byRole(role){ return pool.filter(function(s){ return s.role === role; }); }
     var classics = byRole('classic'), supports = byRole('support'), archers = byRole('archer');
+    var nC = myUnits.filter(function(u){ return u.sprite.role==='classic'; }).length;
+    var nS = myUnits.filter(function(u){ return u.sprite.role==='support'; }).length;
+    var nA = myUnits.filter(function(u){ return u.sprite.role==='archer'; }).length;
     var seen = {}, cands = [];
     for(var i=0;i<900;i++){
-      var c3 = btShuffle(classics).slice(0,3), sp = supports[btRand(supports.length)], ar = archers[btRand(archers.length)];
-      var team = c3.concat([sp, ar]);
+      var team = btShuffle(classics).slice(0,nC).concat(btShuffle(supports).slice(0,nS), btShuffle(archers).slice(0,nA));
       var key = team.map(function(x){ return x.id; }).sort().join(',');
       if(seen[key]) continue;
       seen[key] = true;
@@ -8159,7 +8204,7 @@
     var side = btSide(), sel = btSel[side];
     var ids = sel.classic.concat(sel.support, sel.archer);
     var myUnits = ids.map(function(id){ return btMakeUnit(findSprite(btMyList(), id)); });
-    if(myUnits.length !== 5 || myUnits.some(function(u){ return !u.sprite; })) return;
+    if(myUnits.length < 1 || myUnits.some(function(u){ return !u.sprite; })) return;
     var enUnits = btBuildEnemyTeam(myUnits);
     var myTotal = btTotal(myUnits), enTotal = btTotal(enUnits);   // avant que les cartes soient tirées sur le terrain
     bt = {
@@ -8703,6 +8748,225 @@
     progEvents = []; progSave();
     document.getElementById('progress-confirm').hidden = true;
     renderProgress();
+  });
+  /* ===================== GUIDES (tutoriels en surbrillance) =====================
+     Un guide = une suite d'étapes ; chaque étape éclaire un VRAI élément de l'écran
+     (voile sombre + trou) et l'explique dans une bulle. Comme on s'appuie sur les
+     éléments réels, les explications restent justes quand l'interface change
+     (aucune capture d'écran à refaire).
+       accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
+       boutique : dès 50 étoiles quand on n'a jamais rien acheté ;
+       bataille : dès qu'on a débloqué 5 personnages (hors personnages de départ).
+     Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
+     dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
+  var GUIDE_SHOP_STARS = 50;       // seuil d'étoiles du guide Boutique
+  var GUIDE_BATTLE_UNLOCKS = 5;    // personnages débloqués (hors départ) pour le guide Bataille
+  var guideSeen = {};
+  try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
+  function guideSave(){ try{ localStorage.setItem('geo_guides', JSON.stringify(guideSeen)); }catch(e){} }
+  function guideBought(){ try{ return localStorage.getItem('geo_bought') === '1'; }catch(e){ return false; } }
+  function guideMarkBought(){ try{ localStorage.setItem('geo_bought', '1'); }catch(e){} }
+  // « Effacer ma progression » : nouvelle partie, les guides contextuels pourront revenir (pas l'accueil).
+  function guideResetContextual(){
+    delete guideSeen.boutique; delete guideSeen.bataille; guideSave();
+    try{ localStorage.removeItem('geo_bought'); }catch(e){}
+  }
+
+  function guideVisible(e){
+    if(!e) return false;
+    var r = e.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && !e.closest('[hidden]');
+  }
+  function guideMascotEmoji(){ return currentThemeKey()==='brainrot' ? '👹' : '🐱'; }
+
+  var GUIDES = {
+    accueil: {
+      title:'Découvrir le jeu',
+      steps:[
+        { text:'Bienvenue ! Je te montre en une minute à quoi servent les boutons. Tu pourras revoir ce guide quand tu veux dans les réglages ⚙️.' },
+        { sel:'#menu-btn', text:'Touche ton personnage, en haut à gauche, pour ouvrir le menu : choisis ton niveau (Facile, Moyen ou Difficile), ou le mode Manuel pour choisir toi-même l\'activité.' },
+        { sel:'#practice-mode', text:'Aléatoire : les activités changent toutes seules. Chronométré : tu réponds à un maximum de questions avant la fin du temps.' },
+        { sel:'#streak-pill', text:'La série : réponds juste 20 fois de suite, sans te tromper, pour réussir un défi et débloquer un nouveau personnage !' },
+        { sel:'#stars-btn', text:'Chaque bonne réponse te donne des étoiles ⭐. Touche ce bouton pour ouvrir la boutique et acheter de nouveaux personnages.' },
+        { sel:'#battle-btn', text:'La Bataille : fais combattre tes personnages contre l\'autre clan.' },
+        { sel:'#settings-btn', text:'Les réglages : sons, thème, progression de l\'enfant… et le bouton « Guides » pour revoir ces explications.' },
+        { text:'À toi de jouer ! Réponds aux questions pour gagner des étoiles.' }
+      ]
+    },
+    boutique: {
+      title:'Acheter un personnage',
+      steps:[
+        { sel:'#stars-btn', enter:function(){ showTab(lastPracticeTab); },
+          text:'Les étoiles ⭐ que tu gagnes servent à acheter de nouveaux personnages. Je t\'emmène à la boutique.' },
+        { sel:'#shop-grid .sprite-card, #shop-grid > *', enter:function(){ showTab('shop'); },
+          text:'Voici les personnages. Chacun a un prix en étoiles. Quand tu as assez d\'étoiles, touche « Acheter » : le personnage est à toi !' },
+        { sel:'#shop-grid .sp-buy:not(:disabled)',
+          text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent avec 20 bonnes réponses d\'affilée.' },
+        { sel:'#shop-mascot-panel',
+          text:'Ta mascotte t\'accompagne et réagit à tes réponses. Pour en changer, ouvre un personnage que tu possèdes et touche « Devenir mascotte ».' }
+      ]
+    },
+    bataille: {
+      title:'Combattre',
+      steps:[
+        { sel:'#tab-battle .panel-head', enter:function(){ showTab('battle'); },
+          text:'Tu as débloqué plusieurs personnages : tu peux les faire combattre ! Chacun a des points ❤️, à la fois sa force et son énergie.' },
+        { sel:'#bt-grid-classic',
+          text:'Compose ton équipe : jusqu\'à 3 classiques, 1 soutien 💖 et 1 archer 🏹. Tu n\'es pas obligé d\'avoir un soutien ou un archer, mais ils aident beaucoup : à toi de choisir !' },
+        { sel:'.bt-auto-row',
+          text:'Pas envie de choisir ? « Équipe complète » prend les plus forts, « Au hasard » tire au sort.' },
+        { sel:'#bt-diff-row', text:'Choisis la difficulté : une équipe adverse plus faible, égale ou plus forte que la tienne.' },
+        { sel:'#bt-start',
+          text:'Quand tu es prêt, lance le combat. Touche une de tes cartes pour attaquer, puis la carte à viser : chaque carte perd autant de points que l\'autre en avait. L\'archer, lui, ne perd rien ; le soutien donne des points à ses alliés.' }
+      ]
+    }
+  };
+
+  // ---- Moteur ----
+  var guideState = null;   // { id, i, steps }
+  var guideEls = null;
+  function guideBuild(){
+    if(guideEls) return guideEls;
+    var layer = document.createElement('div'); layer.className = 'guide-layer'; layer.hidden = true;
+    layer.innerHTML =
+      '<div class="guide-spot none" id="guide-spot"></div>' +
+      '<div class="guide-bubble" id="guide-bubble" role="dialog" aria-modal="true" aria-labelledby="guide-title">' +
+      '<div class="guide-step" id="guide-step"></div><h2 id="guide-title"></h2><p id="guide-text" aria-live="polite"></p>' +
+      '<div class="guide-actions"><button class="btn ghost" id="guide-skip" type="button">Passer</button>' +
+      '<button class="btn ghost" id="guide-prev" type="button">◀ Retour</button>' +
+      '<button class="btn primary" id="guide-next" type="button">Suivant ➜</button></div></div>';
+    document.body.appendChild(layer);
+    guideEls = { layer:layer, spot:layer.querySelector('#guide-spot'), bubble:layer.querySelector('#guide-bubble'),
+      step:layer.querySelector('#guide-step'), title:layer.querySelector('#guide-title'), text:layer.querySelector('#guide-text'),
+      skip:layer.querySelector('#guide-skip'), prev:layer.querySelector('#guide-prev'), next:layer.querySelector('#guide-next') };
+    guideEls.next.addEventListener('click', function(){ guideGo(1); });
+    guideEls.prev.addEventListener('click', function(){ guideGo(-1); });
+    guideEls.skip.addEventListener('click', function(){ guideEnd(true); });
+    layer.addEventListener('keydown', function(e){
+      if(e.key === 'Escape'){ e.preventDefault(); guideEnd(true); return; }
+      if(e.key === 'Tab'){   // le focus reste dans la bulle
+        var btns = [guideEls.skip, guideEls.prev, guideEls.next].filter(function(b){ return !b.hidden; });
+        var first = btns[0], last = btns[btns.length-1];
+        if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+        else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      }
+    });
+    window.addEventListener('resize', function(){ if(guideState) guidePlace(); });
+    window.addEventListener('scroll', function(){ if(guideState) guidePlace(); }, true);
+    return guideEls;
+  }
+  function guideTarget(step){
+    if(!step.sel) return null;
+    var list = step.sel.split(',');
+    for(var i=0;i<list.length;i++){
+      var e = document.querySelector(list[i].trim());
+      if(guideVisible(e)) return e;
+    }
+    return null;
+  }
+  function guideStart(id){
+    if(!GUIDES[id]) return;
+    if(guideState) guideEnd(false);
+    ['settings-overlay','guides-overlay','progress-overlay','info-overlay','activity-config-overlay'].forEach(function(o){ var e = document.getElementById(o); if(e) e.hidden = true; });
+    var reveal = document.getElementById('reveal-overlay'); if(reveal) reveal.remove();
+    guideBuild();
+    guideState = { id:id, i:-1, steps:GUIDES[id].steps, dir:1 };
+    guideEls.layer.hidden = false;
+    guideGo(1);
+  }
+  // Va à l'étape suivante (dir=1) ou précédente (dir=-1) qui a un élément visible (ou pas d'élément : étape centrée).
+  function guideGo(dir){
+    var s = guideState; if(!s) return;
+    var i = s.i + dir;
+    while(i >= 0 && i < s.steps.length){
+      var st = s.steps[i];
+      if(st.enter) st.enter();
+      if(!st.sel || guideTarget(st)) break;
+      i += dir;                      // élément absent : on saute l'étape
+    }
+    if(i >= s.steps.length){ guideEnd(false); return; }
+    if(i < 0) i = 0;
+    s.i = i; s.dir = dir;
+    var step = s.steps[i], e = guideEls;
+    e.step.textContent = (i+1) + ' / ' + s.steps.length + ' · ' + GUIDES[s.id].title;
+    e.title.textContent = guideMascotEmoji() + ' ' + (step.sel ? '' : (i===0 ? 'Bienvenue !' : 'Prêt ?'));
+    e.title.hidden = !!step.sel;
+    e.text.textContent = step.text;
+    e.prev.hidden = i === 0;
+    e.next.textContent = (i === s.steps.length-1) ? 'Terminé ✔' : 'Suivant ➜';
+    var t = guideTarget(step);
+    if(t && t.scrollIntoView) t.scrollIntoView({ block:'center', inline:'nearest' });
+    guidePlace();
+    e.next.focus();
+  }
+  function guidePlace(){
+    var s = guideState; if(!s) return;
+    var e = guideEls, step = s.steps[s.i], t = guideTarget(step);
+    var vw = window.innerWidth, vh = window.innerHeight, pad = 6;
+    if(t){
+      var r = t.getBoundingClientRect();
+      e.spot.classList.remove('none');
+      e.spot.style.left = (r.left - pad) + 'px'; e.spot.style.top = (r.top - pad) + 'px';
+      e.spot.style.width = (r.width + 2*pad) + 'px'; e.spot.style.height = (r.height + 2*pad) + 'px';
+      var bh = e.bubble.offsetHeight, bw = e.bubble.offsetWidth;
+      var below = r.bottom + pad + 12, top;
+      if(below + bh <= vh - 8) top = below;                     // sous l'élément
+      else if(r.top - pad - 12 - bh >= 8) top = r.top - pad - 12 - bh;   // au-dessus
+      else top = Math.max(8, vh - bh - 8);                      // en bas de l'écran
+      e.bubble.style.top = top + 'px';
+      e.bubble.style.left = Math.max(12, Math.min(vw - bw - 12, r.left + r.width/2 - bw/2)) + 'px';
+    } else {
+      e.spot.classList.add('none');
+      e.bubble.style.left = Math.max(12, (vw - e.bubble.offsetWidth)/2) + 'px';
+      e.bubble.style.top = Math.max(8, (vh - e.bubble.offsetHeight)/2) + 'px';
+    }
+  }
+  function guideEnd(skipped){
+    var s = guideState; if(!s) return;
+    guideSeen[s.id] = 1; guideSave();
+    guideState = null;
+    guideEls.layer.hidden = true;
+    var b = document.getElementById('settings-btn'); if(b && skipped) b.focus();
+  }
+
+  // ---- Déclenchement automatique (vérifié toutes les 1,5 s, sans jamais interrompre quelqu'un) ----
+  function guideCanInterrupt(){
+    if(guideState) return false;
+    var splash = document.getElementById('splash-overlay');
+    if(splash && !splash.hidden) return false;
+    if(document.getElementById('reveal-overlay')) return false;
+    var blocked = ['settings-overlay','guides-overlay','progress-overlay','info-overlay','activity-config-overlay'].some(function(id){ var e = document.getElementById(id); return e && !e.hidden; });
+    if(blocked) return false;
+    return !document.getElementById('tab-practice').hidden;      // on est sur l'écran des questions
+  }
+  function guideUnlockedCount(){
+    var owned = btMyOwned();
+    return btMyList().filter(function(sp){ return owned[sp.id] && !sp.starter; }).length;
+  }
+  function guideTick(){
+    if(!guideCanInterrupt()) return;
+    if(!guideSeen.accueil){ guideStart('accueil'); return; }
+    if(!guideSeen.boutique && !guideBought() && stars >= GUIDE_SHOP_STARS){ guideStart('boutique'); return; }
+    if(!guideSeen.bataille && guideUnlockedCount() >= GUIDE_BATTLE_UNLOCKS){ guideStart('bataille'); return; }
+  }
+  setInterval(guideTick, 1500);
+
+  // ---- Réglages → Guides : rejouer chacun ----
+  document.getElementById('open-guides-btn').addEventListener('click', function(){
+    document.getElementById('settings-overlay').hidden = true;
+    document.getElementById('guides-overlay').hidden = false;
+  });
+  document.getElementById('guides-close').addEventListener('click', function(){ document.getElementById('guides-overlay').hidden = true; });
+  document.getElementById('guides-overlay').addEventListener('click', function(e){
+    if(e.target.id === 'guides-overlay') document.getElementById('guides-overlay').hidden = true;
+  });
+  document.querySelectorAll('[data-guide]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var id = b.getAttribute('data-guide');
+      document.getElementById('guides-overlay').hidden = true;
+      if(id === 'accueil') showTab(lastPracticeTab);
+      guideStart(id);
+    });
   });
 })();
 </script>
