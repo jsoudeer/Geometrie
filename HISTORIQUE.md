@@ -167,3 +167,8 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - **Guide Série** (4e guide, `serie`) : se lance au premier 10 d'affilée (`GUIDE_SERIE_START`), 3 étapes sur la pastille.
 - `PROG_SKILLS.formes` inclut `atelier-erreur` et `atelier-axe`.
 - **Tests** : `serie_check.js` (nouveau), `progress_check.js` et `guide_check.js` adaptés ; toute la régression et l'audit a11y passent.
+
+## 30. Glisser des coins (Déformer) et animation de lancement (01/10/2026)
+- **Bug** : le glisser d'un coin se perdait après quelques instants. `drawDeform()` reconstruit tout le `<svg>` à chaque mouvement, ce qui détruisait le coin qui avait capturé le pointeur. Le glisser est maintenant capté par le `<svg>` lui-même (`setPointerCapture` sur `deformSvg`, `pointermove`/`pointerup`/`pointercancel` filtrés par `pointerId`). Test : `drag_check.js` (3 s de glisser à la souris, glisser rapide, relâchement) ; il échouait avant le correctif.
+- **Écran de lancement** : l'image est scindée en deux moitiés qui arrivent chacune de leur côté et s'entrechoquent (~1,3 s), avec éclair jaune, flash, deux ondes de choc, 22 étincelles aux directions aléatoires, tremblement de la carte et recul des moitiés ; le texte et le bouton apparaissent ensuite (le bouton reste cliquable). Un clic sur l'image rejoue le choc. Deux cas (`noyau.js`, `css/interface.css`, classes `sp-*`) : image perso `assets/branding/splash.*` coupée en deux fonds CSS (`.sp-split`), ou dessin SVG de secours (moitiés `.sp-left`/`.sp-right` + bulle VS qui rebondit). Une vidéo ou un GIF animé restent affichés tels quels. Mouvement réduit : image fixe, sans effet.
+- Test : `splash_check.js` (les deux cas, captures `/tmp/geo_tests/splash_*`).

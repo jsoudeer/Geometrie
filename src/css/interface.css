@@ -70,6 +70,78 @@
   }
   @media (prefers-reduced-motion: reduce){ .splash-card{ animation:none; } }
 
+  /* --- Choc des deux moitiés au lancement (~2,3 s) --- */
+  .splash-art{ cursor:pointer; }
+  .sp-impact > *, .sp-vs{ transform-box:view-box; }
+  .sp-flash, .sp-ring, .sp-bolt, .sp-spark{ opacity:0; }
+  .sp-vs{ transform-origin:160px 148px; }
+  .sp-left{ transform-origin:80px 180px; }
+  .sp-right{ transform-origin:240px 180px; }
+  .sp-go .sp-left { animation:spLeft  1.35s both; }
+  .sp-go .sp-right{ animation:spRight 1.35s both; }
+  @keyframes spLeft{
+    0%  { transform:translateX(-200px) rotate(-12deg); animation-timing-function:cubic-bezier(.55,0,.9,.5); }
+    48% { transform:translateX(9px) rotate(0); animation-timing-function:ease-out; }
+    62% { transform:translateX(-12px) rotate(-2deg); animation-timing-function:ease-in-out; }
+    80% { transform:translateX(3px); }
+    100%{ transform:translateX(0); }
+  }
+  @keyframes spRight{
+    0%  { transform:translateX(200px) rotate(12deg); animation-timing-function:cubic-bezier(.55,0,.9,.5); }
+    48% { transform:translateX(-9px) rotate(0); animation-timing-function:ease-out; }
+    62% { transform:translateX(12px) rotate(2deg); animation-timing-function:ease-in-out; }
+    80% { transform:translateX(-3px); }
+    100%{ transform:translateX(0); }
+  }
+  .sp-go .sp-flash{ animation:spFlash .5s ease-out .64s both; }
+  @keyframes spFlash{ 0%{ opacity:.95; } 100%{ opacity:0; } }
+  .sp-go .sp-ring1{ animation:spRing .75s ease-out .64s both; }
+  .sp-go .sp-ring2{ animation:spRing .9s ease-out .76s both; }
+  @keyframes spRing{ 0%{ opacity:1; transform:scale(.15); } 100%{ opacity:0; transform:scale(3.4); } }
+  .sp-go .sp-bolt{ animation:spBolt .6s linear .64s both; }
+  @keyframes spBolt{ 0%{ opacity:1; } 25%{ opacity:.2; } 45%{ opacity:1; } 100%{ opacity:0; } }
+  .sp-go .sp-spark{ animation:spSpark .75s cubic-bezier(.1,.7,.3,1) both; }
+  @keyframes spSpark{
+    0%  { opacity:1; transform:translate(0,0) scale(1.3); }
+    100%{ opacity:0; transform:translate(var(--dx),var(--dy)) scale(.1); }
+  }
+  .sp-go .sp-vs{ animation:spVs .65s cubic-bezier(.2,1.5,.4,1) .78s both; }
+  @keyframes spVs{ 0%{ transform:scale(0) rotate(-40deg); } 100%{ transform:scale(1) rotate(0); } }
+  .sp-shake{ animation:splashPop .55s cubic-bezier(.2,1.2,.4,1), spShake .45s linear .64s; }
+  @keyframes spShake{
+    0%,100%{ transform:translate(0,0); } 15%{ transform:translate(-5px,3px) rotate(-.6deg); }
+    30%{ transform:translate(5px,-3px) rotate(.6deg); } 50%{ transform:translate(-3px,-2px); }
+    70%{ transform:translate(3px,2px); } 85%{ transform:translate(-1px,1px); }
+  }
+  .sp-shake .splash-title, .sp-shake .splash-sub, .sp-shake .splash-start-btn{ animation:spTextIn .5s ease-out 1.05s both; }
+  @keyframes spTextIn{ 0%{ opacity:0; transform:translateY(8px); } 100%{ opacity:1; transform:none; } }
+  /* Image perso scindée en deux moitiés (même chorégraphie, en pourcentages) */
+  .sp-split{ position:relative; }
+  .sp-h{ position:absolute; top:0; bottom:0; width:50%; background-repeat:no-repeat; background-size:200% 100%; transform-origin:50% 100%; }
+  .sp-hl{ left:0; background-position:0 0; }
+  .sp-hr{ left:50%; background-position:100% 0; }
+  .sp-fx{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .sp-go .sp-hl{ animation:spLeftD 1.35s both; }
+  .sp-go .sp-hr{ animation:spRightD 1.35s both; }
+  @keyframes spLeftD{
+    0%  { transform:translateX(-135%) rotate(-12deg); animation-timing-function:cubic-bezier(.55,0,.9,.5); }
+    48% { transform:translateX(6%) rotate(0); animation-timing-function:ease-out; }
+    62% { transform:translateX(-8%) rotate(-2deg); animation-timing-function:ease-in-out; }
+    80% { transform:translateX(2%); }
+    100%{ transform:none; }
+  }
+  @keyframes spRightD{
+    0%  { transform:translateX(135%) rotate(12deg); animation-timing-function:cubic-bezier(.55,0,.9,.5); }
+    48% { transform:translateX(-6%) rotate(0); animation-timing-function:ease-out; }
+    62% { transform:translateX(8%) rotate(2deg); animation-timing-function:ease-in-out; }
+    80% { transform:translateX(-2%); }
+    100%{ transform:none; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .sp-go .sp-left, .sp-go .sp-right, .sp-go .sp-hl, .sp-go .sp-hr, .sp-go .sp-vs, .sp-shake, .sp-shake .splash-title, .sp-shake .splash-sub, .sp-shake .splash-start-btn{ animation:none; }
+    .sp-flash, .sp-ring, .sp-bolt, .sp-spark{ display:none; }
+  }
+
   /* ============ TRANSITION D'ENTRÉE D'UNE NOUVELLE QUESTION ============ */
   .qenter{ animation:qFadeIn .35s ease; }
   @keyframes qFadeIn{

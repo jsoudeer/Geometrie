@@ -296,8 +296,12 @@
     if(!svg) return;
     while(svg.firstChild) svg.removeChild(svg.firstChild);
     svg.setAttribute('viewBox','0 0 320 180');
-    svg.appendChild(el('rect',{x:0,y:0,width:160,height:180, fill:'#FFE7EF'}));
-    svg.appendChild(el('rect',{x:160,y:0,width:160,height:180, fill:'#1E1830'}));
+    // Chaque moitié est un groupe à part : elles arrivent chacune de leur côté
+    // et s'entrechoquent au centre (voir splashImpact / css « .sp-* »).
+    var halfL = el('g',{'class':'sp-half sp-left'}), halfR = el('g',{'class':'sp-half sp-right'});
+    halfL.appendChild(el('rect',{x:-2,y:0,width:162,height:180, fill:'#FFE7EF'}));
+    halfR.appendChild(el('rect',{x:160,y:0,width:162,height:180, fill:'#1E1830'}));
+    svg.appendChild(halfL); svg.appendChild(halfR);
 
     var gCat = el('g',{transform:'translate(24,4) scale(0.62)'});
     gCat.appendChild(el('path',{d:'M42,150 C42,108 158,108 158,150 L172,240 L28,240 Z', fill:'#FFB8CE', stroke:'#5B4034','stroke-width':4,'stroke-linejoin':'round'}));
@@ -317,7 +321,7 @@
     gCat.appendChild(el('circle',{cx:122,cy:104,r:6, fill:'#2B2B2B'}));
     gCat.appendChild(el('circle',{cx:80,cy:102,r:1.8, fill:'#fff'}));
     gCat.appendChild(el('circle',{cx:124,cy:102,r:1.8, fill:'#fff'}));
-    svg.appendChild(gCat);
+    halfL.appendChild(gCat);
 
     var gBrain = el('g',{transform:'translate(154,4) scale(0.62)'});
     var bpts = [[100,26],[128,42],[162,36],[176,70],[164,104],[182,132],[152,152],[140,186],[100,196],
@@ -328,14 +332,54 @@
     gBrain.appendChild(el('circle',{cx:130,cy:112,r:8, fill:'#fff'}));
     gBrain.appendChild(el('circle',{cx:73,cy:112,r:4.5, fill:'#2B2B2B'}));
     gBrain.appendChild(el('circle',{cx:132,cy:114,r:3.2, fill:'#2B2B2B'}));
-    svg.appendChild(gBrain);
+    halfR.appendChild(gBrain);
 
-    svg.appendChild(el('circle',{cx:160,cy:148,r:27, fill:'#FFD24C', stroke:'#5B4034','stroke-width':4}));
+    var impact = el('g',{'class':'sp-impact', transform:'translate(160,92)'});
+    svg.appendChild(impact);
+    var vs = el('g',{'class':'sp-vs'});
+    vs.appendChild(el('circle',{cx:160,cy:148,r:27, fill:'#FFD24C', stroke:'#5B4034','stroke-width':4}));
     var vsText = el('text',{x:160,y:156,'text-anchor':'middle','font-size':21,'font-family':"'Baloo 2', sans-serif",'font-weight':'800',fill:'#5B4034'});
     vsText.textContent = 'VS';
-    svg.appendChild(vsText);
+    vs.appendChild(vsText);
+    svg.appendChild(vs);
+    splashImpact(svg, impact);
   }
-  drawSplashArt(document.getElementById('splashSvg'));
+  /* Effets du choc (éclair, ondes, étincelles). Les étincelles partent dans
+     des directions tirées au hasard à chaque lecture : rose côté chat, vert
+     et jaune côté brainrot. Tout est animé en CSS ; mouvement réduit = rien. */
+  function splashImpact(svg, g){
+    g.appendChild(el('rect',{x:-160,y:-92,width:320,height:180,'class':'sp-flash',fill:'#fff'}));
+    g.appendChild(el('circle',{r:30,'class':'sp-ring sp-ring1',fill:'none',stroke:'#fff','stroke-width':5}));
+    g.appendChild(el('circle',{r:30,'class':'sp-ring sp-ring2',fill:'none',stroke:'#FFD24C','stroke-width':3}));
+    g.appendChild(el('polyline',{points:'0,-92 -9,-60 7,-40 -8,-12 8,10 -7,38 6,62 0,88','class':'sp-bolt',fill:'none',stroke:'#FFD24C','stroke-width':4,'stroke-linejoin':'round'}));
+    var cols = ['#FF7FA6','#FFD9E6','#8CF06B','#FFD24C','#fff','#B58CFF'];
+    for(var i=0;i<22;i++){
+      var ang = Math.random()*Math.PI*2, d = 55 + Math.random()*95;
+      var sp = el('circle',{r:(2+Math.random()*3.2).toFixed(1),'class':'sp-spark',fill:cols[i%cols.length]});
+      sp.style.setProperty('--dx', (Math.cos(ang)*d*1.25).toFixed(0) + 'px');
+      sp.style.setProperty('--dy', (Math.sin(ang)*d*0.8).toFixed(0) + 'px');
+      sp.style.animationDelay = (0.62 + Math.random()*0.08).toFixed(2) + 's';
+      g.appendChild(sp);
+    }
+  }
+  var splashSvgEl = document.getElementById('splashSvg');
+  var splashArt = splashSvgEl;   // ce qui est affiché : le dessin SVG, ou l'image perso scindée (trySplashCustomMedia)
+  // (Re)joue le choc : un clic sur l'image le rejoue.
+  function playSplashClash(){
+    var card = splashArt && splashArt.closest('.splash-card');
+    if(!splashArt) return;
+    if(splashArt === splashSvgEl) drawSplashArt(splashSvgEl);
+    else { var g = splashArt.querySelector('.sp-impact'); while(g.firstChild) g.removeChild(g.firstChild); splashImpact(splashArt, g); }
+    splashArt.classList.remove('sp-go'); if(card) card.classList.remove('sp-shake');
+    void splashArt.getBoundingClientRect();
+    splashArt.classList.add('sp-go'); if(card) card.classList.add('sp-shake');
+  }
+  drawSplashArt(splashSvgEl);
+  if(splashSvgEl){
+    splashSvgEl.classList.add('sp-go');
+    splashSvgEl.closest('.splash-card').classList.add('sp-shake');
+    splashSvgEl.addEventListener('click', playSplashClash);
+  }
 
   /* ---- Splash perso en remplacement du dessin procédural -----------------
      Même principe que pour les personnages (tryLoadCustomImage) : si un
@@ -355,10 +399,24 @@
     function tryImage(i){
       if(i >= IMAGE_EXTS.length) return; // rien trouvé : on garde le SVG procédural
       var img = new Image();
-      img.className = 'splash-art splash-custom-media';
-      img.alt = 'Écran de démarrage';
-      img.onload = function(){ svg.style.display = 'none'; container.insertBefore(img, svg); };
       img.onerror = function(){ tryImage(i+1); };
+      img.onload = function(){
+        // Une image fixe est scindée en deux moitiés (fond CSS) qui s'entrechoquent comme le dessin SVG.
+        var box = document.createElement('div');
+        box.className = 'splash-art splash-custom-media sp-split sp-go';
+        box.setAttribute('role','img'); box.setAttribute('aria-label','Écran de démarrage');
+        ['sp-hl','sp-hr'].forEach(function(c){
+          var h = document.createElement('div'); h.className = 'sp-h ' + c;
+          h.style.backgroundImage = 'url("' + img.src + '")'; box.appendChild(h);
+        });
+        var fx = document.createElementNS(svgNS,'svg');
+        fx.setAttribute('viewBox','0 0 320 180'); fx.setAttribute('class','sp-fx'); fx.setAttribute('aria-hidden','true');
+        var g = el('g',{'class':'sp-impact', transform:'translate(160,92)'});
+        fx.appendChild(g); box.appendChild(fx); splashImpact(box, g);
+        box.addEventListener('click', playSplashClash);
+        svg.style.display = 'none'; container.insertBefore(box, svg); splashArt = box;
+        playSplashClash();   // repart à zéro : l'image a pu arriver après le début de l'animation du dessin
+      };
       img.src = 'assets/branding/splash.' + IMAGE_EXTS[i];
     }
     function tryVideo(i){

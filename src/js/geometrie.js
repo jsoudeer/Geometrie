@@ -490,7 +490,11 @@
         if(m2Flow.closed) return;
         m2Flow.clearHint();
         deformFocusIdx = null;
-        c.setPointerCapture(ev.pointerId);
+        // Le glisser est capté par le <svg> (jamais recréé), pas par le coin :
+        // drawDeform() reconstruit les coins à chaque mouvement.
+        ev.preventDefault();
+        var pid = ev.pointerId;
+        try{ svg.setPointerCapture(pid); }catch(e){}
         function toSvgPoint(clientX, clientY){
           var pt = svg.createSVGPoint();
           pt.x = clientX; pt.y = clientY;
@@ -498,17 +502,22 @@
           return pt.matrixTransform(m);
         }
         function move(mv){
+          if(mv.pointerId !== pid) return;
           var sp = toSvgPoint(mv.clientX, mv.clientY);
           pts[idx][0] = Math.max(20, Math.min(240, sp.x));
           pts[idx][1] = Math.max(20, Math.min(240, sp.y));
           drawDeform();
         }
-        function up(){
-          c.removeEventListener('pointermove', move);
-          c.removeEventListener('pointerup', up);
+        function up(e2){
+          if(e2 && e2.pointerId !== pid) return;
+          svg.removeEventListener('pointermove', move);
+          svg.removeEventListener('pointerup', up);
+          svg.removeEventListener('pointercancel', up);
+          try{ svg.releasePointerCapture(pid); }catch(e){}
         }
-        c.addEventListener('pointermove', move);
-        c.addEventListener('pointerup', up);
+        svg.addEventListener('pointermove', move);
+        svg.addEventListener('pointerup', up);
+        svg.addEventListener('pointercancel', up);
       });
       svg.appendChild(c);
       if(deformFocusIdx === idx) c.focus();
