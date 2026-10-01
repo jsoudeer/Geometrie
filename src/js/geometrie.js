@@ -147,7 +147,9 @@
   var M2_LEVELS = [
     { name:'Losange',      instr:"Fais glisser les coins pour transformer la forme en losange : les 4 côtés doivent rester à peu près égaux.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
     { name:'Rectangle',    instr:"Transforme la forme en rectangle : les côtés opposés doivent être à peu près égaux, et les 4 angles doivent rester à peu près droits.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
-    { name:'Parallélogramme', instr:"Transforme la forme en parallélogramme : les côtés opposés doivent rester à peu près égaux, mais les angles ne doivent plus être droits.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} }
+    { name:'Parallélogramme', instr:"Transforme la forme en parallélogramme : les côtés opposés doivent rester à peu près égaux, mais les angles ne doivent plus être droits.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} },
+    { name:'Triangle isocèle', instr:"Fais glisser les 3 coins pour obtenir un triangle isocèle : 2 de ses côtés doivent être à peu près égaux (et le 3e différent).", check:checkIsosceles, tolGreat:0.05, tolOk:0.10 },
+    { name:'Triangle rectangle', instr:"Fais glisser les 3 coins pour obtenir un triangle rectangle : un de ses angles doit être droit (comme le coin d'une feuille).", check:checkRightTriangle, tolGreat:6, tolOk:12 }
   ];
 
   function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
@@ -161,9 +163,10 @@
   }
 
   function sidesAndAngles(){
-    var lens = [0,1,2,3].map(function(i){ return dist(pts[i], pts[(i+1)%4]); });
-    var angles = [0,1,2,3].map(function(i){
-      var prev = pts[(i+3)%4], curr = pts[i], next = pts[(i+1)%4];
+    var n = pts.length, idx = []; for(var k=0;k<n;k++) idx.push(k);
+    var lens = idx.map(function(i){ return dist(pts[i], pts[(i+1)%n]); });
+    var angles = idx.map(function(i){
+      var prev = pts[(i+n-1)%n], curr = pts[i], next = pts[(i+1)%n];
       return angleAtDeg(prev,curr,next);
     });
     return {lens:lens, angles:angles};
@@ -201,6 +204,32 @@
     return {ok:false, msg:'✘ Il faut incliner un peu plus la forme pour que les angles ne soient plus droits.'};
   }
 
+  // Triangle isocèle : on cherche la paire de côtés la plus proche ; elle doit être (presque)
+  // égale, et le triangle ne doit pas être aplati (sinon 3 points alignés « marcheraient »).
+  function checkIsosceles(tolGreat, tolOk){
+    var s = sidesAndAngles(), L = s.lens, best = 9, bi = 0, bj = 1, i, j;
+    for(i=0;i<3;i++) for(j=i+1;j<3;j++){
+      var d = Math.abs(L[i]-L[j]) / Math.max(L[i], L[j]);
+      if(d < best){ best = d; bi = i; bj = j; }
+    }
+    var minAngle = Math.min.apply(null, s.angles);
+    if(minAngle < 18) return {ok:false, msg:'✘ Le triangle est trop aplati : écarte un coin pour qu\'il redevienne un vrai triangle.'};
+    var others = [0,1,2].filter(function(k){ return k!==bi && k!==bj; });
+    if(best <= tolOk && Math.abs(L[others[0]]-L[bi]) / Math.max(L[others[0]], L[bi]) < 0.08) return {ok:false, msg:'✘ Les 3 côtés sont égaux : c\'est un triangle équilatéral. Pour un isocèle, un côté doit être différent des deux autres.'};
+    if(best <= tolGreat) return {ok:true, msg:'✔ Bravo, deux côtés sont bien égaux : c\'est un triangle isocèle !'};
+    if(best <= tolOk) return {ok:true, msg:'✔ Réussi ! Deux côtés sont à peu près égaux, c\'est un triangle isocèle. Essaie d\'être encore plus précis la prochaine fois.'};
+    return {ok:false, msg:'✘ Pas encore : il faut que 2 côtés aient à peu près la même longueur (regarde les mesures en cm).'};
+  }
+  function checkRightTriangle(tolGreat, tolOk){
+    var s = sidesAndAngles();
+    var dev = Math.min.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
+    var minAngle = Math.min.apply(null, s.angles);
+    if(minAngle < 15) return {ok:false, msg:'✘ Le triangle est trop aplati : écarte un coin pour qu\'il redevienne un vrai triangle.'};
+    if(dev <= tolGreat) return {ok:true, msg:'✔ Bravo, il a un angle droit : c\'est un triangle rectangle !'};
+    if(dev <= tolOk) return {ok:true, msg:'✔ Réussi ! L\'un des angles est à peu près droit : c\'est un triangle rectangle.'};
+    return {ok:false, msg:'✘ Pas encore : un des 3 angles doit devenir droit (90°, comme le coin d\'une feuille).'};
+  }
+
   // Construit une forme cible qui satisfait DÉJÀ le critère "great" du type
   // demandé (losange/rectangle/parallélogramme), avec un peu de hasard sur
   // les proportions et une légère rotation pour varier l'affichage — la
@@ -219,6 +248,13 @@
     } else if(shapeIdx===1){ // rectangle
       var w=rand(100,150), h=w*rand(0.5,0.75);
       raw = [[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]];
+    } else if(shapeIdx===3){ // triangle isocèle : base b, hauteur h (jamais équilatéral)
+      var b, h, leg, gd = 0;
+      do { b=rand(90,140); h=rand(70,130); leg=Math.hypot(h, b/2); } while(Math.abs(leg-b)/Math.max(leg,b) < 0.2 && gd++ < 50);
+      raw = [[-b/2,h/2],[b/2,h/2],[0,-h/2]];
+    } else if(shapeIdx===4){ // triangle rectangle : 2 côtés de l'angle droit (pas égaux, sinon isocèle)
+      var a1=rand(90,140), a2=rand(55,85);
+      raw = [[-a1/2,a2/2],[a1/2,a2/2],[-a1/2,-a2/2]];
     } else { // parallélogramme : rectangle + cisaillement horizontal
       var w2=rand(90,130), h2=rand(80,120);
       var shear = Math.tan(rand(24,36)*Math.PI/180) * h2;
@@ -235,9 +271,10 @@
   // Facile = 1 seul coin décalé (petit effort), Moyen = 3 coins décalés
   // (plusieurs mouvements), Difficile = les 4 coins bien décalés (gros effort).
   function perturbForLevel(target, level){
-    var cornerCount = level===0 ? 1 : (level===2 ? 4 : 3);
+    var n = target.length;
+    var cornerCount = level===0 ? 1 : (level===2 ? n : (n===3 ? 2 : 3));
     var magRange = level===0 ? [35,55] : (level===2 ? [45,75] : [25,45]);
-    var idxs = shuffle([0,1,2,3]).slice(0, cornerCount);
+    var idxs = shuffle(target.map(function(_,i){ return i; })).slice(0, cornerCount);
     var startPts = target.map(function(p){ return p.slice(); });
     idxs.forEach(function(i){
       var ang = rand(0, Math.PI*2), mag = rand(magRange[0], magRange[1]);
@@ -257,8 +294,8 @@
     });
     svg.appendChild(poly);
 
-    for(var i=0;i<4;i++){
-      var a = pts[i], b = pts[(i+1)%4];
+    for(var i=0;i<pts.length;i++){
+      var a = pts[i], b = pts[(i+1)%pts.length];
       var mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
       var len = (dist(a,b)/SCALE2).toFixed(1);
       svg.appendChild(el('rect',{x:mx-16,y:my-9,width:32,height:16,rx:6,class:'side-label-bg'}));
@@ -274,7 +311,7 @@
       // déplace avec les flèches (Maj = pas plus grand), en plus du glisser.
       c.setAttribute('tabindex','0');
       c.setAttribute('role','button');
-      c.setAttribute('aria-label','Coin ' + (idx+1) + ' sur 4 : flèches du clavier pour le déplacer');
+      c.setAttribute('aria-label','Coin ' + (idx+1) + ' sur ' + pts.length + ' : flèches du clavier pour le déplacer');
       c.addEventListener('keydown', function(ev){
         var step = ev.shiftKey ? 20 : 8, dx = 0, dy = 0;
         if(ev.key==='ArrowLeft') dx = -step; else if(ev.key==='ArrowRight') dx = step;
@@ -316,11 +353,15 @@
   var m2Won = false;
   function newDeformQuestion(){
     m2Won = false;
-    m2ShapeIdx = randInt(0,2);
+    m2ShapeIdx = pickFresh('deform-shape', [0,1,2,3,4]);
     document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
     var target = shapeTargetPoints(m2ShapeIdx);
-    m2StartPts = perturbForLevel(target, globalLevel);
-    pts = m2StartPts.map(function(p){ return p.slice(); });
+    // le départ ne doit JAMAIS être déjà réussi : on retire la déformation tant que la forme passe le test
+    var lvDef = M2_LEVELS[m2ShapeIdx], tries = 0;
+    do {
+      m2StartPts = perturbForLevel(target, globalLevel);
+      pts = m2StartPts.map(function(p){ return p.slice(); });
+    } while(lvDef.check(lvDef.tolGreat, lvDef.tolOk).ok && ++tries < 40);
     drawDeform();
     var fb = document.getElementById('m2-feedback');
     fb.className='feedback'; fb.textContent='';
@@ -656,36 +697,107 @@
     };
   }
 
-  function genMilieuQuestion(){
+  // Milieu : trois variantes selon le niveau.
+  //  - Facile : 3 formes alignées sur le segment, celle du milieu est la réponse (comme avant).
+  //  - Moyen / Difficile « formes » : 3 ou 5 formes (nombre impair → une forme est au milieu),
+  //    ou 2 ou 4 formes (nombre pair → AUCUNE forme au milieu). La réponse « Aucune forme » est
+  //    toujours proposée, donc on ne peut pas répondre au hasard parmi les seules formes.
+  //  - Difficile « coordonnées » : deux points A et B (en ligne, en colonne ou en diagonale),
+  //    on cherche les coordonnées du milieu.
+  function genMilieuQuestion(level){
+    level = level || 0;
+    if(level===0) return genMilieuFormes(0);
+    if(level===2 && Math.random()<0.5) return genMilieuCoord();
+    return genMilieuFormes(level);
+  }
+  function genMilieuFormes(level){
     var horizontal = Math.random()<0.5;
     var fixedIdx = randInt(0,4);
-    // 3 formes bien distinctes plutôt que des lettres A/B/C, qui se
-    // confondaient visuellement avec les lettres des colonnes du quadrillage.
-    var shapeKeys = shuffle(MARKER_SHAPES.slice()).slice(0,3);
-    var positions = [1,2,3];
+    var span = 2, s0 = 0, e0 = 2, noneAnswer = false;
+    if(level===0){ span = 2; s0 = 1; e0 = 3; }
+    else {
+      span = pick([2,4,4]);
+      s0 = span===4 ? 0 : randInt(0,2); e0 = s0 + span;
+      noneAnswer = Math.random()<0.4;
+    }
+    var mid = (s0+e0)/2;
+    var positions = [];
+    for(var p=s0;p<=e0;p++){ if(!(noneAnswer && p===mid)) positions.push(p); }
+    var shapeKeys = shuffle(MARKER_SHAPES.slice()).slice(0, positions.length);
     var pts = positions.map(function(p,i){
       var base = horizontal ? {col:p,row:fixedIdx} : {col:fixedIdx,row:p};
-      base.shape = shapeKeys[i];
-      return base;
+      base.shape = shapeKeys[i]; base.pos = p; return base;
     });
-    var correctShape = pts[1].shape;
-    var correctName = MARKER_LABELS[correctShape];
+    var correctShape = null;
+    pts.forEach(function(pt){ if(pt.pos===mid) correctShape = pt.shape; });
+    var choices;
+    if(level===0){
+      choices = shapeKeys.map(function(sh){ return { label:MARKER_LABELS[sh], ok: sh===correctShape }; });
+    } else {
+      // 4 propositions : « Aucune forme » + 3 formes (dont la bonne s'il y en a une)
+      var pool = shuffle(shapeKeys.filter(function(sh){ return sh!==correctShape; }));
+      var shown = correctShape ? [correctShape].concat(pool.slice(0,2)) : pool.slice(0,3);
+      choices = shuffle(shown.map(function(sh){ return { label:MARKER_LABELS[sh], ok: sh===correctShape }; }));
+      choices.push({ label:'Aucune forme', ok: correctShape===null });
+    }
+    var cells = span + 1;
+    var explain;
+    if(correctShape) explain = 'Le segment passe par ' + cells + ' cases : celle du milieu est la ' + (mid-s0+1) + 'e, et on y trouve le ' + MARKER_LABELS[correctShape] + '.';
+    else explain = 'Le segment passe par ' + cells + ' cases : celle du milieu (la ' + (mid-s0+1) + 'e) est vide. Il y a ' + positions.length + ' formes, une de chaque côté du milieu : aucune n\'est au milieu.';
     return {
       tag:'Milieu',
-      question:'Quelle forme se trouve au milieu du segment ?',
+      question: level===0 ? 'Quelle forme se trouve au milieu du segment ?' : 'Quelle forme se trouve au milieu du segment ? (il peut ne pas y en avoir)',
       sub:'Le milieu est à égale distance des deux extrémités du segment.',
-      explain:'Le ' + correctName + ' est à égale distance des deux bouts du segment : c\'est lui qui est au milieu.',
+      explain: explain,
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         drawGridBase(svg);
         var x1,y1,x2,y2;
-        if(horizontal){ x1=gridCenterX(0); y1=gridCenterY(fixedIdx); x2=gridCenterX(4); y2=y1; }
-        else { x1=gridCenterX(fixedIdx); y1=gridCenterY(0); x2=x1; y2=gridCenterY(4); }
+        if(horizontal){ x1=gridCenterX(s0); y1=gridCenterY(fixedIdx); x2=gridCenterX(e0); y2=y1; }
+        else { x1=gridCenterX(fixedIdx); y1=gridCenterY(s0); x2=x1; y2=gridCenterY(e0); }
         svg.appendChild(el('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:'var(--accent)','stroke-width':4,'stroke-linecap':'round'}));
-        pts.forEach(function(p,i){ drawShapeMarkerOnGrid(svg,p.col,p.row,p.shape,palette[i%palette.length]); });
+        [[x1,y1],[x2,y2]].forEach(function(q){ svg.appendChild(el('circle',{cx:q[0],cy:q[1],r:4,fill:'var(--accent)'})); });
+        pts.forEach(function(pt,i){ drawShapeMarkerOnGrid(svg,pt.col,pt.row,pt.shape,palette[i%palette.length]); });
       },
-      cols3:true,
-      choices: shapeKeys.map(function(sh){ return { label:MARKER_LABELS[sh], ok: sh===correctShape }; })
+      cols3:level===0,
+      choices: choices
+    };
+  }
+  function genMilieuCoord(){
+    var dirs = [[1,0],[0,1],[1,1],[1,-1]], d = pick(dirs), k = pick([1,2]);   // k = demi-longueur du segment
+    var c0, r0, c1, r1, tries = 0;
+    do {
+      var cm = randInt(0,4), rm = randInt(0,4);
+      c0 = cm - d[0]*k; r0 = rm - d[1]*k; c1 = cm + d[0]*k; r1 = rm + d[1]*k;
+      tries++;
+    } while(tries<100 && (c0<0||c0>4||c1<0||c1>4||r0<0||r0>4||r1<0||r1>4));
+    if(tries>=100){ c0=0; r0=0; c1=4; r1=0; }
+    var cm2 = (c0+c1)/2, rm2 = (r0+r1)/2;
+    var correct = coordLabel(cm2, rm2);
+    var cand = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1]].map(function(o){ return [cm2+o[0], rm2+o[1]]; })
+      .filter(function(q){ return q[0]>=0 && q[0]<=4 && q[1]>=0 && q[1]<=4; });
+    cand.push([c1, r1]);   // piège : prendre l'extrémité
+    cand = shuffle(cand);
+    var seen = {}; seen[correct] = true; var labels = [correct];
+    for(var i=0;i<cand.length && labels.length<4;i++){ var l = coordLabel(cand[i][0], cand[i][1]); if(!seen[l]){ seen[l] = true; labels.push(l); } }
+    labels = shuffle(labels);
+    var A = coordLabel(c0,r0), B = coordLabel(c1,r1);
+    return {
+      tag:'Milieu',
+      question:'A est en ' + A + ' et B est en ' + B + '. Quelles sont les coordonnées du milieu du segment [AB] ?',
+      sub:'Le milieu est à égale distance de A et de B. Compte les cases entre les deux.',
+      explain:'Entre A (' + A + ') et B (' + B + '), le milieu est en ' + correct + ' : il est à ' + k + ' case' + (k>1?'s':'') + ' de chaque bout.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        svg.appendChild(el('line',{x1:gridCenterX(c0),y1:gridCenterY(r0),x2:gridCenterX(c1),y2:gridCenterY(r1),stroke:'var(--accent)','stroke-width':4,'stroke-linecap':'round'}));
+        [[c0,r0,'A'],[c1,r1,'B']].forEach(function(q){
+          svg.appendChild(el('circle',{cx:gridCenterX(q[0]),cy:gridCenterY(q[1]),r:11,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':3}));
+          svg.appendChild(svgText(gridCenterX(q[0]),gridCenterY(q[1])+5,14,q[2]));
+        });
+      },
+      cols3:false,
+      choices: labels.map(function(l){ return { label:l, ok:l===correct }; })
     };
   }
 
@@ -908,48 +1020,7 @@
   }
 
   // ===================== Symétrie =====================
-  // Le triangle isocèle change de taille, de position ET d'orientation
-  // (pointe en haut/bas/gauche/droite) à chaque question, au lieu d'être
-  // toujours rigoureusement le même dessin — seules les 3 droites candidates
-  // changeaient avant, ce qui rendait l'exercice très répétitif.
-  function genSymAxeQuestion(){
-    var dir = pick(['up','down','left','right']);
-    var vertical = (dir==='up' || dir==='down');
-    var cx=100, cy=100;
-    var apexDist = 55+randInt(0,25), baseDist = 45+randInt(0,15), baseHalf = 32+randInt(0,22);
-    var apex, baseA, baseB;
-    if(dir==='up'){    apex=[cx,cy-apexDist]; baseA=[cx-baseHalf,cy+baseDist]; baseB=[cx+baseHalf,cy+baseDist]; }
-    else if(dir==='down'){ apex=[cx,cy+apexDist]; baseA=[cx-baseHalf,cy-baseDist]; baseB=[cx+baseHalf,cy-baseDist]; }
-    else if(dir==='left'){ apex=[cx-apexDist,cy]; baseA=[cx+baseDist,cy-baseHalf]; baseB=[cx+baseDist,cy+baseHalf]; }
-    else {             apex=[cx+apexDist,cy]; baseA=[cx-baseDist,cy-baseHalf]; baseB=[cx-baseDist,cy+baseHalf]; }
-    var offset = 20+Math.floor(Math.random()*11);
-    var axisCoord = vertical ? cx : cy;
-    var coords = [axisCoord-offset, axisCoord, axisCoord+offset];
-    var labels = shuffle(['1','2','3']);
-    var correctIdx = coords.indexOf(axisCoord);
-    var correctLabel = labels[correctIdx];
-    return {
-      tag:'Symétrie',
-      question:'Quelle droite (1, 2 ou 3) est un axe de symétrie de cette figure ?',
-      sub:'Une seule droite partage la figure en deux parties identiques, comme un miroir.',
-      explain:'La droite ' + correctLabel + ' passe par la pointe et le milieu de la base : elle partage le triangle en deux parties identiques.',
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(el('polygon',{points:[apex,baseA,baseB].map(function(p){return p[0]+','+p[1];}).join(' '), fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4,'stroke-linejoin':'round'}));
-        coords.forEach(function(v,i){
-          if(vertical){
-            svg.appendChild(el('line',{x1:v,y1:22,x2:v,y2:182,stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'6,5'}));
-            svg.appendChild(svgText(v,15,13,labels[i]));
-          } else {
-            svg.appendChild(el('line',{x1:22,y1:v,x2:182,y2:v,stroke:'var(--text)','stroke-width':2,'stroke-dasharray':'6,5'}));
-            svg.appendChild(svgText(14,v+4,13,labels[i]));
-          }
-        });
-      },
-      cols3:true,
-      choices: ['1','2','3'].map(function(l){ return { label:l, ok:l===correctLabel }; })
-    };
-  }
+  // (L'ancien QCM « Quelle droite est l'axe du triangle ? » est remplacé par l'atelier « Axes de symétrie », voir atelier.js.)
   // Le rectangle change de taille à chaque question (jamais un carré : sinon
   // la diagonale deviendrait un vrai axe, ce qui casserait la question), et
   // les propositions "fausses" varient entre diagonale et droite décalée
@@ -963,32 +1034,55 @@
   // centre (jamais 50%), à des pourcentages variés (10/20/30/35/65/70/80/90)
   // pour que l'écart avec le vrai milieu soit tantôt petit, tantôt grand.
   var SYM_VRAI_OFFSETS = [10,20,30,35,65,70,80,90];
+  // Quatre figures : rectangle (jamais carré), carré (ses diagonales SONT des axes), triangle
+  // isocèle (seule la médiane de la pointe est un axe) et cercle (toute droite passant par le
+  // centre est un axe). Les droites fausses sont décalées ou obliques, la bonne passe exactement
+  // par le centre de symétrie.
   function genSymVraiQuestion(){
-    var isAxis = Math.random()<0.5;
-    var w = 70+randInt(0,60);
-    var h; do{ h = 40+randInt(0,50); }while(Math.abs(w-h)<20); // jamais un carré
-    var rx = 100-w/2, ry = 100-h/2;
-    var vertical = Math.random()<0.5;
-    var pct = isAxis ? 50 : pick(SYM_VRAI_OFFSETS);
-    var lc;
-    if(vertical){
-      var x = rx + w*(pct/100);
-      lc = {x1:x, y1:ry-15, x2:x, y2:ry+h+15};
+    var fig = pickFresh('symvrai-fig', ['rect','carre','tri','cercle']);
+    var isAxis = Math.random()<0.5, line, shape, expTrue, expFalse;
+    if(fig==='rect'){
+      var w = 70+randInt(0,60), h; do{ h = 40+randInt(0,50); }while(Math.abs(w-h)<20);
+      var rx = 100-w/2, ry = 100-h/2, vertical = Math.random()<0.5, pct = isAxis ? 50 : pick(SYM_VRAI_OFFSETS);
+      line = vertical ? {x1:rx+w*(pct/100), y1:ry-15, x2:rx+w*(pct/100), y2:ry+h+15} : {x1:rx-15, y1:ry+h*(pct/100), x2:rx+w+15, y2:ry+h*(pct/100)};
+      shape = function(svg){ svg.appendChild(el('rect',{x:rx,y:ry,width:w,height:h, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4})); };
+      expTrue = 'Oui : cette droite passe exactement au milieu, donc en pliant le long d\'elle, les deux moitiés du rectangle se superposent.';
+      expFalse = 'Non : cette droite ne passe pas exactement au milieu (elle est décalée), donc les deux parties n\'ont pas la même taille — ce n\'est pas un axe de symétrie.';
+    } else if(fig==='carre'){
+      var c = 70+randInt(0,40), x0 = 100-c/2, y0 = 100-c/2, kind = isAxis ? pick(['mid','diag']) : pick(['off','off','offd']);
+      if(kind==='mid') line = Math.random()<0.5 ? {x1:100, y1:y0-15, x2:100, y2:y0+c+15} : {x1:x0-15, y1:100, x2:x0+c+15, y2:100};
+      else if(kind==='diag') line = Math.random()<0.5 ? {x1:x0-12, y1:y0-12, x2:x0+c+12, y2:y0+c+12} : {x1:x0-12, y1:y0+c+12, x2:x0+c+12, y2:y0-12};
+      else { var pc = pick([15,25,35,65,75,85])/100; line = Math.random()<0.5 ? {x1:x0+c*pc, y1:y0-15, x2:x0+c*pc, y2:y0+c+15} : {x1:x0-15, y1:y0+c*pc, x2:x0+c+15, y2:y0+c*pc}; }
+      shape = function(svg){ svg.appendChild(el('rect',{x:x0,y:y0,width:c,height:c, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4})); };
+      expTrue = kind==='diag' ? 'Oui : dans un carré, les diagonales sont aussi des axes de symétrie. En pliant le long de la diagonale, les deux triangles se superposent.' : 'Oui : cette droite passe exactement par le milieu des côtés, donc les deux moitiés du carré se superposent.';
+      expFalse = 'Non : cette droite est décalée, elle ne passe pas par le centre du carré : les deux parties ne se superposent pas.';
+    } else if(fig==='tri'){
+      var bh = 35+randInt(0,20), th = 55+randInt(0,25), tb = 55+randInt(0,20), kind2 = isAxis ? 'axe' : pick(['off','off','horiz']);
+      var apexY = 100-th, baseY = 100+bh;
+      if(kind2==='axe') line = {x1:100, y1:apexY-15, x2:100, y2:baseY+15};
+      else if(kind2==='off') { var dx = pick([-1,1])*(12+randInt(0,22)); line = {x1:100+dx, y1:apexY-15, x2:100+dx, y2:baseY+15}; }
+      else { var hy = apexY + (baseY-apexY)*pick([0.4,0.5,0.6]); line = {x1:100-tb-15, y1:hy, x2:100+tb+15, y2:hy}; }
+      shape = function(svg){ svg.appendChild(el('polygon',{points:[[100,apexY],[100-tb,baseY],[100+tb,baseY]].map(function(q){return q[0]+','+q[1];}).join(' '), fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4,'stroke-linejoin':'round'})); };
+      expTrue = 'Oui : cette droite passe par la pointe et le milieu de la base du triangle isocèle, donc les deux moitiés se superposent.';
+      expFalse = kind2==='horiz' ? 'Non : en pliant le long de cette droite horizontale, le haut (petit) ne tombe pas sur le bas (large) : ce n\'est pas un axe.' : 'Non : cette droite ne passe pas par la pointe et le milieu de la base : les deux parties ne sont pas identiques.';
     } else {
-      var y = ry + h*(pct/100);
-      lc = {x1:rx-15, y1:y, x2:rx+w+15, y2:y};
+      var rr = 45+randInt(0,25), ang = rand(0, Math.PI), ca = Math.cos(ang), sa = Math.sin(ang), off = isAxis ? 0 : pick([-1,1])*(rr*pick([0.3,0.5,0.7]));
+      var px = 100 - sa*off, py = 100 + ca*off;
+      line = {x1:px-ca*(rr+18), y1:py-sa*(rr+18), x2:px+ca*(rr+18), y2:py+sa*(rr+18)};
+      shape = function(svg){ svg.appendChild(el('circle',{cx:100,cy:100,r:rr, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4})); };
+      expTrue = 'Oui : cette droite passe par le centre du cercle. Un cercle a une infinité d\'axes de symétrie : toutes les droites qui passent par son centre.';
+      expFalse = 'Non : cette droite ne passe pas par le centre du cercle, elle le coupe en deux parties de tailles différentes.';
     }
+    var names = { rect:'du rectangle', carre:'du carré', tri:'du triangle', cercle:'du cercle' };
     return {
       tag:'Symétrie',
-      question:'Cette droite est-elle un axe de symétrie du rectangle ?',
+      question:'Cette droite est-elle un axe de symétrie ' + names[fig] + ' ?',
       sub:'Imagine que tu plies la figure le long de la droite : les deux côtés se superposent-ils exactement ?',
-      explain: isAxis
-        ? 'Oui : cette droite passe exactement au milieu, donc en pliant le long d\'elle, les deux moitiés du rectangle se superposent.'
-        : 'Non : cette droite ne passe pas exactement au milieu (elle est décalée), donc les deux parties n\'ont pas la même taille — ce n\'est pas un axe de symétrie.',
+      explain: isAxis ? expTrue : expFalse,
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(el('rect',{x:rx,y:ry,width:w,height:h, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4}));
-        svg.appendChild(el('line',{x1:lc.x1,y1:lc.y1,x2:lc.x2,y2:lc.y2, stroke:'var(--text)','stroke-width':3,'stroke-dasharray':'6,5'}));
+        shape(svg);
+        svg.appendChild(el('line',{x1:line.x1,y1:line.y1,x2:line.x2,y2:line.y2, stroke:'var(--text)','stroke-width':3,'stroke-dasharray':'6,5'}));
       },
       cols3:false,
       choices: shuffle([{label:'Oui',ok:isAxis},{label:'Non',ok:!isAxis}])
@@ -1365,7 +1459,7 @@
     randomNote:'Les 3 points (alignés ou non) et leur disposition sont tirés au hasard à chaque question.',
     generate:genAlignQuestion });
   registerQuizType({ id:'milieu', category:'formes', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
-    randomNote:'La position du segment et les formes-repères sont tirées au hasard à chaque question.',
+    randomNote:'Facile : 3 formes sur le segment, on cherche celle du milieu. Moyen : segment de 3 ou 5 cases avec 3 ou 5 formes (une au milieu), ou 2 ou 4 formes (aucune au milieu : « Aucune forme » est toujours proposée). Difficile : idem, et une variante où l\'on lit les coordonnées du milieu de [AB] (horizontal, vertical ou diagonal). Position, formes et couleurs sont tirées au hasard.',
     generate:genMilieuQuestion });
   registerQuizType({ id:'coord', category:'repere', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
     randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.',
@@ -1385,14 +1479,11 @@
   registerQuizType({ id:'chasse', category:'formes', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
     randomNote:'Le nombre et la disposition des formes affichées sont tirés au hasard à chaque question.',
     generate:genChasseQuestion });
-  registerQuizType({ id:'symAxe', category:'formes', label:'Symétrie', longLabel:'Axe de symétrie', defaultLevels:[1,2],
-    randomNote:'La position des 3 droites candidates est tirée au hasard ; le triangle est toujours isocèle, donc il y a toujours exactement un vrai axe de symétrie parmi elles (règle fixe).',
-    generate:genSymAxeQuestion });
   registerQuizType({ id:'decodage', category:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
     randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.',
     generate:genDecodageQuestion });
   registerQuizType({ id:'symVrai', category:'formes', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
-    randomNote:'La droite proposée est parallèle à un côté (jamais une diagonale, qui prêtait à confusion) : soit exactement au milieu (vrai axe), soit décalée d\'un pourcentage variable (10 à 90%, jamais 50%) tiré au hasard.',
+    randomNote:'4 figures tirées en alternance : rectangle (jamais carré), carré (ses diagonales sont de vrais axes), triangle isocèle, cercle (toute droite par le centre est un axe). La droite est soit un vrai axe, soit décalée ou oblique ; la figure et les mesures sont tirées au hasard.',
     generate:genSymVraiQuestion });
   registerQuizType({ id:'enigme', category:'solides', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
     randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',

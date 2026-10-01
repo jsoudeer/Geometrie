@@ -217,3 +217,8 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 
 ## Progression de l'enfant (Réglages → 📈 Progression)
 Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma progression »). Trois vues : **Synthèse** (radar de 8 compétences, points forts, à travailler), **Détail** (par activité et niveau), **Activité** (14 derniers jours). La série de 20 bonnes réponses continue quand le niveau monte tout seul, et valide le défi de chaque niveau traversé. Pour les 3 dernières questions de cette série, le jeu pioche dans les sujets les plus faibles (il faut au moins 20 réponses enregistrées).
+
+## Nouveautés d'activités (01/10/2026)
+- **Déformer** : 5 formes à obtenir, dont le triangle isocèle (2 côtés égaux) et le triangle rectangle (un angle droit).
+- **Milieu** : parfois aucune forme n'est au milieu (nombre pair de formes) ; au niveau Difficile, on peut aussi donner les coordonnées du milieu de deux points.
+- **Ateliers** : « Trouver l'erreur » (toucher la case en trop ou manquante) et « Axes de symétrie » (toucher les lignes de pliage qui sont de vrais axes, de 0 à 4 axes).

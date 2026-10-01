@@ -251,3 +251,170 @@
     generate:atCopyGenerate,
     signature:function(){ return JSON.stringify(atCopy.model); }
   });
+
+  // ---------------------------------------------------------------------
+  // 4. Trouver l'erreur : la copie est déjà remplie, il faut repérer la case en trop ou manquante
+  // ---------------------------------------------------------------------
+  var atErr = { n:0, model:null, copy:null, diff:null, marks:null, told:true, ui:null };
+  function atErrGenerate(level){
+    var n = level===0 ? 4 : level===1 ? 5 : 6, count = level===0 ? 5 : level===1 ? 8 : 12;
+    var nDiff = level===0 ? 1 : level===1 ? 2 : 3;
+    var model = [], copy = [], r, c;
+    for(r=0;r<n;r++){ model.push([]); for(c=0;c<n;c++) model[r].push(false); }
+    var placed = 0, guard = 0;
+    while(placed<count && guard++<300){ r = randInt(0,n-1); c = randInt(0,n-1); if(!model[r][c]){ model[r][c] = true; placed++; } }
+    copy = model.map(function(row){ return row.slice(); });
+    // cases modifiées : au moins une « en trop » et une « manquante » dès que plusieurs erreurs
+    var diff = [], wantExtra = [];
+    for(var k=0;k<nDiff;k++) wantExtra.push(k % 2 === 0 ? Math.random()<0.5 : !wantExtra[k-1]);
+    wantExtra.forEach(function(extra){
+      var tries = 0, rr, cc;
+      do { rr = randInt(0,n-1); cc = randInt(0,n-1); tries++; }
+      while(tries<200 && (copy[rr][cc] === extra || diff.some(function(d){ return d[0]===rr && d[1]===cc; })));
+      if(copy[rr][cc] !== extra){ diff.push([rr,cc]); copy[rr][cc] = extra; }   // extra=true : case ajoutée ; false : case retirée
+    });
+    atErr.n = n; atErr.model = model; atErr.copy = copy; atErr.diff = diff; atErr.told = level<2;
+    atErr.marks = model.map(function(row){ return row.map(function(){ return false; }); });
+    var how = level===2 ? 'Il y a des erreurs : trouve-les toutes.' : (nDiff===1 ? 'Il y a 1 erreur.' : 'Il y a ' + nDiff + ' erreurs.');
+    atErr.ui.reset('Compare la copie (à droite) avec le modèle (à gauche). ' + how + ' Touche chaque case en trop ou manquante dans la copie.', 'Modèle et copie avec erreurs : touche les cases fausses de la copie', '0 0 260 150');
+    atErrDraw(null);
+  }
+  function atErrIsDiff(r, c){ return atErr.diff.some(function(d){ return d[0]===r && d[1]===c; }); }
+  function atErrDraw(reveal){
+    var ui = atErr.ui, n = atErr.n, cell = Math.floor(116/n), size = cell*n, r, c;
+    var xm = 8 + (116-size)/2, xp = 136 + (116-size)/2, y0 = 22 + (116-size)/2;
+    ui.svg.innerHTML = '';
+    ui.svg.appendChild(svgText(66, 15, 13, 'Modèle'));
+    ui.svg.appendChild(svgText(194, 15, 13, 'Copie'));
+    for(r=0;r<n;r++) for(c=0;c<n;c++){
+      ui.svg.appendChild(el('rect', { x:xm + c*cell, y:y0 + r*cell, width:cell, height:cell, fill:atErr.model[r][c] ? AT_COLORS.given : AT_COLORS.empty, stroke:'var(--text)', 'stroke-width':1.2 }));
+      (function(rr, cc){
+        var marked = atErr.marks[rr][cc];
+        var rect = atelierCell(ui.svg, xp + cc*cell, y0 + rr*cell, cell, cell, atErr.copy[rr][cc] ? AT_COLORS.mine : AT_COLORS.empty,
+          'case ' + (rr+1) + ', ' + (cc+1) + (atErr.copy[rr][cc] ? ', coloriée' : ', vide') + (marked ? ', signalée comme erreur' : ''), function(){
+            if(ui.solved) return;
+            atErr.marks[rr][cc] = !atErr.marks[rr][cc];
+            ui.fb.className = 'feedback'; ui.fb.innerHTML = '';
+            atErrDraw(null);
+          });
+        if(marked){ rect.setAttribute('stroke', '#d33'); rect.setAttribute('stroke-width', 3.5); ui.svg.appendChild(svgText(xp + cc*cell + cell/2, y0 + rr*cell + cell/2 + 4, Math.max(11, cell*0.5), '✖')); }
+        if(reveal && atErrIsDiff(rr, cc)){ rect.setAttribute('stroke', reveal==='good' ? '#2a9d4a' : '#d33'); rect.setAttribute('stroke-width', 3.5); }
+      })(r, c);
+    }
+  }
+  function atErrCheck(ui){
+    var marked = [], r, c;
+    for(r=0;r<atErr.n;r++) for(c=0;c<atErr.n;c++) if(atErr.marks[r][c]) marked.push([r,c]);
+    var good = marked.filter(function(m){ return atErrIsDiff(m[0], m[1]); }).length, total = atErr.diff.length, wrong = marked.length - good;
+    if(good===total && wrong===0){
+      var parts = atErr.diff.map(function(d){ return 'ligne ' + (d[0]+1) + ', colonne ' + (d[1]+1) + ' : la case est ' + (atErr.copy[d[0]][d[1]] ? 'en trop' : 'manquante'); });
+      atErrDraw('good');
+      atelierWin(ui, '<div>✔ Bravo, tu as trouvé ' + (total>1 ? 'toutes les erreurs' : 'l\'erreur') + ' !</div><div class="explain-line">' + parts.join(' ; ') + '.</div>');
+    } else if(marked.length===0){
+      ui.say(false, '<div>✘ Touche les cases de la copie qui sont différentes du modèle.</div><div class="explain-line">Compare ligne par ligne, en partant du haut.</div>');
+    } else {
+      var msg = good + ' erreur' + (good>1?'s':'') + ' trouvée' + (good>1?'s':'');
+      if(atErr.told) msg += ' sur ' + total;
+      if(wrong>0) msg += ', et ' + wrong + ' case' + (wrong>1?'s':'') + ' touchée' + (wrong>1?'s':'') + ' à tort';
+      ui.say(false, '<div>✘ ' + msg + '.</div><div class="explain-line">Une erreur, c\'est une case coloriée en trop, ou une case oubliée. Retouche une case pour enlever la croix.</div>');
+    }
+  }
+  registerFamily({
+    key:'atelier-erreur', tag:'Trouver l\'erreur', theme:'✋ Ateliers',
+    note:'Un modèle et sa copie sont côte à côte ; la copie contient des erreurs (case coloriée en trop ou case oubliée) qu\'on touche pour les signaler. Facile : grille 4×4, 1 erreur ; Moyen : 5×5, 2 erreurs ; Difficile : 6×6, 3 erreurs sans que le nombre soit donné. Les cases et les erreurs sont tirées au hasard (avec à la fois « en trop » et « manquante » dès 2 erreurs).',
+    build:function(wrap){ atErr.ui = makeAtelier('atelier-erreur', wrap, atErrCheck); },
+    generate:atErrGenerate,
+    signature:function(){ return JSON.stringify(atErr.model) + JSON.stringify(atErr.diff); }
+  });
+
+  // ---------------------------------------------------------------------
+  // 5. Axes de symétrie : on touche les lignes qui sont de vrais axes ; le pliage montre les cases qui ne se superposent pas
+  // ---------------------------------------------------------------------
+  var AX_NAMES = { V:'la ligne verticale', H:'la ligne horizontale', D1:'la diagonale ↘', D2:'la diagonale ↗' };
+  var AX_SHORT = { V:'verticale', H:'horizontale', D1:'diagonale ↘', D2:'diagonale ↗' };
+  var atAxe = { n:0, fig:null, cands:null, sel:null, truth:null, ui:null };
+  function axReflect(ax, r, c, n){
+    if(ax==='V') return [r, n-1-c];
+    if(ax==='H') return [n-1-r, c];
+    if(ax==='D1') return [c, r];
+    return [n-1-c, n-1-r];
+  }
+  // cases qui n'ont pas de « jumelle » de l'autre côté de l'axe
+  function axMismatch(fig, ax, n){
+    var out = [], r, c;
+    for(r=0;r<n;r++) for(c=0;c<n;c++){ var q = axReflect(ax, r, c, n); if(fig[r][c] !== fig[q[0]][q[1]]) out.push([r,c]); }
+    return out;
+  }
+  function axTruth(fig, n, cands){ return cands.filter(function(ax){ return axMismatch(fig, ax, n).length===0; }); }
+  function atAxeGenerate(level){
+    var n = level===0 ? 4 : level===1 ? 5 : pick([5,6]);
+    var cands = level<2 ? ['V','H'] : ['V','H','D1','D2'];
+    var wants = level===0 ? [['V'],['H']] : level===1 ? [['V'],['H'],['V','H'],[]] : [['V'],['H'],['D1'],['D2'],['V','H'],['D1','D2'],['V','H','D1','D2'],[]];
+    var want = pickFresh('axe-want-' + level, wants), fig = null, guard = 0, r, c;
+    do {
+      fig = []; for(r=0;r<n;r++){ fig.push([]); for(c=0;c<n;c++) fig[r].push(false); }
+      var seeds = randInt(2,4); for(var s=0;s<seeds;s++) fig[randInt(0,n-1)][randInt(0,n-1)] = true;
+      var changed = true;
+      while(changed){ changed = false;
+        for(r=0;r<n;r++) for(c=0;c<n;c++) if(fig[r][c]) want.forEach(function(ax){ var q = axReflect(ax, r, c, n); if(!fig[q[0]][q[1]]){ fig[q[0]][q[1]] = true; changed = true; } });
+      }
+      var cnt = 0; for(r=0;r<n;r++) for(c=0;c<n;c++) if(fig[r][c]) cnt++;
+      var truth = axTruth(fig, n, ['V','H','D1','D2']);
+      var okShape = cnt >= 4 && cnt <= n*n*0.65 && truth.length===want.length && want.every(function(a){ return truth.indexOf(a)>=0; });
+    } while(!okShape && ++guard < 400);
+    atAxe.n = n; atAxe.fig = fig; atAxe.cands = cands; atAxe.truth = axTruth(fig, n, cands);
+    atAxe.sel = {}; cands.forEach(function(a){ atAxe.sel[a] = false; });
+    var how = level===0 ? 'Cette figure a un axe de symétrie : touche-le.' : 'Touche toutes les lignes qui sont des axes de symétrie (il peut y en avoir 0, 1' + (cands.length>2 ? ', 2 ou plus' : ' ou 2') + ').';
+    atAxe.ui.reset(how + ' Un axe partage la figure en deux moitiés qui se superposent quand on plie.', 'Figure et lignes candidates : touche les axes de symétrie');
+    atAxeDraw(null);
+  }
+  function atAxeDraw(wrongAxes){
+    var ui = atAxe.ui, n = atAxe.n, cell = Math.floor(200/n), size = cell*n, x0 = (260-size)/2, y0 = (260-size)/2, r, c;
+    ui.svg.innerHTML = '';
+    for(r=0;r<n;r++) for(c=0;c<n;c++){
+      ui.svg.appendChild(el('rect', { x:x0 + c*cell, y:y0 + r*cell, width:cell, height:cell, fill:atAxe.fig[r][c] ? AT_COLORS.given : AT_COLORS.empty, stroke:'var(--text)', 'stroke-width':1 }));
+    }
+    // pliage : cases sans jumelle, entourées en rouge pour chaque ligne fausse choisie
+    (wrongAxes || []).forEach(function(ax){
+      axMismatch(atAxe.fig, ax, n).forEach(function(m){
+        ui.svg.appendChild(el('rect', { x:x0 + m[1]*cell + 2, y:y0 + m[0]*cell + 2, width:cell-4, height:cell-4, fill:'none', stroke:'#d33', 'stroke-width':3, 'stroke-dasharray':'5,3', 'pointer-events':'none' }));
+      });
+    });
+    var m = 12, xa = x0 - m, xb = x0 + size + m, ya = y0 - m, yb = y0 + size + m, mid = x0 + size/2, midy = y0 + size/2;
+    var coords = { V:[mid, ya, mid, yb], H:[xa, midy, xb, midy], D1:[xa, ya, xb, yb], D2:[xa, yb, xb, ya] };
+    atAxe.cands.forEach(function(ax){
+      var k = coords[ax], on = atAxe.sel[ax];
+      ui.svg.appendChild(el('line', { x1:k[0], y1:k[1], x2:k[2], y2:k[3], stroke:on ? '#d33' : 'var(--text)', 'stroke-width':on ? 4.5 : 2.5, 'stroke-dasharray':on ? '' : '7,5', 'pointer-events':'none' }));
+      var hit = el('line', { x1:k[0], y1:k[1], x2:k[2], y2:k[3], stroke:'transparent', 'stroke-width':26, 'stroke-linecap':'round', role:'button', tabindex:0,
+        'aria-label':'Ligne ' + AX_SHORT[ax] + (on ? ', choisie comme axe' : ', non choisie'), style:'cursor:pointer;touch-action:manipulation' });
+      function toggle(){ if(ui.solved) return; atAxe.sel[ax] = !atAxe.sel[ax]; ui.fb.className = 'feedback'; ui.fb.innerHTML = ''; atAxeDraw(null); }
+      hit.addEventListener('click', toggle);
+      hit.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggle(); } });
+      ui.svg.appendChild(hit);
+    });
+  }
+  function atAxeCheck(ui){
+    var chosen = atAxe.cands.filter(function(a){ return atAxe.sel[a]; });
+    var falsePicks = chosen.filter(function(a){ return atAxe.truth.indexOf(a)<0; });
+    var missed = atAxe.truth.filter(function(a){ return chosen.indexOf(a)<0; });
+    if(!falsePicks.length && !missed.length){
+      atAxeDraw(null);
+      var msg = atAxe.truth.length===0 ? 'Cette figure n\'a aucun axe de symétrie : en pliant le long d\'une de ces lignes, les moitiés ne se superposent pas.'
+        : atAxe.truth.length===1 ? 'En pliant le long de ' + AX_NAMES[atAxe.truth[0]] + ', les deux moitiés se superposent exactement.'
+        : 'Pliée le long de chacune de ces ' + atAxe.truth.length + ' lignes, la figure se superpose exactement sur elle-même.';
+      atelierWin(ui, '<div>✔ Bravo !</div><div class="explain-line">' + msg + '</div>');
+      return;
+    }
+    atAxeDraw(falsePicks);
+    var html = '<div>✘ Pas encore.</div><div class="explain-line">';
+    if(falsePicks.length) html += (falsePicks.length>1 ? 'Ces lignes ne sont pas des axes' : AX_NAMES[falsePicks[0]].charAt(0).toUpperCase() + AX_NAMES[falsePicks[0]].slice(1) + ' n\'est pas un axe') + ' : en pliant, les cases entourées en rouge n\'ont pas de jumelle. ';
+    if(missed.length) html += (chosen.length===0 ? 'Il y a au moins un axe à trouver.' : 'Il manque encore ' + (missed.length>1 ? missed.length + ' axes.' : 'un axe.'));
+    ui.say(false, html + '</div>');
+  }
+  registerFamily({
+    key:'atelier-axe', tag:'Axes de symétrie', theme:'✋ Ateliers',
+    note:'Une figure en cases et des lignes de pliage en pointillés : on touche celles qui sont de vrais axes de symétrie. Si on se trompe, les cases qui ne se superposent pas au pliage sont entourées en rouge. Facile : 4×4, la figure a 1 axe (vertical ou horizontal) ; Moyen : 5×5, lignes verticale/horizontale, 0, 1 ou 2 axes ; Difficile : 5×5 ou 6×6, avec les 2 diagonales, de 0 à 4 axes. La figure est construite pour avoir exactement les axes voulus (et vérifiée), le reste est tiré au hasard.',
+    build:function(wrap){ atAxe.ui = makeAtelier('atelier-axe', wrap, atAxeCheck); },
+    generate:atAxeGenerate,
+    signature:function(){ return atAxe.n + JSON.stringify(atAxe.fig); }
+  });
