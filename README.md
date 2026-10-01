@@ -1,4 +1,4 @@
-# Géo Miaou / GEO CHAOS 9000 — app de géométrie CE1
+# Kawaii vs Brainrot — app de géométrie CE1
 
 > Pour travailler sur le projet (humain ou Claude) : lire d'abord `CLAUDE.md`, puis `src/README.md` et `HISTORIQUE.md`.
 
@@ -125,7 +125,7 @@ Brainrot utilise une police de lecture (Rubik) pour les questions.
 
 ## Écran de démarrage
 
-L'appli s'ouvre sur un écran de présentation ("Géo Miaou VS Geo Chaos 9000")
+L'appli s'ouvre sur un écran de présentation ("Kawaii VS Brainrot")
 avec un visuel chat kawaii / brainrot face à face, dessiné par le code (voir
 `drawSplashArt` dans `index.html`, même technique que les personnages). Un
 export fixe de ce visuel vit dans `assets/branding/splash-cat-vs-brainrot.svg`

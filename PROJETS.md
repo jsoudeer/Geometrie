@@ -1,6 +1,6 @@
 # Projets d'avenir
 
-Ce qui reste à faire ou à envisager pour Géo Miaou / GEO CHAOS 9000. Le travail déjà fait
+Ce qui reste à faire ou à envisager pour Kawaii vs Brainrot. Le travail déjà fait
 est dans `HISTORIQUE.md` ; ce fichier-ci ne liste que l'avenir. Cocher (`[x]`) et dater une
 ligne quand elle est faite, puis la reporter dans `HISTORIQUE.md`.
 

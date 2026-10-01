@@ -3,7 +3,7 @@
 Document de reprise : il permet de repartir d'une conversation neuve sans rien perdre. À lire en premier si le contexte a été compressé.
 
 ## 1. Le projet
-Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seul fichier** `index.html` (HTML + CSS + JS, aucune dépendance), **généré** à partir des sources de `src/` (voir §4). Deux clans : **Chats kawaii** (Géo Miaou) et **Brainrot** (Geo Chaos 9000).
+Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seul fichier** `index.html` (HTML + CSS + JS, aucune dépendance), **généré** à partir des sources de `src/` (voir §4). Deux clans : **Chats kawaii** et **Brainrot** (le jeu s'appelle « Kawaii vs Brainrot », anciennement Géo Miaou vs GEO CHAOS 9000).
 
 - Dépôt : `jsoudeer/geometrie` (branche `main`).
 - Aperçu publié : artifact Claude `https://claude.ai/artifact/77Awfhh3EpPUAUGj2XgaVs` (à republier après chaque changement ; version 28 au moment de l'écriture).
@@ -172,3 +172,6 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - **Bug** : le glisser d'un coin se perdait après quelques instants. `drawDeform()` reconstruit tout le `<svg>` à chaque mouvement, ce qui détruisait le coin qui avait capturé le pointeur. Le glisser est maintenant capté par le `<svg>` lui-même (`setPointerCapture` sur `deformSvg`, `pointermove`/`pointerup`/`pointercancel` filtrés par `pointerId`). Test : `drag_check.js` (3 s de glisser à la souris, glisser rapide, relâchement) ; il échouait avant le correctif.
 - **Écran de lancement** : l'image est scindée en deux moitiés qui arrivent chacune de leur côté et s'entrechoquent (~1,3 s), avec éclair jaune, flash, deux ondes de choc, 22 étincelles aux directions aléatoires, tremblement de la carte et recul des moitiés ; le texte et le bouton apparaissent ensuite (le bouton reste cliquable). Un clic sur l'image rejoue le choc. Deux cas (`noyau.js`, `css/interface.css`, classes `sp-*`) : image perso `assets/branding/splash.*` coupée en deux fonds CSS (`.sp-split`), ou dessin SVG de secours (moitiés `.sp-left`/`.sp-right` + bulle VS qui rebondit). Une vidéo ou un GIF animé restent affichés tels quels. Mouvement réduit : image fixe, sans effet.
 - Test : `splash_check.js` (les deux cas, captures `/tmp/geo_tests/splash_*`).
+
+## 31. Le jeu devient « Kawaii vs Brainrot » (01/10/2026)
+- Renommage partout (écran de lancement, titre de page et de l'artefact, `README.md`, `PROJETS.md`, `CLAUDE.md`). Le titre par clan (`THEMES[...].title`) est supprimé : le titre masqué `#appTitle` est fixe. Les clans sont nommés par leur univers (kawaii / brainrot) pour accueillir d'autres personnages kawaii (chiens, lapins) sans renommer à nouveau. Les identifiants internes (`cats`, `brainrot`, `cat01`…) ne changent pas.

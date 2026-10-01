@@ -5,8 +5,8 @@
 
   /* ===================== CORE : THEME + NAV ===================== */
   var THEMES = {
-    cats:{ mascot:"🐱", title:"Géo Miaou" },
-    brainrot:{ mascot:"👹", title:"GEO CHAOS 9000" }
+    cats:{ mascot:"🐱" },
+    brainrot:{ mascot:"👹" }
   };
 
   var stars = 0;
@@ -94,7 +94,6 @@
   function applyTheme(th){
     document.body.setAttribute('data-app-theme', th);
     var cfg = THEMES[th];
-    document.getElementById('appTitle').textContent = cfg.title;
     syncThemeToggleButton(th);
     document.querySelectorAll('.coach-avatar').forEach(function(av){
       // La mascotte perso (si choisie) garde son propre visage, pas
@@ -118,7 +117,6 @@
     document.body.setAttribute('data-app-theme', th);
     var cfg = THEMES[th];
     document.getElementById('mascotIcon').textContent = cfg.mascot;
-    document.getElementById('appTitle').textContent = cfg.title;
     syncThemeToggleButton(th);
     document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
     // (le premier dessin de la mascotte se fait plus bas, une fois svgNS/el
