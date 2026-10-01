@@ -233,3 +233,5 @@ Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma p
 - **Déformer** : 5 formes à obtenir, dont le triangle isocèle (2 côtés égaux) et le triangle rectangle (un angle droit).
 - **Milieu** : parfois aucune forme n'est au milieu (nombre pair de formes) ; au niveau Difficile, on peut aussi donner les coordonnées du milieu de deux points.
 - **Ateliers** : « Trouver l'erreur » (toucher la case en trop ou manquante) et « Axes de symétrie » (toucher les lignes de pliage qui sont de vrais axes, de 0 à 4 axes).
+- **Alignement** : en plus de « ces 3 points sont-ils alignés ? », on peut chercher les 3 points alignés parmi 4, ou le point numéroté aligné avec A et B (règle posée sur A et B).
+- **Angles** : on compare des angles (la longueur des branches ne compte pas ; deux angles peuvent être égaux), on compte les angles droits d'une figure, ou on classe un angle (droit, aigu, obtus).
