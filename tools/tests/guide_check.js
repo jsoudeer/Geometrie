@@ -46,16 +46,20 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 }, guide
   await ev(`showTab('facile'); delete guideSeen.boutique; guideSave(); guideMarkBought();`);
   await page.waitForTimeout(3200);
   chk(!(await open()), 'une fois un achat fait : pas de guide boutique');
-  // ---------- bataille : 5 personnages débloqués (hors départ)
-  await ev(`delete guideSeen.bataille; guideSave(); var k=0; CAT_SPRITES.forEach(function(s){ if(!s.starter && k<4){ ownedCats[s.id]=true; k++; } });`);
+  // ---------- bataille : premier passage dans la Bataille
+  await ev(`delete guideSeen.bataille; guideSave(); var k=0; CAT_SPRITES.forEach(function(s){ if(!s.starter && k<5){ ownedCats[s.id]=true; k++; } });`);
   await page.waitForTimeout(3200);
-  chk(!(await open()), '4 personnages débloqués : pas encore de guide bataille');
-  await ev(`var k2=0; CAT_SPRITES.forEach(function(s){ if(!s.starter && !ownedCats[s.id] && k2<1){ ownedCats[s.id]=true; k2++; } });`);
-  await page.waitForFunction(() => { const l = document.querySelector('.guide-layer'); return l && !l.hidden; }, null, { timeout: 5000 }).catch(() => {});
-  chk(await open() && await page.evaluate(() => !document.getElementById('tab-battle').hidden), '5 débloqués : le guide bataille démarre et ouvre la bataille');
-  await page.waitForTimeout(350); await page.screenshot({ path: SHOTS + 'guide_3_bataille.png' });
+  chk(!(await open()), 'avoir débloqué des personnages ne lance plus le guide bataille tout seul');
+  await page.evaluate(() => document.getElementById('battle-btn').click());
+  await page.waitForFunction(() => { const l = document.querySelector('.guide-layer'); return l && !l.hidden; }, null, { timeout: 4000 }).catch(() => {});
+  chk(await open() && /Bataille/.test(await txt()), 'à la première entrée dans la Bataille : le guide démarre');
+  await page.waitForTimeout(450); await page.screenshot({ path: SHOTS + 'guide_3_bataille.png' });
+  chk(await page.evaluate(() => document.getElementById('guide-mascot').children.length > 0 || document.getElementById('guide-mascot').textContent.length > 0), 'la mascotte est dans la bulle');
   n = 0; while (await open() && n++ < 20) await next();
-  chk(!(await open()), 'guide bataille terminé');
+  chk(!(await open()) && await ev(`guideSeen.bataille`) === 1, 'guide bataille terminé et mémorisé');
+  await page.evaluate(() => document.getElementById('battle-btn').click()); await page.evaluate(() => document.getElementById('battle-btn').click());
+  await page.waitForTimeout(2200);
+  chk(!(await open()), 'deuxième entrée dans la Bataille : pas de guide');
   // ---------- réglages → Guides
   await ev(`showTab('facile')`);
   await page.evaluate(() => document.getElementById('settings-btn').click());

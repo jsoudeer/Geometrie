@@ -852,6 +852,13 @@
   .guide-actions{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
   .guide-actions .btn{ min-height:44px; }
   @media (prefers-reduced-motion: reduce){ .guide-spot{ transition:none; } }
+  .guide-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .guide-head h2:empty{ display:none; }
+  .guide-mascot{
+    flex:none; width:56px; height:56px; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center;
+    background:var(--surface2); border:1.5px solid var(--border); font-size:2rem;
+  }
+  .guide-mascot > *{ max-width:100%; max-height:100%; }
 </style>
 
 <div class="app" id="app" lang="fr">
@@ -972,7 +979,7 @@
         <h2 id="guides-title">📖 Guides</h2>
         <button class="settings-close" id="guides-close" type="button" aria-label="Fermer">✕</button>
       </div>
-      <p class="muted settings-hint">Relance l'explication que tu veux. Les guides se lancent aussi tout seuls : au premier lancement, à 50 étoiles quand on n'a rien acheté, et après 5 personnages débloqués.</p>
+      <p class="muted settings-hint">Relance l'explication que tu veux. Les guides se lancent aussi tout seuls : au premier lancement, à 50 étoiles quand on n'a rien acheté, et à la première entrée dans la Bataille.</p>
       <button class="btn ghost" type="button" data-guide="accueil" style="width:100%;margin-bottom:8px;">👋 Découvrir le jeu</button>
       <button class="btn ghost" type="button" data-guide="boutique" style="width:100%;margin-bottom:8px;">⭐ Acheter un personnage</button>
       <button class="btn ghost" type="button" data-guide="bataille" style="width:100%;">⚔️ Combattre</button>
@@ -8756,12 +8763,11 @@
      (aucune capture d'écran à refaire).
        accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
        boutique : dès 50 étoiles quand on n'a jamais rien acheté ;
-       bataille : dès qu'on a débloqué 5 personnages (hors personnages de départ).
+       bataille : la première fois qu'on ouvre la Bataille.
      Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
      dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
   var GUIDE_SHOP_STARS = 50;       // seuil d'étoiles du guide Boutique
-  var GUIDE_BATTLE_UNLOCKS = 5;    // personnages débloqués (hors départ) pour le guide Bataille
-  var guideSeen = {};
+    var guideSeen = {};
   try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
   function guideSave(){ try{ localStorage.setItem('geo_guides', JSON.stringify(guideSeen)); }catch(e){} }
   function guideBought(){ try{ return localStorage.getItem('geo_bought') === '1'; }catch(e){ return false; } }
@@ -8777,7 +8783,13 @@
     var r = e.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && !e.closest('[hidden]');
   }
-  function guideMascotEmoji(){ return currentThemeKey()==='brainrot' ? '👹' : '🐱'; }
+  // La mascotte du clan actif accompagne chaque bulle (son dessin, ou l'emoji du thème à défaut).
+  function guideDrawMascot(box){
+    var id = activeMascotId(), sprite = id ? findAnySprite(id) : null;
+    box.innerHTML = '';
+    if(sprite) renderSpriteVisual(box, sprite);
+    else box.textContent = THEMES[currentThemeKey()].mascot;
+  }
 
   var GUIDES = {
     accueil: {
@@ -8810,7 +8822,7 @@
       title:'Combattre',
       steps:[
         { sel:'#tab-battle .panel-head', enter:function(){ showTab('battle'); },
-          text:'Tu as débloqué plusieurs personnages : tu peux les faire combattre ! Chacun a des points ❤️, à la fois sa force et son énergie.' },
+          text:'Bienvenue dans la Bataille ! Tes personnages combattent ceux de l\'autre clan. Chacun a des points ❤️, à la fois sa force et son énergie.' },
         { sel:'#bt-grid-classic',
           text:'Compose ton équipe : jusqu\'à 3 classiques, 1 soutien 💖 et 1 archer 🏹. Tu n\'es pas obligé d\'avoir un soutien ou un archer, mais ils aident beaucoup : à toi de choisir !' },
         { sel:'.bt-auto-row',
@@ -8830,14 +8842,16 @@
     var layer = document.createElement('div'); layer.className = 'guide-layer'; layer.hidden = true;
     layer.innerHTML =
       '<div class="guide-spot none" id="guide-spot"></div>' +
-      '<div class="guide-bubble" id="guide-bubble" role="dialog" aria-modal="true" aria-labelledby="guide-title">' +
-      '<div class="guide-step" id="guide-step"></div><h2 id="guide-title"></h2><p id="guide-text" aria-live="polite"></p>' +
+      '<div class="guide-bubble" id="guide-bubble" role="dialog" aria-modal="true">' +
+      '<div class="guide-head"><div class="guide-mascot" id="guide-mascot" aria-hidden="true"></div>' +
+      '<div><div class="guide-step" id="guide-step"></div><h2 id="guide-title"></h2></div></div>' +
+      '<p id="guide-text" aria-live="polite"></p>' +
       '<div class="guide-actions"><button class="btn ghost" id="guide-skip" type="button">Passer</button>' +
       '<button class="btn ghost" id="guide-prev" type="button">◀ Retour</button>' +
       '<button class="btn primary" id="guide-next" type="button">Suivant ➜</button></div></div>';
     document.body.appendChild(layer);
     guideEls = { layer:layer, spot:layer.querySelector('#guide-spot'), bubble:layer.querySelector('#guide-bubble'),
-      step:layer.querySelector('#guide-step'), title:layer.querySelector('#guide-title'), text:layer.querySelector('#guide-text'),
+      step:layer.querySelector('#guide-step'), mascot:layer.querySelector('#guide-mascot'), title:layer.querySelector('#guide-title'), text:layer.querySelector('#guide-text'),
       skip:layer.querySelector('#guide-skip'), prev:layer.querySelector('#guide-prev'), next:layer.querySelector('#guide-next') };
     guideEls.next.addEventListener('click', function(){ guideGo(1); });
     guideEls.prev.addEventListener('click', function(){ guideGo(-1); });
@@ -8889,8 +8903,10 @@
     s.i = i; s.dir = dir;
     var step = s.steps[i], e = guideEls;
     e.step.textContent = (i+1) + ' / ' + s.steps.length + ' · ' + GUIDES[s.id].title;
-    e.title.textContent = guideMascotEmoji() + ' ' + (step.sel ? '' : (i===0 ? 'Bienvenue !' : 'Prêt ?'));
+    guideDrawMascot(e.mascot);
+    e.title.textContent = step.sel ? '' : (i===0 ? 'Bienvenue !' : 'Prêt ?');
     e.title.hidden = !!step.sel;
+    e.bubble.setAttribute('aria-label', 'Guide : ' + GUIDES[s.id].title);
     e.text.textContent = step.text;
     e.prev.hidden = i === 0;
     e.next.textContent = (i === s.steps.length-1) ? 'Terminé ✔' : 'Suivant ➜';
@@ -8937,19 +8953,17 @@
     if(document.getElementById('reveal-overlay')) return false;
     var blocked = ['settings-overlay','guides-overlay','progress-overlay','info-overlay','activity-config-overlay'].some(function(id){ var e = document.getElementById(id); return e && !e.hidden; });
     if(blocked) return false;
-    return !document.getElementById('tab-practice').hidden;      // on est sur l'écran des questions
-  }
-  function guideUnlockedCount(){
-    var owned = btMyOwned();
-    return btMyList().filter(function(sp){ return owned[sp.id] && !sp.starter; }).length;
+    return !document.getElementById('tab-practice').hidden || !document.getElementById('tab-battle').hidden;
   }
   function guideTick(){
     if(!guideCanInterrupt()) return;
-    if(!guideSeen.accueil){ guideStart('accueil'); return; }
+    var inBattle = !document.getElementById('tab-battle').hidden;
+    if(!guideSeen.accueil && !inBattle){ guideStart('accueil'); return; }
+    if(inBattle){ if(!guideSeen.bataille) guideStart('bataille'); return; }   // première entrée dans la Bataille
     if(!guideSeen.boutique && !guideBought() && stars >= GUIDE_SHOP_STARS){ guideStart('boutique'); return; }
-    if(!guideSeen.bataille && guideUnlockedCount() >= GUIDE_BATTLE_UNLOCKS){ guideStart('bataille'); return; }
   }
   setInterval(guideTick, 1500);
+  document.getElementById('battle-btn').addEventListener('click', function(){ setTimeout(guideTick, 350); });
 
   // ---- Réglages → Guides : rejouer chacun ----
   document.getElementById('open-guides-btn').addEventListener('click', function(){
