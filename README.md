@@ -1,5 +1,7 @@
 # Géo Miaou / GEO CHAOS 9000 — app de géométrie CE1
 
+> Pour travailler sur le projet (humain ou Claude) : lire d'abord `CLAUDE.md`, puis `src/README.md` et `HISTORIQUE.md`.
+
 Application de géométrie pour le CE1 (thème kawaii chats vs. brainrot),
 en un seul fichier HTML autonome (`index.html`), sans dépendance externe.
 
