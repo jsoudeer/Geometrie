@@ -859,6 +859,59 @@
     background:var(--surface2); border:1.5px solid var(--border); font-size:2rem;
   }
   .guide-mascot > *{ max-width:100%; max-height:100%; }
+  /* ===================== CHALEUR (mode Overload, séries sans faute) =====================
+     Aux séries de 15, 20 puis 25, une sensation de chaleur de plus en plus forte envahit les
+     bords de l'écran (le centre reste net : rien ne gêne la lecture). body[data-heat] = 0..3.
+       Chats Kawaii : chaleur douce — halo rose-pêche, étincelles et cœurs qui montent, éclat arc-en-ciel ;
+       Brainrot     : chaleur brûlante — halo rouge feu, flammes en bas, braises, tremblement et éclairs.
+     Sans mouvement (prefers-reduced-motion) : seulement le halo fixe. */
+  .heat-layer{ position:fixed; inset:0; z-index:40; pointer-events:none; overflow:hidden; }
+  .heat-glow, .heat-flames{ position:absolute; inset:0; opacity:0; transition:opacity .8s; }
+  body[data-heat="1"] .heat-glow{ opacity:.45; }
+  body[data-heat="2"] .heat-glow{ opacity:.75; }
+  body[data-heat="3"] .heat-glow{ opacity:1; }
+  /* --- Chats : halo pêche/rose + liseré arc-en-ciel au palier 3 --- */
+  body[data-app-theme="cats"] .heat-glow{
+    background:radial-gradient(ellipse at center, transparent 52%, rgba(255,170,130,.38) 78%, rgba(255,120,170,.62) 100%);
+    animation:heatBreath 3.2s ease-in-out infinite;
+  }
+  body[data-app-theme="cats"][data-heat="3"] .heat-glow{
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.55), inset 0 0 40px 6px rgba(255,200,120,.65);
+    animation:heatBreath 2s ease-in-out infinite, heatRainbow 5s linear infinite;
+  }
+  /* --- Brainrot : halo rouge feu qui vacille, flammes en bas --- */
+  body[data-app-theme="brainrot"] .heat-glow{
+    background:radial-gradient(ellipse at center, transparent 45%, rgba(255,90,0,.42) 74%, rgba(190,0,0,.8) 100%);
+    animation:heatFlicker 1.1s steps(2,end) infinite;
+  }
+  body[data-app-theme="brainrot"] .heat-flames{
+    top:auto; height:22vh; background:
+      radial-gradient(60% 100% at 15% 100%, rgba(255,220,60,.9), rgba(255,100,0,.7) 45%, transparent 72%),
+      radial-gradient(55% 90% at 50% 100%, rgba(255,160,20,.9), rgba(230,50,0,.7) 45%, transparent 72%),
+      radial-gradient(60% 100% at 85% 100%, rgba(255,210,50,.9), rgba(255,90,0,.7) 45%, transparent 72%);
+    filter:blur(6px); transform-origin:bottom; animation:heatFlames .7s ease-in-out infinite alternate;
+  }
+  body[data-app-theme="brainrot"][data-heat="2"] .heat-flames{ opacity:.55; }
+  body[data-app-theme="brainrot"][data-heat="3"] .heat-flames{ opacity:.95; height:30vh; }
+  body[data-app-theme="brainrot"][data-heat="3"] main{ animation:heatShake 3s linear infinite; }
+  /* --- Particules (créées en JS) --- */
+  .heat-p{ position:absolute; bottom:-30px; font-size:22px; opacity:0; animation:heatRise var(--dur,3.2s) ease-out forwards; will-change:transform,opacity; }
+  /* éclat à chaque nouveau palier */
+  .heat-layer.surge::after{ content:''; position:absolute; inset:0; animation:heatSurge .7s ease-out; }
+  body[data-app-theme="cats"] .heat-layer.surge::after{ background:radial-gradient(circle, rgba(255,255,255,.55), rgba(255,180,200,.35) 45%, transparent 75%); }
+  body[data-app-theme="brainrot"] .heat-layer.surge::after{ background:radial-gradient(circle, rgba(255,240,150,.7), rgba(255,80,0,.45) 45%, transparent 75%); }
+  @keyframes heatBreath{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.18); } }
+  @keyframes heatRainbow{ 0%{ filter:hue-rotate(0deg) brightness(1.1); } 100%{ filter:hue-rotate(360deg) brightness(1.1); } }
+  @keyframes heatFlicker{ 0%{ opacity:var(--o,1); } 50%{ filter:brightness(1.25); } 100%{ filter:brightness(.9); } }
+  @keyframes heatFlames{ from{ transform:scaleY(.82) skewX(-2deg); } to{ transform:scaleY(1.12) skewX(2deg); } }
+  @keyframes heatShake{ 0%,92%,100%{ transform:translate(0,0); } 94%{ transform:translate(-2px,1px); } 96%{ transform:translate(2px,-1px); } 98%{ transform:translate(-1px,-1px); } }
+  @keyframes heatRise{ 0%{ opacity:0; transform:translate(0,0) scale(.7); } 12%{ opacity:.95; } 100%{ opacity:0; transform:translate(var(--dx,0), -88vh) scale(1.15) rotate(var(--rot,0deg)); } }
+  @keyframes heatSurge{ 0%{ opacity:1; } 100%{ opacity:0; } }
+  @media (prefers-reduced-motion: reduce){
+    body .heat-glow, body .heat-flames{ animation:none !important; transition:none; }
+    body main{ animation:none !important; }
+    .heat-p, .heat-layer.surge::after{ display:none; }
+  }
 </style>
 
 <div class="app" id="app" lang="fr">
@@ -979,10 +1032,11 @@
         <h2 id="guides-title">📖 Guides</h2>
         <button class="settings-close" id="guides-close" type="button" aria-label="Fermer">✕</button>
       </div>
-      <p class="muted settings-hint">Relance l'explication que tu veux. Les guides se lancent aussi tout seuls : au premier lancement, à 50 étoiles quand on n'a rien acheté, et à la première entrée dans la Bataille.</p>
+      <p class="muted settings-hint">Relance l'explication que tu veux. Les guides se lancent aussi tout seuls : au premier lancement, à 50 étoiles quand on n'a rien acheté, à la première entrée dans la Bataille, et à la première série de 10 bonnes réponses d'affilée.</p>
       <button class="btn ghost" type="button" data-guide="accueil" style="width:100%;margin-bottom:8px;">👋 Découvrir le jeu</button>
       <button class="btn ghost" type="button" data-guide="boutique" style="width:100%;margin-bottom:8px;">⭐ Acheter un personnage</button>
-      <button class="btn ghost" type="button" data-guide="bataille" style="width:100%;">⚔️ Combattre</button>
+      <button class="btn ghost" type="button" data-guide="bataille" style="width:100%;margin-bottom:8px;">⚔️ Combattre</button>
+      <button class="btn ghost" type="button" data-guide="serie" style="width:100%;">🔥 Série sans faute</button>
     </div>
   </div>
 
@@ -1240,7 +1294,7 @@
   }catch(e){}
   var SFX_HINTS = {
     normal:'Confettis et petit son à chaque réponse.',
-    overload:'Sons plus forts, gros effets à l\'écran et la mascotte s\'agite fort à chaque réponse !'
+    overload:'Sons plus forts, gros effets à l\'écran et la mascotte s\'agite fort à chaque réponse ! Et la chaleur monte aux séries sans faute de 15, 20 puis 25.'
   };
   function updateSfxHint(){
     document.getElementById('sfx-mode-hint').textContent = SFX_HINTS[sfxMode];
@@ -1249,6 +1303,7 @@
     sfxMode = idx===1 ? 'overload' : 'normal';
     try{ localStorage.setItem('geo_sfx_mode', sfxMode); }catch(e){}
     updateSfxHint();
+    if(typeof updateHeat === 'function') updateHeat();
   });
   updateSfxHint();
 
@@ -6764,11 +6819,13 @@
     var key = bag.splice(at,1)[0];
     return key;
   }
-  // Défi « 20 bonnes réponses d'affilée » : les 3 dernières questions (18e, 19e, 20e) sont posées
-  // dans les sujets où l'enfant a le plus de mal (historique de progression).
+  var STREAK_GOALS = [20, 25, 30];   // paliers de la série sans faute : défis 12 (Facile), 13 (Moyen), 14 (Difficile)
+  // Séries sans faute (paliers 20, 25, 30) : les 3 questions qui précèdent un palier non encore
+  // débloqué (18e-20e, 23e-25e, 28e-30e) sont posées dans les sujets où l'enfant a le plus de mal
+  // (historique de progression).
   function challengeFocusActive(){
-    return appMode==='auto' && practiceMode==='free' && !countdownRunning &&
-      freeStreak >= STREAK_TARGET - 3 && freeStreak < STREAK_TARGET && !isChallengeDone(12 + globalLevel);
+    if(appMode!=='auto' || practiceMode!=='free' || countdownRunning) return false;
+    return STREAK_GOALS.some(function(g, idx){ return freeStreak >= g - 3 && freeStreak < g && !isChallengeDone(12 + idx); });
   }
   function nextPracticeQuestion(){
     var sig = null, prevShown = lastFamily;
@@ -6839,37 +6896,41 @@
     }
   }
   var manualStreak = 0;
-  // Série sans faute en mode Aléatoire (onglets Facile/Moyen/Difficile) :
-  // 20 bonnes réponses d'affilée débloquent les personnages du défi "série"
-  // du niveau en cours (voir CHALLENGES / completeChallenge).
+  // Série sans faute en mode Aléatoire (onglets Facile/Moyen/Difficile), quel que soit le niveau
+  // joué : 20 bonnes réponses d'affilée débloquent le personnage du défi Facile, 25 celui du
+  // Moyen, 30 celui du Difficile (STREAK_GOALS, voir CHALLENGES / completeChallenge).
   var freeStreak = 0;
   var levelStreak = 0;      // bonnes réponses d'affilée dans le niveau en cours (avancement automatique)
-  var streakLevels = [];    // niveaux traversés pendant la série sans faute en cours
-  function resetFreeStreak(){ freeStreak = 0; levelStreak = 0; streakLevels = []; updateStreakPill(); }
+  function resetFreeStreak(){ freeStreak = 0; levelStreak = 0; updateStreakPill(); }
+  function nextStreakGoal(){
+    for(var i=0;i<STREAK_GOALS.length;i++){ if(STREAK_GOALS[i] > freeStreak && !isChallengeDone(12 + i)) return STREAK_GOALS[i]; }
+    return 0;
+  }
   function updateStreakPill(){
     var pill = document.getElementById('streak-pill');
     // (au tout premier affichage, le catalogue des personnages n'est pas
     // encore construit : il est défini plus bas dans le script)
     if(!pill || !CAT_REWARDS || !ownedCats) return;
-    var show = appMode==='auto' && practiceMode==='free' && !countdownRunning && !isChallengeDone(12 + globalLevel);
+    var show = appMode==='auto' && practiceMode==='free' && !countdownRunning;
     pill.hidden = !show;
     if(show){
-      pill.textContent = '🔥 Série sans faute : ' + freeStreak + ' / ' + STREAK_TARGET;
-      pill.setAttribute('aria-label', 'Série sans faute : ' + freeStreak + ' bonnes réponses sur ' + STREAK_TARGET + ' pour débloquer un personnage');
+      var goal = nextStreakGoal();
+      var marks = STREAK_GOALS.map(function(g, i){ return g + (isChallengeDone(12 + i) || freeStreak >= g ? '✔' : ''); }).join(' · ');
+      pill.textContent = '🔥 Série sans faute : ' + freeStreak + (goal ? ' / ' + goal : '') + '  (' + marks + ')';
+      pill.setAttribute('aria-label', 'Série sans faute : ' + freeStreak + ' bonnes réponses' + (goal ? ', prochain palier ' + goal : '') + '. Paliers : ' + marks.replace(/✔/g, ' obtenu').replace(/ · /g, ', '));
     }
+    if(typeof updateHeat === 'function') updateHeat();
   }
   function onPracticeAnswered(correct){
     progRecord(correct);   // historique de progression (progression.js)
     if(appMode==='auto' && practiceMode==='free'){
-      if(correct){
-        freeStreak++; levelStreak++;
-        if(streakLevels.indexOf(globalLevel) === -1) streakLevels.push(globalLevel);
-      } else { freeStreak = 0; levelStreak = 0; streakLevels = []; }
-      if(correct && freeStreak >= STREAK_TARGET){
-        // La série compte pour chaque niveau traversé pendant la série (montée automatique comprise).
-        var fresh = [];
-        streakLevels.forEach(function(lv){ completeChallenge(12 + lv).forEach(function(sp){ fresh.push(sp); }); });
-        if(fresh.length) showUnlockAnnouncement(fresh, 'Série sans faute réussie !');
+      if(correct){ freeStreak++; levelStreak++; }
+      else { freeStreak = 0; levelStreak = 0; }
+      var goalIdx = correct ? STREAK_GOALS.indexOf(freeStreak) : -1;
+      if(goalIdx !== -1){
+        // palier atteint : 20 → défi Facile, 25 → Moyen, 30 → Difficile (quel que soit le niveau joué)
+        var fresh = completeChallenge(12 + goalIdx);
+        if(fresh.length) showUnlockAnnouncement(fresh, 'Série de ' + freeStreak + ' sans faute !');
       }
       updateStreakPill();
       // Avancement automatique en mode Aléatoire : après X bonnes réponses d'affilée DANS CE NIVEAU, niveau supérieur.
@@ -6881,9 +6942,9 @@
           var tabName = ['facile','moyen','difficile'][fromLevel+1];
           var tabBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
           if(tabBtn){
-            var keepStreak = freeStreak, keepLevels = streakLevels.slice();
+            var keepStreak = freeStreak;
             tabBtn.click();                                   // (remet les séries à zéro...)
-            freeStreak = keepStreak; streakLevels = keepLevels; // ...sauf la série sans faute
+            freeStreak = keepStreak;                          // ...sauf la série sans faute
             updateStreakPill();
             showAutoAdvanceToast(LEVEL_NAMES[fromLevel+1]);
           }
@@ -7535,19 +7596,19 @@
      (le chat ou le brainrot du même numéro) : chaque clan a sa propre progression.
        - 12 défis chronométrés (3 niveaux x 4 durées) : réussir au moins N
          bonnes réponses avant la fin du temps.
-       - 3 séries sans faute (un par niveau) : 20 bonnes réponses d'affilée,
-         sans aucune erreur, en mode Aléatoire. */
+       - 3 séries sans faute, en mode Aléatoire, sans aucune erreur et quel que
+         soit le niveau joué : 20 bonnes réponses d'affilée débloquent le défi
+         Facile, 25 le Moyen, 30 le Difficile (la série continue au-delà de 20). */
   var LEVEL_NAMES_FR = ['Facile','Moyen','Difficile'];
   var TIMED_DURATIONS = [60,120,180,300];
   var TIMED_TARGETS = [ [5,8,10,15], [4,6,8,12], [3,5,7,10] ];
-  var STREAK_TARGET = 20;
   function fmtDuration(sec){ return sec===60 ? '1 minute' : (sec/60)+' minutes'; }
   function challengeInfo(k){
     if(k < 12){
       var lvl = Math.floor(k/4), d = k%4;
       return { type:'timed', level:lvl, seconds:TIMED_DURATIONS[d], target:TIMED_TARGETS[lvl][d] };
     }
-    return { type:'streak', level:k-12, target:STREAK_TARGET };
+    return { type:'streak', level:k-12, target:STREAK_GOALS[k-12] };
   }
   function challengeText(k){
     var c = challengeInfo(k), lvl = LEVEL_NAMES_FR[c.level];
@@ -7555,8 +7616,8 @@
       return 'Défi ' + lvl + ' : ouvre le menu, choisis « ' + lvl + ' », puis « Chronométré » et « ' +
         fmtDuration(c.seconds) + ' ». Réponds correctement à ' + c.target + ' questions avant la fin du temps !';
     }
-    return 'Défi ' + lvl + ' · série sans faute : ouvre le menu, choisis « ' + lvl + ' » et reste en mode « Aléatoire ». ' +
-      'Réponds correctement à ' + c.target + ' questions d\'affilée, sans aucune erreur !';
+    return 'Défi ' + lvl + ' · série sans faute : en mode « Aléatoire », réponds correctement à ' + c.target +
+      ' questions d\'affilée, sans aucune erreur ! (La série continue : 20 pour le Facile, 25 pour le Moyen, 30 pour le Difficile.)';
   }
   function isBrainClan(){ return currentThemeKey()==='brainrot'; }
   function isChallengeDone(k){
@@ -8493,7 +8554,7 @@
      Ils servent à :
        1) montrer les résultats de l'enfant dans les Réglages (📈 Progression) :
           un radar de synthèse, un détail par compétence, l'activité des derniers jours ;
-       2) orienter le défi « 20 bonnes réponses d'affilée » : ses 3 dernières
+       2) orienter les séries sans faute (paliers 20, 25, 30) : les 3 dernières
           questions sont posées dans les sujets les plus faibles (progWeakPick).
      Les 8 compétences regroupent les familles d'activités et les catégories de quiz. */
   var PROG_SKILLS = [
@@ -8660,7 +8721,7 @@
       else ul.appendChild(progMk('li', '', '🌟 Tout est au-dessus de 90 % : bravo !'));
       body.appendChild(ul);
     }
-    body.appendChild(progMk('p', 'muted settings-hint', '🎯 Dans le défi « 20 bonnes réponses d’affilée », les 3 dernières questions sont posées dans les sujets à travailler (il faut au moins 20 réponses enregistrées).'));
+    body.appendChild(progMk('p', 'muted settings-hint', '🎯 Dans les séries sans faute (paliers 20, 25 et 30), les 3 questions avant un palier sont posées dans les sujets à travailler (il faut au moins 20 réponses enregistrées).'));
     var unknown = stats.filter(function(st){ return st.rateRecent===null; });
     if(unknown.length) body.appendChild(progMk('p', 'muted settings-hint', 'Pas encore assez de réponses (moins de ' + PROG_MIN_RECENT + ') : ' + unknown.map(function(st){ return st.skill.short; }).join(', ') + '.'));
   }
@@ -8763,10 +8824,12 @@
      (aucune capture d'écran à refaire).
        accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
        boutique : dès 50 étoiles quand on n'a jamais rien acheté ;
-       bataille : la première fois qu'on ouvre la Bataille.
+       bataille : la première fois qu'on ouvre la Bataille ;
+       serie    : à la première série de 10 bonnes réponses d'affilée.
      Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
      dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
   var GUIDE_SHOP_STARS = 50;       // seuil d'étoiles du guide Boutique
+  var GUIDE_SERIE_START = 10;      // série sans faute qui lance le guide Série
     var guideSeen = {};
   try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
   function guideSave(){ try{ localStorage.setItem('geo_guides', JSON.stringify(guideSeen)); }catch(e){} }
@@ -8774,7 +8837,7 @@
   function guideMarkBought(){ try{ localStorage.setItem('geo_bought', '1'); }catch(e){} }
   // « Effacer ma progression » : nouvelle partie, les guides contextuels pourront revenir (pas l'accueil).
   function guideResetContextual(){
-    delete guideSeen.boutique; delete guideSeen.bataille; guideSave();
+    delete guideSeen.boutique; delete guideSeen.bataille; delete guideSeen.serie; guideSave();
     try{ localStorage.removeItem('geo_bought'); }catch(e){}
   }
 
@@ -8798,7 +8861,7 @@
         { text:'Bienvenue ! Je te montre en une minute à quoi servent les boutons. Tu pourras revoir ce guide quand tu veux dans les réglages ⚙️.' },
         { sel:'#menu-btn', text:'Touche ton personnage, en haut à gauche, pour ouvrir le menu : choisis ton niveau (Facile, Moyen ou Difficile), ou le mode Manuel pour choisir toi-même l\'activité.' },
         { sel:'#practice-mode', text:'Aléatoire : les activités changent toutes seules. Chronométré : tu réponds à un maximum de questions avant la fin du temps.' },
-        { sel:'#streak-pill', text:'La série : réponds juste 20 fois de suite, sans te tromper, pour réussir un défi et débloquer un nouveau personnage !' },
+        { sel:'#streak-pill', text:'La série : réponds juste 20 fois de suite, sans te tromper, pour débloquer un nouveau personnage ! Et si tu continues jusqu\'à 25 puis 30, d\'autres personnages t\'attendent.' },
         { sel:'#stars-btn', text:'Chaque bonne réponse te donne des étoiles ⭐. Touche ce bouton pour ouvrir la boutique et acheter de nouveaux personnages.' },
         { sel:'#battle-btn', text:'La Bataille : fais combattre tes personnages contre l\'autre clan.' },
         { sel:'#settings-btn', text:'Les réglages : sons, thème, progression de l\'enfant… et le bouton « Guides » pour revoir ces explications.' },
@@ -8816,6 +8879,17 @@
           text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent avec 20 bonnes réponses d\'affilée.' },
         { sel:'#shop-mascot-panel',
           text:'Ta mascotte t\'accompagne et réagit à tes réponses. Pour en changer, ouvre un personnage que tu possèdes et touche « Devenir mascotte ».' }
+      ]
+    },
+    serie: {
+      title:'Série sans faute',
+      steps:[
+        { sel:'#streak-pill', enter:function(){ showTab(lastPracticeTab); },
+          text:'10 bonnes réponses d\'affilée, bravo ! C\'est ta série sans faute : une seule erreur et elle repart à zéro.' },
+        { sel:'#streak-pill',
+          text:'À 20, tu débloques le personnage du défi Facile. Continue sans faute : à 25 tu gagnes celui du Moyen, à 30 celui du Difficile ! Peu importe le niveau où tu joues.' },
+        { sel:'#streak-pill',
+          text:'Juste avant chaque palier, je te pose les 3 dernières questions dans les sujets où tu as le plus besoin de t\'entraîner. Et en mode Overload, la chaleur monte à 15, 20 et 25 !' }
       ]
     },
     bataille: {
@@ -8960,6 +9034,7 @@
     var inBattle = !document.getElementById('tab-battle').hidden;
     if(!guideSeen.accueil && !inBattle){ guideStart('accueil'); return; }
     if(inBattle){ if(!guideSeen.bataille) guideStart('bataille'); return; }   // première entrée dans la Bataille
+    if(!guideSeen.serie && appMode==='auto' && practiceMode==='free' && freeStreak >= GUIDE_SERIE_START){ guideStart('serie'); return; }
     if(!guideSeen.boutique && !guideBought() && stars >= GUIDE_SHOP_STARS){ guideStart('boutique'); return; }
   }
   setInterval(guideTick, 1500);
@@ -8982,5 +9057,82 @@
       guideStart(id);
     });
   });
+  /* ===================== CHALEUR (mode Overload) =====================
+     Selon la série sans faute (freeStreak) : 15 → niveau 1, 20 → 2, 25 → 3. Le niveau est écrit dans
+     body[data-heat] ; la mise en forme (halo, flammes, tremblement) est dans css/chaleur.css, avec
+     une variante par clan (data-app-theme). Ce fichier ajoute les particules qui montent, l'éclat et le
+     son à chaque nouveau palier. Rien n'apparaît hors mode Overload. */
+  var HEAT_STEPS = [15, 20, 25];
+  var HEAT_EMOJI = {
+    cats:     [['✨','💖'], ['✨','💖','🌸','⭐'], ['🌟','💖','🌈','✨','🎀']],
+    brainrot: [['🔥'], ['🔥','💥','🔥'], ['🔥','⚡','💥','☠️','🔥']]
+  };
+  var heatLevel = 0, heatLayer = null, heatTimer = null;
+  function heatLevelFor(streak){
+    var lv = 0;
+    HEAT_STEPS.forEach(function(g, i){ if(streak >= g) lv = i + 1; });
+    return lv;
+  }
+  function heatBuild(){
+    if(heatLayer) return heatLayer;
+    heatLayer = document.createElement('div');
+    heatLayer.className = 'heat-layer'; heatLayer.setAttribute('aria-hidden', 'true');
+    heatLayer.innerHTML = '<div class="heat-glow"></div><div class="heat-flames"></div>';
+    document.body.appendChild(heatLayer);
+    return heatLayer;
+  }
+  function heatSpawn(){
+    if(!heatLevel) return;
+    var layer = heatBuild();
+    if(heatReduced()){ layer.querySelectorAll('.heat-p').forEach(function(q){ q.remove(); }); return; }
+    if(layer.querySelectorAll('.heat-p').length > 26) return;
+    var side = currentThemeKey()==='brainrot' ? 'brainrot' : 'cats';
+    var set = HEAT_EMOJI[side][heatLevel - 1];
+    var p = document.createElement('span');
+    p.className = 'heat-p'; p.textContent = set[Math.floor(Math.random()*set.length)];
+    p.style.left = (Math.random()*96) + 'vw';
+    p.style.fontSize = (16 + Math.random()*16 + heatLevel*3) + 'px';
+    p.style.setProperty('--dur', (2.6 + Math.random()*2) + 's');
+    p.style.setProperty('--dx', ((Math.random()-0.5)*90) + 'px');
+    p.style.setProperty('--rot', ((Math.random()-0.5)*50) + 'deg');
+    p.addEventListener('animationend', function(){ p.remove(); });
+    layer.appendChild(p);
+  }
+  function heatReduced(){ return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function heatSting(level){
+    try{
+      var ctx = revealCtx(); if(!ctx) return;
+      var t0 = ctx.currentTime, k = 1.2 + level*0.25;
+      if(currentThemeKey()==='brainrot'){
+        revealTone(ctx, 'sawtooth', 70, 40 + level*10, t0, 0.55, 0.30*k);       // grondement
+        revealTone(ctx, 'square', 200 + level*90, 900 + level*200, t0, 0.35, 0.07*k);   // montée de flamme
+        if(level>1) revealTone(ctx, 'square', 1200, 300, t0 + 0.25, 0.25, 0.07*k);
+      } else {
+        [660, 880, 1175, 1568].slice(0, 2 + level).forEach(function(f, i){           // arpège étincelant
+          revealTone(ctx, 'triangle', f, f*1.01, t0 + i*0.07, 0.35, 0.10*k);
+        });
+      }
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 1200);
+    }catch(e){}
+  }
+  // Appelée à chaque mise à jour de la série (voir updateStreakPill) et au changement de mode d'effets.
+  function updateHeat(){
+    if(!HEAT_STEPS) return;   // appelée avant le chargement de ce fichier
+    var lv = sfxMode==='overload' ? heatLevelFor(freeStreak) : 0;
+    if(appMode!=='auto' || practiceMode!=='free' || countdownRunning) lv = 0;
+    if(lv === heatLevel){ document.body.setAttribute('data-heat', String(lv)); return; }
+    var up = lv > heatLevel;
+    heatLevel = lv;
+    document.body.setAttribute('data-heat', String(lv));
+    heatBuild();
+    if(up){
+      heatLayer.classList.remove('surge'); void heatLayer.offsetWidth; heatLayer.classList.add('surge');
+      heatSting(lv);
+      for(var i=0;i<6+lv*4;i++) setTimeout(heatSpawn, i*60);
+    }
+    if(lv && !heatTimer) heatTimer = setInterval(function(){ if(heatLevel){ heatSpawn(); if(heatLevel>1) heatSpawn(); } }, 520);
+    if(!lv && heatTimer){ clearInterval(heatTimer); heatTimer = null; }
+  }
+  updateHeat();
 })();
 </script>

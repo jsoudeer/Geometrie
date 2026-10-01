@@ -7,19 +7,22 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   // ---------- 1) la série continue pendant la montée de niveau automatique ----------
   await ev(`autoAdvanceEnabled=true; autoAdvanceThreshold=5; setAppMode('auto'); setGlobalLevel(0); resetFreeStreak();`);
   const levels = [];
-  for (let i = 0; i < 20; i++) {
+  let at20 = null;
+  for (let i = 0; i < 30; i++) {
     await ev(`nextPracticeQuestion(); onPracticeAnswered(true);`);
     await page.waitForTimeout(900);
     levels.push(await ev(`globalLevel`));
+    if (i === 19) at20 = JSON.parse(await ev(`JSON.stringify([12,13,14].map(function(k){ return isChallengeDone(k); }))`));
   }
   console.log('niveaux :', levels.join(''));
-  chk(levels[4] === 1 && levels[9] === 2 && levels[19] === 2, 'montée automatique Facile → Moyen → Difficile (toutes les 5 bonnes réponses)');
+  chk(levels[4] === 1 && levels[9] === 2 && levels[29] === 2, 'montée automatique Facile → Moyen → Difficile (toutes les 5 bonnes réponses)');
   const done = JSON.parse(await ev(`JSON.stringify([12,13,14].map(function(k){ return isChallengeDone(k); }))`));
-  chk(done.every(Boolean), 'défi des 20 réussi malgré les montées de niveau : ' + JSON.stringify(done));
+  chk(JSON.stringify(at20) === '[true,false,false]', 'à 20 (malgré les montées de niveau) : seul le défi Facile est débloqué : ' + JSON.stringify(at20));
+  chk(done.every(Boolean), 'à 30 : les trois défis sont débloqués : ' + JSON.stringify(done));
   // ---------- 2) enregistrement ----------
   await page.waitForTimeout(600);
   const stored = JSON.parse(await page.evaluate(() => localStorage.getItem('geo_history')));
-  chk(stored.length === 20 && stored.every(e => e.length === 6 && e[5] === 1), 'historique enregistré et sauvegardé (20 réponses)');
+  chk(stored.length === 30 && stored.every(e => e.length === 6 && e[5] === 1), 'historique enregistré et sauvegardé (30 réponses)');
   // ---------- 3) les 3 dernières questions sur les sujets faibles ----------
   await ev(`progEvents=[]; var t=Date.now(); [['calcul',0.3],['mesures',0.4],['solides',0.5]].forEach(function(p){ var i=PROG_SKILLS.map(function(s){return s.id;}).indexOf(p[0]); for(var k=0;k<40;k++) progEvents.push([t-k*1000, i, p[0]==='mesures'?'measure':(p[0]==='solides'?'net':'qcm'), p[0]==='calcul'?'calc':'', 1, k/40<p[1]?1:0]); });
     ['formes','repere','temps','nombres','logique'].forEach(function(id){ var i=PROG_SKILLS.map(function(s){return s.id;}).indexOf(id); for(var k=0;k<40;k++) progEvents.push([t-k*1000, i, id==='formes'?'deform':(id==='temps'?'clock-lire':'qcm'), id==='repere'?'coordFind':'', 1, 1]); });`);
@@ -39,10 +42,10 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   const keys = [...new Set(picks.map(p => JSON.parse(p)).map(p => p.key + (p.cat ? ':' + p.cat : '')))];
   chk(keys.every(k => ['qcm:calcul', 'measure', 'net', 'qcm:solides'].includes(k)), 'sujets choisis parmi les plus faibles : ' + keys.join(', '));
   // défi déjà réussi : pas de ciblage
-  await ev(`ownedCats[CAT_REWARDS[13].id]=true; freeStreak=18; nextPracticeQuestion();`);
+  await ev(`ownedCats[CAT_REWARDS[12].id]=true; freeStreak=18; nextPracticeQuestion();`);
   chk(!(await page.evaluate(() => /🎯/.test(document.getElementById('practice-family-tag').textContent))), 'défi du niveau déjà réussi : pas de ciblage');
   // pas assez de données : pas de ciblage
-  await ev(`progEvents=[]; ownedCats[CAT_REWARDS[13].id]=false; delete ownedCats[CAT_REWARDS[13].id]; freeStreak=18; nextPracticeQuestion();`);
+  await ev(`progEvents=[]; delete ownedCats[CAT_REWARDS[12].id]; freeStreak=18; nextPracticeQuestion();`);
   chk(!(await page.evaluate(() => /🎯/.test(document.getElementById('practice-family-tag').textContent))), 'sans historique suffisant : pas de ciblage');
   // ---------- 4) écran Progression ----------
   await page.evaluate(() => { var r=document.getElementById('reveal-overlay'); if(r) r.remove(); });

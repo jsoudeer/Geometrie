@@ -4,7 +4,7 @@
      Ils servent à :
        1) montrer les résultats de l'enfant dans les Réglages (📈 Progression) :
           un radar de synthèse, un détail par compétence, l'activité des derniers jours ;
-       2) orienter le défi « 20 bonnes réponses d'affilée » : ses 3 dernières
+       2) orienter les séries sans faute (paliers 20, 25, 30) : les 3 dernières
           questions sont posées dans les sujets les plus faibles (progWeakPick).
      Les 8 compétences regroupent les familles d'activités et les catégories de quiz. */
   var PROG_SKILLS = [
@@ -171,7 +171,7 @@
       else ul.appendChild(progMk('li', '', '🌟 Tout est au-dessus de 90 % : bravo !'));
       body.appendChild(ul);
     }
-    body.appendChild(progMk('p', 'muted settings-hint', '🎯 Dans le défi « 20 bonnes réponses d’affilée », les 3 dernières questions sont posées dans les sujets à travailler (il faut au moins 20 réponses enregistrées).'));
+    body.appendChild(progMk('p', 'muted settings-hint', '🎯 Dans les séries sans faute (paliers 20, 25 et 30), les 3 questions avant un palier sont posées dans les sujets à travailler (il faut au moins 20 réponses enregistrées).'));
     var unknown = stats.filter(function(st){ return st.rateRecent===null; });
     if(unknown.length) body.appendChild(progMk('p', 'muted settings-hint', 'Pas encore assez de réponses (moins de ' + PROG_MIN_RECENT + ') : ' + unknown.map(function(st){ return st.skill.short; }).join(', ') + '.'));
   }

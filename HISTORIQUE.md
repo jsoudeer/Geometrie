@@ -136,7 +136,7 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 
 
 ## 25. Historique de progression ; série des 20 qui survit à la montée de niveau (30/09/2026)
-- **Bug** : en avancement automatique, monter de niveau remettait la série à zéro. `freeStreak` (série des 20) est désormais conservée ; `levelStreak` compte les bonnes réponses du niveau courant pour déclencher la montée ; `streakLevels` mémorise les niveaux traversés, et à 20 d'affilée `completeChallenge(12+niveau)` est validé pour chacun.
+- **Bug** : en avancement automatique, monter de niveau remettait la série à zéro. `freeStreak` est désormais conservée ; `levelStreak` compte les bonnes réponses du niveau courant pour déclencher la montée (voir §29 pour les paliers).
 - **Historique** (`src/js/progression.js`, clé `geo_history`, 3000 réponses max) : `progRecord` enregistre `[date, compétence, famille, type, niveau, juste]` à chaque réponse. Écran **⚙️ Réglages → 📈 Progression** : Synthèse (radar 8 compétences, niveau récent sur 40 réponses vs depuis le début, points forts / à travailler), Détail (par compétence et activité, par niveau), Activité (14 derniers jours). Bouton Effacer séparé de « Effacer ma progression ».
 - **Ciblage** : pendant les 18e, 19e et 20e réponses d'une série du défi (mode auto, Aléatoire, défi du niveau non réussi, ≥ 20 réponses enregistrées), `progWeakPick` choisit parmi les compétences les plus faibles (`nextPracticeQuestion`, `forcedQcmCat`) ; étiquette « 🎯 à travailler ». Test : `progress_check.js`.
 
@@ -160,3 +160,10 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - **Bataille** : soutien et archer ne sont plus obligatoires (au moins 1 carte) ; l'équipe adverse reprend la même composition (`btBuildEnemyTeam`) ; message « Pas de soutien ni d'archer : c'est ton choix ».
 - **Tests** : `guide_check.js` ; `lib.js` marque les guides « vus » par défaut (option `guides:true` pour les tester) ; `a11y_audit.js` couvre l'écran Guides et une étape en cours (axe : 0 défaut).
 - **Ajustements (01/10/2026)** : la mascotte du clan actif (`guideDrawMascot`) accompagne chaque bulle ; le guide Bataille se lance désormais à la **première entrée dans la Bataille** (plus au 5e personnage débloqué : `GUIDE_BATTLE_UNLOCKS` supprimé).
+
+## 29. Séries 20/25/30, chaleur Overload, guide Série (01/10/2026)
+- **Paliers** : `STREAK_GOALS=[20,25,30]` (orchestrateur.js, remplace `STREAK_TARGET` et `streakLevels`). Atteindre un palier valide le défi `12+rang` (Facile, Moyen, Difficile) quel que soit le niveau joué ; la série continue sans remise à zéro ; une erreur la remet à 0 sans rien retirer. Pastille 🔥 permanente en Aléatoire : « 21 / 25 (20✔ · 25 · 30) » (`nextStreakGoal`). Ciblage des sujets faibles sur les 3 questions avant chaque palier non débloqué (`challengeFocusActive`).
+- **Chaleur** (`chaleur.js`, `css/chaleur.css`) : en son Overload et mode Aléatoire, `body[data-heat]` = 1/2/3 à 15/20/25 d'affilée ; halo + particules + son (`heatSting`) à chaque palier. Chats : vignette pêche, arc-en-ciel/cœurs/paillettes, liseré irisé au niveau 3. Brainrot : vignette rouge vacillante, flammes, crânes/éclairs, léger tremblement au niveau 3. Mouvement réduit : halo fixe seulement. `pointer-events:none`.
+- **Guide Série** (4e guide, `serie`) : se lance au premier 10 d'affilée (`GUIDE_SERIE_START`), 3 étapes sur la pastille.
+- `PROG_SKILLS.formes` inclut `atelier-erreur` et `atelier-axe`.
+- **Tests** : `serie_check.js` (nouveau), `progress_check.js` et `guide_check.js` adaptés ; toute la régression et l'audit a11y passent.
