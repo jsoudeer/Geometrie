@@ -813,47 +813,74 @@
     return (dx1*dy2 - dy1*dx2) === 0;
   }
 
-  // Explication adaptée aux 3 points affichés : sur quelle ligne/colonne/
-  // diagonale ils sont alignés, ou lequel sort de la droite des deux autres.
+  function alignName(p){ return COL_LETTERS[p.col] + (p.row+1); }
+  // Explication adaptée aux 3 points affichés : sur quelle ligne/colonne/diagonale/droite penchée
+  // ils sont alignés, ou lequel sort de la droite des deux autres.
   function alignExplain(pts, aligned){
-    function nm(p){ return COL_LETTERS[p.col] + (p.row+1); }
+    var nm = alignName;
     if(aligned){
       if(pts[0].row===pts[1].row && pts[1].row===pts[2].row) return 'Oui : ' + pts.map(nm).join(', ') + ' sont tous sur la ligne ' + (pts[0].row+1) + '. Une règle posée sur cette ligne les touche tous les trois.';
       if(pts[0].col===pts[1].col && pts[1].col===pts[2].col) return 'Oui : ' + pts.map(nm).join(', ') + ' sont tous dans la colonne ' + COL_LETTERS[pts[0].col] + '. Une règle posée sur cette colonne les touche tous les trois.';
-      return 'Oui : ' + pts.map(nm).join(', ') + ' sont en diagonale, à la suite les uns des autres. Une seule règle les touche tous les trois.';
+      var dx = Math.abs(pts[1].col-pts[0].col), dy = Math.abs(pts[1].row-pts[0].row);
+      if(dx===dy) return 'Oui : ' + pts.map(nm).join(', ') + ' sont en diagonale, à la suite les uns des autres. Une seule règle les touche tous les trois.';
+      return 'Oui : ' + pts.map(nm).join(', ') + ' sont sur une même droite penchée : à chaque pas on avance de ' + dx + ' colonne' + (dx>1?'s':'') + ' et de ' + dy + ' ligne' + (dy>1?'s':'') + '. Une seule règle les touche tous les trois.';
     }
     return 'Non : si on pose la règle sur ' + nm(pts[0]) + ' et ' + nm(pts[1]) + ', elle ne touche pas ' + nm(pts[2]) + '. Il faut que la règle touche les 3 points en même temps.';
   }
-  function genAlignQuestion(){
-    var aligned = Math.random()<0.5;
-    var pts;
-    if(aligned){
-      var mode = pick(['h','v','d']);
-      if(mode==='h'){
-        var row = randInt(0,4);
-        pts = shuffle([0,1,2,3,4]).slice(0,3).sort(function(a,b){return a-b;}).map(function(c){return {col:c,row:row};});
-      } else if(mode==='v'){
-        var col = randInt(0,4);
-        pts = shuffle([0,1,2,3,4]).slice(0,3).sort(function(a,b){return a-b;}).map(function(r){return {col:col,row:r};});
-      } else {
-        var dir = pick([1,-1]);
-        var startCol = dir===1 ? 0 : 4;
-        var startRow = randInt(0,2);
-        pts = [0,1,2].map(function(i){ return {col:startCol+dir*i, row:startRow+i}; });
-      }
-    } else {
-      var tries=0;
-      do{
-        pts = [0,1,2].map(function(){ return {col:randInt(0,4), row:randInt(0,4)}; });
-        tries++;
-      } while(tries<30 && isColinear(pts));
+  function ptEq(p, q){ return p.col===q.col && p.row===q.row; }
+  function ptIn(list, p){ return list.some(function(q){ return ptEq(p, q); }); }
+  // 3 points alignés régulièrement espacés, dans la direction voulue (horizontale, verticale,
+  // diagonale ou droite penchée 2:1), à une position tirée au hasard.
+  function alignedTriple(modes){
+    var mode = pick(modes), step, tries = 0, pts;
+    do {
+      var sg = pick([1,-1]), sp = pick([1,2]);
+      if(mode==='h') step = [sp,0];
+      else if(mode==='v') step = [0,sp];
+      else if(mode==='d') step = [sp*sg, sp];
+      else step = pick([[2*sg,1],[1*sg,2]]);
+      var c0 = randInt(0,4), r0 = randInt(0,4);
+      pts = [0,1,2].map(function(i){ return {col:c0+step[0]*i, row:r0+step[1]*i}; });
+      tries++;
+    } while(tries<200 && !pts.every(function(p){ return p.col>=0 && p.col<=4 && p.row>=0 && p.row<=4; }));
+    if(tries>=200) pts = [{col:0,row:0},{col:1,row:1},{col:2,row:2}];
+    return pts;
+  }
+  function randomCell(){ return {col:randInt(0,4), row:randInt(0,4)}; }
+  function alignModes(level){ return level===0 ? ['h','v'] : level===1 ? ['h','v','d'] : ['h','v','d','pente']; }
+  function drawLetterPoint(svg, p, letter, color){
+    svg.appendChild(el('circle',{cx:gridCenterX(p.col),cy:gridCenterY(p.row),r:10,fill:color,stroke:'var(--surface)','stroke-width':2}));
+    svg.appendChild(svgText(gridCenterX(p.col), gridCenterY(p.row)+5, 13, letter));
+  }
+  var ALIGN_COLORS = ['var(--accent)','var(--accent2)','var(--accent3)','var(--accent)'];
+
+  function genAlignQuestion(level){
+    level = level || 0;
+    var variant = level===0 ? 'oui' : pickFresh('align-var-' + level, ['oui','quatre','candidat']);
+    if(variant==='quatre') return genAlignQuatre(level);
+    if(variant==='candidat') return genAlignCandidat(level);
+    return genAlignOui(level);
+  }
+  // Variante 1 : 3 points, alignés ou non. Au niveau Moyen/Difficile, les « non alignés »
+  // sont souvent des presque-alignés (un point décalé d'une case).
+  function genAlignOui(level){
+    var aligned = Math.random()<0.5, pts;
+    if(aligned) pts = alignedTriple(alignModes(level));
+    else if(level>0 && Math.random()<0.6){
+      pts = alignedTriple(alignModes(level));
+      var k = pick([0,1,2]), tries = 0, cand;
+      do { cand = {col:pts[k].col + pick([-1,0,1]), row:pts[k].row + pick([-1,0,1])}; tries++; }
+      while(tries<50 && (cand.col<0||cand.col>4||cand.row<0||cand.row>4||ptEq(cand, pts[k])||ptIn(pts, cand)||isColinear(pts.map(function(p,i){ return i===k ? cand : p; }))));
+      if(tries<50) pts[k] = cand; else pts = null;
+    }
+    if(!pts){
+      var t2 = 0;
+      do { pts = [randomCell(), randomCell(), randomCell()]; t2++; }
+      while(t2<50 && (isColinear(pts) || ptEq(pts[0],pts[1]) || ptEq(pts[0],pts[2]) || ptEq(pts[1],pts[2])));
       if(isColinear(pts)) pts = [{col:0,row:0},{col:1,row:0},{col:0,row:2}];
     }
-    // Forme et couleur du repère variées à chaque question (au lieu d'un
-    // rond rose systématique) : purement visuel, pour que l'exercice ne
-    // ressemble jamais deux fois de suite à la même image.
-    var markerShape = pick(MARKER_SHAPES);
-    var markerColor = pick(['var(--accent)','var(--accent2)','var(--accent3)']);
+    aligned = isColinear(pts);
+    var markerShape = pick(MARKER_SHAPES), markerColor = pick(['var(--accent)','var(--accent2)','var(--accent3)']);
     return {
       tag:'Alignement',
       question:'Ces 3 points sont-ils alignés (sur une même droite) ?',
@@ -866,6 +893,76 @@
       },
       cols3:false,
       choices: shuffle([{label:'Oui, alignés', ok:aligned},{label:'Non, pas alignés', ok:!aligned}])
+    };
+  }
+  // Variante 2 : 4 points A B C D, exactement 3 sont alignés : lesquels ?
+  function genAlignQuatre(level){
+    var pts, tries = 0, good;
+    do {
+      var tri = alignedTriple(alignModes(level)), extra = randomCell();
+      pts = tri.concat([extra]);
+      var triples = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
+      var n = triples.filter(function(t){ return isColinear(t.map(function(i){ return pts[i]; })); }).length;
+      good = n===1 && !ptIn(tri, extra);
+      tries++;
+    } while(!good && tries<200);
+    if(!good){ pts = [{col:0,row:0},{col:2,row:0},{col:4,row:0},{col:1,row:3}]; }
+    var order = shuffle([0,1,2,3]), P = order.map(function(i){ return pts[i]; });   // lettres attribuées au hasard
+    var letters = ['A','B','C','D'];
+    var triplesIdx = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
+    var right = triplesIdx.filter(function(t){ return isColinear(t.map(function(i){ return P[i]; })); })[0];
+    function lab(t){ return letters[t[0]] + ', ' + letters[t[1]] + ' et ' + letters[t[2]]; }
+    var tr = right.map(function(i){ return P[i]; });
+    return {
+      tag:'Alignement',
+      question:'Parmi ces 4 points, lesquels sont alignés ?',
+      sub:'Imagine une règle : trois de ces points se touchent avec elle.',
+      explain: 'Les points ' + lab(right) + ' sont alignés. ' + alignExplain(tr, true).replace(/^Oui : [^ ]+, [^ ]+, [^ ]+ sont /, 'Ils sont '),
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        P.forEach(function(p,i){ drawLetterPoint(svg, p, letters[i], ALIGN_COLORS[i]); });
+      },
+      cols3:false,
+      choices: triplesIdx.map(function(t){ return { label:lab(t), ok:t===right }; })
+    };
+  }
+  // Variante 3 : A et B sont posés ; quel point numéroté (1 à 4) est aligné avec eux ?
+  function genAlignCandidat(level){
+    var tri, A, B, C, cands, tries = 0, good;
+    do {
+      tri = alignedTriple(alignModes(level));
+      var pick2 = shuffle([0,1,2]); A = tri[pick2[0]]; B = tri[pick2[1]]; C = tri[pick2[2]];
+      cands = [C];
+      var g = 0;
+      while(cands.length<4 && g++<200){
+        var q = randomCell();
+        if(ptEq(q,A) || ptEq(q,B) || ptIn(cands,q) || isColinear([A,B,q])) continue;
+        cands.push(q);
+      }
+      good = cands.length===4;
+      tries++;
+    } while(!good && tries<50);
+    if(!good){ A = {col:0,row:0}; B = {col:2,row:2}; cands = [{col:4,row:4},{col:3,row:1},{col:1,row:3},{col:0,row:4}]; C = cands[0]; }
+    var order = shuffle([0,1,2,3]);   // numéro affiché de chaque candidat
+    var shown = order.map(function(i){ return cands[i]; });
+    var rightNum = String(order.indexOf(0) + 1);
+    return {
+      tag:'Alignement',
+      question:'Quel point (1, 2, 3 ou 4) est aligné avec A et B ?',
+      sub:'Imagine une règle posée sur A et B : quel numéro touche-t-elle ?',
+      explain: 'Le point ' + rightNum + ' est aligné avec A et B : ' + alignExplain([A,B,C], true).replace(/^Oui : [^ ]+, [^ ]+, [^ ]+ sont /, 'ils sont ').replace(/^Oui : /, ''),
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        drawGridBase(svg);
+        drawLetterPoint(svg, A, 'A', 'var(--accent)'); drawLetterPoint(svg, B, 'B', 'var(--accent)');
+        shown.forEach(function(p,i){
+          svg.appendChild(el('circle',{cx:gridCenterX(p.col),cy:gridCenterY(p.row),r:10,fill:'var(--surface)',stroke:'var(--text)','stroke-width':2.5}));
+          svg.appendChild(svgText(gridCenterX(p.col), gridCenterY(p.row)+5, 13, String(i+1)));
+        });
+      },
+      cols3:false,
+      choices: ['1','2','3','4'].map(function(l){ return { label:l, ok:l===rightNum }; })
     };
   }
 
@@ -1594,7 +1691,19 @@
     };
   }
 
+  // Angles : trois variantes.
+  //  - « classer » : droit, aigu ou obtus (une seule valeur, l'écart à 90° se resserre avec le niveau) ;
+  //  - « comparer » : quel angle est le plus grand (2 ou 3 angles aux branches de longueurs différentes ;
+  //    Difficile : ils peuvent être égaux) ;
+  //  - « droits » : combien d'angles droits dans une figure.
   function genAngleQuestion(level){
+    var variants = level===0 ? ['comparer','droits'] : ['classer','comparer','droits'];
+    var v = pickFresh('angle-var-' + level, variants);
+    if(v==='comparer') return genAngleComparer(level);
+    if(v==='droits') return genAngleDroits(level);
+    return genAngleClasser(level);
+  }
+  function genAngleClasser(level){
     var cat = pick(['droit','aigu','obtus']);
     var gap = GEO_LEVELS[level].angleGap;
     var angleDeg;
@@ -1616,6 +1725,98 @@
       choices: shuffle(['droit','aigu','obtus']).map(function(c){ return { label:c, ok: c===cat }; })
     };
   }
+  // Un angle dessiné autour d'un centre, tourné au hasard ; les branches ont des longueurs différentes
+  // pour que « le plus long » ne soit jamais un indice.
+  function drawAngleAt(svg, cx, cy, deg, len, rot, color1, color2, letter){
+    var r1 = rot*Math.PI/180, r2 = (rot+deg)*Math.PI/180;
+    var l1 = len*rand(0.8,1), l2 = len*rand(0.8,1);
+    var ax = cx + l1*Math.cos(r1), ay = cy - l1*Math.sin(r1), bx = cx + l2*Math.cos(r2), by = cy - l2*Math.sin(r2);
+    var rr = 20, sx = cx + rr*Math.cos(r1), sy = cy - rr*Math.sin(r1), ex = cx + rr*Math.cos(r2), ey = cy - rr*Math.sin(r2);
+    svg.appendChild(el('path',{d:'M '+cx+' '+cy+' L '+sx+' '+sy+' A '+rr+' '+rr+' 0 0 0 '+ex+' '+ey+' Z', fill:'var(--accent3)','fill-opacity':0.55, stroke:'none'}));
+    svg.appendChild(el('line',{x1:cx,y1:cy,x2:ax,y2:ay,stroke:color1,'stroke-width':5,'stroke-linecap':'round'}));
+    svg.appendChild(el('line',{x1:cx,y1:cy,x2:bx,y2:by,stroke:color2,'stroke-width':5,'stroke-linecap':'round'}));
+    svg.appendChild(el('circle',{cx:cx,cy:cy,r:4,fill:'var(--text)'}));
+    // lettre placée au bout de la bissectrice, côté opposé aux branches
+    var bis = (rot + deg/2 + 180)*Math.PI/180;
+    svg.appendChild(svgText(cx + 20*Math.cos(bis), cy - 20*Math.sin(bis) + 5, 15, letter));
+  }
+  function genAngleComparer(level){
+    var k = level===2 ? pick([2,3]) : (level===1 ? pick([2,3]) : 2);
+    var minGap = level===0 ? 40 : level===1 ? 20 : 10;
+    var equalCase = level===2 && k===2 && Math.random()<0.3;
+    var degs, tries = 0;
+    do {
+      degs = []; for(var i=0;i<k;i++) degs.push(Math.round(rand(25, 160)));
+      if(equalCase) degs[1] = degs[0];
+      var sorted = degs.slice().sort(function(a,b){ return b-a; });
+      var ok = equalCase || sorted.every(function(d,i){ return i===0 || sorted[i-1]-d >= minGap; });
+      tries++;
+    } while(!ok && tries<300);
+    var letters = ['A','B','C'].slice(0,k);
+    var max = Math.max.apply(null, degs), bigIdx = degs.indexOf(max);
+    var answer = equalCase ? 'Ils sont égaux' : letters[bigIdx];
+    var centers = k===2 ? [[50,100],[150,100]] : [[50,50],[150,50],[100,150]];
+    var rots = degs.map(function(d){ return rand(0, 360 - d); });
+    var cols = [['var(--accent)','var(--accent2)'],['var(--accent2)','var(--accent)'],['var(--accent)','var(--accent3)']];
+    var choices = letters.map(function(l){ return { label:l, ok:l===answer }; });
+    if(level===2 && k===2) choices.push({ label:'Ils sont égaux', ok:equalCase });
+    return {
+      tag:'Angles',
+      question: k===2 ? 'Quel angle est le plus grand : A ou B ?' : 'Quel angle est le plus grand ?',
+      sub: 'Compare l\'écart entre les deux branches. La longueur des branches ne change rien à l\'angle.',
+      explain: equalCase ? 'Les deux angles s\'ouvrent exactement pareil : ils sont égaux. Les branches n\'ont pas la même longueur, mais cela ne change pas l\'angle.'
+        : 'L\'angle ' + answer + ' est le plus ouvert : c\'est le plus grand. La longueur des branches ne compte pas, seul compte l\'écart entre elles.',
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        degs.forEach(function(d,i){ drawAngleAt(svg, centers[i][0], centers[i][1], d, k===2 ? 48 : 46, rots[i], cols[i][0], cols[i][1], letters[i]); });
+      },
+      cols3: choices.length===3,
+      choices: choices
+    };
+  }
+  // Figures dont on compte les angles droits. Les coordonnées sont centrées sur (0,0).
+  var ANGLE_FIGS = {
+    rect:   { name:'rectangle', rights:4, why:'Un rectangle a 4 angles droits.',
+      pts:function(){ var w=rand(100,140), h=rand(55,85); return [[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]]; } },
+    carre:  { name:'carré', rights:4, why:'Un carré a 4 angles droits.',
+      pts:function(){ var c=rand(80,105); return [[-c/2,-c/2],[c/2,-c/2],[c/2,c/2],[-c/2,c/2]]; } },
+    triRect:{ name:'triangle rectangle', rights:1, why:'Ce triangle a un seul angle droit, dans le coin ; les deux autres sont aigus.',
+      pts:function(){ var a=rand(90,130), b=rand(60,100); return [[-a/2,b/2],[a/2,b/2],[-a/2,-b/2]]; } },
+    triGen: { name:'triangle', rights:0, why:'Ce triangle n\'a aucun angle droit.',
+      pts:function(){ var t=0, p; do { p=[[-rand(40,60),rand(30,50)],[rand(40,65),rand(30,50)],[rand(-25,25),-rand(40,60)]]; t++; } while(t<100 && !figNoRight(p)); return p; } },
+    trapRect:{ name:'trapèze rectangle', rights:2, why:'Ce trapèze a 2 angles droits, côte à côte sur le côté droit ou gauche ; les 2 autres ne sont pas droits.',
+      pts:function(){ var w=rand(100,140), h=rand(60,85), d=rand(30,50); return [[-w/2,h/2],[w/2,h/2],[w/2-d,-h/2],[-w/2,-h/2]]; } },
+    maison: { name:'maison', rights:2, why:'Les 2 angles en bas sont droits ; les autres coins sont plus ouverts que le coin d\'une feuille (obtus).',
+      pts:function(){ var w=rand(100,120), h1=rand(45,60), h2=rand(25,35), b=(h1+h2)/2; return [[-w/2,b],[w/2,b],[w/2,b-h1],[0,b-h1-h2],[-w/2,b-h1]]; } },
+    losange:{ name:'losange', rights:0, why:'Un losange a 4 côtés égaux mais aucun angle droit (sinon ce serait un carré).',
+      pts:function(){ var d1=rand(110,140), d2=rand(55,d1-30); return [[0,-d1/2],[d2/2,0],[0,d1/2],[-d2/2,0]]; } },
+    parallelo:{ name:'parallélogramme', rights:0, why:'Un parallélogramme penché n\'a aucun angle droit.',
+      pts:function(){ var w=rand(90,115), h=rand(55,80), sh=rand(22,36); return [[-w/2+sh,-h/2],[w/2+sh,-h/2],[w/2-sh,h/2],[-w/2-sh,h/2]]; } }
+  };
+  function figNoRight(p){
+    var n = p.length;
+    return p.every(function(q,i){ return Math.abs(angleAtDeg([p[(i+n-1)%n][0],p[(i+n-1)%n][1]], [q[0],q[1]], [p[(i+1)%n][0],p[(i+1)%n][1]]) - 90) > 18; });
+  }
+  function genAngleDroits(level){
+    var pool = level===0 ? ['rect','carre','triGen','triRect'] : level===1 ? ['rect','carre','triGen','triRect','trapRect','maison'] : ['rect','carre','triRect','trapRect','maison','losange','parallelo','triGen'];
+    var key = pickFresh('angle-fig-' + level, pool), f = ANGLE_FIGS[key], P = f.pts();
+    var rot = (level===2 && f.rights>0 && Math.random()<0.7) ? rand(-0.5,0.5) : (key==='maison' || key==='trapRect' ? rand(-0.15,0.15) : rand(-0.12,0.12));
+    var flip = Math.random()<0.5 ? -1 : 1;
+    var pts2 = P.map(function(q){ var x = q[0]*flip, y = q[1]; return [100 + x*Math.cos(rot) - y*Math.sin(rot), 100 + x*Math.sin(rot) + y*Math.cos(rot)]; });
+    var vals = numChoiceSet(f.rights, [0,1,2,3,4,5]);
+    return {
+      tag:'Angles',
+      question:'Combien d\'angles droits y a-t-il dans cette figure ?',
+      sub:'Un angle droit ressemble au coin d\'une feuille. Regarde chaque coin de la figure.',
+      explain: f.why,
+      draw:function(){
+        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+        svg.appendChild(el('polygon',{points:pts2.map(function(q){ return q[0].toFixed(1)+','+q[1].toFixed(1); }).join(' '), fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4,'stroke-linejoin':'round'}));
+      },
+      cols3:false,
+      choices: vals.map(function(v){ return { label:String(v), ok:v===f.rights }; })
+    };
+  }
 
   // ---- Déclaration des types de Quizz du thème Géométrie ----
   registerQuizType({ id:'sides', category:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
@@ -1628,7 +1829,7 @@
     randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.',
     generate:genNameQuestion });
   registerQuizType({ id:'align', category:'formes', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
-    randomNote:'Les 3 points (alignés ou non) et leur disposition sont tirés au hasard à chaque question.',
+    randomNote:'Facile : 3 points, alignés ou non, en ligne ou en colonne. Moyen : + diagonales, points espacés, « presque alignés », et deux nouvelles variantes (parmi 4 points, lesquels sont alignés ; quel point numéroté est aligné avec A et B). Difficile : + droites penchées (2 colonnes pour 1 ligne). Les points sont tirés au hasard ; les bonnes réponses sont vérifiées par le calcul (une seule possible).',
     generate:genAlignQuestion });
   registerQuizType({ id:'milieu', category:'formes', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
     randomNote:'Facile : 3 formes sur le segment, on cherche celle du milieu. Moyen : segment de 3 ou 5 cases avec 3 ou 5 formes (une au milieu), ou 2 ou 4 formes (aucune au milieu : « Aucune forme » est toujours proposée). Difficile : idem, et une variante où l\'on lit les coordonnées du milieu de [AB] (horizontal, vertical ou diagonal). Position, formes et couleurs sont tirées au hasard.',
@@ -1636,8 +1837,8 @@
   registerQuizType({ id:'coord', category:'repere', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
     randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.',
     generate:genCoordQuestion });
-  registerQuizType({ id:'angle', category:'formes', label:'Angles', longLabel:'Angles (droit/aigu/obtus)', defaultLevels:[1,2],
-    randomNote:'La catégorie (droit/aigu/obtus) et la valeur en degrés sont tirées au hasard. C\'est le NIVEAU qui resserre l\'écart minimum autour de 90° (14° en Moyen, 7° en Difficile), rendant la distinction plus fine à l\'œil.',
+  registerQuizType({ id:'angle', category:'formes', label:'Angles', longLabel:'Angles (droit, aigu, obtus, comparer)', defaultLevels:[0,1,2],
+    randomNote:'Trois variantes en alternance. Facile : comparer 2 angles très différents, ou compter les angles droits d\'un rectangle, carré ou triangle. Moyen : + classer un angle (droit/aigu/obtus, écart de 14° autour de 90°), comparer 2 ou 3 angles, trapèze rectangle et maison. Difficile : écart de 7°, comparaisons très serrées (ou angles égaux aux branches inégales), + losange, parallélogramme et figures penchées. Valeurs et branches tirées au hasard.',
     generate:genAngleQuestion });
   registerQuizType({ id:'image', category:'formes', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
     randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.',

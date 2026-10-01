@@ -13,12 +13,12 @@ la colonne « réponses » est la vraie mesure de variété de fond.
 | Axe de symétrie | QCM à 3 droites, toujours un triangle isocèle | Atelier « Axes de symétrie » : on touche les vrais axes (0 à 4), le pliage montre les cases sans jumelle |
 | Symétrie vrai/faux | rectangle seul | rectangle, carré (diagonales vraies), triangle isocèle, cercle |
 | Ateliers | symétrie, fractions, reproduire | + « Trouver l'erreur » (case en trop / manquante) |
+| Alignement | 3 points oui/non (2 réponses) | + « lesquels sont alignés parmi 4 points », « quel point numéroté est aligné avec A et B », droites penchées, presque-alignés |
+| Angles | droit/aigu/obtus seulement (3 réponses), pas de Facile | + comparer 2 ou 3 angles (branches inégales, angles égaux), compter les angles droits d'une figure ; Facile disponible |
 
 ## Faiblesses restantes (par ordre d'intérêt)
 | Activité | Questions distinctes (F/M/D) | Réponses distinctes | Constat | Piste |
 |---|---|---|---|---|
-| Alignement (`align`) | ~265 | 2 | Un seul concept (3 points, oui/non) | 4 ou 5 points : « lesquels sont alignés ? », « où placer le 3e point pour aligner ? », lignes en diagonale |
-| Angles (`angle`) | ~90-100 | 3 | droit / aigu / obtus seulement | comparer deux angles, « combien d'angles droits dans la figure ? », angle de l'équerre |
 | Nommer une forme (`name`) | 300 mais surtout visuel | 3-7 | Peu de formes différentes | + quadrilatères (parallélogramme, trapèze), orientations, formes « pièges » |
 | Côtés / sommets (`sides`, `vertices`) | 300 (visuel) | 2-5 | Compter sur des polygones réguliers | polygones irréguliers, formes composées, « combien de côtés au total ? » |
 | Énigme (`enigme`) | 46 | 19 | Réserve très limitée, se répète vite | générateur d'énigmes à partir de propriétés (côtés, angles, symétrie) |
