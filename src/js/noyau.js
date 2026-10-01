@@ -28,7 +28,7 @@
   }catch(e){}
   var SFX_HINTS = {
     normal:'Confettis et petit son à chaque réponse.',
-    overload:'Sons plus forts, gros effets à l\'écran et la mascotte s\'agite fort à chaque réponse !'
+    overload:'Sons plus forts, gros effets à l\'écran et la mascotte s\'agite fort à chaque réponse ! Et la chaleur monte aux séries sans faute de 15, 20 puis 25.'
   };
   function updateSfxHint(){
     document.getElementById('sfx-mode-hint').textContent = SFX_HINTS[sfxMode];
@@ -37,6 +37,7 @@
     sfxMode = idx===1 ? 'overload' : 'normal';
     try{ localStorage.setItem('geo_sfx_mode', sfxMode); }catch(e){}
     updateSfxHint();
+    if(typeof updateHeat === 'function') updateHeat();
   });
   updateSfxHint();
 

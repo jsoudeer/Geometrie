@@ -60,13 +60,24 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 }, guide
   await page.evaluate(() => document.getElementById('battle-btn').click()); await page.evaluate(() => document.getElementById('battle-btn').click());
   await page.waitForTimeout(2200);
   chk(!(await open()), 'deuxième entrée dans la Bataille : pas de guide');
+  // ---------- série : première série de 10
+  await ev(`showTab('facile'); setAppMode('auto'); practiceMode='free'; delete guideSeen.serie; guideSave(); resetFreeStreak(); freeStreak=9; updateStreakPill();`);
+  await page.waitForTimeout(3200);
+  chk(!(await open()), 'série de 9 : pas de guide');
+  await ev(`freeStreak=10; updateStreakPill();`);
+  await page.waitForFunction(() => { const l = document.querySelector('.guide-layer'); return l && !l.hidden; }, null, { timeout: 4000 }).catch(() => {});
+  chk(await open() && /10 bonnes réponses/.test(await txt()), 'à 10 bonnes réponses d\'affilée : le guide Série démarre');
+  await page.waitForTimeout(450); await page.screenshot({ path: SHOTS + 'guide_5_serie.png' });
+  n = 0; while (await open() && n++ < 20) await next();
+  chk(!(await open()) && await ev(`guideSeen.serie`) === 1, 'guide Série terminé et mémorisé');
+  await ev(`resetFreeStreak()`);
   // ---------- réglages → Guides
   await ev(`showTab('facile')`);
   await page.evaluate(() => document.getElementById('settings-btn').click());
   await page.evaluate(() => document.getElementById('open-guides-btn').click());
-  chk(await page.evaluate(() => !document.getElementById('guides-overlay').hidden && document.getElementById('settings-overlay').hidden && document.querySelectorAll('[data-guide]').length === 3), 'Réglages → Guides : 3 boutons');
+  chk(await page.evaluate(() => !document.getElementById('guides-overlay').hidden && document.getElementById('settings-overlay').hidden && document.querySelectorAll('[data-guide]').length === 4), 'Réglages → Guides : 4 boutons');
   await page.screenshot({ path: SHOTS + 'guide_4_reglages.png' });
-  for (const id of ['accueil', 'boutique', 'bataille']) {
+  for (const id of ['accueil', 'boutique', 'bataille', 'serie']) {
     await page.evaluate(() => { const o = document.getElementById('guides-overlay'); o.hidden = false; });
     await page.evaluate(i => document.querySelector('[data-guide="' + i + '"]').click(), id);
     chk(await open() && await ev(`guideState.id`) === id, 'le bouton relance le guide « ' + id + ' » même déjà vu');

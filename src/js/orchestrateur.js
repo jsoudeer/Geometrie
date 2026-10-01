@@ -458,11 +458,13 @@
     var key = bag.splice(at,1)[0];
     return key;
   }
-  // Défi « 20 bonnes réponses d'affilée » : les 3 dernières questions (18e, 19e, 20e) sont posées
-  // dans les sujets où l'enfant a le plus de mal (historique de progression).
+  var STREAK_GOALS = [20, 25, 30];   // paliers de la série sans faute : défis 12 (Facile), 13 (Moyen), 14 (Difficile)
+  // Séries sans faute (paliers 20, 25, 30) : les 3 questions qui précèdent un palier non encore
+  // débloqué (18e-20e, 23e-25e, 28e-30e) sont posées dans les sujets où l'enfant a le plus de mal
+  // (historique de progression).
   function challengeFocusActive(){
-    return appMode==='auto' && practiceMode==='free' && !countdownRunning &&
-      freeStreak >= STREAK_TARGET - 3 && freeStreak < STREAK_TARGET && !isChallengeDone(12 + globalLevel);
+    if(appMode!=='auto' || practiceMode!=='free' || countdownRunning) return false;
+    return STREAK_GOALS.some(function(g, idx){ return freeStreak >= g - 3 && freeStreak < g && !isChallengeDone(12 + idx); });
   }
   function nextPracticeQuestion(){
     var sig = null, prevShown = lastFamily;
@@ -533,37 +535,41 @@
     }
   }
   var manualStreak = 0;
-  // Série sans faute en mode Aléatoire (onglets Facile/Moyen/Difficile) :
-  // 20 bonnes réponses d'affilée débloquent les personnages du défi "série"
-  // du niveau en cours (voir CHALLENGES / completeChallenge).
+  // Série sans faute en mode Aléatoire (onglets Facile/Moyen/Difficile), quel que soit le niveau
+  // joué : 20 bonnes réponses d'affilée débloquent le personnage du défi Facile, 25 celui du
+  // Moyen, 30 celui du Difficile (STREAK_GOALS, voir CHALLENGES / completeChallenge).
   var freeStreak = 0;
   var levelStreak = 0;      // bonnes réponses d'affilée dans le niveau en cours (avancement automatique)
-  var streakLevels = [];    // niveaux traversés pendant la série sans faute en cours
-  function resetFreeStreak(){ freeStreak = 0; levelStreak = 0; streakLevels = []; updateStreakPill(); }
+  function resetFreeStreak(){ freeStreak = 0; levelStreak = 0; updateStreakPill(); }
+  function nextStreakGoal(){
+    for(var i=0;i<STREAK_GOALS.length;i++){ if(STREAK_GOALS[i] > freeStreak && !isChallengeDone(12 + i)) return STREAK_GOALS[i]; }
+    return 0;
+  }
   function updateStreakPill(){
     var pill = document.getElementById('streak-pill');
     // (au tout premier affichage, le catalogue des personnages n'est pas
     // encore construit : il est défini plus bas dans le script)
     if(!pill || !CAT_REWARDS || !ownedCats) return;
-    var show = appMode==='auto' && practiceMode==='free' && !countdownRunning && !isChallengeDone(12 + globalLevel);
+    var show = appMode==='auto' && practiceMode==='free' && !countdownRunning;
     pill.hidden = !show;
     if(show){
-      pill.textContent = '🔥 Série sans faute : ' + freeStreak + ' / ' + STREAK_TARGET;
-      pill.setAttribute('aria-label', 'Série sans faute : ' + freeStreak + ' bonnes réponses sur ' + STREAK_TARGET + ' pour débloquer un personnage');
+      var goal = nextStreakGoal();
+      var marks = STREAK_GOALS.map(function(g, i){ return g + (isChallengeDone(12 + i) || freeStreak >= g ? '✔' : ''); }).join(' · ');
+      pill.textContent = '🔥 Série sans faute : ' + freeStreak + (goal ? ' / ' + goal : '') + '  (' + marks + ')';
+      pill.setAttribute('aria-label', 'Série sans faute : ' + freeStreak + ' bonnes réponses' + (goal ? ', prochain palier ' + goal : '') + '. Paliers : ' + marks.replace(/✔/g, ' obtenu').replace(/ · /g, ', '));
     }
+    if(typeof updateHeat === 'function') updateHeat();
   }
   function onPracticeAnswered(correct){
     progRecord(correct);   // historique de progression (progression.js)
     if(appMode==='auto' && practiceMode==='free'){
-      if(correct){
-        freeStreak++; levelStreak++;
-        if(streakLevels.indexOf(globalLevel) === -1) streakLevels.push(globalLevel);
-      } else { freeStreak = 0; levelStreak = 0; streakLevels = []; }
-      if(correct && freeStreak >= STREAK_TARGET){
-        // La série compte pour chaque niveau traversé pendant la série (montée automatique comprise).
-        var fresh = [];
-        streakLevels.forEach(function(lv){ completeChallenge(12 + lv).forEach(function(sp){ fresh.push(sp); }); });
-        if(fresh.length) showUnlockAnnouncement(fresh, 'Série sans faute réussie !');
+      if(correct){ freeStreak++; levelStreak++; }
+      else { freeStreak = 0; levelStreak = 0; }
+      var goalIdx = correct ? STREAK_GOALS.indexOf(freeStreak) : -1;
+      if(goalIdx !== -1){
+        // palier atteint : 20 → défi Facile, 25 → Moyen, 30 → Difficile (quel que soit le niveau joué)
+        var fresh = completeChallenge(12 + goalIdx);
+        if(fresh.length) showUnlockAnnouncement(fresh, 'Série de ' + freeStreak + ' sans faute !');
       }
       updateStreakPill();
       // Avancement automatique en mode Aléatoire : après X bonnes réponses d'affilée DANS CE NIVEAU, niveau supérieur.
@@ -575,9 +581,9 @@
           var tabName = ['facile','moyen','difficile'][fromLevel+1];
           var tabBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
           if(tabBtn){
-            var keepStreak = freeStreak, keepLevels = streakLevels.slice();
+            var keepStreak = freeStreak;
             tabBtn.click();                                   // (remet les séries à zéro...)
-            freeStreak = keepStreak; streakLevels = keepLevels; // ...sauf la série sans faute
+            freeStreak = keepStreak;                          // ...sauf la série sans faute
             updateStreakPill();
             showAutoAdvanceToast(LEVEL_NAMES[fromLevel+1]);
           }

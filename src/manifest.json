@@ -6,7 +6,8 @@
     "css/exercices.css",
     "css/interface.css",
     "css/boutique-bataille.css",
-    "css/guide.css"
+    "css/guide.css",
+    "css/chaleur.css"
   ],
   "js": [
     "js/noyau.js",
@@ -20,6 +21,7 @@
     "js/boutique.js",
     "js/bataille.js",
     "js/progression.js",
-    "js/guide.js"
+    "js/guide.js",
+    "js/chaleur.js"
   ]
 }

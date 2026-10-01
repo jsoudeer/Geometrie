@@ -40,7 +40,7 @@ Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction c
 6. Terminer : `git status` propre, branche locale alignée sur `main`.
 
 ## Conventions de contenu
-- Niveaux : 0 Facile, 1 Moyen, 2 Difficile ; `globalLevel`. Défi « 20 d'affilée » : `STREAK_TARGET`, index `12 + niveau`.
+- Niveaux : 0 Facile, 1 Moyen, 2 Difficile ; `globalLevel`. Séries sans faute : `STREAK_GOALS=[20,25,30]` (orchestrateur.js) ↔ défis d'index `12 + palier` (Facile/Moyen/Difficile), quel que soit le niveau joué ; chaleur Overload : `chaleur.js` (15/20/25).
 - Historique de progression : `progression.js` (clé `geo_history`, 3000 réponses). Une nouvelle famille d'activité doit
   être rattachée à une compétence dans `PROG_SKILLS`.
 - Variété : tirage sans remise (`pickFresh`, `pickFamilyFresh`) ; mesurer avec `tools/tests/variete_audit.js`.

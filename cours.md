@@ -191,7 +191,7 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 | Moyen | 4 | 6 | 8 | 12 |
 | Difficile | 3 | 5 | 7 | 10 |
 
-**Séries sans faute** (3 défis, un par niveau) : **20 bonnes réponses d'affilée**, sans erreur, en mode **Aléatoire** (un compteur 🔥 s'affiche au-dessus de la question).
+**Séries sans faute** (3 défis, un par niveau) : **20, 25 puis 30 bonnes réponses d'affilée**, sans erreur, en mode **Aléatoire** (un compteur 🔥 s'affiche au-dessus de la question). La série continue après 20 : 20 débloque le personnage Facile, 25 le Moyen, 30 le Difficile (quel que soit le niveau joué). Une erreur remet à zéro sans rien retirer. En son **Overload**, une sensation de **chaleur** monte à 15, 20 puis 25 d'affilée (halo, flammes ou paillettes selon le clan) ; elle s'éteint à la première erreur.
 
 ---
 
@@ -227,7 +227,7 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 
 
 ## Progression de l'enfant (Réglages → 📈 Progression)
-Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma progression »). Trois vues : **Synthèse** (radar de 8 compétences, points forts, à travailler), **Détail** (par activité et niveau), **Activité** (14 derniers jours). La série de 20 bonnes réponses continue quand le niveau monte tout seul, et valide le défi de chaque niveau traversé. Pour les 3 dernières questions de cette série, le jeu pioche dans les sujets les plus faibles (il faut au moins 20 réponses enregistrées).
+Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma progression »). Trois vues : **Synthèse** (radar de 8 compétences, points forts, à travailler), **Détail** (par activité et niveau), **Activité** (14 derniers jours). La série sans faute continue quand le niveau monte tout seul. Pour les 3 dernières questions avant chaque palier (20, 25, 30), le jeu pioche dans les sujets les plus faibles (il faut au moins 20 réponses enregistrées).
 
 ## Nouveautés d'activités (01/10/2026)
 - **Déformer** : 5 formes à obtenir, dont le triangle isocèle (2 côtés égaux) et le triangle rectangle (un angle droit).
@@ -237,4 +237,4 @@ Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma p
 - **Angles** : on compare des angles (la longueur des branches ne compte pas ; deux angles peuvent être égaux), on compte les angles droits d'une figure, ou on classe un angle (droit, aigu, obtus).
 
 ## Guides (tutoriels)
-Trois guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 50 étoiles quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.
+Quatre guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 50 étoiles quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille, **Série sans faute** au premier 10 d'affilée. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.

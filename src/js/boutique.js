@@ -439,19 +439,19 @@
      (le chat ou le brainrot du même numéro) : chaque clan a sa propre progression.
        - 12 défis chronométrés (3 niveaux x 4 durées) : réussir au moins N
          bonnes réponses avant la fin du temps.
-       - 3 séries sans faute (un par niveau) : 20 bonnes réponses d'affilée,
-         sans aucune erreur, en mode Aléatoire. */
+       - 3 séries sans faute, en mode Aléatoire, sans aucune erreur et quel que
+         soit le niveau joué : 20 bonnes réponses d'affilée débloquent le défi
+         Facile, 25 le Moyen, 30 le Difficile (la série continue au-delà de 20). */
   var LEVEL_NAMES_FR = ['Facile','Moyen','Difficile'];
   var TIMED_DURATIONS = [60,120,180,300];
   var TIMED_TARGETS = [ [5,8,10,15], [4,6,8,12], [3,5,7,10] ];
-  var STREAK_TARGET = 20;
   function fmtDuration(sec){ return sec===60 ? '1 minute' : (sec/60)+' minutes'; }
   function challengeInfo(k){
     if(k < 12){
       var lvl = Math.floor(k/4), d = k%4;
       return { type:'timed', level:lvl, seconds:TIMED_DURATIONS[d], target:TIMED_TARGETS[lvl][d] };
     }
-    return { type:'streak', level:k-12, target:STREAK_TARGET };
+    return { type:'streak', level:k-12, target:STREAK_GOALS[k-12] };
   }
   function challengeText(k){
     var c = challengeInfo(k), lvl = LEVEL_NAMES_FR[c.level];
@@ -459,8 +459,8 @@
       return 'Défi ' + lvl + ' : ouvre le menu, choisis « ' + lvl + ' », puis « Chronométré » et « ' +
         fmtDuration(c.seconds) + ' ». Réponds correctement à ' + c.target + ' questions avant la fin du temps !';
     }
-    return 'Défi ' + lvl + ' · série sans faute : ouvre le menu, choisis « ' + lvl + ' » et reste en mode « Aléatoire ». ' +
-      'Réponds correctement à ' + c.target + ' questions d\'affilée, sans aucune erreur !';
+    return 'Défi ' + lvl + ' · série sans faute : en mode « Aléatoire », réponds correctement à ' + c.target +
+      ' questions d\'affilée, sans aucune erreur ! (La série continue : 20 pour le Facile, 25 pour le Moyen, 30 pour le Difficile.)';
   }
   function isBrainClan(){ return currentThemeKey()==='brainrot'; }
   function isChallengeDone(k){

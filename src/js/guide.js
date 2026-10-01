@@ -5,10 +5,12 @@
      (aucune capture d'écran à refaire).
        accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
        boutique : dès 50 étoiles quand on n'a jamais rien acheté ;
-       bataille : la première fois qu'on ouvre la Bataille.
+       bataille : la première fois qu'on ouvre la Bataille ;
+       serie    : à la première série de 10 bonnes réponses d'affilée.
      Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
      dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
   var GUIDE_SHOP_STARS = 50;       // seuil d'étoiles du guide Boutique
+  var GUIDE_SERIE_START = 10;      // série sans faute qui lance le guide Série
     var guideSeen = {};
   try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
   function guideSave(){ try{ localStorage.setItem('geo_guides', JSON.stringify(guideSeen)); }catch(e){} }
@@ -16,7 +18,7 @@
   function guideMarkBought(){ try{ localStorage.setItem('geo_bought', '1'); }catch(e){} }
   // « Effacer ma progression » : nouvelle partie, les guides contextuels pourront revenir (pas l'accueil).
   function guideResetContextual(){
-    delete guideSeen.boutique; delete guideSeen.bataille; guideSave();
+    delete guideSeen.boutique; delete guideSeen.bataille; delete guideSeen.serie; guideSave();
     try{ localStorage.removeItem('geo_bought'); }catch(e){}
   }
 
@@ -40,7 +42,7 @@
         { text:'Bienvenue ! Je te montre en une minute à quoi servent les boutons. Tu pourras revoir ce guide quand tu veux dans les réglages ⚙️.' },
         { sel:'#menu-btn', text:'Touche ton personnage, en haut à gauche, pour ouvrir le menu : choisis ton niveau (Facile, Moyen ou Difficile), ou le mode Manuel pour choisir toi-même l\'activité.' },
         { sel:'#practice-mode', text:'Aléatoire : les activités changent toutes seules. Chronométré : tu réponds à un maximum de questions avant la fin du temps.' },
-        { sel:'#streak-pill', text:'La série : réponds juste 20 fois de suite, sans te tromper, pour réussir un défi et débloquer un nouveau personnage !' },
+        { sel:'#streak-pill', text:'La série : réponds juste 20 fois de suite, sans te tromper, pour débloquer un nouveau personnage ! Et si tu continues jusqu\'à 25 puis 30, d\'autres personnages t\'attendent.' },
         { sel:'#stars-btn', text:'Chaque bonne réponse te donne des étoiles ⭐. Touche ce bouton pour ouvrir la boutique et acheter de nouveaux personnages.' },
         { sel:'#battle-btn', text:'La Bataille : fais combattre tes personnages contre l\'autre clan.' },
         { sel:'#settings-btn', text:'Les réglages : sons, thème, progression de l\'enfant… et le bouton « Guides » pour revoir ces explications.' },
@@ -58,6 +60,17 @@
           text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent avec 20 bonnes réponses d\'affilée.' },
         { sel:'#shop-mascot-panel',
           text:'Ta mascotte t\'accompagne et réagit à tes réponses. Pour en changer, ouvre un personnage que tu possèdes et touche « Devenir mascotte ».' }
+      ]
+    },
+    serie: {
+      title:'Série sans faute',
+      steps:[
+        { sel:'#streak-pill', enter:function(){ showTab(lastPracticeTab); },
+          text:'10 bonnes réponses d\'affilée, bravo ! C\'est ta série sans faute : une seule erreur et elle repart à zéro.' },
+        { sel:'#streak-pill',
+          text:'À 20, tu débloques le personnage du défi Facile. Continue sans faute : à 25 tu gagnes celui du Moyen, à 30 celui du Difficile ! Peu importe le niveau où tu joues.' },
+        { sel:'#streak-pill',
+          text:'Juste avant chaque palier, je te pose les 3 dernières questions dans les sujets où tu as le plus besoin de t\'entraîner. Et en mode Overload, la chaleur monte à 15, 20 et 25 !' }
       ]
     },
     bataille: {
@@ -202,6 +215,7 @@
     var inBattle = !document.getElementById('tab-battle').hidden;
     if(!guideSeen.accueil && !inBattle){ guideStart('accueil'); return; }
     if(inBattle){ if(!guideSeen.bataille) guideStart('bataille'); return; }   // première entrée dans la Bataille
+    if(!guideSeen.serie && appMode==='auto' && practiceMode==='free' && freeStreak >= GUIDE_SERIE_START){ guideStart('serie'); return; }
     if(!guideSeen.boutique && !guideBought() && stars >= GUIDE_SHOP_STARS){ guideStart('boutique'); return; }
   }
   setInterval(guideTick, 1500);

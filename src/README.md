@@ -18,7 +18,7 @@ C'est pourquoi l'ordre des fichiers JS compte (voir ci-dessous).
 src/
   index.template.html   structure de la page (les lignes @@CSS@@ et @@JS@@ sont remplacées)
   manifest.json         liste ordonnée des fichiers CSS et JS
-  css/                  base, exercices, interface (mascotte, effets…), boutique-bataille, guide
+  css/                  base, exercices, interface (mascotte, effets…), boutique-bataille, guide, chaleur
   js/
     noyau.js            outils partagés (el, shuffle, pick, rand…), thème, sons, effets,
                         mascotte, registre des types de Quizz
@@ -32,7 +32,8 @@ src/
     boutique.js         personnages, défis, boutique, mascotte
     bataille.js         combat de cartes
     progression.js      historique des réponses, radar, détail, sujets à travailler
-    guide.js            tutoriels en surbrillance (accueil, boutique, bataille) + Réglages → Guides
+    guide.js            tutoriels en surbrillance (accueil, boutique, bataille, série) + Réglages → Guides
+    chaleur.js          effet « heat » Overload (15/20/25 d'affilée) par clan, + css/chaleur.css
 ```
 
 Les fichiers de thèmes (`geometrie`, `horloge`, `calcul`, `patron3d`) sont chargés **avant**
