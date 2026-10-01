@@ -110,6 +110,58 @@
     options.sort(function(a,b){ return (optionRate(a) - optionRate(b)) || (Math.random() - .5); });
     return { key:options[0].key, cat:options[0].cat };
   }
+  /* ---- Mode Révision : mettre en avant les exercices ratés et ceux jamais faits ----
+     Une « unité » = une activité au niveau en cours (une famille, ou un type de quiz précis).
+     Poids de tirage : jamais faite à ce niveau = 3 ; sinon 0,25 + 4 × (part d'erreurs sur ses
+     10 dernières réponses), +1 si la toute dernière réponse était fausse. Une activité
+     toujours réussie reste possible (poids faible), pour ne pas tourner en rond.
+     Renvoie { key, type (quiz seulement), why : 'raté' | 'nouveau' | '' }. Jamais deux fois de suite
+     la même famille quand il y a le choix. */
+  var REVIEW_RECENT = 10, REVIEW_NEW_WEIGHT = 3;
+  var reviewLast = null;
+  function progReviewUnits(){
+    var units = [];
+    FAMILIES.forEach(function(f){
+      if(f.key==='qcm') M4_LEVELS[globalLevel].types.forEach(function(t){ units.push({ key:'qcm', type:t, id:'qcm|' + t }); });
+      else units.push({ key:f.key, type:null, id:f.key });
+    });
+    return units;
+  }
+  function progReviewWeight(u){
+    var ev = (progEvents || []).filter(function(e){
+      return e[4]===globalLevel && (u.type ? (e[2]==='qcm' && e[3]===u.type) : e[2]===u.key);
+    });
+    if(!ev.length) return { w:REVIEW_NEW_WEIGHT, why:'nouveau' };
+    var last = ev.slice(-REVIEW_RECENT), errs = last.filter(function(e){ return !e[5]; }).length;
+    var w = 0.25 + 4 * errs / last.length + (last[last.length-1][5] ? 0 : 1);
+    return { w:w, why: errs ? 'raté' : '' };
+  }
+  function weightedPick(list){
+    var total = list.reduce(function(s,u){ return s + u.w; }, 0), x = Math.random() * total;
+    for(var i=0;i<list.length;i++){ x -= list[i].w; if(x <= 0) return list[i]; }
+    return list[list.length-1];
+  }
+  // Deux étages : d'abord la famille (le quiz pèse la moyenne de ses types × 1,5 : il en contient
+  // une vingtaine, il ne doit pas écraser le reste), puis, pour le quiz, le type précis.
+  function progReviewPick(){
+    var units = progReviewUnits().map(function(u){ var r = progReviewWeight(u); u.w = r.w; u.why = r.why; return u; });
+    var fams = [], byKey = {};
+    units.forEach(function(u){
+      var f = byKey[u.key];
+      if(!f){ f = byKey[u.key] = { key:u.key, units:[], w:0, why:'' }; fams.push(f); }
+      f.units.push(u);
+    });
+    fams.forEach(function(f){
+      f.w = f.units.reduce(function(s,u){ return s + u.w; }, 0) / f.units.length * (f.key==='qcm' ? 1.5 : 1);
+      f.why = f.units.some(function(u){ return u.why==='raté'; }) ? 'raté' : (f.units.every(function(u){ return u.why==='nouveau'; }) ? 'nouveau' : '');
+    });
+    var pool = fams.filter(function(f){ return f.key !== reviewLast; });
+    if(!pool.length) pool = fams;
+    var fam = weightedPick(pool);
+    reviewLast = fam.key;
+    var u = weightedPick(fam.units);
+    return { key:u.key, type:u.type, why:u.why };
+  }
   // catégorie de quiz d'un événement, retrouvée à partir de son type
   function eventCat(e){ var d = e[3] ? quizTypeById(e[3]) : null; return d ? quizCategoryId(d) : null; }
 
