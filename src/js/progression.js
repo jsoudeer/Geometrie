@@ -8,7 +8,7 @@
           questions sont posées dans les sujets les plus faibles (progWeakPick).
      Les 8 compétences regroupent les familles d'activités et les catégories de quiz. */
   var PROG_SKILLS = [
-    { id:'formes',   icon:'🔷', label:'Formes & symétrie',   short:'Formes',   fams:['deform','atelier-sym','atelier-copie'], cats:['formes'] },
+    { id:'formes',   icon:'🔷', label:'Formes & symétrie',   short:'Formes',   fams:['deform','atelier-sym','atelier-copie','atelier-erreur','atelier-axe'], cats:['formes'] },
     { id:'repere',   icon:'🧭', label:'Repérage',            short:'Repérage', fams:[],                                     cats:['repere'] },
     { id:'solides',  icon:'🧊', label:'Solides & patrons',   short:'Solides',  fams:['net'],                                cats:['solides'] },
     { id:'temps',    icon:'🕒', label:'Heure & calendrier',  short:'Heure',    fams:['clock-lire','clock-regler'],          cats:['temps'] },

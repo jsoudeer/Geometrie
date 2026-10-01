@@ -115,7 +115,7 @@ async function record(outFile) {
         await ev(`__seed(777); globalLevel=1; showFamily('${key}'); ${FAM[key][0]};`);
         await shot(`${theme}_${key}`);
       }
-      for (const t of ['align', 'coordFind', 'symAxe', 'solideNom', 'monnaie', 'calc', 'heure', 'vie', 'image']) {
+      for (const t of ['align', 'coordFind', 'symVrai', 'solideNom', 'monnaie', 'calc', 'heure', 'vie', 'image']) {
         await ev(`__seed(555); globalLevel=2; m4TypeFilter='${t}'; showFamily('qcm'); newQCM();`);
         await shot(`${theme}_qcm_${t}`);
       }
