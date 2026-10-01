@@ -236,5 +236,8 @@ Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma p
 - **Alignement** : en plus de « ces 3 points sont-ils alignés ? », on peut chercher les 3 points alignés parmi 4, ou le point numéroté aligné avec A et B (règle posée sur A et B).
 - **Angles** : on compare des angles (la longueur des branches ne compte pas ; deux angles peuvent être égaux), on compte les angles droits d'une figure, ou on classe un angle (droit, aigu, obtus).
 
+## Écran de lancement
+Au démarrage, l'image se coupe en deux : le côté Italian Brainrot et le côté Kawaii Cats se percutent avec éclair et étincelles. Un clic sur l'image rejoue le choc.
+
 ## Guides (tutoriels)
 Quatre guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 50 étoiles quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille, **Série sans faute** au premier 10 d'affilée. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.
