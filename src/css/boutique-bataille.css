@@ -151,7 +151,7 @@
      contrastées (≥ 3:1 avec le fond) pour être repérées sans dépendre de la
      seule couleur de remplissage (RGAA 3.3). Placé en dernier : les états
      (.active, .selected, .correct...) plus spécifiques gardent leur couleur. */
-  .choice-btn, .level-btn, .tab-btn, .menu-btn, .theme-toggle, .settings-btn, .home-btn,
+  .choice-btn, .level-btn, .tab-btn, .menu-btn, .theme-toggle, .settings-btn,
   .bcard, .sprite-card, .settings-close, .aconf-level-btn, .sp-mascot-btn, .btn.ghost{ border-color:var(--control-border); }
   .btn.ghost{ border:1.5px solid var(--control-border); }
 
@@ -216,4 +216,15 @@
   @media (prefers-reduced-motion: reduce){
     .reveal-overlay, .reveal-overlay.spinning .rv-spinner, .reveal-overlay.shown .rv-glow, .reveal-overlay.shown .rv-flash, .rv-spark{ animation:none; }
     .rv-spark{ display:none; } .rv-info{ transition:none; }
+  }
+
+  /* Filet de sécurité (RGAA 13.8) : si l'appareil demande moins d'animations,
+     toutes les animations et transitions deviennent quasi instantanées, y
+     compris celles ajoutées plus tard. (Le pliage des patrons, en JavaScript,
+     lit ce réglage lui-même et montre directement le solide plié.) */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:.01ms !important; animation-iteration-count:1 !important;
+      transition-duration:.01ms !important; scroll-behavior:auto !important;
+    }
   }

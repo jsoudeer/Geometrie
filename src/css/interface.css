@@ -15,7 +15,8 @@
      pied, en bas à droite de l'écran, qui "pose" les questions. */
 
   /* ============ EFFETS : réussite / échec ============ */
-  .explain-line{ font-weight:600; font-size:12.5px; margin-top:4px; opacity:.85; }
+  /* Pas d'opacité réduite : le texte doit garder un contraste ≥ 4,5:1 (RGAA 3.2). */
+  .explain-line{ font-weight:600; font-size:13px; margin-top:4px; }
   .burst-particle{
     position:fixed; pointer-events:none; font-size:20px; z-index:9999;
     animation:burstUp .9s ease-out forwards;
@@ -185,3 +186,7 @@
     .auto-advance-toast{ animation:none; }
   }
 
+
+  /* Retour d'une réponse (voir makeQuestionFlow) : titre ✔/✘, puis détail, puis explication. */
+  .feedback .fb-title{ font-weight:800; }
+  .feedback > div:not(.fb-title):not(.explain-line){ font-weight:700; }

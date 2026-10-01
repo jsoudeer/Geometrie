@@ -32,6 +32,8 @@ const AUDIT = () => {
     const txt = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent.trim()).join(' ').trim();
     if (!txt) return;
     if (el.closest('svg')) return;
+    // exclus par le RGAA 3.2 : composants inactifs (désactivés) et images (emoji décoratifs aria-hidden)
+    if (el.closest('[disabled]') || el.closest('[aria-hidden="true"]')) return;
     let op = 1; for (let e = el; e; e = e.parentElement) { op *= parseFloat(getComputedStyle(e).opacity); }
     const fg0 = parse(cs.color); if (!fg0) return;
     const bg = bgOf(el);

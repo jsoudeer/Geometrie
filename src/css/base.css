@@ -21,6 +21,7 @@
     --good:#17683F; --bad:#B02A2A; --on-good:#FFFFFF; --on-bad:#FFFFFF;
     --border:#E9C4CE; --control-border:#B9728A; --shadow:0 10px 24px -12px rgba(91,64,52,.28);
     --focus:#1B4FD8;
+    --stage-bg:#FFFDF8; --stage-grid:rgba(74,50,40,.07);
     --font-display:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
     --font-title:'Baloo 2', ui-rounded, 'Nunito', sans-serif;
     --font-body:'Nunito', system-ui, sans-serif;
@@ -52,6 +53,7 @@
     --good:#7BFFAE; --bad:#FF8DA1; --on-good:#0B2A1A; --on-bad:#2B0A12;
     --border:#5B4A8A; --control-border:#8F7BD0; --shadow:0 10px 28px -10px rgba(198,255,61,.18);
     --focus:#FFE94D;
+    --stage-bg:#EDE8F7; --stage-grid:rgba(34,27,54,.08);
     --font-display:'Rubik', system-ui, sans-serif;
     --font-title:'Bungee', 'Rubik', sans-serif;
     --font-body:'Rubik', system-ui, sans-serif;
@@ -73,9 +75,29 @@
   .app{
     max-width:480px;
     margin:0 auto;
-    padding:14px 16px calc(130px + env(safe-area-inset-bottom,0px));
-    min-height:100%;
+    padding:14px 16px calc(12px + env(safe-area-inset-bottom,0px));
+    min-height:100dvh;
+    display:flex; flex-direction:column;
   }
+  /* ============ ÉCRAN D'EXERCICE : zone de réponse toujours en bas ============
+     L'écran d'entraînement occupe toute la hauteur disponible. Dans chaque
+     activité, la zone de réponse (.q-bottom : réponses à choisir, retour,
+     boutons) est poussée tout en bas ; le haut (question, consigne,
+     illustration) garde la place restante. Si le contenu est plus grand que
+     l'écran, la page défile normalement (cas rare, à traiter à part). */
+  #tabContent{ flex:1 1 auto; display:flex; flex-direction:column; }
+  #tab-practice:not([hidden]){ flex:1 1 auto; display:flex; flex-direction:column; }
+  #tab-practice > .card{ flex:1 1 auto; display:flex; flex-direction:column; margin-bottom:0; }
+  #practice-exercise:not([hidden]){ flex:1 1 auto; display:flex; flex-direction:column; }
+  #practice-exercise > [id^="fam-"]:not([hidden]){ flex:1 1 auto; display:flex; flex-direction:column; }
+  .q-tags{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .q-tags .qtype-tag{ margin-bottom:8px; }
+  .q-tags .streak-pill{ margin-left:0; }
+  .q-bottom{ margin-top:auto; padding-top:10px; display:flex; flex-direction:column; }
+  .q-bottom > .choices, .q-bottom > .qcm-choices{ margin-top:0; }
+  /* le retour d'une question fermée prend la place des boutons, au même endroit */
+  .q-bottom > .feedback{ margin-top:10px; }
+  .q-bottom > .btn-row{ margin-top:12px; }
 
   h1,h2,h3{ font-family:var(--font-display); margin:0; text-wrap:balance; }
   .brand h1, .splash-title{ font-family:var(--font-title); }
@@ -85,19 +107,36 @@
     display:flex; align-items:center; justify-content:space-between;
     gap:10px; padding:6px 4px 12px;
   }
-  .brand{ display:flex; align-items:flex-start; gap:10px; min-width:0; }
-  /* Colonne de gauche : l'image de la mascotte (ou son emoji) et, juste en
-     dessous, le bouton Menu qui fait apparaître/disparaître la ligne
-     Facile / Moyen / Difficile / Manuel / Boutique. */
-  .brand-left{ display:flex; flex-direction:column; align-items:center; gap:4px; flex:none; }
-  .mascot{ font-size:34px; line-height:1; flex:none; width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
-  .brand h1{ font-size:18px; letter-spacing:.2px; margin-top:8px; }
+  /* À gauche : la mascotte, qui est aussi le bouton du menu. Le menu
+     (Facile / Moyen / Difficile / Manuel) descend en colonne juste sous
+     elle, PAR-DESSUS le contenu : il ne pousse plus la page vers le bas. */
+  .brand{ position:relative; flex:none; }
+  .mascot{ font-size:34px; line-height:1; flex:none; width:44px; height:44px; display:flex; align-items:center; justify-content:center; pointer-events:none; }
   .menu-btn{
-    border:1.5px solid var(--border); background:var(--surface2); color:var(--text);
-    border-radius:10px; padding:4px 8px; min-height:28px; cursor:pointer;
-    font-family:var(--font-body); font-weight:800; font-size:12px; line-height:1;
+    position:relative; display:flex; align-items:center; justify-content:center;
+    width:52px; height:52px; padding:0; border-radius:16px; cursor:pointer;
+    border:2px solid var(--control-border); background:var(--surface2); color:var(--text);
+    transition:transform .15s, background .15s;
   }
-  .menu-btn[aria-expanded="true"]{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .menu-btn:active{ transform:scale(.93); }
+  .menu-btn[aria-expanded="true"]{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent); }
+  /* Pastille : niveau en cours (🙂 🤔 🔥 🎯) ou ✕ pendant un défi chronométré. */
+  .menu-badge{
+    position:absolute; right:-6px; bottom:-6px; width:24px; height:24px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:13px; line-height:1;
+    background:var(--surface); border:2px solid var(--control-border); pointer-events:none;
+  }
+  body.chrono-running .menu-badge{ background:var(--bad); border-color:var(--bad); color:var(--on-bad); font-weight:900; }
+  .menu-dropdown{
+    position:absolute; top:calc(100% + 10px); left:0; z-index:60;
+    display:flex; flex-direction:column; gap:6px; width:190px; margin:0;
+    padding:8px; border-radius:18px; background:var(--surface);
+    border:1.5px solid var(--border); box-shadow:0 18px 36px -14px rgba(40,24,18,.45);
+    transform-origin:top left; animation:menuDrop .18s ease-out;
+  }
+  .menu-dropdown[hidden]{ display:none; }
+  @keyframes menuDrop{ from{ opacity:0; transform:translateY(-6px) scale(.96); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ .menu-dropdown{ animation:none; } }
   /* Bouton de bascule Chats Kawaii <-> Brainrot, à gauche des étoiles. */
   .theme-toggle{
     flex:none; width:40px; height:40px; border-radius:50%;
@@ -106,7 +145,6 @@
     transition:transform .15s;
   }
   .theme-toggle:active{ transform:scale(.9); }
-  body[data-app-theme="brainrot"] .brand h1{ font-size:15px; letter-spacing:.4px; text-transform:uppercase; }
   .stars{
     display:flex; align-items:center; gap:6px;
     background:var(--surface2); color:var(--text);
@@ -210,21 +248,17 @@
   .aconf-static-card h3{ font-size:14px; margin-bottom:6px; }
   .aconf-static-card p{ font-size:12.5px; color:var(--text-soft); line-height:1.55; margin:0; }
 
-  /* ============ TABS ============ */
-  /* flex-wrap + min-width:0 : même précaution que .level-row, pour que
-     l'ajout de nouveaux onglets ne fasse jamais déborder la barre.
-     La barre est repliée par défaut (attribut hidden) : on la fait
-     apparaître avec le bouton Menu de la barre du haut. */
-  .tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  /* ============ MENU : entrées de la colonne ============ */
   .tab-btn{
-    flex:1 1 auto; min-width:60px; min-height:44px; border:2px solid var(--border); background:var(--surface);
-    color:var(--text); cursor:pointer; border-radius:14px;
-    padding:8px 4px; font-family:var(--font-body); font-weight:800; font-size:12.5px;
-    display:flex; flex-direction:column; align-items:center; gap:3px;
-    transition:all .2s;
+    display:flex; flex-direction:row; align-items:center; gap:10px; width:100%;
+    min-height:46px; padding:8px 14px; cursor:pointer; text-align:left;
+    border:2px solid var(--border); border-radius:12px; background:var(--surface2);
+    color:var(--text); font-family:var(--font-body); font-weight:800; font-size:15px;
+    transition:background .15s, border-color .15s;
   }
-  .tab-btn .ic{ font-size:18px; }
+  .tab-btn .ic{ font-size:20px; }
   .tab-btn.active{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .tab-btn.active::after{ content:'✔'; margin-left:auto; }
 
   .card{
     background:var(--surface); border:1px solid var(--border);
@@ -234,29 +268,19 @@
   .card h2{ font-size:17px; margin-bottom:4px; }
   .muted{ color:var(--text-soft); font-size:13.5px; line-height:1.5; margin:0 0 12px; }
 
-  /* ============ MODE CHRONO COMPACT ============
-     Pendant un défi chronométré, on veut ne JAMAIS avoir à scroller entre
-     deux questions : la topbar, le sélecteur de thème, les onglets de
-     niveau et le titre "Entraînement" disparaissent, et les espacements
-     sont resserrés. Le bandeau ⏱️/score (#countdown-hud) remplace la
-     topbar comme seul repère du haut pendant le défi. */
-  body.chrono-compact .topbar,
-  body.chrono-compact .tabs,
-  body.chrono-compact #practice-mode,
-  body.chrono-compact #mascot-dock,
-  body.chrono-compact #tab-practice > .card > h2{ display:none; }
-  /* La mascotte fixe en bas de l'écran est masquée pendant le défi, donc
-     l'espace qui lui était réservé en bas de .app ne l'est plus non plus. */
-  body.chrono-compact .app{ padding-top:8px; padding-bottom:16px; }
-  body.chrono-compact #tab-practice > .card{ padding:10px 14px; margin-bottom:0; }
-  body.chrono-compact #countdown-hud{ margin-bottom:8px; }
-  .home-btn{
-    flex:none; width:44px; height:44px; border-radius:50%;
-    background:var(--surface); border:2px solid var(--border); font-size:20px;
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  /* ============ DÉFI CHRONOMÉTRÉ ============
+     Le défi garde l'interface habituelle : il ne reste qu'une ligne en haut
+     (la barre de l'appli). On masque seulement le choix Aléatoire /
+     Chronométré ; on quitte le défi en touchant la mascotte. */
+  body.chrono-running #practice-mode{ display:none; }
+  .countdown-hud{
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px 14px;
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:12px;
+    padding:8px 12px; margin-bottom:12px; font-weight:800; font-size:15px;
+    font-variant-numeric:tabular-nums;
   }
-  .home-btn:active{ transform:scale(.92); }
-  body.chrono-compact .muted{ margin-bottom:8px; }
+  .countdown-hud[hidden]{ display:none; }
+  .hud-hint{ margin-left:auto; font-size:11.5px; font-weight:700; color:var(--text-soft); }
 
   .btn{
     font-family:var(--font-display); font-weight:700; font-size:14px;
@@ -300,6 +324,8 @@
   }
   .level-row.level-row-even .level-btn{ flex:1 1 auto; }
   .level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:var(--on-accent); }
+  /* la sélection se voit aussi sans la couleur (RGAA 3.1) */
+  .level-btn.active::before, .aconf-level-btn.active::before{ content:'✔ '; }
 
 
   .aconf-cat{ margin:0 0 8px; }

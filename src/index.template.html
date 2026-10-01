@@ -21,12 +21,23 @@
   </div>
 
   <header class="topbar">
+    <!-- Titre de la page pour les lecteurs d'écran (le nom du clan n'est plus affiché). -->
+    <h1 class="vh" id="appTitle">Géo Miaou</h1>
+    <!-- L'icône de la mascotte EST le bouton du menu : elle ouvre, juste en
+         dessous d'elle, la colonne Facile / Moyen / Difficile / Manuel. La
+         pastille rappelle le niveau en cours. Pendant un défi chronométré, ce
+         même bouton sert à quitter le défi. -->
     <div class="brand">
-      <div class="brand-left">
-        <span class="mascot" id="mascotIcon" role="img" aria-label="Ta mascotte">🐱</span>
-        <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="main-nav">☰ Menu</button>
-      </div>
-      <h1 id="appTitle">Géo Miaou</h1>
+      <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Menu : choisir le niveau (niveau actuel : Facile)">
+        <span class="mascot" id="mascotIcon" aria-hidden="true">🐱</span>
+        <span class="menu-badge" id="menu-badge" aria-hidden="true">🙂</span>
+      </button>
+      <nav class="tabs menu-dropdown" id="main-nav" aria-label="Choix du niveau" hidden>
+        <button class="tab-btn active" data-tab="facile" type="button" aria-pressed="true"><span class="ic" aria-hidden="true">🙂</span>Facile</button>
+        <button class="tab-btn" data-tab="moyen" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🤔</span>Moyen</button>
+        <button class="tab-btn" data-tab="difficile" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🔥</span>Difficile</button>
+        <button class="tab-btn" data-tab="manuel" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎯</span>Manuel</button>
+      </nav>
     </div>
     <div class="topbar-right">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Passer en mode Brainrot" title="Changer de clan">👹</button>
@@ -138,13 +149,6 @@
     </div>
   </div>
 
-  <nav class="tabs" id="main-nav" aria-label="Choix de l'activité" hidden>
-    <button class="tab-btn active" data-tab="facile" type="button" aria-pressed="true"><span class="ic" aria-hidden="true">🙂</span>Facile</button>
-    <button class="tab-btn" data-tab="moyen" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🤔</span>Moyen</button>
-    <button class="tab-btn" data-tab="difficile" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🔥</span>Difficile</button>
-    <button class="tab-btn" data-tab="manuel" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">🎯</span>Manuel</button>
-  </nav>
-
   <main id="tabContent">
 
     <!-- ENTRAINEMENT : fusion de tous les anciens onglets (Mesurer,
@@ -154,7 +158,7 @@
          qu'il n'y ait plus qu'un seul menu à trois entrées. -->
     <section class="tabpanel" id="tab-practice">
       <div class="card">
-        <h2>Entraînement</h2>
+        <h2 class="vh">Entraînement</h2>
         <div class="level-row" id="practice-mode"></div>
 
         <!-- Mode "Manuel" : choix d'une activité précise, à travailler en
@@ -200,9 +204,12 @@
         </div>
 
         <!-- Mode "compte à rebours" : pendant le défi -->
-        <div id="countdown-hud" class="arena-star-note countdown-hud" hidden>
-          <button class="home-btn" id="countdown-home-btn" type="button" aria-label="Quitter le chronomètre et revenir à l'accueil">🏠</button>
-          <span role="timer" aria-live="off"><span aria-hidden="true">⏱️</span> Temps restant : <strong id="countdown-time-left">60 s</strong> — Bonnes réponses : <strong id="countdown-score-live">0 / 0</strong></span>
+        <!-- Une seule ligne : temps restant et score. On quitte le défi en
+             touchant l'icône de la mascotte, en haut à gauche. -->
+        <div id="countdown-hud" class="countdown-hud" hidden>
+          <span class="hud-item" role="timer" aria-live="off" aria-label="Temps restant"><span aria-hidden="true">⏱️</span> <strong id="countdown-time-left">60 s</strong></span>
+          <span class="hud-item"><span aria-hidden="true">✔</span> <strong id="countdown-score-live">0 / 0</strong><span class="vh"> bonnes réponses</span></span>
+          <span class="hud-hint" aria-hidden="true">Touche ta mascotte pour arrêter</span>
         </div>
 
         <!-- Mode "compte à rebours" : résultats -->
@@ -213,80 +220,14 @@
           </div>
         </div>
 
-        <!-- Zone d'exercice partagée : un seul des blocs "fam-*" ci-dessous
-             est visible à la fois, choisi au hasard par nextPracticeQuestion(). -->
+        <!-- Zone d'exercice partagée : chaque activité y ajoute son écran
+             (#fam-<clé>) en se déclarant avec registerFamily (noyau.js) ; un
+             seul est visible à la fois, choisi par nextPracticeQuestion(). -->
         <div id="practice-exercise">
-          <span class="qtype-tag" id="practice-family-tag">Mesurer</span>
-          <span class="qtype-tag streak-pill" id="streak-pill" hidden></span>
-
-          <div id="fam-measure" hidden>
-            <p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>
-            <div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>
-            <div class="choices" id="m1-choices"></div>
-            <div class="feedback" id="m1-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m1-next" type="button">Nouvelle activité ↻</button>
-            </div>
+          <div class="q-tags">
+            <span class="qtype-tag" id="practice-family-tag"></span>
+            <span class="qtype-tag streak-pill" id="streak-pill" hidden></span>
           </div>
-
-          <div id="fam-deform" hidden>
-            <p class="muted" id="m2-instructions">Fais glisser les coins pour transformer la forme.</p>
-            <div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>
-            <div class="feedback" id="m2-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>
-              <button class="btn ghost" id="m2-next" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-net" hidden>
-            <p class="muted" id="m3-sub">Observe les faces à plat, puis choisis le bon solide.</p>
-            <div class="stage" id="stage" role="img" aria-label="Patron à plat qui se plie pour former un solide">
-              <div class="net-spin" id="netSpin"><div class="net" id="netEl"></div></div>
-            </div>
-            <div class="qcm-choices" id="m3-choices"></div>
-            <div class="feedback" id="m3-feedback"></div>
-            <div class="btn-row">
-              <button class="btn ghost" id="m3-next" type="button" hidden>Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-qcm" hidden>
-            <div class="coach-row">
-              <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>
-            </div>
-            <p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>
-            <div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200" role="img" aria-label="Illustration de la question"></svg></div>
-            <div class="qcm-choices" id="m4-choices"></div>
-            <div class="feedback" id="m4-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m4-next" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-clock-lire" hidden>
-            <div class="coach-row">
-              <div class="coach-bubble" id="m5-question">Quelle heure indique cette horloge ?</div>
-            </div>
-            <p class="muted" id="m5-sub">Regarde bien la petite et la grande aiguille.</p>
-            <div class="shape-wrap"><svg id="m5Svg" viewBox="0 0 200 200" role="img" aria-label="Horloge à lire"></svg></div>
-            <div class="qcm-choices" id="m5-choices"></div>
-            <div class="feedback" id="m5-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m5-next" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
-          <div id="fam-clock-regler" hidden>
-            <p class="muted">Place les aiguilles sur : <strong id="m5-target">3 h</strong></p>
-            <div class="shape-wrap"><svg id="m5ClockSvg" viewBox="0 0 200 200" role="img" aria-label="Horloge dont on règle les aiguilles"></svg></div>
-            <div class="feedback" id="m5r-feedback"></div>
-            <div class="btn-row">
-              <button class="btn primary" id="m5r-check" type="button">Vérifier ✅</button>
-              <button class="btn ghost" id="m5r-new" type="button">Nouvelle activité ↻</button>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>

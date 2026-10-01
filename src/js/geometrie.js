@@ -1,10 +1,29 @@
   /* ===================== THÈME GÉOMÉTRIE =====================
-     Mesurer (règle), Déformer (formes) et les questions de Quizz de géométrie :
+     Mesurer (règle), Estimer une longueur, Déformer (formes) et les questions de Quizz de géométrie :
      côtés, sommets, nom, angles, alignement, milieu, repérage, codage/décodage,
      chasse aux formes, symétrie, scènes illustrées, énigmes.
   */
 
-  /* ===================== MODULE 1 : MESURER =====================
+  /* ===================== MODULE 1 : MESURER ===================== */
+  registerFamily({
+    key:'measure', tag:'Mesurer', theme:'📐 Formes & mesures', order:10, timed:true,
+    note:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m1-question">Combien mesure ce trait ?</div>',
+      '</div>',
+      '<p class="muted">Regarde bien la règle, puis choisis la bonne longueur.</p>',
+      '<div class="ruler-wrap"><svg id="rulerSvg" viewBox="0 0 320 100" role="img" aria-label="Règle graduée avec un segment à mesurer"></svg></div>',
+      '<div class="choices" id="m1-choices"></div>',
+      '<div class="feedback" id="m1-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m1-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newMeasureQuestion(); },
+    signature:function(){ return globalLevel + '|' + currentLen + '|' + m1RulerStart + '|' + m1SegStart; }
+  });
+  /* ---------------------------------------------------------------
      Le 0 doit toujours être visible sur la règle (demande explicite) :
      - Facile/Moyen : la règle commence à 0, seul le début du trait bouge.
      - Difficile : la règle peut s'étendre dans les négatifs, mais son
@@ -95,8 +114,7 @@
       b.addEventListener('click', function(){ checkMeasure(v, b); });
       wrap.appendChild(b);
     });
-    var fb = document.getElementById('m1-feedback');
-    fb.className = 'feedback'; fb.innerHTML = '';
+    m1Flow.start();
   }
 
   function measureExplain(){
@@ -107,31 +125,174 @@
       + fmtNum(m1SegEnd) + ' − ' + fmtNum(m1SegStart) + ' = ' + fmtNum(currentLen) + ' cm.';
   }
 
+  var m1Flow = makeQuestionFlow({ feedback:'m1-feedback', tries:1 });
   function checkMeasure(v, btn){
+    if(m1Flow.closed) return;
     var buttons = document.querySelectorAll('#m1-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
-    var fb = document.getElementById('m1-feedback');
     var ok = Math.abs(v-currentLen)<0.001;
     if(ok){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Bravo, ce segment mesure bien ' + fmtNum(currentLen) + ' cm !</div><div class="explain-line">' + measureExplain() + '</div>';
+      m1Flow.answer(true, { success:'Bravo, ce trait mesure bien ' + fmtNum(currentLen) + ' cm !', explain:measureExplain() });
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b.textContent === (fmtNum(currentLen)+' cm')) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait. La bonne réponse est ' + fmtNum(currentLen) + ' cm.</div><div class="explain-line">' + measureExplain() + '</div>';
+      m1Flow.answer(false, { solution:'Le trait mesure ' + fmtNum(currentLen) + ' cm : la bonne réponse est en vert.', explain:measureExplain() });
     }
-    playSound(ok?'good':'bad');
-    celebrate(ok?'good':'bad', fb);
-    if(ok) addStar(1);
-    onPracticeAnswered(ok);
   }
 
-  document.getElementById('m1-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m1-feedback', nextPracticeQuestion);
+  document.getElementById('m1-next').addEventListener('click', function(){ m1Flow.skip(); });
+
+  /* ===================== MODULE 1 bis : ESTIMER UNE LONGUEUR =====================
+     Une règle fixe de 10 cm dont on ne voit que le 0 et le 10 : il faut deviner
+     la longueur du trait « au jugé », en s'aidant des repères (la moitié, c'est
+     5 cm…). Après la réponse, les graduations apparaissent pour vérifier.
+     Facile : trait posé contre le 0, réponses espacées d'au moins 2 cm.
+     Moyen : trait posé contre le 0, réponses à 1 cm près.
+     Difficile : trait décalé (il ne part pas du 0), demi-centimètres. */
+  var ESTIMATE_LEVELS = [
+    { name:'Facile',    half:false, offset:false, gaps:[2,3,4,5,6] },
+    { name:'Moyen',     half:false, offset:false, gaps:[1,2,3] },
+    { name:'Difficile', half:true,  offset:true,  gaps:[1,1.5,2,2.5] }
+  ];
+  var estLen = 5, estStart = 0;
+  registerFamily({
+    key:'estimate', tag:'Estimer une longueur', theme:'📐 Formes & mesures', order:12, timed:true,
+    note:'La règle mesure toujours 10 cm mais seuls le 0 et le 10 sont écrits : on estime la longueur du trait à l\'œil. Facile : le trait part du 0, longueurs de 1 à 9 cm, réponses espacées d\'au moins 2 cm. Moyen : le trait part du 0, réponses à 1 cm près. Difficile : le trait est posé plus bas et ne part pas du 0, longueurs en demi-centimètres. La longueur, la position et les réponses proposées sont tirées au hasard. Après la réponse, les graduations apparaissent pour vérifier.',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="est-question">À ton avis, combien mesure ce trait ?</div>',
+      '</div>',
+      '<p class="muted" id="est-sub">La règle mesure 10 cm. Estime la longueur à l\'œil.</p>',
+      '<div class="ruler-wrap"><svg id="estSvg" viewBox="0 0 320 110" role="img" aria-label="Règle de 10 cm sans graduations et un trait à estimer"></svg></div>',
+      '<div class="choices" id="est-choices"></div>',
+      '<div class="feedback" id="est-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="est-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(level){ newEstimateQuestion(level); },
+    signature:function(){ return globalLevel + '|' + estLen + '|' + estStart; }
+  });
+
+  // reveal = true : on montre les graduations (après la réponse)
+  function drawEstimate(reveal){
+    var svg = document.getElementById('estSvg');
+    var scalePx = 28, originX = 20, baseY = 42, W = originX*2 + 10*scalePx;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' 110');
+    svg.innerHTML = '';
+    function toX(v){ return originX + v*scalePx; }
+    // corps de la règle
+    svg.appendChild(el('rect', { x:originX-8, y:baseY-2, width:10*scalePx+16, height:34, rx:5, fill:'var(--surface2)', stroke:'var(--text-soft)', 'stroke-width':1.5 }));
+    [0, 10].forEach(function(v){
+      svg.appendChild(el('line', { x1:toX(v), y1:baseY-2, x2:toX(v), y2:baseY+16, stroke:'var(--text)', 'stroke-width':2.2 }));
+      var t = el('text', { x:toX(v), y:baseY+28, 'text-anchor':'middle', 'font-size':11, 'font-weight':700, fill:'var(--text)', 'font-family':'var(--font-body)' });
+      t.textContent = v; svg.appendChild(t);
+    });
+    if(reveal){
+      for(var i=1;i<10;i++){
+        svg.appendChild(el('line', { x1:toX(i), y1:baseY-2, x2:toX(i), y2:baseY + (i===5 ? 14 : 9), stroke:'var(--text-soft)', 'stroke-width':i===5 ? 1.8 : 1.3, class:'est-grad' }));
+        var g = el('text', { x:toX(i), y:baseY+26, 'text-anchor':'middle', 'font-size':9, fill:'var(--text-soft)', 'font-family':'var(--font-body)', class:'est-grad' });
+        g.textContent = i; svg.appendChild(g);
+      }
+      for(var h=0; h<10; h++) svg.appendChild(el('line', { x1:toX(h+0.5), y1:baseY-2, x2:toX(h+0.5), y2:baseY+5, stroke:'var(--text-soft)', 'stroke-width':1, class:'est-grad' }));
+    }
+    // le trait : contre la règle (au-dessus) ou posé plus bas, décalé
+    var segY = ESTIMATE_LEVELS[globalLevel].offset ? baseY + 58 : baseY - 16;
+    var sx = toX(estStart), ex = toX(estStart + estLen);
+    [sx, ex].forEach(function(x){ svg.appendChild(el('line', { x1:x, y1:segY-8, x2:x, y2:segY+8, stroke:'var(--accent)', 'stroke-width':3, 'stroke-linecap':'round' })); });
+    svg.appendChild(el('line', { x1:sx, y1:segY, x2:ex, y2:segY, stroke:'var(--accent)', 'stroke-width':5, 'stroke-linecap':'round' }));
+    // après la réponse, en Difficile : pointillés qui ramènent le trait sur la règle
+    if(reveal && ESTIMATE_LEVELS[globalLevel].offset) [sx, ex].forEach(function(x){
+      svg.appendChild(el('line', { x1:x, y1:segY-8, x2:x, y2:baseY+30, stroke:'var(--accent)', 'stroke-width':1.5, 'stroke-dasharray':'4 3' }));
+    });
+  }
+
+  function newEstimateQuestion(level){
+    var lv = ESTIMATE_LEVELS[level];
+    var step = lv.half ? 0.5 : 1;
+    estLen = lv.half ? randInt(3, 18)/2 : randInt(1, 9);          // 1 à 9 cm (1,5 à 9 en Difficile)
+    estStart = lv.offset ? randInt(0, Math.floor((10 - estLen)/step))*step : 0;
+    drawEstimate(false);
+    // 3 autres réponses : écarts tirés dans lv.gaps, de part et d'autre, entre 0,5 et 10 cm
+    var cands = [];
+    lv.gaps.forEach(function(g){ [-1,1].forEach(function(s){
+      var v = Math.round((estLen + s*g)*2)/2;
+      if(v >= 0.5 && v <= 10 && cands.indexOf(v)===-1 && v!==estLen) cands.push(v);
+    }); });
+    // en Facile, les réponses doivent aussi être espacées entre elles d'au moins 2 cm
+    // (on retente plusieurs mélanges : une combinaison qui convient existe toujours)
+    var minGap = lv.gaps[0], picks = [];
+    for(var tries = 0; tries < 40 && picks.length < 3; tries++){
+      picks = [];
+      shuffle(cands.slice()).forEach(function(v){
+        if(picks.length < 3 && picks.every(function(p){ return Math.abs(p - v) >= minGap; })) picks.push(v);
+      });
+    }
+    var list = [estLen].concat(picks).sort(function(a, b){ return a - b; });
+    var wrap = document.getElementById('est-choices');
+    wrap.innerHTML = '';
+    list.forEach(function(v){
+      var b = document.createElement('button');
+      b.className = 'choice-btn';
+      b.type = 'button';
+      b.textContent = fmtNum(v) + ' cm';
+      b.addEventListener('click', function(){ checkEstimate(v, b); });
+      wrap.appendChild(b);
+    });
+    document.getElementById('est-sub').textContent = lv.offset
+      ? 'La règle mesure 10 cm. Le trait ne part pas du 0 : estime sa longueur à l\'œil.'
+      : 'La règle mesure 10 cm. Estime la longueur du trait à l\'œil.';
+    estFlow.start();
+  }
+  // Repères pour expliquer : la moitié de la règle (5 cm), un quart, trois quarts, toute la règle.
+  function estimateExplain(){
+    var L = estLen, ref;
+    if(L === 5) ref = 'C\'est exactement la moitié de la règle.';
+    else if(L < 2) ref = 'C\'est tout petit : moins de 2 cm, bien moins que la moitié de la règle.';
+    else if(L < 5) ref = (L >= 4 ? 'Un peu moins' : 'Moins') + ' que la moitié de la règle (5 cm).';
+    else if(L < 8) ref = (L <= 6 ? 'Un peu plus' : 'Plus') + ' que la moitié de la règle (5 cm).';
+    else ref = 'Presque toute la règle (10 cm).';
+    return 'Le trait mesure ' + fmtNum(L) + ' cm. ' + ref + ' Regarde les graduations qui viennent d\'apparaître.';
+  }
+  var estFlow = makeQuestionFlow({ feedback:'est-feedback', tries:1 });
+  function checkEstimate(v, btn){
+    if(estFlow.closed) return;
+    var buttons = document.querySelectorAll('#est-choices .choice-btn');
+    buttons.forEach(function(b){ b.disabled = true; });
+    drawEstimate(true);
+    document.getElementById('estSvg').setAttribute('aria-label', 'Règle de 10 cm, graduations visibles : le trait mesure ' + fmtNum(estLen) + ' cm');
+    var ok = Math.abs(v - estLen) < 0.001;
+    if(ok){
+      btn.classList.add('correct');
+      estFlow.answer(true, { success:'Bravo, bien vu : ' + fmtNum(estLen) + ' cm !', explain:estimateExplain() });
+    } else {
+      btn.classList.add('wrong');
+      buttons.forEach(function(b){ if(b.textContent === fmtNum(estLen) + ' cm') b.classList.add('correct'); });
+      estFlow.answer(false, { solution:'Le trait mesure ' + fmtNum(estLen) + ' cm : la bonne réponse est en vert.', explain:estimateExplain() });
+    }
+  }
+  document.getElementById('est-next').addEventListener('click', function(){ estFlow.skip(); });
 
   /* ===================== MODULE 2 : DEFORMER ===================== */
+  registerFamily({
+    key:'deform', tag:'Déformer', theme:'📐 Formes & mesures', order:20,
+    note:'Une seule épreuve avec 5 formes cibles (losange, rectangle, parallélogramme, triangle isocèle, triangle rectangle) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins (2 pour un triangle) en Moyen, tous les coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m2-question">Transforme la forme.</div>',
+      '</div>',
+      '<p class="muted" id="m2-instructions">Fais glisser les coins, puis vérifie.</p>',
+      '<div class="deform-wrap"><svg id="deformSvg" viewBox="0 0 260 260" role="group" aria-label="Forme à déformer : quatre coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)"></svg></div>',
+      '<div class="feedback" id="m2-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m2-check" type="button">Vérifier ✅</button>',
+      '  <button class="btn primary" id="m2-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newDeformQuestion(); },
+    signature:function(){ return m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';'); }
+  });
   var SCALE2 = 20; // px per cm
   var basePts = [[70,70],[190,70],[190,190],[70,190]];
   var pts = basePts.map(function(p){ return p.slice(); });
@@ -145,11 +306,11 @@
   // décalés en Moyen, les 4 coins très décalés en Difficile — voir
   // perturbForLevel() plus bas.
   var M2_LEVELS = [
-    { name:'Losange',      instr:"Fais glisser les coins pour transformer la forme en losange : les 4 côtés doivent rester à peu près égaux.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
-    { name:'Rectangle',    instr:"Transforme la forme en rectangle : les côtés opposés doivent être à peu près égaux, et les 4 angles doivent rester à peu près droits.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
-    { name:'Parallélogramme', instr:"Transforme la forme en parallélogramme : les côtés opposés doivent rester à peu près égaux, mais les angles ne doivent plus être droits.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} },
-    { name:'Triangle isocèle', instr:"Fais glisser les 3 coins pour obtenir un triangle isocèle : 2 de ses côtés doivent être à peu près égaux (et le 3e différent).", check:checkIsosceles, tolGreat:0.05, tolOk:0.10 },
-    { name:'Triangle rectangle', instr:"Fais glisser les 3 coins pour obtenir un triangle rectangle : un de ses angles doit être droit (comme le coin d'une feuille).", check:checkRightTriangle, tolGreat:6, tolOk:12 }
+    { name:'Losange',      question:'Transforme la forme en losange.', instr:"Fais glisser les coins : les 4 côtés doivent être à peu près égaux. Puis vérifie.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
+    { name:'Rectangle',    question:'Transforme la forme en rectangle.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, et les 4 angles à peu près droits. Puis vérifie.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
+    { name:'Parallélogramme', question:'Transforme la forme en parallélogramme.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, mais des angles qui ne sont pas droits. Puis vérifie.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} },
+    { name:'Triangle isocèle', question:'Transforme la forme en triangle isocèle.', instr:"Fais glisser les 3 coins : 2 côtés doivent être à peu près égaux (et le 3e différent). Puis vérifie.", check:checkIsosceles, tolGreat:0.05, tolOk:0.10 },
+    { name:'Triangle rectangle', question:'Transforme la forme en triangle rectangle.', instr:"Fais glisser les 3 coins : un des angles doit être droit (comme le coin d'une feuille). Puis vérifie.", check:checkRightTriangle, tolGreat:6, tolOk:12 }
   ];
 
   function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
@@ -177,9 +338,9 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var maxDev = Math.max.apply(null, s.lens.map(function(l){ return Math.abs(l-avg); }));
     var rel = maxDev/avg;
-    if(rel <= tolGreat) return {ok:true, msg:'✔ Super, les 4 côtés sont égaux : bravo pour ce losange !'};
-    if(rel <= tolOk) return {ok:true, msg:'✔ Réussi ! Les côtés sont à peu près égaux, c\'est un losange. Tu peux essayer d\'être encore plus précis la prochaine fois.'};
-    return {ok:false, msg:'✘ Pas encore : les 4 côtés doivent avoir à peu près la même longueur.'};
+    if(rel <= tolGreat) return {ok:true, success:'Bravo, c\'est un losange !', detail:'Les 4 côtés sont égaux.'};
+    if(rel <= tolOk) return {ok:true, success:'Bravo, c\'est un losange !', detail:'Les côtés sont à peu près égaux. La prochaine fois, essaie d\'être encore plus précis.'};
+    return {ok:false, hint:'Les 4 côtés doivent avoir à peu près la même longueur.'};
   }
 
   function checkRectangle(tolGreat, tolOk){
@@ -187,10 +348,10 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
     var angleDevMax = Math.max.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
-    if(sideDevRel<=tolGreat.side && angleDevMax<=tolGreat.angle) return {ok:true, msg:'✔ Bravo, les côtés opposés sont égaux et les angles sont bien droits : c\'est un rectangle !'};
-    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, msg:'✔ Réussi ! C\'est globalement un rectangle, même si ce n\'est pas parfaitement précis. Essaie d\'ajuster encore un peu la prochaine fois.'};
-    if(angleDevMax>tolOk.angle) return {ok:false, msg:'✘ Presque : les 4 angles doivent redevenir à peu près droits.'};
-    return {ok:false, msg:'✘ Pas encore : les côtés opposés doivent être à peu près de la même longueur.'};
+    if(sideDevRel<=tolGreat.side && angleDevMax<=tolGreat.angle) return {ok:true, success:'Bravo, c\'est un rectangle !', detail:'Les côtés opposés sont égaux et les angles sont bien droits.'};
+    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, success:'Bravo, c\'est un rectangle !', detail:'Ce n\'est pas parfaitement précis. La prochaine fois, essaie d\'ajuster encore un peu.'};
+    if(angleDevMax>tolOk.angle) return {ok:false, hint:'Les 4 angles doivent redevenir à peu près droits.'};
+    return {ok:false, hint:'Les côtés opposés doivent être à peu près de la même longueur.'};
   }
 
   function checkParallelogram(tolGreat, tolOk){
@@ -198,10 +359,10 @@
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
     var angleDevMin = Math.min.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
-    if(sideDevRel<=tolGreat.side && angleDevMin>=tolGreat.tilt) return {ok:true, msg:'✔ Bien joué, c\'est un vrai parallélogramme penché !'};
-    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, msg:'✔ Réussi ! C\'est un parallélogramme, même si ce n\'est pas parfaitement précis.'};
-    if(sideDevRel>tolOk.side) return {ok:false, msg:'✘ Pas encore : les côtés opposés doivent rester à peu près de la même longueur.'};
-    return {ok:false, msg:'✘ Il faut incliner un peu plus la forme pour que les angles ne soient plus droits.'};
+    if(sideDevRel<=tolGreat.side && angleDevMin>=tolGreat.tilt) return {ok:true, success:'Bravo, c\'est un parallélogramme !', detail:'Les côtés opposés sont égaux et la forme est bien penchée.'};
+    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, success:'Bravo, c\'est un parallélogramme !', detail:'Ce n\'est pas parfaitement précis. La prochaine fois, essaie d\'ajuster encore un peu.'};
+    if(sideDevRel>tolOk.side) return {ok:false, hint:'Les côtés opposés doivent rester à peu près de la même longueur.'};
+    return {ok:false, hint:'Penche un peu plus la forme : les angles ne doivent plus être droits.'};
   }
 
   // Triangle isocèle : on cherche la paire de côtés la plus proche ; elle doit être (presque)
@@ -318,12 +479,16 @@
         else if(ev.key==='ArrowUp') dy = -step; else if(ev.key==='ArrowDown') dy = step;
         else return;
         ev.preventDefault();
+        if(m2Flow.closed) return;
+        m2Flow.clearHint();
         pts[idx][0] = Math.max(20, Math.min(240, pts[idx][0] + dx));
         pts[idx][1] = Math.max(20, Math.min(240, pts[idx][1] + dy));
         deformFocusIdx = idx;
         drawDeform();
       });
       c.addEventListener('pointerdown', function(ev){
+        if(m2Flow.closed) return;
+        m2Flow.clearHint();
         deformFocusIdx = null;
         c.setPointerCapture(ev.pointerId);
         function toSvgPoint(clientX, clientY){
@@ -350,35 +515,42 @@
     });
   }
 
-  var m2Won = false;
+  var m2Target = null;   // une forme juste, montrée si les 3 essais sont ratés
+  var M2_EXPLAIN = [
+    'Un losange a 4 côtés de la même longueur.',
+    'Un rectangle a ses côtés opposés de même longueur et 4 angles droits.',
+    'Un parallélogramme a ses côtés opposés de même longueur, mais ses angles ne sont pas droits.',
+    'Un triangle isocèle a 2 côtés de la même longueur.',
+    'Un triangle rectangle a un angle droit, comme le coin d\'une feuille.'
+  ];
   function newDeformQuestion(){
-    m2Won = false;
     m2ShapeIdx = pickFresh('deform-shape', [0,1,2,3,4]);
+    document.getElementById('m2-question').textContent = M2_LEVELS[m2ShapeIdx].question;
     document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
-    var target = shapeTargetPoints(m2ShapeIdx);
+    m2Target = shapeTargetPoints(m2ShapeIdx);
     // le départ ne doit JAMAIS être déjà réussi : on retire la déformation tant que la forme passe le test
     var lvDef = M2_LEVELS[m2ShapeIdx], tries = 0;
     do {
-      m2StartPts = perturbForLevel(target, globalLevel);
+      m2StartPts = perturbForLevel(m2Target, globalLevel);
       pts = m2StartPts.map(function(p){ return p.slice(); });
     } while(lvDef.check(lvDef.tolGreat, lvDef.tolOk).ok && ++tries < 40);
     drawDeform();
-    var fb = document.getElementById('m2-feedback');
-    fb.className='feedback'; fb.textContent='';
+    m2Flow.start();
   }
 
-  document.getElementById('m2-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m2-feedback', nextPracticeQuestion);
-
+  var m2Flow = makeQuestionFlow({ feedback:'m2-feedback', tries:MANIP_TRIES });
+  document.getElementById('m2-next').addEventListener('click', function(){ m2Flow.skip(); });
   document.getElementById('m2-check').addEventListener('click', function(){
     var lv = M2_LEVELS[m2ShapeIdx];
     var res = lv.check(lv.tolGreat, lv.tolOk);
-    var fb = document.getElementById('m2-feedback');
-    fb.className = 'feedback tappable ' + (res.ok ? 'good' : 'bad') + ' show';
-    fb.textContent = res.msg;
-    playSound(res.ok ? 'good' : 'bad');
-    celebrate(res.ok ? 'good' : 'bad', fb);
-    if(res.ok && !m2Won){ m2Won = true; addStar(1); }   // une seule étoile par forme
+    res.explain = M2_EXPLAIN[m2ShapeIdx];
+    res.solution = 'Voici un ' + M2_LEVELS[m2ShapeIdx].name.toLowerCase() + ' bien formé.';
+    var state = m2Flow.answer(res.ok, res);
+    if(state==='failed'){
+      deformFocusIdx = null;
+      pts = m2Target.map(function(p){ return p.slice(); });
+      drawDeform();
+    }
   });
 
   function regularPoly(n, rot){
@@ -1372,7 +1544,7 @@
       tag:'Énigme',
       question: r.text,
       sub:'Lis bien l\'énigme et retrouve la bonne réponse.',
-      explain:'La réponse est « ' + r.answer + ' » : ' + (SOLID_FACTS[r.answer] || 'relis bien les indices de l\'énigme.'),
+      explain:'La réponse est « ' + r.answer + ' » : ' + ((typeof SOLID_FACTS!=='undefined' && SOLID_FACTS[r.answer]) || 'relis bien les indices de l\'énigme.'),
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
         svg.appendChild(svgText(100,120,64,'?'));

@@ -7,7 +7,7 @@ Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seu
 
 - Dépôt : `jsoudeer/geometrie` (branche `main`).
 - Aperçu publié : artifact Claude `https://claude.ai/artifact/77Awfhh3EpPUAUGj2XgaVs` (à republier après chaque changement ; version 28 au moment de l'écriture).
-- `cours.md` : liste des exercices, niveaux, défis. `README.md` : présentation. `src/README.md` : organisation des sources et comment ajouter un thème. `assets/MANIFEST.md` : noms de fichiers des personnages.
+- `PROJETS.md` : projets d'avenir (ce qui reste à faire). `cours.md` : liste des exercices, niveaux, défis. `README.md` : présentation. `src/README.md` : organisation des sources et comment ajouter un thème. `assets/MANIFEST.md` : noms de fichiers des personnages.
 
 ## 2. Règle de travail convenue
 À chaque évolution : **modifier `src/` → `python3 tools/build.py` → tester dans un vrai navigateur → commit → push → republier l'aperçu → rendre compte en français** (court, l'essentiel d'abord). L'utilisateur n'est pas développeur : pas de jargon.
@@ -25,6 +25,18 @@ Jeu de géométrie pour une élève de **CE1**, en français, livré en **un seu
 **Défis** : 15 personnages par clan non achetables. 12 défis chronométrés (seuils dans `cours.md`) + 3 séries de 20 bonnes réponses sans erreur (mode Aléatoire). Un défi débloque le chat **et** le brainrot du même numéro (`cat21–35` / `br21–35`). Clic sur une carte verrouillée = explication.
 
 **Accessibilité (RGAA)** : contrastes vérifiés automatiquement dans les deux thèmes, focus visible, libellés pour lecteurs d'écran, boîtes de dialogue fermées par Échap, coins de la forme déplaçables au clavier, ✔ / ✘ en plus de la couleur, police Rubik pour le Brainrot (la police décorative n'est gardée que pour le titre).
+
+**Ordre des boutons** (01/10/2026) : « Nouvelle activité » toujours à gauche, « Vérifier » à sa droite (rangé par `registerFamily`, ordre du clavier identique).
+
+**Estimer une longueur** (01/10/2026) : nouvelle activité (`estimate`, `geometrie.js`), groupe 📐 Formes & mesures, aussi en Chronométré : règle de 10 cm avec seulement 0 et 10, estimation à l'œil ; graduations révélées après la réponse ; Difficile : trait décalé, demi-cm. Compte dans la compétence « Mesures » de la progression.
+
+**Zone de réponse en bas** (01/10/2026) : dans toutes les activités, réponses à choisir puis boutons Vérifier / Nouvelle activité sont collés en bas de l'écran (`.q-bottom`, rangée faite par `registerFamily`) ; le retour d'une question fermée prend la place des boutons. L'écran d'entraînement occupe toute la hauteur. Si le contenu dépasse (cas rares), la page défile : à traiter plus tard.
+
+**En-tête, chrono, solides, RGAA** (30/09/2026) : plus de bouton Menu ni de nom du clan ni de titre « Entraînement » (gardés pour les lecteurs d'écran) ; l'icône de la mascotte ouvre le menu en colonne sous elle (Échap, toucher ailleurs, flèches), sa pastille montre le niveau. Chronométré sans plein écran : la barre du haut reste, l'icône (pastille ✕) quitte le défi. Boutons Vérifier / Nouvelle activité de la même couleur partout. **Patron → Solide réécrit** : moteur 3D maison en SVG (patrons = polygones, charnières trouvées seules, angles de pliage calculés), pliage lent face par face, solide posé sur sa face 1 qui tourne sur lui-même, « Revoir le pliage », rotation au doigt/clavier ; détection réelle des faces en trop (hachurées, soulevées) et manquantes (pointillés + « ? ») avec légende ; 28 patrons (11 cubes, pavés, pyramides, tétraèdres, prismes, 9 pièges), réponse déduite du calcul ; couleur = forme de la face. **RGAA** : langue de la page, contraste des explications, aiguilles de « Régler l'heure » au clavier (curseurs), focus conservé quand une question se ferme, sélection visible sans la couleur (✔), mouvement réduit partout. Tests : `a11y_audit.js` (axe-core, 0 défaut sur 42 écrans), `keyboard_check.js`, `net_check.js` et `header_check.js` réécrits.
+
+**Messages et modularité** (30/09/2026) : les retours ont la même forme partout, composée par `makeQuestionFlow` (« ✔ Bravo… » / « ✘ Pas encore. » + indice + essai n sur 3 / « ✘ Ce n'est pas ça. » + solution), les activités ne fournissent que le contenu. Toutes les activités, Quizz compris, se déclarent avec `registerFamily` (écran, ordre, poids, chrono, réglages) : l'orchestrateur ne nomme plus aucune activité et chaque thème peut être retiré du manifeste (test `tools/tests/theme_removal_check.js`). Outils de dessin partagés déplacés dans `noyau.js`. Instantané `golden.js` identique avant/après (hors espaces du HTML déplacé).
+
+**Uniformisation des activités** (30/09/2026) : une seule façon de corriger pour les 9 activités (`makeQuestionFlow` dans `src/js/noyau.js`). Question toujours dans la bulle, consigne en dessous. QCM (Mesurer, Quizz, Lire l'heure, Patron) : 1 tentative ; manipulations (Déformer, Régler l'heure, 3 ateliers) : 3 tentatives, puis la solution est montrée. Toute réponse compte dans la série sans faute et l'historique (Déformer, Régler l'heure et les ateliers ne comptaient pas). Une question fermée masque Vérifier / Nouvelle activité ; toucher le retour = question suivante (le retour de Régler l'heure n'était pas cliquable). « Nouvelle activité » après un raté compte comme une erreur. Test : `tools/tests/uniform_check.js`.
 
 **Horloge Difficile en 24 h** (29/09/2026) : « Lire l'heure » et le type de Quizz « Lire l'heure » tirent les heures de 0 h à 23 h 59 au niveau Difficile ; l'énoncé donne le moment de la journée (nuit, matin, après-midi, soir), la réponse est en format 24 h, et le piège « oublier d'ajouter 12 h » est toujours proposé (`genHeure24Question` dans `src/js/horloge.js`). « Régler l'heure » reste à heure pile ou demie.
 
@@ -71,12 +83,7 @@ Playwright + Chromium (`/opt/pw-browsers/chromium`). `lib.js` sert le dépôt en
 - Republier l'aperçu : l'outil exige de relire la version en ligne avant d'écraser (elle était identique à la dernière publication).
 
 ## 8. Idées restantes
-- Illustrer les 58 personnages restants (priorité aux défis difficiles).
-- Renard à nœud bleu (deux plein pied sans visage) : à confirmer avec l'utilisateur.
-- Pas de réglage général du décor de l'écran de démarrage.
-- Registre des « familles » d'activités (Mesurer, Déformer, Patron, Horloge) pour une appli par thème, avec une option `--themes` dans `tools/build.py`.
-- Polices Google Fonts (`index.template.html`) chargées depuis internet : à embarquer pour l'usage hors ligne (Tauri/Capacitor).
-- Nettoyer `wip/` (11 Mo d'images brutes versionnées).
+Déplacées dans **`PROJETS.md`** (projets d'avenir : référentiels à suivre en plus du RGAA, ergonomie, idées en attente).
 
 ## 9. Refonte modulaire (29/09/2026)
 Du fichier unique éditable à `src/` + `tools/build.py`, en trois étapes vérifiées par `tools/tests/golden.js` (résultat identique à l'avant sur 1650 éléments) : (A) découpe sans changement, `index.html` identique octet pour octet ; (B1) regroupement du JS par thème ; (B2) registre des types de Quizz (`registerQuizType`). Les scripts de migration jetables ont été retirés (voir l'historique git : commits « Découpe index.html… », « Regroupe le JS… », « Registre des types de Quizz… »).

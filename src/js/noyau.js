@@ -1,4 +1,8 @@
 
+  // Langue de la page (RGAA 8.3) : la page est publiée sans balise <html> à elle,
+  // on déclare donc le français sur la racine du document.
+  document.documentElement.lang = 'fr';
+
   /* ===================== CORE : THEME + NAV ===================== */
   var THEMES = {
     cats:{ mascot:"🐱", title:"Géo Miaou" },
@@ -174,15 +178,59 @@
   }
 
   var DIFFICULTY_TABS = { facile:0, moyen:1, difficile:2 };
-  // La ligne d'onglets (Facile/Moyen/Difficile/Manuel) est repliée
-  // par défaut pour alléger l'écran : le bouton "☰ Menu" (juste sous l'image
-  // de la mascotte) la fait apparaître, et elle se referme dès qu'on a choisi.
-  function setMenuOpen(open){
+  // Menu : l'icône de la mascotte (en haut à gauche) ouvre, juste sous elle,
+  // la colonne Facile / Moyen / Difficile / Manuel, posée par-dessus la page.
+  // Elle se referme dès qu'on a choisi, en touchant ailleurs, ou avec Échap
+  // (le focus revient alors sur l'icône). Flèches haut/bas pour s'y déplacer.
+  // Pendant un défi chronométré, la même icône sert à QUITTER le défi.
+  var MENU_BADGES = { facile:'🙂', moyen:'🤔', difficile:'🔥', manuel:'🎯' };
+  var MENU_NAMES = { facile:'Facile', moyen:'Moyen', difficile:'Difficile', manuel:'Manuel' };
+  function menuItems(){ return [].slice.call(document.querySelectorAll('#main-nav .tab-btn')); }
+  function isMenuOpen(){ return !document.getElementById('main-nav').hidden; }
+  function setMenuOpen(open, focusItem){
     document.getElementById('main-nav').hidden = !open;
     document.getElementById('menu-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+    if(open && focusItem){
+      var items = menuItems(), cur = items.filter(function(b){ return b.classList.contains('active'); })[0];
+      (cur || items[0]).focus();
+    }
   }
-  document.getElementById('menu-btn').addEventListener('click', function(){
-    setMenuOpen(document.getElementById('main-nav').hidden);
+  // Pastille et nom accessible du bouton : niveau en cours, ou « quitter » en chrono.
+  function updateMenuButton(){
+    var btn = document.getElementById('menu-btn'), badge = document.getElementById('menu-badge');
+    var chrono = typeof countdownRunning !== 'undefined' && countdownRunning;
+    document.body.classList.toggle('chrono-running', !!chrono);
+    if(chrono){
+      badge.textContent = '✕';
+      btn.setAttribute('aria-label', 'Quitter le défi chronométré');
+      btn.removeAttribute('aria-expanded');
+      btn.title = 'Quitter le défi';
+    } else {
+      badge.textContent = MENU_BADGES[lastPracticeTab] || '🙂';
+      btn.setAttribute('aria-label', 'Menu : choisir le niveau (niveau actuel : ' + (MENU_NAMES[lastPracticeTab] || 'Facile') + ')');
+      btn.setAttribute('aria-expanded', isMenuOpen() ? 'true' : 'false');
+      btn.title = 'Choisir le niveau';
+    }
+  }
+  document.getElementById('menu-btn').addEventListener('click', function(e){
+    if(typeof countdownRunning !== 'undefined' && countdownRunning){ quitCountdown(); return; }
+    // clavier (e.detail===0) : on place le focus dans le menu pour s'y déplacer aux flèches
+    setMenuOpen(!isMenuOpen(), e.detail === 0);
+  });
+  document.getElementById('main-nav').addEventListener('keydown', function(e){
+    var items = menuItems(), i = items.indexOf(document.activeElement);
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+      e.preventDefault();
+      var n = e.key==='ArrowDown' ? (i+1) % items.length : (i-1+items.length) % items.length;
+      items[n].focus();
+    } else if(e.key==='Home'){ e.preventDefault(); items[0].focus(); }
+    else if(e.key==='End'){ e.preventDefault(); items[items.length-1].focus(); }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape' && isMenuOpen()){ setMenuOpen(false); document.getElementById('menu-btn').focus(); }
+  });
+  document.addEventListener('click', function(e){
+    if(isMenuOpen() && !e.target.closest('.brand')) setMenuOpen(false);
   });
   // Navigation : les exercices (Facile/Moyen/Difficile/Manuel) passent par le
   // menu ; la Boutique (compteur d'étoiles) et la Bataille (icône ⚔️) s'ouvrent
@@ -215,6 +263,7 @@
       document.getElementById('mascot-dock').hidden = true;
       if(tab === 'battle') renderBtSetup();
     }
+    updateMenuButton();
   }
   document.querySelectorAll('.tab-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ showTab(btn.getAttribute('data-tab')); });
@@ -579,23 +628,105 @@
     });
   }
 
-  // Permet de toucher n'importe où sur la boîte de feedback pour relancer
-  // une nouvelle question (en plus du bouton dédié) : plus pratique pour un
-  // enfant que de devoir viser un petit bouton après chaque réponse.
-  function enableTapToContinue(feedbackId, nextFn){
-    var fb = document.getElementById(feedbackId);
-    if(!fb) return;
-    fb.classList.add('tappable');
-    // Accessibilité : annoncé par les lecteurs d'écran dès qu'il apparaît,
-    // atteignable au clavier, et Entrée/Espace fait la même chose qu'un clic.
+  /* ===================== DÉROULÉ COMMUN D'UNE QUESTION =====================
+     TOUTES les activités passent par ici pour corriger une réponse, afin que
+     les règles soient les mêmes partout :
+     - une question est « ouverte » tant qu'on peut répondre ;
+     - QCM (on touche une réponse) : 1 seule tentative ;
+       manipulations (Déformer, Régler l'heure, ateliers) : 3 tentatives ;
+     - elle se « ferme » dès que la réponse est juste, ou après la dernière
+       tentative ratée. À la fermeture : retour + explication, son, effets,
+       mascotte, étoile si c'est juste, série sans faute et historique
+       (onPracticeAnswered), et la rangée de boutons (Vérifier / Nouvelle
+       activité) disparaît : on touche le retour pour passer à la suite ;
+     - « Nouvelle activité » avant tout essai = question passée, sans effet ;
+       après un essai raté = erreur (on ne peut pas fuir pour garder sa série).
+     opts : { feedback: id ou élément, tries: 1|3 }
+     La rangée de boutons masquée est la .btn-row qui suit le retour. */
+  var MANIP_TRIES = 3;
+  var qfFocusNext = false;   // la question suivante a été demandée depuis le retour, au clavier
+  function makeQuestionFlow(opts){
+    var fb = typeof opts.feedback==='string' ? document.getElementById(opts.feedback) : opts.feedback;
+    var row = fb.parentNode.querySelector('.btn-row');
+    function famWrap(){ return fb.closest('[id^="fam-"]') || fb.parentNode; }
+    var flow = { tries:0, maxTries:opts.tries || 1, closed:false, fb:fb };
+    // Accessibilité : annoncé par les lecteurs d'écran, atteignable au clavier,
+    // Entrée/Espace fait la même chose qu'un toucher.
     fb.setAttribute('aria-live','polite');
     fb.tabIndex = 0;
-    fb.addEventListener('click', function(){
-      if(fb.classList.contains('show')) nextFn();
-    });
+    function goNext(){
+      if(!flow.closed) return;
+      qfFocusNext = (document.activeElement === fb);
+      nextPracticeQuestion();
+    }
+    fb.addEventListener('click', goNext);
     fb.addEventListener('keydown', function(e){
-      if((e.key==='Enter' || e.key===' ') && fb.classList.contains('show')){ e.preventDefault(); nextFn(); }
+      if((e.key==='Enter' || e.key===' ') && flow.closed){ e.preventDefault(); goNext(); }
     });
+    function show(ok, html, closing){
+      fb.className = 'feedback show ' + (ok ? 'good' : 'bad') + (closing ? ' tappable' : '');
+      fb.innerHTML = html;
+      playSound(ok ? 'good' : 'bad');
+      celebrate(ok ? 'good' : 'bad', fb);
+      setCoachReaction(ok ? 'good' : 'bad');
+    }
+    function close(ok, html){
+      flow.closed = true;
+      // le bouton qu'on vient d'utiliser va disparaître : on garde le focus clavier
+      // sur le retour, pour qu'Entrée passe à la question suivante (RGAA 12.8)
+      var ae = document.activeElement, hadFocus = !ae || ae === document.body || famWrap().contains(ae);   // (un bouton de réponse désactivé perd le focus : il retombe sur la page)
+      if(row) row.hidden = true;
+      show(ok, html, true);
+      if(hadFocus) fb.focus();
+      if(ok) addStar(1);
+      onPracticeAnswered(ok);
+    }
+    // Nouvelle question : tout est remis à zéro.
+    flow.start = function(){
+      var q = famWrap().querySelector('.coach-bubble');
+      if(qfFocusNext && q){ q.tabIndex = -1; q.focus(); }   // on vient du retour (clavier) : on lit la nouvelle question
+      qfFocusNext = false;
+      flow.tries = 0; flow.closed = false;
+      fb.className = 'feedback'; fb.innerHTML = '';
+      if(row) row.hidden = false;
+    };
+    // Efface le retour d'un essai raté dès que l'enfant recommence à manipuler.
+    flow.clearHint = function(){
+      if(!flow.closed){ fb.className = 'feedback'; fb.innerHTML = ''; }
+    };
+    // Messages : l'activité fournit le CONTENU, le flux compose la FORME,
+    // identique partout :
+    //   réussite       ✔ <success>              / <detail> / explication
+    //   essai raté     ✘ Pas encore.            / <hint>   / 🔁 Essai n sur 3
+    //   échec final    ✘ Ce n'est pas ça.       / <solution> / explication
+    // msg = { success, detail, hint, solution, explain } (tout est facultatif
+    // sauf success, et solution pour un échec).
+    // Renvoie 'solved', 'retry' (encore des essais) ou 'failed' (question fermée).
+    function line(cls, txt){ return txt ? '<div' + (cls ? ' class="' + cls + '"' : '') + '>' + txt + '</div>' : ''; }
+    flow.answer = function(ok, msg){
+      if(flow.closed) return 'closed';
+      flow.tries++;
+      var explain = line('explain-line', msg.explain);
+      if(ok){
+        close(true, line('fb-title', '✔ ' + msg.success) + line('', msg.detail) + explain);
+        return 'solved';
+      }
+      if(flow.tries >= flow.maxTries){
+        close(false, line('fb-title', '✘ Ce n\'est pas ça.') + line('', msg.solution) + explain);
+        return 'failed';
+      }
+      var left = flow.maxTries - flow.tries;
+      show(false, line('fb-title', '✘ Pas encore.') + line('', msg.hint) +
+        line('explain-line', '🔁 Essai ' + flow.tries + ' sur ' + flow.maxTries + ' : corrige puis vérifie encore (' +
+          left + ' essai' + (left>1 ? 's' : '') + ' restant' + (left>1 ? 's' : '') + ').'), false);
+      return 'retry';
+    };
+    // Bouton « Nouvelle activité ».
+    flow.skip = function(){
+      if(!flow.closed && flow.tries > 0){ flow.closed = true; onPracticeAnswered(false); }
+      nextPracticeQuestion();
+    };
+    return flow;
   }
 
 
@@ -622,6 +753,27 @@
     var t = el('text',{x:x,y:y,'text-anchor':'middle','font-size':size,'font-family':"'Baloo 2', sans-serif",'font-weight':'700',fill:'var(--text)'});
     t.textContent = txt;
     return t;
+  }
+  // ---- Outils de dessin partagés par plusieurs thèmes ----
+  // (ils vivent ici pour qu'on puisse retirer un thème sans casser les autres)
+  var palette = ['var(--accent2)','var(--accent3)','var(--accent)','var(--accent2)','var(--accent3)'];
+  // Liste de points [[x,y],…] → attribut `points` d'un <polygon>.
+  function isoPoly(pts){ return pts.map(function(p){return p[0]+','+p[1];}).join(' '); }
+  // Sommets d'un polygone régulier (ou d'une ellipse, si rx ≠ ry) à n côtés.
+  function ngonPoints(n, cx, cy, rx, ry, rotDeg){
+    var pts=[];
+    for(var k=0;k<n;k++){
+      var ang=(rotDeg + k*360/n) * Math.PI/180;
+      pts.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
+    }
+    return pts;
+  }
+  // Illustration d'une question de Quizz réduite à un texte (ex. « 3 + 4 = ? »).
+  function drawEquation(txt){
+    var svg = document.getElementById('m4Svg');
+    svg.setAttribute('viewBox','0 0 200 200');
+    svg.innerHTML = "";
+    svg.appendChild(svgText(100,112,txt.length>11 ? 24 : 34,txt));
   }
 
   // ---- Registre des types de Quizz ----
@@ -655,17 +807,65 @@
     return 'autres';
   }
   function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
-  // Familles d'activités à écran propre déclarées par un thème (les activités
-  // interactives : on touche, on place…). Contrat d'une famille :
-  //   { key, tag, theme, note, build(wrap), generate(level), signature() }
-  //  - key        identifiant unique (sert aussi à fabriquer l'id du conteneur fam-<key>)
-  //  - tag        nom affiché ; theme : libellé du thème du mode Manuel (ex. '✋ Ateliers')
-  //  - note       texte du panneau « Activités & difficulté »
-  //  - build      construit l'écran dans le conteneur `wrap` (une seule fois, au démarrage)
-  //  - generate   prépare une nouvelle question pour le niveau donné
-  //  - signature  empreinte de la question courante (évite les répétitions dans une série)
-  var EXTRA_FAMILIES = [];
-  function registerFamily(def){ EXTRA_FAMILIES.push(def); }
+  /* ===================== REGISTRE DES ACTIVITÉS (familles) =====================
+     TOUTES les activités (Mesurer, Déformer, Patron, Quizz, Horloge, ateliers…)
+     sont déclarées par leur thème avec registerFamily ; l'orchestrateur ne
+     connaît aucune activité par son nom. Retirer un thème du manifeste retire
+     simplement ses activités. Contrat d'une famille :
+       key        identifiant unique (conteneur d'écran : #fam-<key>)
+       tag        nom affiché ; theme : groupe du mode Manuel (ex. '🕒 Horloge')
+       order      rang d'affichage et de tirage (les plus petits d'abord)
+       weight     nombre de places dans le tirage aléatoire (1 par défaut ; 3 pour le Quizz)
+       timed      true : proposée aussi en mode Chronométré (réponse en un toucher)
+       note       texte du panneau « Activités & difficulté » (si pas de `config`)
+       config     facultatif : réglage des niveaux épreuve par épreuve
+                  { storageKey, defs(), groups()?, rebuild(overrides) } (voir orchestrateur)
+       markup     HTML de l'écran (mis dans le conteneur dès l'enregistrement)
+       build      facultatif : construit l'écran en JS dans le conteneur `wrap`
+       generate   prépare une nouvelle question pour le niveau donné
+       signature  empreinte de la question courante (évite les répétitions dans une série)
+     Le conteneur existe dès le retour de registerFamily : le thème peut ensuite
+     brancher ses boutons par leur id. */
+  var FAMILIES = [];
+  function registerFamily(def){
+    var wrap = document.createElement('div');
+    wrap.id = 'fam-' + def.key;
+    wrap.hidden = true;
+    if(def.markup) wrap.innerHTML = def.markup;
+    document.getElementById('practice-exercise').appendChild(wrap);
+    FAMILIES.push(def);
+    if(def.build) def.build(wrap);
+    // RÈGLE DE MISE EN PAGE commune à toutes les activités : la zone de réponse
+    // (réponses à choisir, retour, boutons Vérifier / Nouvelle activité) est
+    // regroupée en bas de l'écran, dans cet ordre, quelle que soit l'activité.
+    // Le haut (question, consigne, illustration) prend la place restante : d'une
+    // question à l'autre, les boutons et les réponses restent au même endroit.
+    var bottom = document.createElement('div');
+    bottom.className = 'q-bottom';
+    [].slice.call(wrap.children).filter(function(c){
+      return c.matches('.choices, .qcm-choices, .feedback, .btn-row');
+    }).forEach(function(c){ bottom.appendChild(c); });
+    wrap.appendChild(bottom);
+    // Dans la rangée de boutons : « Nouvelle activité » toujours à gauche,
+    // « Vérifier » à sa droite. On change l'ordre dans la page elle-même (pas
+    // seulement à l'affichage) pour que le clavier suive le même ordre (RGAA 12.8).
+    var row = bottom.querySelector('.btn-row');
+    if(row){
+      var next = [].slice.call(row.children).filter(function(b){ return /-(next|new)$/.test(b.id); })[0];
+      if(next) row.insertBefore(next, row.firstChild);
+    }
+    return wrap;
+  }
+  // Empreinte d'une question à choix (Quizz, Lire l'heure) pour l'anti-répétition.
+  function quizSignature(q){
+    return q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
+  }
+  // Niveaux où apparaît une épreuve réglable (Quizz, patron…) : réglage manuel
+  // enregistré s'il existe, sinon ses niveaux par défaut.
+  function effectiveLevels(def, overrides){
+    var lv = overrides && overrides[def.id];
+    return (lv && lv.length) ? lv : def.defaultLevels;
+  }
   function quizTypeById(id){
     for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }
     return null;

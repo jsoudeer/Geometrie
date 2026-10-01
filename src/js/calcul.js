@@ -2,13 +2,6 @@
      Questions de Quizz de calcul : opérations, monnaie, maths de la vie.
   */
 
-  function drawEquation(txt){
-    var svg = document.getElementById('m4Svg');
-    svg.setAttribute('viewBox','0 0 200 200');
-    svg.innerHTML = "";
-    svg.appendChild(svgText(100,112,txt.length>11 ? 24 : 34,txt));
-  }
-
   // ===================== Monnaie =====================
   function drawMoneyItem(svg,cx,cy,value,isCoin){
     if(isCoin) svg.appendChild(el('circle',{cx:cx,cy:cy,r:26, fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2.5}));

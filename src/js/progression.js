@@ -12,7 +12,7 @@
     { id:'repere',   icon:'🧭', label:'Repérage',            short:'Repérage', fams:[],                                     cats:['repere'] },
     { id:'solides',  icon:'🧊', label:'Solides & patrons',   short:'Solides',  fams:['net'],                                cats:['solides'] },
     { id:'temps',    icon:'🕒', label:'Heure & calendrier',  short:'Heure',    fams:['clock-lire','clock-regler'],          cats:['temps'] },
-    { id:'mesures',  icon:'📏', label:'Mesures',             short:'Mesures',  fams:['measure'],                            cats:['mesures'] },
+    { id:'mesures',  icon:'📏', label:'Mesures',             short:'Mesures',  fams:['measure','estimate'],                 cats:['mesures'] },
     { id:'nombres',  icon:'🔢', label:'Nombres & fractions', short:'Nombres',  fams:['atelier-fraction'],                   cats:['nombres'] },
     { id:'calcul',   icon:'➕', label:'Calcul & problèmes',  short:'Calcul',   fams:[],                                     cats:['calcul','problemes'] },
     { id:'logique',  icon:'🧩', label:'Logique & énigmes',   short:'Logique',  fams:[],                                     cats:['logique','autres'] }

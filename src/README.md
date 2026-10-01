@@ -80,20 +80,82 @@ activités ». Les paramètres propres à un niveau vivent dans le thème (`GEO_
 Un type déjà connu n'a pas besoin d'être ajouté à `QCM_DISPLAY_ORDER` : les nouveaux
 types s'affichent à la suite des existants.
 
-## Ajouter une activité interactive (écran propre)
+## Règle commune pour corriger une réponse
 
-Voir `src/js/atelier.js` : `registerFamily({ key, tag, theme, note, build(wrap), generate(level), signature() })`.
-Elle est ajoutée automatiquement au tirage, au mode Manuel (dans le thème `theme`), au panneau
-« Activités & difficulté » et à l'anti-répétition. `makeAtelier()` fournit l'écran commun
-(consigne, dessin tactile, retour, boutons Vérifier / Nouvelle activité).
+Toutes les activités corrigent avec `makeQuestionFlow` (`noyau.js`), jamais à la main :
 
-## Ce qui n'est pas encore modulaire
+```js
+var flow = makeQuestionFlow({ feedback:'mon-feedback', tries:1 });   // QCM : 1 ; manipulation : MANIP_TRIES (3)
+flow.start();                                   // à chaque nouvelle question
+flow.answer(ok, html, lastHtml);                // renvoie 'solved', 'retry' ou 'failed'
+flow.skip();                                    // bouton « Nouvelle activité »
+flow.clearHint();                               // l'enfant recommence à manipuler après un raté
+```
 
-Les activités qui ont leur **propre écran** (Mesurer, Déformer, Patron → Solide, Lire
-l'heure, Régler l'heure) restent câblées en dur dans `orchestrateur.js` (listes de
-familles, niveaux, panneaux `fam-*` de la page). Retirer `horloge.js` ou `patron3d.js`
-du manifeste casse donc l'appli, alors que retirer `calcul.js` fonctionne. Pour pouvoir
-publier une appli par thème, il reste à migrer ces familles vers `registerFamily` (déjà utilisé par les ateliers).
+Le flux gère seul le retour, le son, les effets, la mascotte, l'étoile, la série sans faute,
+l'historique, et masque la rangée `.btn-row` qui suit le retour quand la question se ferme
+(réussite, ou dernier essai raté : c'est alors à l'activité d'afficher la solution si
+`answer` renvoie `'failed'`). Toucher le retour d'une question fermée = question suivante.
+« Nouvelle activité » est neutre avant tout essai, et compte comme une erreur après un raté.
+La question se met dans la bulle `.coach-bubble`, la consigne dans le `.muted` en dessous.
+`tools/tests/uniform_check.js` vérifie ces règles pour chaque activité.
+
+## Ajouter une activité à écran propre
+
+Toutes les activités (Mesurer, Déformer, Patron, Quizz, Horloge, ateliers) sont déclarées
+par leur thème avec `registerFamily` (contrat complet en tête du registre, dans `noyau.js`) :
+
+```js
+registerFamily({
+  key:'mon-activite', tag:'Mon activité', theme:'📐 Formes & mesures',
+  order:70,               // rang d'affichage et de tirage
+  weight:1,               // places dans le tirage aléatoire (le Quizz en a 3)
+  timed:false,            // true : aussi en Chronométré (réponse en un toucher)
+  note:'Ce que change le niveau…',            // panneau « Activités & difficulté »
+  markup:'<div class="coach-row">…</div>…',   // ou build:function(wrap){ … }
+  generate:function(level){ … },
+  signature:function(){ return '…'; }         // anti-répétition
+});
+```
+
+Le conteneur `#fam-mon-activite` existe dès le retour de `registerFamily` : on peut ensuite
+brancher ses boutons par leur id. L'activité apparaît alors seule dans le tirage, le
+Chronométré (si `timed`), le mode Manuel (groupe `theme`), le panneau de réglages et
+l'anti-répétition. Pour des épreuves réglables niveau par niveau (comme les types du Quizz
+ou les patrons), ajouter `config:{ storageKey, defs(), groups()?, rebuild(overrides) }`.
+`makeAtelier()` (`atelier.js`) fournit un écran tout prêt pour une activité où l'on touche
+des cases (question, consigne, dessin tactile, retour, Vérifier / Nouvelle activité).
+
+## Mise en page d'une activité : la zone de réponse est toujours en bas
+
+`registerFamily` range automatiquement, en bas de l'écran et dans cet ordre, les réponses à
+choisir (`.choices` / `.qcm-choices`), le retour (`.feedback`) et les boutons (`.btn-row`) :
+c'est la `.q-bottom`. Tout le reste (question, consigne, illustration) reste en haut. Une
+nouvelle activité n'a rien à faire de plus : il suffit que ces éléments soient au premier
+niveau de son écran. Dans la rangée, « Nouvelle activité » (id en `-next` ou `-new`) est placée à gauche et
+« Vérifier » à sa droite. `uniform_check.js` vérifie que les boutons sont au même endroit partout.
+
+## Retirer un thème
+
+L'orchestrateur ne nomme aucune activité : retirer `horloge.js`, `patron3d.js`,
+`calcul.js`, `atelier.js` ou `geometrie.js` du manifeste retire simplement ses activités
+et ses questions de Quizz. Les outils de dessin utilisés par plusieurs thèmes (`palette`,
+`isoPoly`, `ngonPoints`, `drawEquation`, `svgText`…) vivent dans `noyau.js`.
+`tools/tests/theme_removal_check.js` le vérifie pour chaque thème.
+
+## Ajouter un patron (Patron → Solide)
+
+Dans `src/js/patron3d.js`, ajouter une ligne à `NET_DEFS` avec `netDef(id, groupe, nom, niveaux, polygones, { solid })`.
+Les polygones se fabriquent avec `gridPolys('.X../XXXX/.X..')` (carrés ou rectangles, `/` = ligne suivante),
+`pyramidPolys`, `prismPolys` ou `tetraPolys`. Les charnières, l'ordre de pliage, les angles et la
+bonne réponse (solide ou « Aucun solide ») sont calculés : `node tools/tests/net_check.js` vérifie que
+chaque patron du groupe `piege` ne se referme pas, et que tous les autres se referment.
+
+## Accessibilité
+
+`node tools/tests/a11y_audit.js` passe axe-core (WCAG 2.2 A/AA, équivalent RGAA) sur tous les écrans dans
+les deux clans (installer d'abord `cd tools/tests && npm install --no-save axe-core@4`) ;
+`contrast_audit.js` et `keyboard_check.js` complètent ce qu'un outil automatique ne voit pas.
 
 ## Vérifier qu'une modification ne casse rien
 

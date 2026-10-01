@@ -17,23 +17,26 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     } return JSON.stringify({n:n,bad:bad.slice(0,5),nbad:bad.length}); })()`);
   console.log('positions acceptées :', bad);
   assert.equal(JSON.parse(bad).nbad, 0);
-  // 2) une seule étoile même si on clique 5 fois sur Vérifier (bonne réponse)
+  // 2) une étoile, puis la question se ferme (boutons masqués : impossible de revérifier)
   for (let lvl = 0; lvl < 3; lvl++) {
     await ev(`globalLevel=${lvl}; showFamily('clock-regler'); m5rGenTarget();
       m5rHourTick=Math.round((((m5Target.hour%12)+m5Target.minute/60)*30)/15)%24; m5rMinTick=Math.round(m5Target.minute*6/M5R_MIN_STEP[${lvl}]); drawSettableClock();`);
     const s0 = await stars();
-    for (let i = 0; i < 5; i++) await page.click('#m5r-check');
+    await page.click('#m5r-check');
     assert.equal(await stars(), s0 + 1, 'Régler L' + lvl + ' : une seule étoile');
+    assert(await page.evaluate(() => document.getElementById('m5r-check').closest('.btn-row').hidden), 'Régler : boutons masqués après réussite');
     // question suivante : de nouveau possible
     await ev(`m5rGenTarget(); m5rHourTick=Math.round((((m5Target.hour%12)+m5Target.minute/60)*30)/15)%24; m5rMinTick=Math.round(m5Target.minute*6/M5R_MIN_STEP[${lvl}]); drawSettableClock();`);
-    await page.click('#m5r-check'); await page.click('#m5r-check');
+    await ev(`m5rFlow.start()`);
+    await page.click('#m5r-check');
     assert.equal(await stars(), s0 + 2);
   }
   // 3) Déformer : une seule étoile
   await ev(`globalLevel=0; showFamily('deform'); newDeformQuestion(); pts = shapeTargetPoints(m2ShapeIdx).map(function(p){return p.slice();}); drawDeform();`);
   const s1 = await stars();
-  for (let i = 0; i < 4; i++) await page.click('#m2-check');
-  console.log('Déformer : étoiles gagnées en 4 clics =', (await stars()) - s1);
+  await page.click('#m2-check');
+  console.log('Déformer : étoiles gagnées =', (await stars()) - s1);
+  assert(await page.evaluate(() => document.getElementById('m2-check').closest('.btn-row').hidden), 'Déformer : boutons masqués après réussite');
   assert.equal((await stars()) - s1, 1);
   // 4) indice sur la petite aiguille mal placée
   await ev(`globalLevel=1; showFamily('clock-regler'); m5rGenTarget(); m5Target.hour=3; m5Target.minute=30; m5rHourTick=0; m5rMinTick=2; drawSettableClock();`);

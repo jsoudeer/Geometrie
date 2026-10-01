@@ -30,6 +30,42 @@
     { name:'Moyen',     types:[] },
     { name:'Difficile', types:[] }
   ];
+  function rebuildM4Types(overrides){
+    M4_LEVELS.forEach(function(lv, idx){
+      lv.types = QCM_TYPE_DEFS.filter(function(d){ return effectiveLevels(d, overrides).indexOf(idx)!==-1; })
+        .map(function(d){ return d.id; });
+    });
+  }
+  // Le Quizz est une famille comme les autres ; il pèse 3 places dans le
+  // tirage aléatoire (il regroupe à lui seul une vingtaine de types).
+  registerFamily({
+    key:'qcm', tag:'Quizz', theme:'🧠 Quizz', order:40, weight:3, timed:true,
+    // Chaque type de question se règle niveau par niveau, regroupé par sous-catégorie.
+    config:{
+      storageKey:'geo_qcm_level_overrides',
+      defs:function(){ return QCM_TYPE_DEFS; },
+      groups:function(){
+        return QCM_CATEGORIES.map(function(cat){
+          return { id:cat.id, label:cat.icon + ' ' + cat.label, defs:QCM_TYPE_DEFS.filter(function(d){ return quizCategoryId(d)===cat.id; }) };
+        });
+      },
+      rebuild:rebuildM4Types
+    },
+    markup:[
+      '<div class="coach-row">',
+      '  <div class="coach-bubble" id="m4-question">Combien de côtés a cette forme ?</div>',
+      '</div>',
+      '<p class="muted" id="m4-sub">Observe la forme, puis choisis la bonne réponse.</p>',
+      '<div class="shape-wrap"><svg id="m4Svg" viewBox="0 0 200 200" role="img" aria-label="Illustration de la question"></svg></div>',
+      '<div class="qcm-choices" id="m4-choices"></div>',
+      '<div class="feedback" id="m4-feedback"></div>',
+      '<div class="btn-row">',
+      '  <button class="btn primary" id="m4-next" type="button">Nouvelle activité ↻</button>',
+      '</div>'
+    ].join('\n'),
+    generate:function(){ newQCM(); },
+    signature:function(){ return quizSignature(m4Current); }
+  });
   var m4TypeFilter = 'random';
   var m4CategoryFilter = 'all';   // mode Manuel : « Aléatoire » se limite à cette sous-catégorie
   var m4Current = null;
@@ -101,45 +137,32 @@
       b.addEventListener('click', function(){ checkQCM(c, b); });
       wrap.appendChild(b);
     });
-    var fb = document.getElementById('m4-feedback');
-    fb.className='feedback'; fb.innerHTML='';
+    m4Flow.start();
   }
 
+  var m4Flow = makeQuestionFlow({ feedback:'m4-feedback', tries:1 });
   function checkQCM(choice, btn){
+    if(m4Flow.closed) return;
     var buttons = document.querySelectorAll('#m4-choices .choice-btn');
     buttons.forEach(function(b){ b.disabled = true; });
-    var fb = document.getElementById('m4-feedback');
     if(choice.ok){
       btn.classList.add('correct');
-      fb.className = 'feedback tappable good show';
-      fb.innerHTML = '<div>✔ Bravo, c\'est la bonne réponse !</div><div class="explain-line">'+m4Current.explain+'</div>';
-      addStar(1);
-      setCoachReaction('good');
+      m4Flow.answer(true, { success:'Bravo, c\'est la bonne réponse !', explain:m4Current.explain });
     } else {
       btn.classList.add('wrong');
       buttons.forEach(function(b){ if(b._ok) b.classList.add('correct'); });
-      fb.className = 'feedback tappable bad show';
-      fb.innerHTML = '<div>✘ Pas tout à fait, regarde encore.</div><div class="explain-line">'+m4Current.explain+'</div>';
-      setCoachReaction('bad');
+      m4Flow.answer(false, { solution:'La bonne réponse est en vert.', explain:m4Current.explain });
     }
-    playSound(choice.ok?'good':'bad');
-    celebrate(choice.ok?'good':'bad', fb);
-    onPracticeAnswered(choice.ok);
   }
 
-  document.getElementById('m4-next').addEventListener('click', nextPracticeQuestion);
-  enableTapToContinue('m4-feedback', nextPracticeQuestion);
+  document.getElementById('m4-next').addEventListener('click', function(){ m4Flow.skip(); });
 
   /* ===================== ENTRAINEMENT : ORCHESTRATEUR =====================
-     Fusionne les anciens modules 1 à 5 en un seul menu à 3 niveaux (Facile/
-     Moyen/Difficile). Le niveau choisi pilote directement M1_LEVELS,
-     M2_LEVELS (via perturbForLevel), M3_LEVELS.pool, M4_LEVELS et
-     genHeureQuestion — chacun lisait auparavant sa propre variable de
-     niveau (m1Level, m3Level, m4Level...), remplacée ici par un seul
-     "globalLevel" partagé. À chaque nouvelle question, une "famille"
-     d'exercice est tirée au hasard et affichée dans #practice-exercise ;
-     tout le reste (génération, correction, dessin) est inchangé et reste
-     dans chaque module. */
+     Un seul menu à 3 niveaux (Facile/Moyen/Difficile) : le niveau choisi
+     (« globalLevel ») est transmis à la famille tirée. À chaque nouvelle
+     question, une famille (registerFamily, noyau.js) est tirée et affichée
+     dans #practice-exercise ; génération, correction et dessin restent dans
+     le thème qui l'a déclarée. L'orchestrateur ne nomme aucune activité. */
   var globalLevel = 0;
   var practiceMode = 'free'; // 'free' | 'countdown'  (utilisé seulement en mode 'auto')
   var appMode = 'auto'; // 'auto' (Facile/Moyen/Difficile) | 'manual' (activité choisie à la main)
@@ -148,83 +171,35 @@
   var countdownScore = { correct:0, total:0 };
   var countdownRunning = false, countdownInterval = null, countdownEndAt = 0, countdownSeconds = 60;
 
-  var FAMILY_TAGS = {
-    measure:'Mesurer', deform:'Déformer', net:'Patron → Solide',
-    qcm:'Quizz', 'clock-lire':'Lire l\'heure', 'clock-regler':'Régler l\'heure'
-  };
-  var FAMILY_WRAP_IDS = {
-    measure:'fam-measure', deform:'fam-deform', net:'fam-net',
-    qcm:'fam-qcm', 'clock-lire':'fam-clock-lire', 'clock-regler':'fam-clock-regler'
-  };
-  var MANUAL_FAMILY_LIST = ['measure','deform','net','qcm','clock-lire','clock-regler'];
-  // Activités qui ont de vrais paliers de difficulté : en mode Manuel, le
-  // sélecteur de niveau est masqué pour les autres (aucune à ce jour).
-  var FAMILIES_WITH_LEVELS = {
-    measure:true, deform:true, net:true, qcm:true, 'clock-lire':true, 'clock-regler':true
-  };
-  // La famille "Quizz" (QCM) regroupe à elle seule ~20 types de questions
-  // (M4_LEVELS[*].types) qui étaient auparavant sélectionnables un par un.
-  // On les réexpose ici en mode Manuel via l'ancien mécanisme m4TypeFilter
-  // (déjà lu par genQuestion, mais plus jamais réglé depuis la fusion).
+  // Tout est calculé à partir du registre (registerFamily, noyau.js) : aucune
+  // activité n'est nommée ici. Ordre = champ `order` de chaque famille.
+  FAMILIES.sort(function(a, b){ return (a.order || 100) - (b.order || 100); });
+  var FAMILY_TAGS = {};
+  FAMILIES.forEach(function(f){ FAMILY_TAGS[f.key] = f.tag; });
+  var MANUAL_FAMILY_LIST = FAMILIES.map(function(f){ return f.key; });
   var LEVEL_NAMES = ['Facile','Moyen','Difficile'];
   var LEVEL_SHORT = ['Fa','Mo','Di'];
+  function familyDef(key){
+    for(var i=0;i<FAMILIES.length;i++){ if(FAMILIES[i].key===key) return FAMILIES[i]; }
+    return null;
+  }
+  var extraFamily = familyDef;   // ancien nom, gardé pour les tests
 
   /* ===================== CONFIGURATION DES ACTIVITÉS =====================
      Panneau de réglages avancé (⚙️ → "Configurer les activités et leur
-     difficulté") : pour Quizz (QCM_TYPE_DEFS) et Patron→Solide (NET_DEFS),
-     affiche chaque épreuve avec les niveaux où elle apparaît actuellement et
-     permet de les cocher/décocher à la main (au moins un niveau doit rester
-     coché). Les surcharges sont persistées et fusionnées par-dessus
-     defaultLevels via effectiveLevels(), puis rebuildM4Types()/
-     rebuildM3Pools() reconstruisent M4_LEVELS[*].types / M3_LEVELS[*].pool à
-     partir du résultat — tout le reste du code (qcmTypeLevels, genQuestion,
-     pickNetForLevel...) continue de lire ces tableaux normalement, sans
-     rien savoir des surcharges. */
-  var typeLevelOverrides = {}, netLevelOverrides = {};
-  try{ typeLevelOverrides = JSON.parse(localStorage.getItem('geo_qcm_level_overrides') || '{}'); }catch(e){}
-  try{ netLevelOverrides = JSON.parse(localStorage.getItem('geo_net_level_overrides') || '{}'); }catch(e){}
-  function effectiveLevels(def, kind){
-    var overrides = kind==='qcm' ? typeLevelOverrides : netLevelOverrides;
-    var lv = overrides[def.id];
-    return (lv && lv.length) ? lv : def.defaultLevels;
-  }
-  function rebuildM4Types(){
-    M4_LEVELS.forEach(function(lv, idx){
-      lv.types = QCM_TYPE_DEFS.filter(function(d){ return effectiveLevels(d,'qcm').indexOf(idx)!==-1; })
-        .map(function(d){ return d.id; });
-    });
-  }
-  function rebuildM3Pools(){
-    M3_LEVELS.forEach(function(lv, idx){
-      lv.pool = NET_DEFS.filter(function(d){ return effectiveLevels(d,'net').indexOf(idx)!==-1; })
-        .map(function(d){ return d.obj; });
-    });
-  }
-  rebuildM4Types();
-  rebuildM3Pools();
-
-  var STATIC_FAMILY_NOTES = {
-    measure:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
-    deform:'Une seule épreuve avec 5 formes cibles (losange, rectangle, parallélogramme, triangle isocèle, triangle rectangle) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins (2 pour un triangle) en Moyen, tous les coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
-    'clock-lire':'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
-    'clock-regler':'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place sur 24 positions à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (à 15 ou 45 minutes, les deux positions voisines sont acceptées).'
-  };
-  var ACTIVITY_CONFIG_FAMILIES = ['measure','deform','net','qcm','clock-lire','clock-regler'];
-  // Familles déclarées par les thèmes (voir registerFamily dans noyau.js) : on les
-  // ajoute aux listes ci-dessus et on leur crée un conteneur d'écran.
-  EXTRA_FAMILIES.forEach(function(f){
-    FAMILY_TAGS[f.key] = f.tag;
-    FAMILY_WRAP_IDS[f.key] = 'fam-' + f.key;
-    MANUAL_FAMILY_LIST.push(f.key);
-    FAMILIES_WITH_LEVELS[f.key] = true;
-    STATIC_FAMILY_NOTES[f.key] = f.note;
-    ACTIVITY_CONFIG_FAMILIES.push(f.key);
-    var wrap = document.createElement('div');
-    wrap.id = 'fam-' + f.key; wrap.hidden = true;
-    var host = document.getElementById('fam-clock-regler');
-    host.parentNode.insertBefore(wrap, host.nextSibling);
-    f.build(wrap);
+     difficulté") : pour une famille qui a un `config` (Quizz, Patron →
+     Solide…), affiche chaque épreuve avec les niveaux où elle apparaît et
+     permet de les cocher/décocher (au moins un niveau reste coché). Les
+     surcharges sont enregistrées (config.storageKey), puis config.rebuild()
+     reconstruit les tirages de la famille ; le reste du code ne sait rien
+     des surcharges. Une famille sans `config` affiche son texte `note`. */
+  FAMILIES.forEach(function(f){
+    if(!f.config) return;
+    f.config.overrides = {};
+    try{ f.config.overrides = JSON.parse(localStorage.getItem(f.config.storageKey) || '{}'); }catch(e){}
+    f.config.rebuild(f.config.overrides);
   });
+  var ACTIVITY_CONFIG_FAMILIES = MANUAL_FAMILY_LIST;
   var currentAconfFamily = 'qcm';
   var aconfOpenCats = {};
   function flashAconfWarning(){
@@ -234,9 +209,8 @@
     wrap.classList.add('shake');
     setTimeout(function(){ wrap.classList.remove('shake'); }, 420);
   }
-  function toggleAconfLevel(def, kind, idx){
-    var overrides = kind==='qcm' ? typeLevelOverrides : netLevelOverrides;
-    var current = effectiveLevels(def, kind).slice();
+  function toggleAconfLevel(def, cfg, idx){
+    var current = effectiveLevels(def, cfg.overrides).slice();
     var pos = current.indexOf(idx);
     if(pos!==-1){
       if(current.length===1){ flashAconfWarning(); return; } // au moins un niveau doit rester coché
@@ -245,21 +219,19 @@
       current.push(idx);
       current.sort();
     }
-    overrides[def.id] = current;
-    try{
-      localStorage.setItem(kind==='qcm' ? 'geo_qcm_level_overrides' : 'geo_net_level_overrides', JSON.stringify(overrides));
-    }catch(e){}
-    if(kind==='qcm') rebuildM4Types(); else rebuildM3Pools();
+    cfg.overrides[def.id] = current;
+    try{ localStorage.setItem(cfg.storageKey, JSON.stringify(cfg.overrides)); }catch(e){}
+    cfg.rebuild(cfg.overrides);
     renderActivityConfig(currentAconfFamily);
   }
-  function buildAconfItem(def, kind){
+  function buildAconfItem(def, cfg){
     var item = document.createElement('div');
     item.className = 'aconf-item';
     var head = document.createElement('div'); head.className = 'aconf-item-head';
     var nameSpan = document.createElement('span'); nameSpan.textContent = def.label;
     head.appendChild(nameSpan);
     var toggles = document.createElement('div'); toggles.className = 'aconf-level-toggles';
-    var levels = effectiveLevels(def, kind);
+    var levels = effectiveLevels(def, cfg.overrides);
     LEVEL_SHORT.forEach(function(short, idx){
       var b = document.createElement('button');
       b.type = 'button';
@@ -267,7 +239,7 @@
       b.textContent = short;
       b.title = LEVEL_NAMES[idx];
       b.setAttribute('aria-label', LEVEL_NAMES[idx]);
-      b.addEventListener('click', function(){ toggleAconfLevel(def, kind, idx); });
+      b.addEventListener('click', function(){ toggleAconfLevel(def, cfg, idx); });
       toggles.appendChild(b);
     });
     head.appendChild(toggles);
@@ -279,26 +251,25 @@
   function renderActivityConfig(familyKey){
     var wrap = document.getElementById('activity-config-list');
     wrap.innerHTML = '';
-    if(familyKey === 'qcm'){
+    var fam = familyDef(familyKey), cfg = fam && fam.config;
+    if(cfg && cfg.groups){
       // regroupé par sous-catégorie, chaque groupe repliable (le premier ouvert)
-      QCM_CATEGORIES.forEach(function(cat, ci){
-        var defs = QCM_TYPE_DEFS.filter(function(d){ return quizCategoryId(d)===cat.id; });
-        if(!defs.length) return;
+      cfg.groups().filter(function(g){ return g.defs.length; }).forEach(function(g, gi){
         var det = document.createElement('details'); det.className = 'aconf-cat';
-        if(aconfOpenCats[cat.id] === undefined ? ci===0 : aconfOpenCats[cat.id]) det.open = true;
+        if(aconfOpenCats[g.id] === undefined ? gi===0 : aconfOpenCats[g.id]) det.open = true;
         var sum = document.createElement('summary');
-        sum.textContent = cat.icon + ' ' + cat.label + ' (' + defs.length + ')';
+        sum.textContent = g.label + ' (' + g.defs.length + ')';
         det.appendChild(sum);
-        det.addEventListener('toggle', function(){ aconfOpenCats[cat.id] = det.open; });
-        defs.forEach(function(def){ det.appendChild(buildAconfItem(def, 'qcm')); });
+        det.addEventListener('toggle', function(){ aconfOpenCats[g.id] = det.open; });
+        g.defs.forEach(function(def){ det.appendChild(buildAconfItem(def, cfg)); });
         wrap.appendChild(det);
       });
-    } else if(familyKey === 'net'){
-      NET_DEFS.forEach(function(def){ wrap.appendChild(buildAconfItem(def, 'net')); });
+    } else if(cfg){
+      cfg.defs().forEach(function(def){ wrap.appendChild(buildAconfItem(def, cfg)); });
     } else {
       var card = document.createElement('div'); card.className = 'aconf-static-card';
       var h3 = document.createElement('h3'); h3.textContent = FAMILY_TAGS[familyKey];
-      var p = document.createElement('p'); p.textContent = STATIC_FAMILY_NOTES[familyKey];
+      var p = document.createElement('p'); p.textContent = (fam && fam.note) || '';
       card.appendChild(h3); card.appendChild(p);
       wrap.appendChild(card);
     }
@@ -306,7 +277,7 @@
   buildLevelRow(
     document.getElementById('activity-config-family-row'),
     ACTIVITY_CONFIG_FAMILIES.map(function(k){ return FAMILY_TAGS[k]; }),
-    ACTIVITY_CONFIG_FAMILIES.indexOf('qcm'),
+    Math.max(0, ACTIVITY_CONFIG_FAMILIES.indexOf('qcm')),
     function(idx){
       currentAconfFamily = ACTIVITY_CONFIG_FAMILIES[idx];
       renderActivityConfig(currentAconfFamily);
@@ -418,21 +389,23 @@
   document.getElementById('manual-show-activities-btn').addEventListener('click', function(){
     if(document.getElementById('manual-activity-picker').hidden) expandManualActivities(); else collapseManualActivities();
   });
-  // Manipulations plus lentes (glisser des coins, régler des aiguilles) sont
-  // réservées au mode Aléatoire : un compte à rebours mélange seulement les
-  // familles qui se répondent en un tap. Le patron 3D en est exclu aussi :
-  // l'animation de pliage n'a pas le temps de se jouer correctement avant
-  // l'enchaînement automatique de la question suivante.
+  // Sac de tirage : chaque famille y figure `weight` fois (1 par défaut).
+  // En mode Chronométré, seules les familles `timed` (réponse en un toucher)
+  // sont tirées, une fois chacune : les manipulations lentes et le patron 3D
+  // (dont l'animation de pliage n'aurait pas le temps de se jouer) en sont exclus.
   function familyKeys(){
-    return practiceMode==='countdown'
-      ? ['measure','qcm','clock-lire']
-      : ['measure','deform','net','qcm','qcm','qcm','clock-lire','clock-regler'].concat(EXTRA_FAMILIES.map(function(f){ return f.key; }));
+    var keys = [];
+    FAMILIES.forEach(function(f){
+      if(practiceMode==='countdown'){ if(f.timed) keys.push(f.key); return; }
+      for(var i=0;i<(f.weight || 1);i++) keys.push(f.key);
+    });
+    return keys;
   }
   function showFamily(key){
     currentFamily = key;
-    Object.keys(FAMILY_WRAP_IDS).forEach(function(k){
-      var wrap = document.getElementById(FAMILY_WRAP_IDS[k]);
-      if(wrap) wrap.hidden = (k!==key);
+    FAMILIES.forEach(function(f){
+      var wrap = document.getElementById('fam-' + f.key);
+      if(wrap) wrap.hidden = (f.key!==key);
     });
     document.getElementById('practice-family-tag').textContent = FAMILY_TAGS[key];
     updateStreakPill();
@@ -454,27 +427,11 @@
   var seenSigs = [];
   function resetSeenQuestions(){ seenSigs = []; }
   function questionSignature(key){
-    if(key==='measure') return 'measure|' + globalLevel + '|' + currentLen + '|' + m1RulerStart + '|' + m1SegStart;
-    if(key==='deform') return 'deform|' + m2ShapeIdx + '|' + m2StartPts.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';');
-    if(key==='net') return 'net|' + NET_DEFS.map(function(n){ return n.obj; }).indexOf(currentNet);
-    if(key==='clock-regler') return 'regler|' + m5Target.hour + ':' + m5Target.minute;
-    if(extraFamily(key)) return key + '|' + extraFamily(key).signature();
-    var q = key==='qcm' ? m4Current : m5Current;
-    return key + '|' + q.tag + '|' + q.question + '|' + q.explain + '|' + q.choices.map(function(c){ return c.label; }).sort().join('/');
+    return key + '|' + familyDef(key).signature();
   }
   function generateFamilyQuestion(key){
     showFamily(key);
-    if(key==='measure') newMeasureQuestion();
-    else if(key==='deform') newDeformQuestion();
-    else if(key==='net') loadNet(pickNetForLevel(globalLevel));
-    else if(key==='qcm') newQCM();
-    else if(key==='clock-lire') newM5Lire();
-    else if(key==='clock-regler') m5rGenTarget();
-    else extraFamily(key).generate(globalLevel);
-  }
-  function extraFamily(key){
-    for(var i=0;i<EXTRA_FAMILIES.length;i++){ if(EXTRA_FAMILIES[i].key===key) return EXTRA_FAMILIES[i]; }
-    return null;
+    familyDef(key).generate(globalLevel);
   }
   // Choix de la famille « sans remise » : chaque famille sort (le quiz autant de
   // fois que son poids) avant qu'aucune ne revienne ; jamais deux fois de suite
@@ -653,6 +610,7 @@
     var pos = manualAvailableLevels.indexOf(newLevel);
     document.querySelectorAll('#manual-level-row .level-btn').forEach(function(b,i){
       b.classList.toggle('active', i===pos);
+      b.setAttribute('aria-pressed', i===pos ? 'true' : 'false');
     });
     showAutoAdvanceToast(LEVEL_NAMES[newLevel]);
     nextPracticeQuestion();
@@ -670,14 +628,10 @@
     document.getElementById('countdown-time-left').textContent = Math.ceil(remainMs/1000) + ' s';
     document.getElementById('countdown-score-live').textContent = countdownScore.correct + ' / ' + countdownScore.total;
   }
-  // Bascule l'interface en mode compact PENDANT que le chrono tourne (pas
-  // pendant l'écran de réglage de la durée, où on garde la topbar/les
-  // onglets pour pouvoir revenir en arrière avant de démarrer) : topbar,
-  // sélecteur de thème et onglets de niveau disparaissent, pour qu'on
-  // n'ait jamais à scroller entre deux questions.
-  function setChronoCompact(active){
-    document.body.classList.toggle('chrono-compact', active);
-  }
+  // Pendant le défi, l'interface reste la même (plus de plein écran) : on
+  // masque seulement le choix Aléatoire / Chronométré, et l'icône du menu
+  // devient le bouton « quitter » (voir updateMenuButton, noyau.js).
+  function setChronoCompact(active){ updateMenuButton(); }
   var countdownLevel = 0; // niveau (0/1/2) sur lequel le défi en cours a été lancé
   function startCountdown(){
     resetSeenQuestions();
@@ -707,7 +661,6 @@
     var firstBtn = document.querySelector('#practice-mode .level-btn');
     if(firstBtn) firstBtn.click(); // = repasser sur "Aléatoire" (arrête le chrono et réaffiche l'interface)
   }
-  document.getElementById('countdown-home-btn').addEventListener('click', quitCountdown);
   function endCountdown(){
     countdownRunning = false;
     clearInterval(countdownInterval);
@@ -768,23 +721,26 @@
   // elle n'existe pas en Facile et/ou en Moyen (voir rebuildManualLevelRow).
   // Deux étages : d'abord un THÈME (Quizz, Formes & mesures, Solides, Horloge),
   // puis, s'il en contient plusieurs, l'activité précise.
-  var FAMILY_THEMES = [
-    { label:'🧠 Quizz',            families:['qcm'] },
-    { label:'📐 Formes & mesures', families:['measure','deform'] },
-    { label:'📦 Solides',          families:['net'] },
-    { label:'🕒 Horloge',          families:['clock-lire','clock-regler'] }
-  ];
-  EXTRA_FAMILIES.forEach(function(f){
+  // Les groupes viennent du champ `theme` de chaque famille ; cet ordre
+  // d'affichage est une simple préférence (un groupe inconnu va à la suite).
+  var THEME_DISPLAY_ORDER = ['🧠 Quizz', '📐 Formes & mesures', '📦 Solides', '🕒 Horloge'];
+  var FAMILY_THEMES = [];
+  FAMILIES.forEach(function(f){
     var th = null;
     FAMILY_THEMES.forEach(function(t){ if(t.label===f.theme) th = t; });
     if(!th){ th = { label:f.theme, families:[] }; FAMILY_THEMES.push(th); }
     th.families.push(f.key);
   });
+  FAMILY_THEMES.forEach(function(t, i){
+    var r = THEME_DISPLAY_ORDER.indexOf(t.label);
+    t.rank = r===-1 ? THEME_DISPLAY_ORDER.length + i : r;
+  });
+  FAMILY_THEMES.sort(function(a, b){ return a.rank - b.rank; });
   function startManualFamily(key){
     manualFamily = key;
     refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
     if(manualFamily !== 'qcm'){
-      rebuildManualLevelRow(FAMILIES_WITH_LEVELS[manualFamily] ? [0,1,2] : []);
+      rebuildManualLevelRow(familyDef(manualFamily).levels || [0,1,2]);
     }
     // Sans niveaux à choisir, l'épreuve démarre tout de suite ; sinon elle attend le choix du niveau.
     if(!manualAvailableLevels.length) showManualExercise();
