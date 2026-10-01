@@ -146,3 +146,4 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - **Milieu** : `genMilieuFormes` (3/5 formes → une au milieu ; 2/4 formes → « Aucune forme »), `genMilieuCoord` (coordonnées du milieu de [AB]). Test : `milieu_check.js`.
 - **Ateliers** : `atelier-erreur` (Trouver l'erreur : case en trop ou manquante) et `atelier-axe` (Axes de symétrie, remplace le QCM `symAxe` supprimé ; figure construite puis vérifiée pour avoir exactement les axes voulus, le pliage entoure les cases sans jumelle). Test : `atelier2_check.js`.
 - **Symétrie vrai/faux** : rectangle, carré (diagonales vraies), triangle isocèle, cercle.
+- **Tests** : `uniform_check.js` couvre aussi « Trouver l'erreur » et « Axes de symétrie », gère les triangles de Déformer (réponse fausse à 3 coins), et attend la fin de l'animation d'apparition avant de mesurer la position des boutons (la mesure instantanée donnait un écart de 31 px une fois sur quatre).

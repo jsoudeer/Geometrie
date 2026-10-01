@@ -47,7 +47,15 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     'atelier-copie': { fb:'at-atelier-copie-fb', skip:'at-atelier-copie-next', tries:3,
       right: `atCopy.mine=atCopy.model.map(function(r){return r.slice();}); document.getElementById('at-atelier-copie-check').click()`,
       wrong: `atCopy.mine=atCopy.model.map(function(r){return r.map(function(){return false;});}); document.getElementById('at-atelier-copie-check').click()`,
-      solved: `JSON.stringify(atCopy.mine)===JSON.stringify(atCopy.model)` }
+      solved: `JSON.stringify(atCopy.mine)===JSON.stringify(atCopy.model)` },
+    'atelier-erreur': { fb:'at-atelier-erreur-fb', skip:'at-atelier-erreur-next', tries:3,
+      right: `atErr.marks=atErr.marks.map(function(row,r){return row.map(function(v,c){return atErrIsDiff(r,c);});}); document.getElementById('at-atelier-erreur-check').click()`,
+      wrong: `atErr.marks=atErr.marks.map(function(row){return row.map(function(){return false;});}); document.getElementById('at-atelier-erreur-check').click()`,
+      solved: `atErr.marks.every(function(row,r){return row.every(function(v,c){return v===atErrIsDiff(r,c);});})` },
+    'atelier-axe': { fb:'at-atelier-axe-fb', skip:'at-atelier-axe-next', tries:3,
+      right: `atAxe.cands.forEach(function(a){atAxe.sel[a]=atAxe.truth.indexOf(a)>=0;}); document.getElementById('at-atelier-axe-check').click()`,
+      wrong: `atAxe.cands.forEach(function(a){atAxe.sel[a]=atAxe.truth.indexOf(a)<0;}); document.getElementById('at-atelier-axe-check').click()`,
+      solved: `atAxe.cands.every(function(a){return atAxe.sel[a]===(atAxe.truth.indexOf(a)>=0);})` }
   };
 
   // mode Aléatoire, sans montée de niveau automatique (elle changerait l'écran pendant le test)
@@ -66,6 +74,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     await gen(key);
     const bubble = await page.evaluate(k => { const w = document.getElementById('fam-' + k); const b = w && w.querySelector('.coach-bubble'); return b ? b.textContent.trim() : ''; }, key);
     chk(bubble.length > 3, 'question dans la bulle : « ' + bubble + ' »');
+    await page.waitForTimeout(800);   // fin de l'animation d'apparition de la question
     const pos = await page.evaluate(k => {
       const w = document.getElementById('fam-' + k), bottom = w.querySelector('.q-bottom'), row = w.querySelector('.btn-row'), ch = w.querySelector('.choices, .qcm-choices');
       return { last: w.lastElementChild === bottom, inBottom: bottom.contains(row) && (!ch || bottom.contains(ch)),
