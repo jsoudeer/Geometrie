@@ -1,4 +1,4 @@
-<title>Géo Kawaii vs Brainrot</title>
+<title>Kawaii vs Brainrot</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B1%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&family=Bungee&family=Rubik:wght@400;600;700;800&display=swap">
@@ -994,7 +994,7 @@
   <div class="splash-overlay" id="splash-overlay">
     <div class="splash-card">
       <svg id="splashSvg" class="splash-art" viewBox="0 0 320 180" role="img" aria-label="Un chat kawaii et un personnage brainrot face à face"></svg>
-      <h1 class="splash-title">Géo Miaou <span class="splash-vs-inline">VS</span> Geo Chaos 9000</h1>
+      <h1 class="splash-title">Kawaii <span class="splash-vs-inline">VS</span> Brainrot</h1>
       <p class="splash-sub">La géométrie CE1 comme un jeu : mesure, formes, quiz et bataille de personnages !</p>
       <button class="btn primary splash-start-btn" id="splash-start-btn" type="button">Commencer à jouer ▶</button>
     </div>
@@ -1002,7 +1002,7 @@
 
   <header class="topbar">
     <!-- Titre de la page pour les lecteurs d'écran (le nom du clan n'est plus affiché). -->
-    <h1 class="vh" id="appTitle">Géo Miaou</h1>
+    <h1 class="vh" id="appTitle">Kawaii vs Brainrot</h1>
     <!-- L'icône de la mascotte EST le bouton du menu : elle ouvre, juste en
          dessous d'elle, la colonne Facile / Moyen / Difficile / Manuel. La
          pastille rappelle le niveau en cours. Pendant un défi chronométré, ce
@@ -1343,8 +1343,8 @@
 
   /* ===================== CORE : THEME + NAV ===================== */
   var THEMES = {
-    cats:{ mascot:"🐱", title:"Géo Miaou" },
-    brainrot:{ mascot:"👹", title:"GEO CHAOS 9000" }
+    cats:{ mascot:"🐱" },
+    brainrot:{ mascot:"👹" }
   };
 
   var stars = 0;
@@ -1432,7 +1432,6 @@
   function applyTheme(th){
     document.body.setAttribute('data-app-theme', th);
     var cfg = THEMES[th];
-    document.getElementById('appTitle').textContent = cfg.title;
     syncThemeToggleButton(th);
     document.querySelectorAll('.coach-avatar').forEach(function(av){
       // La mascotte perso (si choisie) garde son propre visage, pas
@@ -1456,7 +1455,6 @@
     document.body.setAttribute('data-app-theme', th);
     var cfg = THEMES[th];
     document.getElementById('mascotIcon').textContent = cfg.mascot;
-    document.getElementById('appTitle').textContent = cfg.title;
     syncThemeToggleButton(th);
     document.querySelectorAll('.coach-avatar').forEach(function(av){ av.textContent = cfg.mascot; });
     // (le premier dessin de la mascotte se fait plus bas, une fois svgNS/el
