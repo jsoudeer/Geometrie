@@ -30,6 +30,15 @@
   .coach-bubble:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
   .side-label{ font-family:var(--font-body); font-weight:800; font-size:11px; fill:var(--text); }
   .side-label-bg{ fill:var(--surface); opacity:.85; }
+  /* mesures « justes » (en direct, puis une fois la forme corrigée) : vert + trait plein */
+  .side-label.ok{ fill:#0B6B2F; }
+  .side-label-bg.ok{ fill:#DDF6E4; opacity:1; }
+  .angle-label{ font-family:var(--font-body); font-weight:800; font-size:11px; fill:var(--text); paint-order:stroke; stroke:var(--surface); stroke-width:3px; stroke-linejoin:round; }
+  .angle-label.ok{ fill:#0B6B2F; }
+  .angle-mark{ stroke:var(--text-soft); stroke-width:1.8; }
+  .angle-mark.ok{ stroke:#0B6B2F; stroke-width:2.4; }
+  .eq-tick{ stroke:var(--accent); stroke-width:2.5; stroke-linecap:round; }
+  .deform-wrap circle.handle.done{ cursor:default; opacity:.55; }
 
   /* ============ MODULE 3 : PATRON -> SOLIDE ============ */
   /* Scène : un plateau clair, légèrement quadrillé comme une feuille de
