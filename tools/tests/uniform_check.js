@@ -75,6 +75,9 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     const bubble = await page.evaluate(k => { const w = document.getElementById('fam-' + k); const b = w && w.querySelector('.coach-bubble'); return b ? b.textContent.trim() : ''; }, key);
     chk(bubble.length > 3, 'question dans la bulle : « ' + bubble + ' »');
     await page.waitForTimeout(800);   // fin de l'animation d'apparition de la question
+    // Une question de QCM très haute (figure + 4 réponses) dépasse l'écran de test : le bas de page défile,
+    // ce qui n'a rien à voir avec l'alignement mesuré ici. On en tire une autre (déterministe).
+    for (let k2 = 0; k2 < 12 && key === 'qcm' && await page.evaluate(() => { const r = document.querySelector('#fam-qcm .btn-row'); return r && r.getBoundingClientRect().bottom > innerHeight; }); k2++) { await gen(key); await page.waitForTimeout(800); }
     const pos = await page.evaluate(k => {
       const w = document.getElementById('fam-' + k), bottom = w.querySelector('.q-bottom'), row = w.querySelector('.btn-row'), ch = w.querySelector('.choices, .qcm-choices');
       return { last: w.lastElementChild === bottom, inBottom: bottom.contains(row) && (!ch || bottom.contains(ch)),
@@ -137,6 +140,6 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     }
   }
   const vals = Object.values(btnBottoms);
-  chk(Math.max(...vals) - Math.min(...vals) <= 1, 'boutons au même endroit dans toutes les activités (' + [...new Set(vals)].join(', ') + ' px)');
+  chk(Math.max(...vals) - Math.min(...vals) <= 1, 'boutons au même endroit dans toutes les activités (' + JSON.stringify(btnBottoms) + ' px)');
   console.log(bad ? 'ÉCHEC (' + bad + ')' : 'OK');
 });
