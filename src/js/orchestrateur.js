@@ -560,7 +560,7 @@
       updateStreakPill();
       // Avancement automatique en mode Aléatoire : après X bonnes réponses d'affilée DANS CE NIVEAU, niveau supérieur.
       // La série sans faute (freeStreak) continue, elle, à travers les niveaux.
-      if(correct && autoAdvanceEnabled && levelStreak >= autoAdvanceThreshold && globalLevel < 2 && !countdownRunning){
+      if(correct && levelStreak >= autoAdvanceThreshold && globalLevel < 2 && !countdownRunning){
         var fromLevel = globalLevel;
         pendingAdvance = function(){
           if(appMode!=='auto' || practiceMode!=='free' || globalLevel!==fromLevel) return false;
@@ -581,7 +581,7 @@
         manualStreak = 0;
       } else {
         manualStreak++;
-        if(autoAdvanceEnabled && manualStreak >= autoAdvanceThreshold){
+        if(manualStreak >= autoAdvanceThreshold){
           manualStreak = 0;
           var pos = manualAvailableLevels.indexOf(globalLevel);
           if(pos !== -1 && pos < manualAvailableLevels.length - 1){

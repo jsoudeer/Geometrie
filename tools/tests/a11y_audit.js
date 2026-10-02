@@ -27,7 +27,7 @@ const FAMS = ['measure', 'estimate', 'deform', 'net', 'qcm', 'clock-lire', 'cloc
         console.log(`\n=== ${theme} / ${name} : ${res.length} règle(s) en défaut`);
         res.forEach(v => { console.log(`  [${v.impact}] ${v.id} (${v.n}) : ${v.help}`); v.nodes.forEach(n => console.log('     · ' + n)); });
       };
-      await ev(`appMode='auto'; practiceMode='free'; autoAdvanceEnabled=false;`);
+      await ev(`appMode='auto'; practiceMode='free'; autoAdvanceThreshold=1e9;`);
       for (const f of FAMS) {
         await ev(`generateFamilyQuestion('${f}')`);
         await run('question ' + f);

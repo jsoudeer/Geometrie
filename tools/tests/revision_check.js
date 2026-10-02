@@ -39,7 +39,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 } }, asy
   for (let i = 0; i < 60; i++) { await ev('nextPracticeQuestion()'); if (await ev('currentFamily') === 'qcm') { qcmSeen++; if (await ev('m4Current.typeId === window.__tt')) hit++; } }
   chk(qcmSeen > 5 && hit > qcmSeen * 0.3, 'quiz : le type raté est bien posé (' + hit + '/' + qcmSeen + ')');
   // la révision ne touche ni à la série sans faute ni à la montée de niveau automatique
-  await ev(`freeStreak=0; levelStreak=0; autoAdvanceEnabled=true; for(var i=0;i<12;i++) onPracticeAnswered(true);`);
+  await ev(`freeStreak=0; levelStreak=0; for(var i=0;i<12;i++) onPracticeAnswered(true);`);
   chk(await ev('freeStreak') === 0 && await ev('globalLevel') === 0, 'pas de série sans faute ni de changement de niveau en révision');
   // retour à Aléatoire / passage en Chronométré
   await page.click('#practice-mode .level-btn:nth-child(1)');

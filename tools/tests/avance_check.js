@@ -7,13 +7,16 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   await page.evaluate(() => document.getElementById('menu-btn').click());
   await page.click('.tab-btn[data-tab="facile"]');
   await page.evaluate(() => [...document.querySelectorAll('#practice-mode .level-btn')].find(x => x.textContent.includes('Aléatoire')).click());
-  // désactivé : pas d'avancement
-  await ev('autoAdvanceEnabled=false');
+  // plus de réglage : toujours actif, seuil 5 par défaut
+  assert.equal(await ev('autoAdvanceThreshold'), 5, 'seuil par défaut : 5 bonnes réponses');
+  assert(await page.evaluate(() => !document.getElementById('auto-advance-toggle') && !document.getElementById('auto-advance-count-row')), 'plus de case ni de choix du seuil dans les réglages');
+  // seuil relevé (test) : pas d'avancement
+  await ev('autoAdvanceThreshold=1e9');
   for (let i = 0; i < 6; i++) await page.evaluate(() => window.__t.onPracticeAnswered(true));
   await page.waitForTimeout(900);
   assert.equal(await lvl(), 0, 'sans avancement auto, on reste en Facile');
-  // activé, seuil 5
-  await ev('autoAdvanceEnabled=true; autoAdvanceThreshold=5; resetFreeStreak();');
+  // seuil 5
+  await ev('autoAdvanceThreshold=5; resetFreeStreak();');
   for (let i = 0; i < 4; i++) await page.evaluate(() => window.__t.onPracticeAnswered(true));
   await page.waitForTimeout(900);
   assert.equal(await lvl(), 0, '4 bonnes réponses : pas encore');

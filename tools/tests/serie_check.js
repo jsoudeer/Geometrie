@@ -5,7 +5,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 } }, asy
   let bad = 0; const chk = (ok, m) => { console.log(ok ? '  ok' : '  ✘', m); if (!ok) bad++; };
   const done = async () => JSON.parse(await ev(`JSON.stringify([12,13,14].map(function(k){ return isChallengeDone(k); }))`));
   const closeReveal = () => page.evaluate(() => { const r = document.getElementById('reveal-overlay'); if (r) r.remove(); });
-  await ev(`appMode='auto'; practiceMode='free'; autoAdvanceEnabled=false; setGlobalLevel(0); resetFreeStreak();`);
+  await ev(`appMode='auto'; practiceMode='free'; autoAdvanceThreshold=1e9; setGlobalLevel(0); resetFreeStreak();`);
   // ---------- paliers
   for (let i = 1; i <= 30; i++) {
     await ev(`onPracticeAnswered(true)`); await closeReveal();

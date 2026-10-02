@@ -41,32 +41,10 @@
   });
   updateSfxHint();
 
-  /* ---- Avancement automatique (modes Manuel et Aléatoire) : monte de niveau
-     toute seule après X bonnes réponses d'affilée. ---- */
-  var autoAdvanceEnabled = false;
+  /* ---- Avancement automatique (modes Manuel et Aléatoire) : toujours actif, il monte de niveau
+     après autoAdvanceThreshold bonnes réponses d'affilée (plus de réglage dans l'interface ;
+     les tests peuvent relever le seuil pour l'éviter). ---- */
   var autoAdvanceThreshold = 5;
-  var AUTO_ADVANCE_OPTIONS = [3,5,8,10];
-  try{
-    if(localStorage.getItem('geo_auto_advance') === '1') autoAdvanceEnabled = true;
-    var savedThreshold = parseInt(localStorage.getItem('geo_auto_advance_n'),10);
-    if(AUTO_ADVANCE_OPTIONS.indexOf(savedThreshold)!==-1) autoAdvanceThreshold = savedThreshold;
-  }catch(e){}
-  document.getElementById('auto-advance-toggle').checked = autoAdvanceEnabled;
-  document.getElementById('auto-advance-count-wrap').hidden = !autoAdvanceEnabled;
-  document.getElementById('auto-advance-toggle').addEventListener('change', function(e){
-    autoAdvanceEnabled = e.target.checked;
-    document.getElementById('auto-advance-count-wrap').hidden = !autoAdvanceEnabled;
-    try{ localStorage.setItem('geo_auto_advance', autoAdvanceEnabled ? '1' : '0'); }catch(err){}
-  });
-  buildLevelRow(
-    document.getElementById('auto-advance-count-row'),
-    AUTO_ADVANCE_OPTIONS.map(function(n){ return n+''; }),
-    AUTO_ADVANCE_OPTIONS.indexOf(autoAdvanceThreshold),
-    function(idx){
-      autoAdvanceThreshold = AUTO_ADVANCE_OPTIONS[idx];
-      try{ localStorage.setItem('geo_auto_advance_n', String(autoAdvanceThreshold)); }catch(e){}
-    }
-  );
 
   document.getElementById('settings-btn').addEventListener('click', function(){
     document.getElementById('settings-overlay').hidden = false;
