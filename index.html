@@ -1123,18 +1123,6 @@
 
       <hr class="settings-divider">
 
-      <label class="settings-checkbox-row" for="auto-advance-toggle">
-        <input type="checkbox" id="auto-advance-toggle">
-        <span>Avancement automatique (modes Manuel et Aléatoire)</span>
-      </label>
-      <p class="muted settings-hint">Monte automatiquement au niveau supérieur après plusieurs bonnes réponses d'affilée, en mode Manuel comme en mode Aléatoire (pas en Chronométré). La série des « 20 bonnes réponses d'affilée » continue pendant les montées de niveau : chaque niveau traversé compte pour son défi.</p>
-      <div id="auto-advance-count-wrap" hidden>
-        <p class="muted">Bonnes réponses d'affilée nécessaires :</p>
-        <div class="level-row" id="auto-advance-count-row"></div>
-      </div>
-
-      <hr class="settings-divider">
-
       <p class="muted">Affichage des personnages en Bataille :</p>
       <div class="level-row" id="fighter-display-row"></div>
 
@@ -1464,32 +1452,10 @@
   });
   updateSfxHint();
 
-  /* ---- Avancement automatique (modes Manuel et Aléatoire) : monte de niveau
-     toute seule après X bonnes réponses d'affilée. ---- */
-  var autoAdvanceEnabled = false;
+  /* ---- Avancement automatique (modes Manuel et Aléatoire) : toujours actif, il monte de niveau
+     après autoAdvanceThreshold bonnes réponses d'affilée (plus de réglage dans l'interface ;
+     les tests peuvent relever le seuil pour l'éviter). ---- */
   var autoAdvanceThreshold = 5;
-  var AUTO_ADVANCE_OPTIONS = [3,5,8,10];
-  try{
-    if(localStorage.getItem('geo_auto_advance') === '1') autoAdvanceEnabled = true;
-    var savedThreshold = parseInt(localStorage.getItem('geo_auto_advance_n'),10);
-    if(AUTO_ADVANCE_OPTIONS.indexOf(savedThreshold)!==-1) autoAdvanceThreshold = savedThreshold;
-  }catch(e){}
-  document.getElementById('auto-advance-toggle').checked = autoAdvanceEnabled;
-  document.getElementById('auto-advance-count-wrap').hidden = !autoAdvanceEnabled;
-  document.getElementById('auto-advance-toggle').addEventListener('change', function(e){
-    autoAdvanceEnabled = e.target.checked;
-    document.getElementById('auto-advance-count-wrap').hidden = !autoAdvanceEnabled;
-    try{ localStorage.setItem('geo_auto_advance', autoAdvanceEnabled ? '1' : '0'); }catch(err){}
-  });
-  buildLevelRow(
-    document.getElementById('auto-advance-count-row'),
-    AUTO_ADVANCE_OPTIONS.map(function(n){ return n+''; }),
-    AUTO_ADVANCE_OPTIONS.indexOf(autoAdvanceThreshold),
-    function(idx){
-      autoAdvanceThreshold = AUTO_ADVANCE_OPTIONS[idx];
-      try{ localStorage.setItem('geo_auto_advance_n', String(autoAdvanceThreshold)); }catch(e){}
-    }
-  );
 
   document.getElementById('settings-btn').addEventListener('click', function(){
     document.getElementById('settings-overlay').hidden = false;
@@ -7336,7 +7302,7 @@
       updateStreakPill();
       // Avancement automatique en mode Aléatoire : après X bonnes réponses d'affilée DANS CE NIVEAU, niveau supérieur.
       // La série sans faute (freeStreak) continue, elle, à travers les niveaux.
-      if(correct && autoAdvanceEnabled && levelStreak >= autoAdvanceThreshold && globalLevel < 2 && !countdownRunning){
+      if(correct && levelStreak >= autoAdvanceThreshold && globalLevel < 2 && !countdownRunning){
         var fromLevel = globalLevel;
         pendingAdvance = function(){
           if(appMode!=='auto' || practiceMode!=='free' || globalLevel!==fromLevel) return false;
@@ -7357,7 +7323,7 @@
         manualStreak = 0;
       } else {
         manualStreak++;
-        if(autoAdvanceEnabled && manualStreak >= autoAdvanceThreshold){
+        if(manualStreak >= autoAdvanceThreshold){
           manualStreak = 0;
           var pos = manualAvailableLevels.indexOf(globalLevel);
           if(pos !== -1 && pos < manualAvailableLevels.length - 1){

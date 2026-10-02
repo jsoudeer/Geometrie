@@ -214,10 +214,10 @@ Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué 
 
 ## 4. Réglages utiles
 - **Effets** : Normal, ou Mode Overload (gros sons et effets).
-- **Avancement automatique (mode Manuel)** : passe au niveau suivant après 3, 5, 8 ou 10 bonnes réponses d'affilée.
+- **Avancement automatique (mode Manuel)** : passe au niveau suivant après 5 bonnes réponses d'affilée.
 - **Affichage des personnages en Bataille** : tête ou plein pied.
 - **Configurer les activités** : chaque type de Quizz et chaque patron peut être ajouté ou retiré d'un niveau.
-- **Avancement automatique** : après 3, 5, 8 ou 10 bonnes réponses d'affilée, on passe au niveau supérieur, en mode **Manuel** comme en mode **Aléatoire** (jamais en Chronométré) ; le changement a lieu à la question suivante, jamais sous les doigts de l'enfant. La série sans faute continue d'un niveau à l'autre.
+- **Avancement automatique** : après **5 bonnes réponses d'affilée**, on passe au niveau supérieur, en mode **Manuel** comme en mode **Aléatoire** (jamais en Chronométré) ; le changement a lieu à la question suivante, jamais sous les doigts de l'enfant. La série sans faute continue d'un niveau à l'autre.
 - **Effacer ma progression** : remet les étoiles à zéro et fait perdre tous les personnages débloqués **sauf le premier de chaque clan**, qui redevient la mascotte (en deux étapes). Il faut ensuite en débloquer d'autres (avec le bouton « +50 ⭐ » par exemple) pour pouvoir lancer une bataille.
 
 

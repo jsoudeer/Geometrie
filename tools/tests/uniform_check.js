@@ -59,7 +59,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   };
 
   // mode Aléatoire, sans montée de niveau automatique (elle changerait l'écran pendant le test)
-  await ev(`appMode='auto'; practiceMode='free'; autoAdvanceEnabled=false;`);
+  await ev(`appMode='auto'; practiceMode='free'; autoAdvanceThreshold=1e9;`);
   const streak = () => ev('freeStreak');
   const gen = key => ev(`globalLevel=1; resetFreeStreak(); freeStreak=5; lastFamily=null; generateFamilyQuestion('${key}'); currentFamily`);
   const state = f => page.evaluate(f => {

@@ -5,7 +5,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   const ev = c => page.evaluate(x => window.__t.__eval(x), c);
   let bad = 0; const chk = (ok, msg) => { console.log(ok ? '  ok' : '  ✘', msg); if (!ok) bad++; };
   // ---------- 1) la série continue pendant la montée de niveau automatique ----------
-  await ev(`autoAdvanceEnabled=true; autoAdvanceThreshold=5; setAppMode('auto'); setGlobalLevel(0); resetFreeStreak();`);
+  await ev(`autoAdvanceThreshold=5; setAppMode('auto'); setGlobalLevel(0); resetFreeStreak();`);
   const levels = [];
   let at20 = null;
   for (let i = 0; i < 30; i++) {

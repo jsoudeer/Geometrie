@@ -47,7 +47,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     const fams = JSON.parse(await ev('JSON.stringify(MANUAL_FAMILY_LIST)'));
     chk(gone.every(k => fams.indexOf(k) === -1), 'activités retirées absentes (' + fams.join(', ') + ')');
     // 60 questions en Aléatoire sur les 3 niveaux, en répondant au hasard
-    const seen = JSON.parse(await ev(`(function(){ var seen={}; autoAdvanceEnabled=false;
+    const seen = JSON.parse(await ev(`(function(){ var seen={}; autoAdvanceThreshold=1e9;
       for(var lv=0; lv<3; lv++){ setGlobalLevel(lv); for(var i=0;i<20;i++){ nextPracticeQuestion(); seen[currentFamily]=1;
         var b=document.querySelector('#fam-' + currentFamily + ' .choice-btn'); if(b) b.click(); } }
       return JSON.stringify(Object.keys(seen)); })()`));
