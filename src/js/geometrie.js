@@ -277,7 +277,7 @@
   /* ===================== MODULE 2 : DEFORMER ===================== */
   registerFamily({
     key:'deform', tag:'Déformer', domain:'formes', order:20,
-    note:'Une seule épreuve avec 5 formes cibles (losange, rectangle, parallélogramme, triangle isocèle, triangle rectangle) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins (2 pour un triangle) en Moyen, tous les coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard. Les longueurs (et, selon la forme, les angles) s'affichent en direct ; après « Vérifier », une forme approximative ou ratée se remet juste.',
+    note:'Une seule épreuve avec 5 formes cibles (losange, rectangle, parallélogramme, triangle isocèle, triangle rectangle) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins (2 pour un triangle) en Moyen, tous les coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard. Les longueurs (et, selon la forme, les angles) s\'affichent en direct ; après « Vérifier », une forme approximative ou ratée se remet juste.',
     markup:[
       '<div class="coach-row">',
       '  <div class="coach-bubble" id="m2-question">Transforme la forme.</div>',

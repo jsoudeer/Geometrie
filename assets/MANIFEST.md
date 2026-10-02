@@ -38,13 +38,13 @@ généré dans un navigateur et réenregistre chaque `.svg` à jour.
 | cat03.png | Pétale (départ) |
 | cat04.png | Étoilou (départ, Soutien) |
 | cat05.png | Éclairon (départ, Archer) |
-| cat06.png | Câlin |
-| cat07.png | Doudou |
-| cat08.png | Pompon |
-| cat09.png | Cannelle |
-| cat10.png | Réglisse |
-| cat11.png | Framboise |
-| cat12.png | Sushi |
+| cat06.png | Gouttelette |
+| cat07.png | Matchou |
+| cat08.png | Capuche |
+| cat09.png | Footin |
+| cat10.png | Merlinou |
+| cat11.png | Fleurette |
+| cat12.png | Flammèche |
 | cat13.png | Velours |
 | cat14.png | Chamallow |
 | cat15.png | Pixel |
@@ -78,8 +78,8 @@ généré dans un navigateur et réenregistre chaque `.svg` à jour.
 | br03.png | Waffolo Papero (départ) |
 | br04.png | Spaghettino Orsetto (départ, Soutien) |
 | br05.png | Televisiogatto (départ, Archer) |
-| br06.png | Lasagnone Lampo |
-| br07.png | Grissino Ghost |
+| br06.png | Elefantino Aspiro |
+| br07.png | Cagnolino Ventilo |
 | br08.png | Cannolotto Caos |
 | br09.png | Raviolone Rex |
 | br10.png | Basilico Boom |
@@ -117,8 +117,8 @@ leur carte dans la Boutique explique comment les obtenir.
 
 ## Images générées (Grok) déjà intégrées
 
-12 personnages ont une vraie illustration (visage `<id>.png` 256 px + plein pied
-détouré `<id>_full.png`) : cat01–05, br01–05, br21, br22. Les originaux sont dans
+21 personnages ont une vraie illustration (visage `<id>.png` 256 px + plein pied
+détouré `<id>_full.png`) : cat01–12, br01–07, br21, br22 (cat06–12 et br06–07 préparés par `tools/proc3.py`). Les originaux sont dans
 `wip/`. Les images sont aussi embarquées en base64 dans `index.html` (bloc
 `IMG_DATA_START … IMG_DATA_END`) pour que l'aperçu publié (fichier unique) les
 affiche. Les autres personnages gardent leur dessin procédural en attendant.
