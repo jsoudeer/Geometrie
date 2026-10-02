@@ -33,7 +33,11 @@ Lire la longueur d'un trait sur une règle graduée (4 choix). Le 0 est toujours
 *Tiré au hasard :* la longueur, le décalage et les mauvaises réponses.
 
 ### 🔷 Déformer
-Faire glisser les 4 coins d'une forme (au doigt, à la souris ou aux flèches du clavier) pour obtenir un **losange**, un **rectangle** ou un **parallélogramme**.
+Faire glisser les 4 coins d'une forme (au doigt, à la souris ou aux flèches du clavier) pour obtenir un **losange**, un **rectangle**, un **parallélogramme**, un **triangle isocèle** ou un **triangle rectangle**.
+
+**Mesures en direct** : la longueur de chaque côté est affichée ; pour le rectangle, le parallélogramme et le triangle rectangle, l'**angle de chaque coin** l'est aussi, et il passe au **vert** (avec un petit carré) quand il est bien droit ; les côtés qui conviennent passent au vert eux aussi, pour voir si on est proche.
+
+**Après « Vérifier »** : on dit d'abord si c'est bon ou raté. Si c'est réussi mais approximatif, ou raté après les 3 essais, la forme **se remet toute seule juste** (à partir du dessin de l'enfant) : les longueurs et les angles sont mis en avant (côtés égaux marqués par des petits traits, angles droits en vert) et une phrase les donne (« Côtés : 6,8 cm et 4,9 cm. Les 4 angles mesurent 90°. »). Si la forme est déjà bien précise, elle ne bouge pas : on montre seulement ses mesures.
 
 | Niveau | Départ |
 |---|---|

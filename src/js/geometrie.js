@@ -277,7 +277,7 @@
   /* ===================== MODULE 2 : DEFORMER ===================== */
   registerFamily({
     key:'deform', tag:'Déformer', domain:'formes', order:20,
-    note:'Une seule épreuve avec 5 formes cibles (losange, rectangle, parallélogramme, triangle isocèle, triangle rectangle) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins (2 pour un triangle) en Moyen, tous les coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
+    note:'Une seule épreuve avec 5 formes cibles (losange, rectangle, parallélogramme, triangle isocèle, triangle rectangle) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins (2 pour un triangle) en Moyen, tous les coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard. Les longueurs (et, selon la forme, les angles) s'affichent en direct ; après « Vérifier », une forme approximative ou ratée se remet juste.',
     markup:[
       '<div class="coach-row">',
       '  <div class="coach-bubble" id="m2-question">Transforme la forme.</div>',
@@ -306,11 +306,11 @@
   // décalés en Moyen, les 4 coins très décalés en Difficile — voir
   // perturbForLevel() plus bas.
   var M2_LEVELS = [
-    { name:'Losange',      question:'Transforme la forme en losange.', instr:"Fais glisser les coins : les 4 côtés doivent être à peu près égaux. Puis vérifie.", check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
-    { name:'Rectangle',    question:'Transforme la forme en rectangle.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, et les 4 angles à peu près droits. Puis vérifie.", check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
-    { name:'Parallélogramme', question:'Transforme la forme en parallélogramme.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, mais des angles qui ne sont pas droits. Puis vérifie.", check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} },
-    { name:'Triangle isocèle', question:'Transforme la forme en triangle isocèle.', instr:"Fais glisser les 3 coins : 2 côtés doivent être à peu près égaux (et le 3e différent). Puis vérifie.", check:checkIsosceles, tolGreat:0.05, tolOk:0.10 },
-    { name:'Triangle rectangle', question:'Transforme la forme en triangle rectangle.', instr:"Fais glisser les 3 coins : un des angles doit être droit (comme le coin d'une feuille). Puis vérifie.", check:checkRightTriangle, tolGreat:6, tolOk:12 }
+    { name:'Losange',      question:'Transforme la forme en losange.', instr:"Fais glisser les coins : les 4 côtés doivent être à peu près égaux. Puis vérifie.", angles:false, check:checkRhombus, tolGreat:0.15, tolOk:0.30 },
+    { name:'Rectangle',    question:'Transforme la forme en rectangle.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, et les 4 angles à peu près droits. Puis vérifie.", angles:true, check:checkRectangle, tolGreat:{side:0.14, angle:12}, tolOk:{side:0.26, angle:20} },
+    { name:'Parallélogramme', question:'Transforme la forme en parallélogramme.', instr:"Fais glisser les coins : les côtés opposés à peu près égaux, mais des angles qui ne sont pas droits. Puis vérifie.", angles:true, check:checkParallelogram, tolGreat:{side:0.14, tilt:15}, tolOk:{side:0.26, tilt:8} },
+    { name:'Triangle isocèle', question:'Transforme la forme en triangle isocèle.', instr:"Fais glisser les 3 coins : 2 côtés doivent être à peu près égaux (et le 3e différent). Puis vérifie.", angles:false, check:checkIsosceles, tolGreat:0.05, tolOk:0.10 },
+    { name:'Triangle rectangle', question:'Transforme la forme en triangle rectangle.', instr:"Fais glisser les 3 coins : un des angles doit être droit (comme le coin d'une feuille). Puis vérifie.", angles:true, check:checkRightTriangle, tolGreat:6, tolOk:12 }
   ];
 
   function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
@@ -333,13 +333,15 @@
     return {lens:lens, angles:angles};
   }
 
+  // Chaque contrôle renvoie { ok, approx?, success, detail, hint } (format de makeQuestionFlow) :
+  // `approx` = réussi seulement dans la tolérance large (la forme sera alors remise juste sous les yeux de l'enfant).
   function checkRhombus(tolGreat, tolOk){
     var s = sidesAndAngles();
     var avg = s.lens.reduce(function(a,b){return a+b;},0)/4;
     var maxDev = Math.max.apply(null, s.lens.map(function(l){ return Math.abs(l-avg); }));
     var rel = maxDev/avg;
     if(rel <= tolGreat) return {ok:true, success:'Bravo, c\'est un losange !', detail:'Les 4 côtés sont égaux.'};
-    if(rel <= tolOk) return {ok:true, success:'Bravo, c\'est un losange !', detail:'Les côtés sont à peu près égaux. La prochaine fois, essaie d\'être encore plus précis.'};
+    if(rel <= tolOk) return {ok:true, approx:true, success:'Bravo, c\'est un losange !', detail:'Les côtés sont à peu près égaux : regarde la forme se remettre bien juste.'};
     return {ok:false, hint:'Les 4 côtés doivent avoir à peu près la même longueur.'};
   }
 
@@ -349,7 +351,7 @@
     var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
     var angleDevMax = Math.max.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
     if(sideDevRel<=tolGreat.side && angleDevMax<=tolGreat.angle) return {ok:true, success:'Bravo, c\'est un rectangle !', detail:'Les côtés opposés sont égaux et les angles sont bien droits.'};
-    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, success:'Bravo, c\'est un rectangle !', detail:'Ce n\'est pas parfaitement précis. La prochaine fois, essaie d\'ajuster encore un peu.'};
+    if(sideDevRel<=tolOk.side && angleDevMax<=tolOk.angle) return {ok:true, approx:true, success:'Bravo, c\'est un rectangle !', detail:'Ce n\'est pas tout à fait précis : regarde la forme se remettre bien droite.'};
     if(angleDevMax>tolOk.angle) return {ok:false, hint:'Les 4 angles doivent redevenir à peu près droits.'};
     return {ok:false, hint:'Les côtés opposés doivent être à peu près de la même longueur.'};
   }
@@ -360,7 +362,7 @@
     var sideDevRel = Math.max(Math.abs(s.lens[0]-s.lens[2]), Math.abs(s.lens[1]-s.lens[3])) / avg;
     var angleDevMin = Math.min.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
     if(sideDevRel<=tolGreat.side && angleDevMin>=tolGreat.tilt) return {ok:true, success:'Bravo, c\'est un parallélogramme !', detail:'Les côtés opposés sont égaux et la forme est bien penchée.'};
-    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, success:'Bravo, c\'est un parallélogramme !', detail:'Ce n\'est pas parfaitement précis. La prochaine fois, essaie d\'ajuster encore un peu.'};
+    if(sideDevRel<=tolOk.side && angleDevMin>=tolOk.tilt) return {ok:true, approx:true, success:'Bravo, c\'est un parallélogramme !', detail:'Ce n\'est pas tout à fait précis : regarde la forme se remettre bien juste.'};
     if(sideDevRel>tolOk.side) return {ok:false, hint:'Les côtés opposés doivent rester à peu près de la même longueur.'};
     return {ok:false, hint:'Penche un peu plus la forme : les angles ne doivent plus être droits.'};
   }
@@ -374,21 +376,21 @@
       if(d < best){ best = d; bi = i; bj = j; }
     }
     var minAngle = Math.min.apply(null, s.angles);
-    if(minAngle < 18) return {ok:false, msg:'✘ Le triangle est trop aplati : écarte un coin pour qu\'il redevienne un vrai triangle.'};
+    if(minAngle < 18) return {ok:false, hint:'Le triangle est trop aplati : écarte un coin pour qu\'il redevienne un vrai triangle.'};
     var others = [0,1,2].filter(function(k){ return k!==bi && k!==bj; });
-    if(best <= tolOk && Math.abs(L[others[0]]-L[bi]) / Math.max(L[others[0]], L[bi]) < 0.08) return {ok:false, msg:'✘ Les 3 côtés sont égaux : c\'est un triangle équilatéral. Pour un isocèle, un côté doit être différent des deux autres.'};
-    if(best <= tolGreat) return {ok:true, msg:'✔ Bravo, deux côtés sont bien égaux : c\'est un triangle isocèle !'};
-    if(best <= tolOk) return {ok:true, msg:'✔ Réussi ! Deux côtés sont à peu près égaux, c\'est un triangle isocèle. Essaie d\'être encore plus précis la prochaine fois.'};
-    return {ok:false, msg:'✘ Pas encore : il faut que 2 côtés aient à peu près la même longueur (regarde les mesures en cm).'};
+    if(best <= tolOk && Math.abs(L[others[0]]-L[bi]) / Math.max(L[others[0]], L[bi]) < 0.08) return {ok:false, hint:'Les 3 côtés sont égaux : c\'est un triangle équilatéral. Pour un isocèle, un côté doit être différent des deux autres.'};
+    if(best <= tolGreat) return {ok:true, success:'Bravo, c\'est un triangle isocèle !', detail:'Deux côtés sont bien égaux.'};
+    if(best <= tolOk) return {ok:true, approx:true, success:'Bravo, c\'est un triangle isocèle !', detail:'Deux côtés sont à peu près égaux : regarde la forme se remettre bien juste.'};
+    return {ok:false, hint:'Il faut que 2 côtés aient à peu près la même longueur (regarde les mesures en cm).'};
   }
   function checkRightTriangle(tolGreat, tolOk){
     var s = sidesAndAngles();
     var dev = Math.min.apply(null, s.angles.map(function(a){ return Math.abs(a-90); }));
     var minAngle = Math.min.apply(null, s.angles);
-    if(minAngle < 15) return {ok:false, msg:'✘ Le triangle est trop aplati : écarte un coin pour qu\'il redevienne un vrai triangle.'};
-    if(dev <= tolGreat) return {ok:true, msg:'✔ Bravo, il a un angle droit : c\'est un triangle rectangle !'};
-    if(dev <= tolOk) return {ok:true, msg:'✔ Réussi ! L\'un des angles est à peu près droit : c\'est un triangle rectangle.'};
-    return {ok:false, msg:'✘ Pas encore : un des 3 angles doit devenir droit (90°, comme le coin d\'une feuille).'};
+    if(minAngle < 15) return {ok:false, hint:'Le triangle est trop aplati : écarte un coin pour qu\'il redevienne un vrai triangle.'};
+    if(dev <= tolGreat) return {ok:true, success:'Bravo, c\'est un triangle rectangle !', detail:'Il a bien un angle droit.'};
+    if(dev <= tolOk) return {ok:true, approx:true, success:'Bravo, c\'est un triangle rectangle !', detail:'Un des angles est à peu près droit : regarde la forme se remettre bien droite.'};
+    return {ok:false, hint:'Un des 3 angles doit devenir droit (90°, comme le coin d\'une feuille).'};
   }
 
   // Construit une forme cible qui satisfait DÉJÀ le critère "great" du type
@@ -446,27 +448,94 @@
   }
 
   var deformFocusIdx = null; // coin qui garde le focus clavier après un redessin
+  var m2Revealed = false;    // après « Vérifier » : forme figée, longueurs ET angles mis en avant
+  function cm1(v){ return (Math.round(v*10)/10).toFixed(1).replace('.', ','); }
+
+  // Ce qui est « juste » en ce moment, pour colorer les mesures en direct (même exigence que la réussite
+  // « bien précise » : tolGreat) : côtés qui conviennent, angles droits.
+  function m2Matches(){
+    var n = pts.length, s = sidesAndAngles(), L = s.lens, lv = M2_LEVELS[m2ShapeIdx], g = lv.tolGreat;
+    var avg = L.reduce(function(a,b){ return a+b; }, 0) / n;
+    var sides = L.map(function(){ return false; }), right = s.angles.map(function(){ return false; });
+    if(m2ShapeIdx===0) sides = L.map(function(l){ return Math.abs(l-avg)/avg <= g; });
+    else if(m2ShapeIdx===1 || m2ShapeIdx===2) sides = L.map(function(l, i){ return Math.abs(l-L[(i+2)%4])/avg <= g.side; });
+    else if(m2ShapeIdx===3){
+      var best = 9, bi = 0, bj = 1;
+      for(var i=0;i<3;i++) for(var j=i+1;j<3;j++){ var d = Math.abs(L[i]-L[j])/Math.max(L[i],L[j]); if(d < best){ best = d; bi = i; bj = j; } }
+      if(best <= g && Math.min.apply(null, s.angles) >= 18){ sides[bi] = true; sides[bj] = true; }
+    }
+    if(m2ShapeIdx===1) right = s.angles.map(function(a){ return Math.abs(a-90) <= g.angle; });
+    if(m2ShapeIdx===4) right = s.angles.map(function(a){ return Math.abs(a-90) <= g; });
+    return { sides:sides, right:right, angles:s.angles };
+  }
+  function unit(v){ var m = Math.hypot(v[0], v[1]) || 1; return [v[0]/m, v[1]/m]; }
+  // Un angle : petit arc (ou carré s'il est droit) + sa valeur en degrés, du côté intérieur.
+  function drawAngleMark(svg, idx, deg, isRight){
+    var n = pts.length, prev = pts[(idx+n-1)%n], cur = pts[idx], next = pts[(idx+1)%n];
+    var u1 = unit([prev[0]-cur[0], prev[1]-cur[1]]), u2 = unit([next[0]-cur[0], next[1]-cur[1]]);
+    var cls = isRight ? 'angle-mark ok' : 'angle-mark';
+    var r = 14;
+    if(isRight){
+      var a1 = [cur[0]+u1[0]*r*.8, cur[1]+u1[1]*r*.8], a2 = [a1[0]+u2[0]*r*.8, a1[1]+u2[1]*r*.8], a3 = [cur[0]+u2[0]*r*.8, cur[1]+u2[1]*r*.8];
+      svg.appendChild(el('polyline', { points:[a1,a2,a3].map(function(p){ return p[0]+','+p[1]; }).join(' '), class:cls, fill:'none' }));
+    } else {
+      var cross = u1[0]*u2[1] - u1[1]*u2[0];
+      svg.appendChild(el('path', { d:'M ' + (cur[0]+u1[0]*r) + ' ' + (cur[1]+u1[1]*r) + ' A ' + r + ' ' + r + ' 0 0 ' + (cross > 0 ? 1 : 0) + ' ' + (cur[0]+u2[0]*r) + ' ' + (cur[1]+u2[1]*r), class:cls, fill:'none' }));
+    }
+    var bis = unit([u1[0]+u2[0], u1[1]+u2[1]]);
+    if(Math.hypot(u1[0]+u2[0], u1[1]+u2[1]) < 0.05) bis = [-u1[1], u1[0]];
+    var d = deg < 40 ? 38 : 30;
+    var t = el('text', { x:cur[0]+bis[0]*d, y:cur[1]+bis[1]*d+4, 'text-anchor':'middle', class:'angle-label' + (isRight ? ' ok' : '') });
+    t.textContent = Math.round(deg) + '°';
+    svg.appendChild(t);
+  }
+  // Traits d'égalité (| et ||) sur les côtés qui doivent être égaux (selon la forme) et qui le sont assez.
+  function drawEqualTicks(svg, matches){
+    var n = pts.length, groups = [];
+    if(m2ShapeIdx === 0) groups = [[0,1,2,3]];
+    else if(m2ShapeIdx === 1 || m2ShapeIdx === 2) groups = [[0,2],[1,3]];
+    else if(m2ShapeIdx === 3) groups = [[0,1,2].filter(function(i){ return matches.sides[i]; })];
+    var rank = 0;
+    groups.forEach(function(g){
+      if(g.length < 2 || !g.every(function(i){ return matches.sides[i]; })) return;
+      rank++;
+      g.forEach(function(i){
+        var a = pts[i], b = pts[(i+1)%n], u = unit([b[0]-a[0], b[1]-a[1]]), nv = [-u[1], u[0]];
+        for(var k=0;k<rank;k++){
+          var off = 0.2*dist(a,b) + k*5, cx = a[0]+u[0]*off, cy = a[1]+u[1]*off;
+          svg.appendChild(el('line', { x1:cx-nv[0]*7, y1:cy-nv[1]*7, x2:cx+nv[0]*7, y2:cy+nv[1]*7, class:'eq-tick' }));
+        }
+      });
+    });
+  }
   function drawDeform(){
     var svg = document.getElementById('deformSvg');
     svg.innerHTML = "";
+    var m = m2Matches();
     var poly = el('polygon', {
       points: pts.map(function(p){return p[0]+','+p[1];}).join(' '),
       fill:'var(--accent2)', 'fill-opacity':'0.35', stroke:'var(--accent)', 'stroke-width':3
     });
     svg.appendChild(poly);
+    // angles : en direct pour les formes où ils comptent (rectangle, parallélogramme, triangle rectangle) ;
+    // après « Vérifier », toujours (avec les traits d'égalité des côtés)
+    var showAngles = m2Revealed || M2_LEVELS[m2ShapeIdx].angles;
+    if(m2Revealed) drawEqualTicks(svg, m);
+    if(showAngles) m.angles.forEach(function(deg, i){ drawAngleMark(svg, i, deg, m.right[i] || (m2Revealed && Math.abs(deg-90) < 1.5)); });
 
     for(var i=0;i<pts.length;i++){
       var a = pts[i], b = pts[(i+1)%pts.length];
       var mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
-      var len = (dist(a,b)/SCALE2).toFixed(1);
-      svg.appendChild(el('rect',{x:mx-16,y:my-9,width:32,height:16,rx:6,class:'side-label-bg'}));
-      var t = el('text',{x:mx,y:my+4,'text-anchor':'middle',class:'side-label'});
+      var len = cm1(dist(a,b)/SCALE2);
+      svg.appendChild(el('rect',{x:mx-18,y:my-9,width:36,height:16,rx:6,class:'side-label-bg' + (m.sides[i] ? ' ok' : '')}));
+      var t = el('text',{x:mx,y:my+4,'text-anchor':'middle',class:'side-label' + (m.sides[i] ? ' ok' : '')});
       t.textContent = len+' cm';
       svg.appendChild(t);
     }
 
     pts.forEach(function(p, idx){
       var c = el('circle',{cx:p[0],cy:p[1],r:13,fill:'var(--accent)',stroke:'var(--text)','stroke-width':3,class:'handle'});
+      if(m2Revealed){ c.setAttribute('r', 8); c.setAttribute('class', 'handle done'); svg.appendChild(c); return; }   // forme figée : plus rien à déplacer
       c.style.touchAction = 'none';
       // Accessibilité : chaque coin est atteignable au clavier (Tab) et se
       // déplace avec les flèches (Maj = pas plus grand), en plus du glisser.
@@ -537,6 +606,8 @@
     document.getElementById('m2-question').textContent = M2_LEVELS[m2ShapeIdx].question;
     document.getElementById('m2-instructions').textContent = M2_LEVELS[m2ShapeIdx].instr;
     m2Target = shapeTargetPoints(m2ShapeIdx);
+    cancelAnimationFrame(m2MorphTimer); m2Revealed = false;
+    document.getElementById('deformSvg').setAttribute('aria-label', 'Forme à déformer : coins à déplacer (à la souris, au doigt ou avec les flèches du clavier)');
     // le départ ne doit JAMAIS être déjà réussi : on retire la déformation tant que la forme passe le test
     var lvDef = M2_LEVELS[m2ShapeIdx], tries = 0;
     do {
@@ -549,17 +620,114 @@
 
   var m2Flow = makeQuestionFlow({ feedback:'m2-feedback', tries:MANIP_TRIES });
   document.getElementById('m2-next').addEventListener('click', function(){ m2Flow.skip(); });
+
+  /* ---- La forme remise juste, à partir de CELLE de l'enfant (elle bouge peu, il reconnaît son dessin) ---- */
+  function angOf(v){ return Math.atan2(v[1], v[0]); }
+  function dirV(th, r){ return [r*Math.cos(th), r*Math.sin(th)]; }
+  function normDeg(a){ while(a > Math.PI) a -= 2*Math.PI; while(a <= -Math.PI) a += 2*Math.PI; return a; }
+  // Deux demi-droites (angles th1, th2) ramenées à un écart d'exactement 90°, en tournant chacune de la moitié de l'erreur.
+  function squareUp(th1, th2){
+    var d = normDeg(th2 - th1), target = d >= 0 ? Math.PI/2 : -Math.PI/2, fix = (d - target)/2;
+    return [th1 + fix, th2 - fix];
+  }
+  function fitInBox(P){
+    var xs = P.map(function(p){ return p[0]; }), ys = P.map(function(p){ return p[1]; });
+    var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs), minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+    var k = Math.min(1, 220/Math.max(maxX-minX, 1), 220/Math.max(maxY-minY, 1));
+    var cx = (minX+maxX)/2, cy = (minY+maxY)/2;
+    P = P.map(function(p){ return [cx + (p[0]-cx)*k, cy + (p[1]-cy)*k]; });
+    var xs2 = P.map(function(p){ return p[0]; }), ys2 = P.map(function(p){ return p[1]; });
+    var lx = Math.min.apply(null, xs2), hx = Math.max.apply(null, xs2), ly = Math.min.apply(null, ys2), hy = Math.max.apply(null, ys2);
+    var dx = lx < 20 ? 20-lx : (hx > 240 ? 240-hx : 0), dy = ly < 20 ? 20-ly : (hy > 240 ? 240-hy : 0);
+    return P.map(function(p){ return [p[0]+dx, p[1]+dy]; });
+  }
+  function m2Ideal(){
+    var n = pts.length, i, out = null;
+    if(n === 4){
+      var c = [(pts[0][0]+pts[1][0]+pts[2][0]+pts[3][0])/4, (pts[0][1]+pts[1][1]+pts[2][1]+pts[3][1])/4];
+      var a = [(pts[0][0]-pts[2][0])/2, (pts[0][1]-pts[2][1])/2], b = [(pts[1][0]-pts[3][0])/2, (pts[1][1]-pts[3][1])/2];
+      var la = Math.hypot(a[0], a[1]), lb = Math.hypot(b[0], b[1]), ta = angOf(a), tb = angOf(b);
+      if(m2ShapeIdx === 0){ var q = squareUp(ta, tb); a = dirV(q[0], la); b = dirV(q[1], lb); }       // diagonales perpendiculaires → 4 côtés égaux
+      else if(m2ShapeIdx === 1){ var r = (la+lb)/2; a = dirV(ta, r); b = dirV(tb, r); }                   // diagonales égales → angles droits
+      out = [[c[0]+a[0], c[1]+a[1]], [c[0]+b[0], c[1]+b[1]], [c[0]-a[0], c[1]-a[1]], [c[0]-b[0], c[1]-b[1]]];   // (diagonales qui se coupent en leur milieu : parallélogramme)
+    } else if(m2ShapeIdx === 3){
+      var L = sidesAndAngles().lens, best = 9, bi = 0, bj = 1, j;
+      for(i=0;i<3;i++) for(j=i+1;j<3;j++){ var d = Math.abs(L[i]-L[j])/Math.max(L[i], L[j]); if(d < best){ best = d; bi = i; bj = j; } }
+      var v = bi===0 && bj===1 ? 1 : (bi===1 && bj===2 ? 2 : 0);      // sommet commun aux deux côtés presque égaux
+      var A = pts[(v+2)%3], B = pts[(v+1)%3], V = pts[v];
+      var avg = (dist(V, A) + dist(V, B))/2, uA = unit([A[0]-V[0], A[1]-V[1]]), uB = unit([B[0]-V[0], B[1]-V[1]]);
+      out = pts.map(function(p){ return p.slice(); });
+      out[(v+2)%3] = [V[0]+uA[0]*avg, V[1]+uA[1]*avg]; out[(v+1)%3] = [V[0]+uB[0]*avg, V[1]+uB[1]*avg];
+    } else if(m2ShapeIdx === 4){
+      var ang = sidesAndAngles().angles, bv = 0;
+      for(i=1;i<3;i++) if(Math.abs(ang[i]-90) < Math.abs(ang[bv]-90)) bv = i;
+      var V2 = pts[bv], A2 = pts[(bv+2)%3], B2 = pts[(bv+1)%3];
+      var vu = [A2[0]-V2[0], A2[1]-V2[1]], vw = [B2[0]-V2[0], B2[1]-V2[1]];
+      var qq = squareUp(angOf(vu), angOf(vw)), nu = dirV(qq[0], Math.hypot(vu[0], vu[1])), nw = dirV(qq[1], Math.hypot(vw[0], vw[1]));
+      out = pts.map(function(p){ return p.slice(); });
+      out[(bv+2)%3] = [V2[0]+nu[0], V2[1]+nu[1]]; out[(bv+1)%3] = [V2[0]+nw[0], V2[1]+nw[1]];
+    }
+    if(out){
+      out = fitInBox(out);
+      var keep = pts; pts = out;
+      var lv = M2_LEVELS[m2ShapeIdx], ok = lv.check(lv.tolGreat, lv.tolOk);
+      pts = keep;
+      if(ok.ok && !ok.approx) return out;
+    }
+    return m2Target.map(function(p){ return p.slice(); });   // repli : une forme juste tirée au départ
+  }
+  // Phrase qui nomme les longueurs ET les angles de la forme juste (mesurés sur le dessin affiché).
+  function m2Describe(P){
+    var keep = pts; pts = P;
+    var s = sidesAndAngles(), L = s.lens.map(function(l){ return cm1(l/SCALE2); }), A = s.angles.map(function(a){ return Math.round(a); });
+    pts = keep;
+    var txt;
+    if(m2ShapeIdx === 0) txt = 'Les 4 côtés mesurent ' + L[0] + ' cm.';
+    else if(m2ShapeIdx === 1) txt = 'Côtés : ' + L[0] + ' cm et ' + L[1] + ' cm. Les 4 angles mesurent 90°.';
+    else if(m2ShapeIdx === 2) txt = 'Côtés : ' + L[0] + ' cm et ' + L[1] + ' cm. Angles : ' + A[0] + '° et ' + A[1] + '°.';
+    else if(m2ShapeIdx === 3){
+      var sorted = s.lens.map(function(l, i){ return [l, i]; }).sort(function(x, y){ return x[0]-y[0]; });
+      var gap = [Math.abs(sorted[0][0]-sorted[1][0]), Math.abs(sorted[1][0]-sorted[2][0])], odd = gap[0] < gap[1] ? 2 : 0, eq = gap[0] < gap[1] ? sorted[0][1] : sorted[1][1];
+      txt = 'Deux côtés égaux de ' + L[eq] + ' cm, le troisième de ' + L[sorted[odd][1]] + ' cm.';
+    } else {
+      var right = A.indexOf(90) !== -1 ? A.indexOf(90) : 0, others = A.filter(function(x, i){ return i !== right; });
+      txt = 'Un angle droit de 90°, les deux autres de ' + others[0] + '° et ' + others[1] + '°.';
+    }
+    return txt;
+  }
+  // Fait glisser la forme de l'enfant vers la forme juste : les mesures bougent en direct sous ses yeux.
+  var m2MorphTimer = null;
+  function m2MorphTo(target, done){
+    var from = pts.map(function(p){ return p.slice(); });
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var t0 = null, DUR = 900;
+    cancelAnimationFrame(m2MorphTimer);
+    function step(ts){
+      if(t0 === null) t0 = ts;
+      var k = reduced ? 1 : Math.min(1, (ts - t0)/DUR), e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2)/2;
+      pts = from.map(function(p, i){ return [p[0] + (target[i][0]-p[0])*e, p[1] + (target[i][1]-p[1])*e]; });
+      drawDeform();
+      if(k < 1) m2MorphTimer = requestAnimationFrame(step); else if(done) done();
+    }
+    m2MorphTimer = requestAnimationFrame(step);
+  }
+  function m2Reveal(){
+    m2Revealed = true; deformFocusIdx = null;
+    drawDeform();
+    var svg = document.getElementById('deformSvg');
+    svg.setAttribute('aria-label', 'Forme corrigée. ' + m2Describe(pts));
+  }
   document.getElementById('m2-check').addEventListener('click', function(){
+    if(m2Flow.closed) return;
     var lv = M2_LEVELS[m2ShapeIdx];
     var res = lv.check(lv.tolGreat, lv.tolOk);
-    res.explain = M2_EXPLAIN[m2ShapeIdx];
-    res.solution = 'Voici un ' + M2_LEVELS[m2ShapeIdx].name.toLowerCase() + ' bien formé.';
+    // forme juste à montrer : celle de l'enfant si elle est déjà bien précise, sinon sa version remise droite
+    var willMorph = !res.ok || res.approx, ideal = willMorph ? m2Ideal() : null;
+    res.explain = M2_EXPLAIN[m2ShapeIdx] + ' ' + m2Describe(willMorph ? ideal : pts);
+    res.solution = 'Voici un ' + lv.name.toLowerCase() + ' bien formé.';
     var state = m2Flow.answer(res.ok, res);
-    if(state==='failed'){
-      deformFocusIdx = null;
-      pts = m2Target.map(function(p){ return p.slice(); });
-      drawDeform();
-    }
+    if(state === 'retry') return;
+    if(willMorph) m2MorphTo(ideal, m2Reveal); else m2Reveal();   // verdict d'abord, puis la forme se remet juste
   });
 
   function regularPoly(n, rot){
@@ -1431,7 +1599,18 @@
       return {
         tag:'Mesures', question:'Quelle est la plus grande longueur ?', sub:'Attention aux unités : 1 m = 100 cm.',
         explain:fmt(max) + ' est la plus grande : ' + vals.slice().sort(function(a,b){ return a-b; }).map(function(v){ return v + ' cm'; }).join(' < ') + '.',
-        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'📐')); },
+        draw:function(){
+          // une règle d'1 m graduée tous les 10 cm : le repère « 1 m = 100 cm » reste sous les yeux
+          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
+          var x0=24, k=1.5, y=104;
+          svg.appendChild(el('rect',{x:x0,y:y,width:100*k,height:34,rx:4,fill:'var(--accent3)','fill-opacity':0.45,stroke:'var(--text)','stroke-width':2}));
+          for(var c=0;c<=100;c+=10){
+            svg.appendChild(el('line',{x1:x0+c*k,y1:y,x2:x0+c*k,y2:y+(c%50===0 ? 20 : 12),stroke:'var(--text)','stroke-width':c%50===0 ? 2.5 : 1.5}));
+            if(c%50===0){ var t=svgText(x0+c*k, y+52, 15, c===100 ? '100 cm' : (c===0 ? '0' : '50 cm')); t.setAttribute('font-weight','800'); svg.appendChild(t); }
+          }
+          svg.appendChild(el('path',{d:'M '+x0+' '+(y-10)+' v -8 h '+(100*k)+' v 8',fill:'none',stroke:'var(--accent)','stroke-width':3}));
+          var tm=svgText(x0+50*k, y-30, 24, '1 m = 100 cm'); tm.setAttribute('font-weight','800'); svg.appendChild(tm);
+        },
         cols3:false,
         choices: vals.map(function(v){ return { label:fmt(v), ok:v===max }; })
       };

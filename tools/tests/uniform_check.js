@@ -30,7 +30,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     'deform':       { fb:'m2-feedback', skip:'m2-next', tries:3,
       right: `pts=m2Target.map(function(p){return p.slice();}); document.getElementById('m2-check').click()`,
       wrong: `pts=(m2ShapeIdx>=3 ? [[20,20],[240,30],[130,45]] : [[20,20],[240,20],[200,60],[40,200]]); document.getElementById('m2-check').click()`,
-      solved: `m2Target.every(function(p,i){ return p[0]===pts[i][0] && p[1]===pts[i][1]; })` },
+      solved: `(function(){ var lv=M2_LEVELS[m2ShapeIdx], r=lv.check(lv.tolGreat, lv.tolOk); return m2Revealed && r.ok && !r.approx; })()` },   // la forme se remet juste sous les yeux (~1 s)
     'clock-regler': { fb:'m5r-feedback', skip:'m5r-new', tries:3,
       right: `m5rHourTick=Math.round((((m5Target.hour%12)+m5Target.minute/60)*30)/15)%24; m5rMinTick=Math.round(m5Target.minute*6/M5R_MIN_STEP[m5Target.level])%Math.round(360/M5R_MIN_STEP[m5Target.level]); document.getElementById('m5r-check').click()`,
       wrong: `m5rHourTick=(Math.round((((m5Target.hour%12)+m5Target.minute/60)*30)/15)+6)%24; document.getElementById('m5r-check').click()`,
@@ -121,7 +121,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
       } else {
         chk(s.shown && !s.good && s.rowHidden && s.tappable, (f.tries === 1 ? 'erreur' : 'raté n°3') + ' : question fermée');
         chk(await streak() === 0, 'série remise à 0');
-        if (f.solved) chk(await ev(f.solved), 'la solution est affichée');
+        if (f.solved) { await page.waitForTimeout(1200); chk(await ev(f.solved), 'la solution est affichée'); }
       }
     }
 
