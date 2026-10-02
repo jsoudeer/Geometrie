@@ -7,11 +7,11 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   const ev = c => page.evaluate(x => window.__t.__eval(x), c);
   let bad = 0; const chk = (ok, msg) => { console.log(ok ? '  ok' : '  ✘', msg); if (!ok) bad++; };
   await ev(`appMode='manual'; manualFamily='clock-regler'; globalLevel=0; generateFamilyQuestion('clock-regler'); m5Target.hour=3; m5Target.minute=30; m5rHourTick=0; m5rMinTick=0; drawSettableClock();`);
-  // petite aiguille : 3 h 30 → 7 crans de 15° (à mi-chemin entre 3 et 4) ; grande : 1 cran (sur le 6)
+  // petite aiguille : 3 h 30 → 3 crans (heure 3) ; grande : 1 cran (sur le 6), la petite se décale alors d'elle-même
   await page.focus('#m5ClockSvg [data-hand="hour"]');
-  for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowRight');
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
   chk(await page.evaluate(() => document.activeElement.getAttribute('data-hand')) === 'hour', 'le focus reste sur la petite aiguille après chaque cran');
-  chk(await page.evaluate(() => document.activeElement.getAttribute('aria-valuetext')) === 'entre le 3 et le 4', 'position annoncée : ' + await page.evaluate(() => document.activeElement.getAttribute('aria-valuetext')));
+  chk(await page.evaluate(() => document.activeElement.getAttribute('aria-valuetext')) === 'sur le 3', 'position annoncée : ' + await page.evaluate(() => document.activeElement.getAttribute('aria-valuetext')));
   await page.keyboard.press('Tab');
   chk(await page.evaluate(() => document.activeElement.getAttribute('data-hand')) === 'minute', 'Tab passe à la grande aiguille');
   await page.keyboard.press('ArrowRight');

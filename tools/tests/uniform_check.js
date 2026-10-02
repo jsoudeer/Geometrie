@@ -32,10 +32,10 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
       wrong: `pts=(m2ShapeIdx>=3 ? [[20,20],[240,30],[130,45]] : [[20,20],[240,20],[200,60],[40,200]]); document.getElementById('m2-check').click()`,
       solved: `(function(){ var lv=M2_LEVELS[m2ShapeIdx], r=lv.check(lv.tolGreat, lv.tolOk); return m2Revealed && r.ok && !r.approx; })()` },   // la forme se remet juste sous les yeux (~1 s)
     'clock-regler': { fb:'m5r-feedback', skip:'m5r-new', tries:3,
-      right: `m5rHourTick=Math.round((((m5Target.hour%12)+m5Target.minute/60)*30)/15)%24; m5rMinTick=Math.round(m5Target.minute*6/M5R_MIN_STEP[m5Target.level])%Math.round(360/M5R_MIN_STEP[m5Target.level]); document.getElementById('m5r-check').click()`,
-      wrong: `m5rHourTick=(Math.round((((m5Target.hour%12)+m5Target.minute/60)*30)/15)+6)%24; document.getElementById('m5r-check').click()`,
+      right: `m5rHourTick=m5Target.hour%12; m5rMinTick=Math.round(m5Target.minute*6/M5R_MIN_STEP[m5Target.level])%Math.round(360/M5R_MIN_STEP[m5Target.level]); document.getElementById('m5r-check').click()`,
+      wrong: `m5rHourTick=(m5Target.hour+6)%12; document.getElementById('m5r-check').click()`,
       // la solution affichée doit passer la vérification : on la revérifie en interne
-      solved: `(function(){ var l=m5Target.level, e=((m5Target.hour%12)+m5Target.minute/60)*30, d=Math.abs(m5rHourTick*M5R_HOUR_STEP[l]-e)%360; d=Math.min(d,360-d); return d<=M5R_HOUR_TOL[l] && Math.abs(m5rMinTick*M5R_MIN_STEP[l]-m5Target.minute*6)%360<0.01; })()` },
+      solved: `m5rHourTick===m5Target.hour%12 && m5rMinutes()===m5Target.minute` },
     'atelier-sym':  { fb:'at-atelier-sym-fb', skip:'at-atelier-sym-next', tries:3,
       right: `atSym.mine=atSym.solution.map(function(r){return r.slice();}); document.getElementById('at-atelier-sym-check').click()`,
       wrong: `atSym.mine=atSym.solution.map(function(r){return r.map(function(){return false;});}); document.getElementById('at-atelier-sym-check').click()`,
