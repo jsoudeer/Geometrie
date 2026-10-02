@@ -914,6 +914,75 @@
       transition-duration:.01ms !important; scroll-behavior:auto !important;
     }
   }
+  /* ===== Évolutions des personnages (niveau 1 « Évolué », niveau 2 « Ultime ») =====
+     Posées sur le conteneur de l'image (classe evo-1 / evo-2 + data-evo-clan) par
+     applyEvoLook() (boutique.js) : fonctionne pour tous les affichages (boutique,
+     bataille, aperçu, mascotte) et pour les images comme pour les dessins. */
+  :where(.evo-1, .evo-2){ position:relative; }
+  .evo-1, .evo-2{ --evo-c:#FF8FC1; --evo-c2:#FFE27A; border-radius:14px; }
+  .evo-1[data-evo-clan="cats"]{ --evo-c:#FF8FC1; --evo-c2:#FFD4E8; }
+  .evo-2[data-evo-clan="cats"]{ --evo-c:#FFC83D; --evo-c2:#FF8FC1; }
+  .evo-1[data-evo-clan="brainrot"]{ --evo-c:#3DDC97; --evo-c2:#B8FF5A; }
+  .evo-2[data-evo-clan="brainrot"]{ --evo-c:#FF3DE0; --evo-c2:#B8FF5A; }
+  .evo-1{ box-shadow:0 0 0 2px var(--evo-c), 0 0 10px var(--evo-c); }
+  .evo-2{ box-shadow:0 0 0 3px var(--evo-c), 0 0 0 5px var(--evo-c2), 0 0 18px var(--evo-c); animation:evoPulse 2.2s ease-in-out infinite; }
+  .evo-1 > img, .evo-1 > svg{ filter:drop-shadow(0 0 4px var(--evo-c)); }
+  .evo-2 > img, .evo-2 > svg{ filter:drop-shadow(0 0 7px var(--evo-c)) drop-shadow(0 0 2px var(--evo-c2)); }
+  .evo-2 > .sp-custom-img, .evo-2 > .sp-full-img{ transform:scale(1.06); }
+  .evo-2[data-evo-clan="brainrot"] > img{ animation:evoGlitch 2.6s steps(1) infinite; }
+  .evo-badge{ position:absolute; left:3px; bottom:3px; z-index:3; pointer-events:none; font-size:11px; line-height:1; font-weight:900;
+    color:#5A3600; background:#FFE27A; border:1.5px solid #B57A00; border-radius:9px; padding:1px 4px; letter-spacing:-1px; }
+  .evo-spark{ position:absolute; z-index:3; pointer-events:none; font-size:12px; line-height:1; animation:evoTwinkle 1.8s ease-in-out infinite; }
+  .evo-spark.s0{ top:2px; right:3px; }
+  .evo-spark.s1{ top:38%; left:1px; animation-delay:.6s; }
+  .evo-spark.s2{ bottom:34%; right:1px; animation-delay:1.2s; }
+  @keyframes evoPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.12); } }
+  @keyframes evoTwinkle{ 0%,100%{ opacity:.25; transform:scale(.7) rotate(0); } 50%{ opacity:1; transform:scale(1.2) rotate(18deg); } }
+  @keyframes evoGlitch{ 0%,88%,100%{ transform:scale(1.06) translate(0,0); } 90%{ transform:scale(1.06) translate(-2px,1px); } 94%{ transform:scale(1.06) translate(2px,-1px); } }
+  .info-art.evo-1, .info-art.evo-2{ padding:8px; }
+  .sprite-card .sp-evo-btn{ min-height:32px; border:2px solid var(--control-border, var(--border)); border-radius:10px; background:var(--surface2); color:var(--text);
+    font-family:var(--font-body); font-weight:800; font-size:11.5px; line-height:1.15; padding:4px 6px; cursor:pointer; }
+  .sprite-card .sp-evo-btn:not([disabled]){ background:var(--accent2); border-color:var(--accent2); color:var(--on-accent); }
+  .sprite-card .sp-evo-btn[disabled]{ opacity:.55; cursor:default; }
+  .sprite-card .sp-evo-btn.max{ opacity:1; background:transparent; border-style:dashed; color:var(--text-soft); }
+  @media (prefers-reduced-motion: reduce){ .evo-2, .evo-spark, .evo-2[data-evo-clan="brainrot"] > img{ animation:none; } .evo-spark{ opacity:.9; } }
+  /* ===== Bataille : effets sonores affichés, charge, boost, secousse ===== */
+  .sr-only{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+  .bt-mid{ position:relative; margin:6px 0; display:flex; align-items:center; justify-content:center; }
+  /* l'effet se pose au milieu du terrain, par-dessus les cartes (aucune place réservée) */
+  .bt-sfx{ position:absolute; left:0; right:0; top:50%; height:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:7; }
+  .sfx-word{ display:flex; flex-direction:column; align-items:center; gap:4px; transform:rotate(var(--rot,0deg)); animation:sfxPop .45s cubic-bezier(.2,1.6,.4,1) both; }
+  .sfx-text{ font-family:var(--font-display); font-weight:900; font-size:46px; line-height:1; letter-spacing:1px; color:#FFF6CF;
+    -webkit-text-stroke:3px #3B2A20; paint-order:stroke fill; text-shadow:0 3px 0 #3B2A20, 0 0 18px var(--sfx-c,#FF8A3D); padding:6px 16px;
+    background:radial-gradient(closest-side, var(--sfx-c,#FF8A3D) 0%, transparent 100%); }
+  .sfx-sub{ font-weight:800; font-size:13px; line-height:1.25; color:var(--text); background:var(--surface); border:2px solid var(--border); border-radius:12px; padding:3px 10px; max-width:92%; text-align:center; }
+  .sfx-word.hit{ --sfx-c:#FF8A3D; }
+  .sfx-word.shot{ --sfx-c:#3DB4FF; }
+  .sfx-word.shot .sfx-text{ font-size:42px; transform:skewX(-8deg); }
+  .sfx-word.boost{ --sfx-c:#FFC83D; }
+  .sfx-word.ko{ --sfx-c:#FF4D5E; }
+  .sfx-word.ko .sfx-text{ font-size:56px; }
+  .sfx-word.heal{ --sfx-c:#3DDC97; }
+  .sfx-word.enter{ --sfx-c:#B79CED; }
+  @keyframes sfxPop{ 0%{ transform:rotate(var(--rot,0deg)) scale(.2); opacity:0; } 60%{ transform:rotate(var(--rot,0deg)) scale(1.25); opacity:1; } 100%{ transform:rotate(var(--rot,0deg)) scale(1); opacity:1; } }
+  .bcard.charging{ animation:btCharge .65s ease-in-out; z-index:4; }
+  .bcard.targeted{ box-shadow:0 0 0 3px var(--bad), 0 0 14px var(--bad); }
+  @keyframes btCharge{ 0%{ transform:scale(1); } 40%{ transform:scale(1.12) rotate(-2deg); filter:brightness(1.15); } 70%{ transform:scale(1.12) rotate(2deg); filter:brightness(1.15); } 100%{ transform:scale(1.06); } }
+  .bt-shake{ animation:btShake .45s; }
+  @keyframes btShake{ 0%,100%{ transform:translate(0,0); } 15%{ transform:translate(-6px,3px); } 35%{ transform:translate(6px,-3px); } 55%{ transform:translate(-4px,-2px); } 75%{ transform:translate(3px,2px); } }
+  .boost-tag{ position:absolute; top:-9px; left:50%; transform:translateX(-50%); z-index:5; white-space:nowrap; pointer-events:none;
+    font-family:var(--font-display); font-weight:900; font-size:11px; color:#3B2A20; background:#FFC83D; border:2px solid #B57A00; border-radius:10px; padding:1px 7px; animation:boostBob 1.1s ease-in-out infinite; }
+  .bcard.boosted{ box-shadow:0 0 0 3px #FFC83D, 0 0 16px #FFC83D; }
+  @keyframes boostBob{ 0%,100%{ transform:translateX(-50%) translateY(0); } 50%{ transform:translateX(-50%) translateY(-3px); } }
+  .bt-boost{ width:100%; background:var(--surface2); border:3px solid #FFC83D; border-radius:16px; padding:10px; text-align:center; animation:sfxPop .4s both; }
+  .bt-boost-title{ margin:0 0 8px; font-family:var(--font-display); font-weight:900; font-size:15px; }
+  .bt-boost-row{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .bt-boost-btn{ flex:1 1 130px; min-height:48px; font-size:16px; }
+  .bt-boost-none{ margin-top:8px; min-height:36px; font-size:13px; }
+  @media (prefers-reduced-motion: reduce){
+    .sfx-word, .bt-boost{ animation:none; } .bcard.charging, .bt-shake, .boost-tag{ animation:none; }
+  }
+  .bcard-art .evo-badge{ bottom:auto; top:-3px; left:-3px; }
   /* ===================== GUIDES (tutoriels en surbrillance) =====================
      Un voile sombre avec un « trou » autour de l'élément expliqué (ombre géante du
      cadre .guide-spot), et une bulle d'explication. Au-dessus de tout (z-index 6000). */
@@ -1266,6 +1335,8 @@
                 <li>Quand tu attaques, la carte visée perd autant de points que ton attaquant en a, et ton attaquant perd autant de points que la carte adverse en avait. Une carte à 0 est battue.</li>
                 <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain, puis <strong>+2 points à chaque allié à la fin de chaque tour</strong> de son camp.</li>
                 <li>🏹 L'<strong>Archer</strong> attaque de loin : il n'est jamais blessé en retour.</li>
+                <li>🎁 <strong>Boost</strong> : tous les 3 tours, un boost apparaît sur une de tes cartes. Tu choisis : <strong>✖️2</strong> (dégâts doublés) ou un nombre de <strong>dégâts fixes</strong>, qui vaut tantôt autant que le double, tantôt 30 % de moins, tantôt 30 % de plus. Calcule le double des points de ta carte pour choisir le meilleur !</li>
+                <li>⬆ <strong>Évolutions</strong> (Boutique) : chaque personnage peut évoluer 2 fois (Évolué, puis Ultime). Chaque évolution coûte le prix d'achat du personnage et ajoute 20 % de ses points de base.</li>
                 <li>Ton équipe : jusqu'à 3 classiques, 1 soutien et 1 archer. Soutien et archer ne sont pas obligatoires : à toi de choisir ! L'équipe adverse a la même composition que la tienne. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
               </ul>
             </details>
@@ -1298,7 +1369,18 @@
               <div class="bt-field" id="bt-enemy-field"></div>
               <p class="bt-reserve" id="bt-enemy-reserve"></p>
             </div>
-            <div class="bt-log" id="bt-log" role="log" aria-live="polite"></div>
+            <div class="bt-mid">
+              <div class="bt-sfx" id="bt-sfx" aria-hidden="true"></div>
+              <div class="bt-boost" id="bt-boost" role="group" aria-label="Choix du boost" hidden>
+                <p class="bt-boost-title">🎁 Boost : lequel fait le plus de dégâts ?</p>
+                <div class="bt-boost-row">
+                  <button class="btn bt-boost-btn" id="bt-boost-x2" type="button"></button>
+                  <button class="btn bt-boost-btn" id="bt-boost-fixed" type="button"></button>
+                </div>
+                <button class="btn ghost bt-boost-none" id="bt-boost-none" type="button">Attaquer sans boost</button>
+              </div>
+            </div>
+            <div class="sr-only" id="bt-log" role="log" aria-live="polite"></div>
             <div class="bt-side">
               <p class="bt-side-title">Ton équipe</p>
               <div class="bt-field" id="bt-player-field"></div>
@@ -7504,10 +7586,10 @@
   // Les fonds des pastilles de rareté sont assez foncés pour que le texte
   // blanc posé dessus soit lisible (contraste ≥ 4,5:1, accessibilité).
   var RARITY_META = {
-    commun:     { label:'Commun',     cost:8,  color:'#595959' },
-    rare:       { label:'Rare',       cost:15, color:'#1D5EA6' },
-    epique:     { label:'Épique',     cost:28, color:'#7B3FB8' },
-    legendaire: { label:'Légendaire', cost:45, color:'#8A5200' },
+    commun:     { label:'Commun',     cost:6,  color:'#595959' },
+    rare:       { label:'Rare',       cost:12, color:'#1D5EA6' },
+    epique:     { label:'Épique',     cost:24, color:'#7B3FB8' },
+    legendaire: { label:'Légendaire', cost:40, color:'#8A5200' },
     defi:       { label:'Défi',       cost:0,  color:'#A3246B' }
   };
   var CAT_COLORS   = ['#FFC2D1','#FFE29A','#C9F2C6','#BFE3FF','#E4C9FF','#FFD6B0','#C6FFF2','#F2C6E0',
@@ -7586,15 +7668,15 @@
     mkSprite('br20','Biscottino Blitz','legendaire',3,'propeller',[10,9,8,9])
   ];
 
-  // Rôles des personnages de base + personnages de départ (3 classiques, 1
-  // soutien, 1 archer par clan : de quoi former une équipe tout de suite).
+  // Rôles des personnages de base + personnage de départ (le premier de chaque clan).
   var ROLE_BY_ID = {
     cat04:'support', cat10:'support', cat14:'support', cat18:'support',
     cat05:'archer',  cat11:'archer',  cat16:'archer',  cat20:'archer',
     br04:'support',  br10:'support',  br14:'support',  br18:'support',
     br05:'archer',   br11:'archer',   br16:'archer',   br20:'archer'
   };
-  var STARTER_IDS = ['cat01','cat02','cat03','cat04','cat05','br01','br02','br03','br04','br05'];
+  // Un seul personnage offert par clan : les autres s'achètent (équipe de 5 communs ≈ 24 ⭐).
+  var STARTER_IDS = ['cat01','br01'];
   CAT_SPRITES.concat(BRAINROT_SPRITES).forEach(function(sp){
     if(ROLE_BY_ID[sp.id]) sp.role = ROLE_BY_ID[sp.id];
     if(STARTER_IDS.indexOf(sp.id) !== -1){ sp.starter = true; sp.cost = 0; }
@@ -7837,11 +7919,32 @@
     }
     attempt();
   }
-  function renderSpriteVisual(container, sprite){
+  // Cadre, aura et étoiles d'évolution posés sur le conteneur (CSS : .evo-1 / .evo-2, par clan).
+  function applyEvoLook(container, sprite, level){
+    ['evo-1','evo-2'].forEach(function(c){ container.classList.remove(c); });
+    Array.prototype.slice.call(container.querySelectorAll(':scope > .evo-badge, :scope > .evo-spark')).forEach(function(n){ n.remove(); });
+    if(level === undefined) level = spriteEvo(sprite);
+    container.removeAttribute('data-evo-clan');
+    if(!level) return;
+    container.classList.add('evo-' + level);
+    container.setAttribute('data-evo-clan', spriteSide(sprite));
+    var badge = document.createElement('span');
+    badge.className = 'evo-badge'; badge.setAttribute('aria-hidden','true');
+    badge.textContent = level === 2 ? '★★' : '★';
+    container.appendChild(badge);
+    for(var i=0;i<(level===2?3:2);i++){
+      var sp = document.createElement('span');
+      sp.className = 'evo-spark s' + i; sp.setAttribute('aria-hidden','true');
+      sp.textContent = spriteSide(sprite)==='cats' ? ['✨','💖','✨'][i] : ['⚡','🔥','⚡'][i];
+      container.appendChild(sp);
+    }
+  }
+  function renderSpriteVisual(container, sprite, level){
     var svg = document.createElementNS(svgNS,'svg');
     container.appendChild(svg);
     drawSpriteInto(svg, sprite);
     tryLoadCustomImage(container, svg, sprite);
+    applyEvoLook(container, sprite, level);
     return svg;
   }
 
@@ -7874,15 +7977,16 @@
     }
     attempt();
   }
-  function renderCreatureVisual(container, sprite, mode){
+  function renderCreatureVisual(container, sprite, mode, level){
     container.innerHTML = '';
     if(mode !== 'full'){
-      renderSpriteVisual(container, sprite);
+      renderSpriteVisual(container, sprite, level);
       return;
     }
     var side = spriteSide(sprite);
+    applyEvoLook(container, sprite, level);
     tryLoadFullBodyImage(sprite, side, function(img){
-      container.appendChild(img);
+      container.insertBefore(img, container.firstChild);
     }, function(){
       var wrap = document.createElement('div');
       wrap.className = 'fullbody-compose';
@@ -7892,8 +7996,8 @@
       var faceWrap = document.createElement('div');
       faceWrap.className = 'fb-face';
       wrap.appendChild(faceWrap);
-      renderSpriteVisual(faceWrap, sprite);
-      container.appendChild(wrap);
+      renderSpriteVisual(faceWrap, sprite, 0);
+      container.insertBefore(wrap, container.firstChild);
     });
   }
 
@@ -7918,6 +8022,42 @@
       localStorage.setItem('geo_owned_cats', JSON.stringify(Object.keys(ownedCats)));
       localStorage.setItem('geo_owned_brain', JSON.stringify(Object.keys(ownedBrain)));
     }catch(e){}
+  }
+  /* ---- Évolutions : 2 montées par personnage (0 = de base, 1 = Évolué, 2 = Ultime).
+     Chaque montée coûte le prix d'achat du personnage (rareté ; 12 ⭐ pour un personnage
+     de défi, qui est gratuit) et ajoute 20 % de ses points de base (au moins +1). ---- */
+  var EVO_MAX = 2, EVO_BONUS = 0.2, EVO_REWARD_COST = 12;
+  var EVO_NAMES = ['De base','Évolué','Ultime'];
+  var evoCats = {}, evoBrain = {};
+  (function loadEvo(){
+    try{
+      [['geo_evo_cats',evoCats],['geo_evo_brain',evoBrain]].forEach(function(pair){
+        var o = JSON.parse(localStorage.getItem(pair[0])||'{}') || {};
+        Object.keys(o).forEach(function(id){ var v = parseInt(o[id],10); if(v>=1 && v<=EVO_MAX) pair[1][id] = v; });
+      });
+    }catch(e){}
+  })();
+  function saveEvo(){
+    try{
+      localStorage.setItem('geo_evo_cats', JSON.stringify(evoCats));
+      localStorage.setItem('geo_evo_brain', JSON.stringify(evoBrain));
+    }catch(e){}
+  }
+  function evoMapFor(sprite){ return CAT_SPRITES.indexOf(sprite) >= 0 ? evoCats : evoBrain; }
+  function spriteEvo(sprite){ return evoMapFor(sprite)[sprite.id] || 0; }
+  function evoGain(sprite){ return Math.max(1, Math.round(sprite.pts * EVO_BONUS)); }
+  // Points d'un personnage à un niveau d'évolution donné (par défaut : le niveau possédé).
+  function spritePts(sprite, level){
+    if(level === undefined) level = spriteEvo(sprite);
+    return sprite.pts + level * evoGain(sprite);
+  }
+  function evoCost(sprite){ return sprite.rarity === 'defi' ? EVO_REWARD_COST : RARITY_META[sprite.rarity].cost; }
+  function tryEvolve(sprite){
+    var lvl = spriteEvo(sprite);
+    if(lvl >= EVO_MAX || !trySpendStars(evoCost(sprite))) return false;
+    evoMapFor(sprite)[sprite.id] = lvl + 1;
+    saveEvo();
+    return true;
   }
   function trySpendStars(n){
     if(stars < n) return false;
@@ -8035,7 +8175,7 @@
       body.appendChild(art);
       var role = document.createElement('p');
       role.className = 'muted';
-      role.textContent = roleLine(sprite) + ' · ' + RARITY_META[sprite.rarity].label;
+      role.textContent = roleLine(sprite) + ' · ' + RARITY_META[sprite.rarity].label + ' · ' + EVO_NAMES[spriteEvo(sprite)];
       body.appendChild(role);
     });
   }
@@ -8145,7 +8285,7 @@
   }
   function roleLine(sprite){
     var m = BT_ROLE_META[sprite.role];
-    return m.icon + ' ' + m.label + ' · ❤️ ' + sprite.pts;
+    return m.icon + ' ' + m.label + ' · ❤️ ' + spritePts(sprite);
   }
   function buildSpriteShopCard(sprite, isOwned){
     var card = document.createElement('div');
@@ -8179,6 +8319,32 @@
         renderShop();
       });
       card.appendChild(mascotBtn);
+      var lvl = spriteEvo(sprite);
+      var evoBtn = document.createElement('button');
+      evoBtn.type = 'button';
+      evoBtn.className = 'sp-evo-btn';
+      if(lvl >= EVO_MAX){
+        evoBtn.disabled = true; evoBtn.classList.add('max');
+        evoBtn.textContent = '🌟 Ultime (max)';
+        evoBtn.setAttribute('aria-label', sprite.name + ' est au niveau maximum : Ultime');
+      } else {
+        var gain = evoGain(sprite), cost = evoCost(sprite);
+        evoBtn.textContent = '⬆ ' + EVO_NAMES[lvl+1] + ' · ' + cost + ' ⭐ (+' + gain + ' ❤️)';
+        evoBtn.setAttribute('aria-label', 'Faire évoluer ' + sprite.name + ' au niveau ' + EVO_NAMES[lvl+1] + ' pour ' + cost + ' étoiles, plus ' + gain + ' points');
+        if(stars < cost) evoBtn.disabled = true;
+        evoBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          if(tryEvolve(sprite)){
+            playSound('good');
+            renderShop();
+            renderBtSetup();
+            renderMascotDock();
+            renderTopMascotIcon();
+            showReveal([sprite], 'Évolution : ' + EVO_NAMES[spriteEvo(sprite)] + ' !');
+          }
+        });
+      }
+      card.appendChild(evoBtn);
     } else if(isReward){
       card.classList.add('reward-locked');
       var lock = document.createElement('div'); lock.className='sp-cost'; lock.textContent = '🔒 Défi à relever';
@@ -8341,13 +8507,15 @@
      débloqués, mascotte, équipes de bataille et série en cours. Les
      réglages (thème, effets, affichage) sont conservés. ---- */
   function resetProgress(){
-    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_evo_cats','geo_evo_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
       try{ localStorage.removeItem(k); }catch(e){}
     });
     stars = 0;
     document.getElementById('starCount').textContent = '0';
     Object.keys(ownedCats).forEach(function(k){ delete ownedCats[k]; });
     Object.keys(ownedBrain).forEach(function(k){ delete ownedBrain[k]; });
+    Object.keys(evoCats).forEach(function(k){ delete evoCats[k]; });
+    Object.keys(evoBrain).forEach(function(k){ delete evoBrain[k]; });
     // On ne garde que le PREMIER personnage de chaque clan, qui redevient la mascotte.
     var firstCat = CAT_SPRITES.filter(function(sp){ return sp.starter; })[0];
     var firstBrain = BRAINROT_SPRITES.filter(function(sp){ return sp.starter; })[0];
@@ -8395,13 +8563,22 @@
        obligatoire, il faut au moins 1 carte) ; l'équipe adverse a la même
        composition ; 3 cartes tirées au hasard sont posées sur le terrain, et une carte de la réserve entre
        dès qu'une carte est battue (à 0 point ou moins) ;
-     - le camp qui n'a plus aucune carte (terrain + réserve) a perdu. */
+     - le camp qui n'a plus aucune carte (terrain + réserve) a perdu ;
+     - évolutions (boutique) : spritePts() ajoute 20 % des points de base par niveau ;
+     - BOOST : au début de chaque 3e tour du joueur, un boost apparaît devant une de ses
+       cartes (tant qu'il n'est pas utilisé). Au choix : « ×2 » (dégâts doublés) ou
+       « N dégâts fixes », N valant tour à tour le double, 30 % de moins ou 30 % de plus
+       que le double (BT_BOOST_FACTORS) : il faut calculer pour bien choisir. */
   var BT_ROLE_META = {
     classic:{ label:'Classique', icon:'⚔️' },
     support:{ label:'Soutien',   icon:'💖' },
     archer: { label:'Archer',    icon:'🏹' }
   };
   var BT_FIELD_SIZE = 3, BT_SUPPORT_BONUS = 5, BT_SUPPORT_TURN = 2;
+  var BT_BOOST_EVERY = 3, BT_BOOST_FACTORS = [1, 0.7, 1.3];
+  // Vitesse du déroulé (1 = lent, pour bien voir attaques et conséquences ; les tests l'accélèrent).
+  var BT_SPEED = 1;
+  function btT(ms){ return Math.round(ms * BT_SPEED); }
   var BT_ROLE_ORDER = ['classic','support','archer'];
   var BT_LIMITS = { classic:3, support:1, archer:1 };
 
@@ -8447,16 +8624,20 @@
       renderSpriteVisual(card, sprite);
       var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
       card.appendChild(nameEl);
-      var pts = document.createElement('div'); pts.className='sp-role'; pts.textContent = '❤️ ' + sprite.pts + ' points';
-      card.appendChild(pts);
+      var pts = document.createElement('div'); pts.className='sp-role';
+      card.appendChild(pts); card._pts = pts; card._evo = -1;
       card.addEventListener('click', function(){ btToggleSetup(sprite); });
     }
     return card;
   }
   function btUpdateSetupCard(card, sprite, picked, full){
+    var evo = spriteEvo(sprite), pts = spritePts(sprite);
     card.className = 'sprite-card owned' + (picked ? ' selected' : '') + (full && !picked ? ' is-full' : '');
+    if(card._evo !== evo){ card._evo = evo; applyEvoLook(card, sprite, evo); }
+    else if(evo) card.classList.add('evo-' + evo);
+    card._pts.textContent = '❤️ ' + pts + ' points';
     card.setAttribute('aria-pressed', picked ? 'true' : 'false');
-    card.setAttribute('aria-label', sprite.name + ', ' + BT_ROLE_META[sprite.role].label + ', ' + sprite.pts + ' points' + (picked ? ', choisi' : ''));
+    card.setAttribute('aria-label', sprite.name + ', ' + BT_ROLE_META[sprite.role].label + (evo ? ', ' + EVO_NAMES[evo] : '') + ', ' + pts + ' points' + (picked ? ', choisi' : ''));
   }
   // Clic sur un personnage : on le retire s'il est choisi ; sinon on l'ajoute,
   // et si la place est pleine, le PLUS ANCIEN choisi de ce rôle sort.
@@ -8478,7 +8659,7 @@
       var mine = btMyList().filter(function(x){ return x.role===role && owned[x.id]; });
       if(mode==='clear'){ sel[role] = []; return; }
       if(mode==='random') mine = btShuffle(mine);
-      else mine = mine.slice().sort(function(x,y){ return y.pts - x.pts; });
+      else mine = mine.slice().sort(function(x,y){ return spritePts(y) - spritePts(x); });
       sel[role] = mine.slice(0, BT_LIMITS[role]).map(function(x){ return x.id; });
     });
     saveBtSel();
@@ -8513,7 +8694,7 @@
     } else missEl.hidden = true;
     document.getElementById('bt-start').disabled = !ok;
     var total = 0;
-    BT_ROLE_ORDER.forEach(function(role){ sel[role].forEach(function(id){ var sp = findSprite(btMyList(), id); if(sp) total += sp.pts; }); });
+    BT_ROLE_ORDER.forEach(function(role){ sel[role].forEach(function(id){ var sp = findSprite(btMyList(), id); if(sp) total += spritePts(sp); }); });
     if(BT_DIFFS) document.getElementById('bt-diff-note').textContent = ok
       ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points.'
       : 'Choisis au moins une carte pour voir les points de tes adversaires.';
@@ -8523,7 +8704,7 @@
   }
 
   // Petite flèche/éclair qui vole de l'attaquant vers la carte visée.
-  function playAttackAnim(fromEl, toEl, emoji){
+  function playAttackAnim(fromEl, toEl, emoji, duration){
     var fromRect = fromEl.getBoundingClientRect(), toRect = toEl.getBoundingClientRect();
     var fx = fromRect.left+fromRect.width/2, fy = fromRect.top+fromRect.height/2;
     var tx = toRect.left+toRect.width/2, ty = toRect.top+toRect.height/2;
@@ -8534,13 +8715,18 @@
     bolt.style.left = fx+'px'; bolt.style.top = fy+'px';
     bolt.style.setProperty('--tx',(tx-fx)+'px');
     bolt.style.setProperty('--ty',(ty-fy)+'px');
+    bolt.style.animationDuration = (duration || 550) + 'ms';
     document.body.appendChild(bolt);
-    setTimeout(function(){ bolt.remove(); }, 550);
+    setTimeout(function(){ bolt.remove(); }, (duration || 550) + 50);
   }
 
   /* ---- Moteur de combat ---- */
   var bt = null, btUid = 0;
-  function btMakeUnit(sprite){ return { uid:++btUid, sprite:sprite, pts:sprite.pts, buffed:false }; }
+  // own = carte du joueur (points évolués) ; les cartes adverses restent à leurs points de base.
+  function btMakeUnit(sprite, own){
+    var evo = own ? spriteEvo(sprite) : 0, base = spritePts(sprite, evo);
+    return { uid:++btUid, sprite:sprite, pts:base, base:base, evo:evo, buffed:false };
+  }
   function btOnArrive(sideObj, unit, notes){
     if(unit.sprite.role === 'support'){
       sideObj.field.forEach(function(u){
@@ -8578,7 +8764,7 @@
   ];
   var btDiff = 1;
   try{ var savedDiff = parseInt(localStorage.getItem('geo_bt_diff'),10); if(savedDiff>=0 && savedDiff<BT_DIFFS.length) btDiff = savedDiff; }catch(e){}
-  function btTotal(units){ return units.reduce(function(sum, u){ return sum + u.sprite.pts; }, 0); }
+  function btTotal(units){ return units.reduce(function(sum, u){ return sum + u.base; }, 0); }
   // Équipe adverse : même composition que la tienne (mêmes nombres de classiques, soutien, archer),
   // tirée au hasard parmi les combinaisons dont le total est le plus proche de la cible (variété conservée).
   function btBuildEnemyTeam(myUnits){
@@ -8602,13 +8788,13 @@
     var best = cands[0].gap;
     var near = cands.filter(function(c){ return c.gap <= best; });    // ex æquo au plus près
     if(near.length < 6) near = cands.slice(0, 6).filter(function(c){ return c.gap <= best + 1; });
-    return pick_(near).team.map(btMakeUnit);
+    return pick_(near).team.map(function(sp){ return btMakeUnit(sp, false); });
   }
   function pick_(arr){ return arr[btRand(arr.length)]; }
   function btStart(){
     var side = btSide(), sel = btSel[side];
     var ids = sel.classic.concat(sel.support, sel.archer);
-    var myUnits = ids.map(function(id){ return btMakeUnit(findSprite(btMyList(), id)); });
+    var myUnits = ids.map(function(id){ return btMakeUnit(findSprite(btMyList(), id), true); });
     if(myUnits.length < 1 || myUnits.some(function(u){ return !u.sprite; })) return;
     var enUnits = btBuildEnemyTeam(myUnits);
     var myTotal = btTotal(myUnits), enTotal = btTotal(enUnits);   // avant que les cartes soient tirées sur le terrain
@@ -8616,7 +8802,8 @@
       side: side,
       pl: { field:[], reserve:myUnits },
       en: { field:[], reserve:enUnits },
-      phase: 'pick-attacker', selected: null, over: false, log: [], cards: {}, animateArrivals: false
+      phase: 'pick-attacker', selected: null, over: false, log: [], cards: {}, animateArrivals: false,
+      turn: 0, boost: null, boostChoice: null, factors: []
     };
     var notes = [];
     for(var i=0;i<BT_FIELD_SIZE;i++){ btDrawFromReserve(bt.pl, notes); btDrawFromReserve(bt.en, notes); }
@@ -8626,7 +8813,54 @@
     document.getElementById('bt-enemy-title').textContent = (side==='cats' ? 'Adversaires (Brainrots 👹)' : 'Adversaires (Chats Kawaii 🐱)') + ' · ❤️ ' + enTotal;
     var intro = 'Difficulté ' + BT_DIFFS[btDiff].name + ' : équipe adverse ❤️ ' + enTotal + ' points, la tienne ❤️ ' + myTotal + '.';
     btLog([intro].concat(notes), true);
-    btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
+    btClearSfx();
+    btStartPlayerTurn();
+  }
+  var BT_STATUS_PICK = 'À toi ! Touche une de tes cartes pour attaquer.';
+  // Début de chaque tour du joueur : tous les 3 tours, un boost apparaît devant une de ses cartes.
+  function btStartPlayerTurn(){
+    bt.turn++;
+    bt.phase = 'pick-attacker'; bt.selected = null; bt.boostChoice = null;
+    var spawned = false;
+    if(bt.turn % BT_BOOST_EVERY === 0 && !bt.boost && bt.pl.field.length){
+      if(!bt.factors.length) bt.factors = btShuffle(BT_BOOST_FACTORS.slice());
+      bt.boost = { unit: pick_(bt.pl.field), factor: bt.factors.pop() };
+      spawned = true;
+      btSfx('🎁 BOOST !', 'boost', { sub:'Une de tes cartes a un boost : choisis-le avec elle.', ms:2200 });
+      playSound('good');
+    }
+    btSetStatus(spawned ? '🎁 Un boost est apparu sur ' + bt.boost.unit.sprite.name + ' ! Touche cette carte pour le choisir (ou attaque avec une autre).' : BT_STATUS_PICK);
+    btRender();
+  }
+  // Valeurs du boost pour l'attaquant : « ×2 » = 2 fois ses points actuels ; « fixe » = le double ± 30 %.
+  function btBoostValues(unit){
+    var dbl = unit.pts * 2;
+    return { x2: dbl, fixed: Math.max(1, Math.round(dbl * bt.boost.factor)) };
+  }
+  function btBoostFor(unit){ return bt && bt.boost && bt.boost.unit === unit ? bt.boost : null; }
+  function btClearBoostIfGone(){
+    if(bt.boost && bt.pl.field.indexOf(bt.boost.unit) === -1) bt.boost = null;
+  }
+  function btRenderBoostPanel(){
+    var panel = document.getElementById('bt-boost');
+    if(!panel) return;
+    var show = !!(bt && !bt.over && bt.phase === 'pick-boost' && bt.selected && btBoostFor(bt.selected));
+    panel.hidden = !show;
+    if(!show) return;
+    var v = btBoostValues(bt.selected);
+    var bx = document.getElementById('bt-boost-x2'), bf = document.getElementById('bt-boost-fixed');
+    bx.textContent = '✖️2 dégâts doublés';
+    bf.textContent = '🎯 ' + v.fixed + ' dégâts fixes';
+    bx.setAttribute('aria-label', 'Boost : dégâts doublés');
+    bf.setAttribute('aria-label', 'Boost : ' + v.fixed + ' dégâts fixes');
+  }
+  function btChooseBoost(kind){
+    if(!bt || bt.phase !== 'pick-boost') return;
+    bt.boostChoice = kind;          // 'x2' | 'fixed' | 'none'
+    bt.phase = 'pick-target';
+    btSetStatus(kind === 'none'
+      ? bt.selected.sprite.name + ' attaque sans boost : touche la carte adverse à viser.'
+      : 'Boost choisi ! Touche la carte adverse à viser.');
     btRender();
   }
   function btSetStatus(text){ document.getElementById('bt-status').textContent = text; }
@@ -8638,6 +8872,34 @@
     bt.log.forEach(function(l){
       var p = document.createElement('p'); p.textContent = l; document.getElementById('bt-log').appendChild(p);
     });
+  }
+  /* ---- Effets sonores affichés (à la place du descriptif) ---- */
+  var BT_WORDS = {
+    hit:  ['POW !','BAM !','PAF !','CRAC !','BOUM !'],
+    shot: ['ZIIIP !','TCHAK !','PIOU !','FLOP !'],
+    ko:   ['K.O. !'],
+    heal: ['+',''],
+    enter:['HOP !']
+  };
+  function btClearSfx(){ var st = document.getElementById('bt-sfx'); if(st) st.innerHTML = ''; }
+  // Affiche un mot d'effet (« POW ! ») au milieu du terrain ; opts.sub = petite ligne sous le mot.
+  function btSfx(word, kind, opts){
+    var st = document.getElementById('bt-sfx'); if(!st) return;
+    opts = opts || {};
+    var w = document.createElement('div');
+    w.className = 'sfx-word ' + kind; w.setAttribute('aria-hidden','true');
+    w.style.setProperty('--rot', (btRand(13) - 6) + 'deg');
+    var t = document.createElement('span'); t.className = 'sfx-text'; t.textContent = word; w.appendChild(t);
+    if(opts.sub){ var sub = document.createElement('span'); sub.className = 'sfx-sub'; sub.textContent = opts.sub; w.appendChild(sub); }
+    st.innerHTML = ''; st.appendChild(w);
+    var life = btT(opts.ms || 1100);
+    setTimeout(function(){ if(w.parentNode) w.parentNode.removeChild(w); }, life);
+  }
+  function btWord(kind){ var a = BT_WORDS[kind]; return a[btRand(a.length)]; }
+  function btShake(){
+    var arena = document.getElementById('bt-arena'); if(!arena || BT_REDUCED) return;
+    arena.classList.remove('bt-shake'); void arena.offsetWidth; arena.classList.add('bt-shake');
+    setTimeout(function(){ arena.classList.remove('bt-shake'); }, 450);
   }
   var BT_REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   // Chaque unité garde SA carte (créée une seule fois) : on ne fait que la
@@ -8651,8 +8913,10 @@
     card.className = 'bcard' + (isEnemy ? ' enemy' : '');
     card.setAttribute('data-uid', String(unit.uid));
     var art = document.createElement('div'); art.className = 'bcard-art';
-    renderCreatureVisual(art, unit.sprite, fighterDisplayMode);
+    renderCreatureVisual(art, unit.sprite, fighterDisplayMode, unit.evo);
     card.appendChild(art);
+    var tag = document.createElement('div'); tag.className = 'boost-tag'; tag.setAttribute('aria-hidden','true'); tag.textContent = '🎁 BOOST'; tag.hidden = true;
+    card.appendChild(tag); card._boostTag = tag;
     var m = BT_ROLE_META[unit.sprite.role];
     var nameEl = document.createElement('div'); nameEl.className = 'bcard-name'; nameEl.textContent = unit.sprite.name;
     card.appendChild(nameEl);
@@ -8667,18 +8931,26 @@
       if(!bt || bt.over) return;
       if(isEnemy){
         if(bt.phase !== 'pick-target') return;
-        var attacker = bt.selected;
-        bt.selected = null; bt.phase = 'busy';
+        var attacker = bt.selected, choice = bt.boostChoice;
+        var boost = btBoostFor(attacker) && (choice === 'x2' || choice === 'fixed') ? { kind:choice, values:btBoostValues(attacker) } : null;
+        if(boost) bt.boost = null;      // le boost est consommé
+        bt.selected = null; bt.boostChoice = null; bt.phase = 'busy';
         btSetStatus('Attaque en cours…');
         btRender();
-        btResolveAttack(bt.pl, attacker, bt.en, unit, false, btAfterPlayerAttack);
+        btResolveAttack(bt.pl, attacker, bt.en, unit, false, btAfterPlayerAttack, boost);
       } else if(bt.phase === 'pick-attacker'){
-        bt.selected = unit; bt.phase = 'pick-target';
-        btSetStatus(unit.sprite.name + ' est prêt : touche la carte adverse à attaquer (ou retouche ta carte pour changer).');
+        bt.selected = unit; bt.boostChoice = null;
+        if(btBoostFor(unit)){
+          bt.phase = 'pick-boost';
+          btSetStatus('🎁 Boost sur ' + unit.sprite.name + ' : lequel fait le plus de dégâts ? Calcule, puis choisis !');
+        } else {
+          bt.phase = 'pick-target';
+          btSetStatus(unit.sprite.name + ' est prêt : touche la carte adverse à attaquer (ou retouche ta carte pour changer).');
+        }
         btRender();
-      } else if(bt.phase === 'pick-target' && bt.selected === unit){
-        bt.selected = null; bt.phase = 'pick-attacker';
-        btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
+      } else if((bt.phase === 'pick-target' || bt.phase === 'pick-boost') && bt.selected === unit){
+        bt.selected = null; bt.boostChoice = null; bt.phase = 'pick-attacker';
+        btSetStatus(BT_STATUS_PICK);
         btRender();
       }
     });
@@ -8708,13 +8980,16 @@
       var v = i>=steps ? to : Math.round(from + delta*i/steps);
       btSetPtsText(card, v, unit.buffed);
       if(i>=steps){ clearInterval(card._timer); card._timer = null; }
-    }, 45);
+    }, Math.max(8, btT(70)));
   }
   function btSyncCard(card, unit, isEnemy, canPick, isSel, canTarget){
     var m = BT_ROLE_META[unit.sprite.role], shown = Math.max(0, unit.pts);
     card.setAttribute('aria-label', (isEnemy ? 'Adversaire : ' : 'Ta carte : ') + unit.sprite.name + ', ' + m.label + ', ' + shown + ' points');
     card.classList.toggle('selected', isSel);
     card.classList.toggle('targetable', canTarget);
+    var hasBoost = !isEnemy && !!btBoostFor(unit);
+    card.classList.toggle('boosted', hasBoost);
+    if(card._boostTag) card._boostTag.hidden = !hasBoost;
     if(isSel) card.setAttribute('aria-pressed','true'); else card.removeAttribute('aria-pressed');
     card.disabled = isEnemy ? !canTarget : !canPick;
     if(shown !== card._shown){
@@ -8729,7 +9004,7 @@
     var plField = document.getElementById('bt-player-field'), enField = document.getElementById('bt-enemy-field');
     btReconcile(plField, bt.pl.field.map(function(u){
       var c = btCardFor(u, false), isSel = bt.selected === u;
-      btSyncCard(c, u, false, !bt.over && ((bt.phase === 'pick-attacker') || (bt.phase === 'pick-target' && isSel)), isSel, false);
+      btSyncCard(c, u, false, !bt.over && ((bt.phase === 'pick-attacker') || ((bt.phase === 'pick-target' || bt.phase === 'pick-boost') && isSel)), isSel, false);
       return c;
     }));
     btReconcile(enField, bt.en.field.map(function(u){
@@ -8738,33 +9013,55 @@
       return c;
     }));
     bt.animateArrivals = true;
+    btRenderBoostPanel();
     document.getElementById('bt-player-reserve').textContent = 'Réserve : ' + bt.pl.reserve.length + ' carte' + (bt.pl.reserve.length>1 ? 's' : '');
     document.getElementById('bt-enemy-reserve').textContent = 'Réserve adverse : ' + bt.en.reserve.length + ' carte' + (bt.en.reserve.length>1 ? 's' : '');
   }
   function btEl(unit){ return document.querySelector('#bt-arena [data-uid="'+unit.uid+'"]'); }
 
-  // Résout une attaque : animation, échange de points, cartes battues,
-  // remplacements depuis la réserve, puis rappelle done().
-  function btResolveAttack(attSide, attacker, defSide, target, attackerIsEnemy, done){
+  // Résout une attaque, au ralenti : préparation → charge (ou tir) → impact avec effet sonore →
+  // points qui défilent → cartes battues (K.O.) → remplaçants → soutien, puis rappelle done().
+  // boost (joueur seulement) : { kind:'x2'|'fixed', values:{x2,fixed} } ; il ne change que les dégâts infligés.
+  function btResolveAttack(attSide, attacker, defSide, target, attackerIsEnemy, done, boost){
     var archer = attacker.sprite.role === 'archer';
     var fromEl = btEl(attacker), toEl = btEl(target);
-    // Archer : une flèche vole vers la cible. Corps à corps : la carte fonce
-    // sur sa cible puis revient (l'impact a lieu au milieu du mouvement).
-    if(fromEl && toEl){
-      if(archer) playAttackAnim(fromEl, toEl, '🏹');
-      else btLunge(fromEl, toEl);
-    }
+    if(fromEl) fromEl.classList.add('charging');
+    if(toEl) toEl.classList.add('targeted');
+    // 1) préparation : l'attaquant se gonfle et la cible est mise en évidence
     setTimeout(function(){
-      var dmgToTarget = attacker.pts;
+      if(fromEl) fromEl.classList.remove('charging');
+      if(fromEl && toEl){
+        if(archer) playAttackAnim(fromEl, toEl, '🏹', btT(750));
+        else btLunge(fromEl, toEl, btT(1000));
+      }
+      // 2) impact (au milieu de la charge / à l'arrivée de la flèche)
+      setTimeout(impact, btT(archer ? 700 : 500));
+    }, btT(550));
+
+    function impact(){
+      if(!bt) return;
+      var dmgToTarget = boost ? boost.values[boost.kind] : attacker.pts;
       var dmgToAttacker = archer ? 0 : target.pts;
       target.pts -= dmgToTarget;
       attacker.pts -= dmgToAttacker;
+      if(toEl) toEl.classList.remove('targeted');
       var lines = [];
       if(archer){
         lines.push(attacker.sprite.name + ' tire à distance : ' + target.sprite.name + ' perd ' + dmgToTarget + ' points, ' + attacker.sprite.name + ' ne perd rien.');
       } else {
         lines.push(attacker.sprite.name + ' attaque ' + target.sprite.name + ' : ' + target.sprite.name + ' perd ' + dmgToTarget + ' points et ' + attacker.sprite.name + ' en perd ' + dmgToAttacker + '.');
       }
+      var verdict = null;
+      if(boost){
+        var mine = boost.values[boost.kind], other = boost.values[boost.kind === 'x2' ? 'fixed' : 'x2'];
+        verdict = mine > other ? '👍 Bon calcul : c\'était le meilleur choix !'
+          : mine === other ? '🟰 Les deux boosts faisaient pareil (' + mine + ').'
+          : '🤔 L\'autre boost faisait ' + other + ' (tu en as fait ' + mine + ').';
+        lines.push('Boost : ' + (boost.kind === 'x2' ? 'dégâts doublés' : dmgToTarget + ' dégâts fixes') + '. ' + verdict);
+      }
+      var word = boost ? (boost.kind === 'x2' ? '✖️2 BOOM !' : '🎯 ' + dmgToTarget + ' !') : btWord(archer ? 'shot' : 'hit');
+      btSfx(word, boost ? 'boost' : (archer ? 'shot' : 'hit'), { sub: verdict, ms: boost ? 2400 : 1300 });
+      btShake();
       var hitEl = btEl(target); if(hitEl) btFloat(hitEl, archer ? '🏹' : (attackerIsEnemy ? '💥' : '⚔️'), 'impact');
       playSound(attackerIsEnemy ? 'bad' : 'good');
       btLog(lines);
@@ -8773,15 +9070,22 @@
       [attSide, defSide].forEach(function(sd){
         sd.field.forEach(function(u){ if(u.pts <= 0) dead.push({ side:sd, unit:u }); });
       });
-      // On laisse le temps de lire les points qui défilent, puis les cartes battues s'effacent.
-      // Fin du tour : le Soutien de ce camp donne ses points, puis on passe la main.
+      // 3) on laisse le temps de lire les chiffres ; puis K.O., remplaçants, soutien
       function finish(){
-        if(btSupportTick(attSide)){ btRender(); setTimeout(done, 800); } else done();
+        if(!bt) return;
+        btClearBoostIfGone();
+        if(btSupportTick(attSide)){
+          btSfx('+' + BT_SUPPORT_TURN + ' ❤️', 'heal', { ms:1300 });
+          btRender(); setTimeout(function(){ if(bt) done(); }, btT(1500));
+        } else done();
       }
       setTimeout(function(){
+        if(!bt) return;
         if(!dead.length){ finish(); return; }
+        btSfx(btWord('ko'), 'ko', { ms:1500 });
         dead.forEach(function(d){ var e = btEl(d.unit); if(e) e.classList.add('dying'); });
         setTimeout(function(){
+          if(!bt) return;
           var notes = [];
           dead.forEach(function(d){
             d.side.field.splice(d.side.field.indexOf(d.unit), 1);
@@ -8792,16 +9096,20 @@
             if(arrived) notes.push(arrived.sprite.name + ' entre sur le terrain.');
           });
           // Une carte qui reçoit un bonus après remplacement est déjà comptée dans btOnArrive ; on remplit aussi les places libres restantes.
+          var entered = 0;
           [bt.pl, bt.en].forEach(function(sd){ while(sd.field.length < BT_FIELD_SIZE && sd.reserve.length){ var a = btDrawFromReserve(sd, notes); if(a) notes.push(a.sprite.name + ' entre sur le terrain.'); } });
+          entered = notes.filter(function(n){ return /entre sur le terrain/.test(n); }).length;
           if(notes.length) btLog(notes);
+          if(entered) btSfx(btWord('enter'), 'enter', { ms:1200 });
+          btClearBoostIfGone();
           btRender();
-          setTimeout(finish, 600);   // le temps de voir arriver les remplaçants
-        }, 650);
-      }, 750);
-    }, archer ? 480 : 300);
+          setTimeout(finish, btT(900));   // le temps de voir arriver les remplaçants
+        }, btT(850));
+      }, btT(1500));
+    }
   }
   // Corps à corps : la carte fonce vers sa cible, puis revient à sa place.
-  function btLunge(fromEl, toEl){
+  function btLunge(fromEl, toEl, duration){
     if(BT_REDUCED || !fromEl.animate) return;
     var a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
     var dx = (b.left + b.width/2 - (a.left + a.width/2)) * 0.6, dy = (b.top + b.height/2 - (a.top + a.height/2)) * 0.6;
@@ -8810,8 +9118,9 @@
       { transform:'translate(0,0) scale(1)' },
       { transform:'translate(' + (-dx*0.08) + 'px,' + (-dy*0.08) + 'px) scale(1.04)', offset:0.18 },
       { transform:'translate(' + dx + 'px,' + dy + 'px) scale(1.14)', offset:0.5 },
+      { transform:'translate(' + dx + 'px,' + dy + 'px) scale(1.14)', offset:0.62 },   // petit arrêt sur l'impact
       { transform:'translate(0,0) scale(1)' }
-    ], { duration:600, easing:'ease-in-out' });
+    ], { duration:duration || 1000, easing:'ease-in-out' });
     anim.onfinish = function(){ fromEl.style.zIndex = ''; };
   }
   function btAlive(sd){ return sd.field.length + sd.reserve.length > 0; }
@@ -8833,7 +9142,7 @@
   function btAfterPlayerAttack(){
     if(btCheckEnd()) return;
     btSetStatus('Tour de l\'adversaire…');
-    setTimeout(btEnemyTurn, 650);
+    setTimeout(function(){ if(bt) btEnemyTurn(); }, btT(700));
   }
   function btChooseEnemyMove(){
     var best = null, bestScore = -1e9;
@@ -8850,16 +9159,16 @@
   function btEnemyTurn(){
     if(!bt || bt.over) return;
     var move = btChooseEnemyMove();
-    if(!move){ if(!btCheckEnd()){ bt.phase = 'pick-attacker'; btRender(); } return; }
+    if(!move){ if(!btCheckEnd()) btStartPlayerTurn(); return; }
     btResolveAttack(bt.en, move.a, bt.pl, move.t, true, function(){
       if(btCheckEnd()) return;
-      bt.phase = 'pick-attacker';
-      btSetStatus('À toi ! Touche une de tes cartes pour attaquer.');
-      btRender();
+      btStartPlayerTurn();
     });
   }
   function btBackToSetup(){
     bt = null;
+    btClearSfx();
+    var bp = document.getElementById('bt-boost'); if(bp) bp.hidden = true;
     document.getElementById('bt-arena').hidden = true;
     document.getElementById('bt-over').hidden = true;
     document.getElementById('bt-setup').hidden = false;
@@ -8875,6 +9184,9 @@
   document.getElementById('bt-auto-random').addEventListener('click', function(){ btAutoTeam('random'); });
   document.getElementById('bt-auto-clear').addEventListener('click', function(){ btAutoTeam('clear'); });
   document.getElementById('bt-start').addEventListener('click', btStart);
+  document.getElementById('bt-boost-x2').addEventListener('click', function(){ btChooseBoost('x2'); });
+  document.getElementById('bt-boost-fixed').addEventListener('click', function(){ btChooseBoost('fixed'); });
+  document.getElementById('bt-boost-none').addEventListener('click', function(){ btChooseBoost('none'); });
   document.getElementById('bt-quit').addEventListener('click', btBackToSetup);
   document.getElementById('bt-change-team').addEventListener('click', btBackToSetup);
   document.getElementById('bt-again').addEventListener('click', btStart);
@@ -9199,12 +9511,12 @@
      éléments réels, les explications restent justes quand l'interface change
      (aucune capture d'écran à refaire).
        accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
-       boutique : dès 50 étoiles quand on n'a jamais rien acheté ;
+       boutique : dès 6 étoiles (le moins cher des personnages) quand on n'a jamais rien acheté ;
        bataille : la première fois qu'on ouvre la Bataille ;
        serie    : à la première série de 10 bonnes réponses d'affilée.
      Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
      dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
-  var GUIDE_SHOP_STARS = 50;       // seuil d'étoiles du guide Boutique
+  var GUIDE_SHOP_STARS = 6;        // seuil d'étoiles du guide Boutique (= le prix du moins cher des personnages)
   var GUIDE_SERIE_START = 10;      // série sans faute qui lance le guide Série
     var guideSeen = {};
   try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
@@ -9250,7 +9562,7 @@
         { sel:'#stars-btn', enter:function(){ showTab(lastPracticeTab); },
           text:'Les étoiles ⭐ que tu gagnes servent à acheter de nouveaux personnages. Je t\'emmène à la boutique.' },
         { sel:'#shop-grid .sprite-card, #shop-grid > *', enter:function(){ showTab('shop'); },
-          text:'Voici les personnages. Chacun a un prix en étoiles. Quand tu as assez d\'étoiles, touche « Acheter » : le personnage est à toi !' },
+          text:'Voici les personnages. Un seul est offert, chacun des autres a un prix en étoiles. Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Plus tard, tu pourras aussi le faire évoluer.' },
         { sel:'#shop-grid .sp-buy:not(:disabled)',
           text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent avec 20 bonnes réponses d\'affilée.' },
         { sel:'#shop-mascot-panel',

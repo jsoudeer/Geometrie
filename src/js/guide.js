@@ -4,12 +4,12 @@
      éléments réels, les explications restent justes quand l'interface change
      (aucune capture d'écran à refaire).
        accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
-       boutique : dès 50 étoiles quand on n'a jamais rien acheté ;
+       boutique : dès 6 étoiles (le moins cher des personnages) quand on n'a jamais rien acheté ;
        bataille : la première fois qu'on ouvre la Bataille ;
        serie    : à la première série de 10 bonnes réponses d'affilée.
      Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
      dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
-  var GUIDE_SHOP_STARS = 50;       // seuil d'étoiles du guide Boutique
+  var GUIDE_SHOP_STARS = 6;        // seuil d'étoiles du guide Boutique (= le prix du moins cher des personnages)
   var GUIDE_SERIE_START = 10;      // série sans faute qui lance le guide Série
     var guideSeen = {};
   try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
@@ -55,7 +55,7 @@
         { sel:'#stars-btn', enter:function(){ showTab(lastPracticeTab); },
           text:'Les étoiles ⭐ que tu gagnes servent à acheter de nouveaux personnages. Je t\'emmène à la boutique.' },
         { sel:'#shop-grid .sprite-card, #shop-grid > *', enter:function(){ showTab('shop'); },
-          text:'Voici les personnages. Chacun a un prix en étoiles. Quand tu as assez d\'étoiles, touche « Acheter » : le personnage est à toi !' },
+          text:'Voici les personnages. Un seul est offert, chacun des autres a un prix en étoiles. Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Plus tard, tu pourras aussi le faire évoluer.' },
         { sel:'#shop-grid .sp-buy:not(:disabled)',
           text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent avec 20 bonnes réponses d\'affilée.' },
         { sel:'#shop-mascot-panel',

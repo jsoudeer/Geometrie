@@ -10,10 +10,10 @@
   // Les fonds des pastilles de rareté sont assez foncés pour que le texte
   // blanc posé dessus soit lisible (contraste ≥ 4,5:1, accessibilité).
   var RARITY_META = {
-    commun:     { label:'Commun',     cost:8,  color:'#595959' },
-    rare:       { label:'Rare',       cost:15, color:'#1D5EA6' },
-    epique:     { label:'Épique',     cost:28, color:'#7B3FB8' },
-    legendaire: { label:'Légendaire', cost:45, color:'#8A5200' },
+    commun:     { label:'Commun',     cost:6,  color:'#595959' },
+    rare:       { label:'Rare',       cost:12, color:'#1D5EA6' },
+    epique:     { label:'Épique',     cost:24, color:'#7B3FB8' },
+    legendaire: { label:'Légendaire', cost:40, color:'#8A5200' },
     defi:       { label:'Défi',       cost:0,  color:'#A3246B' }
   };
   var CAT_COLORS   = ['#FFC2D1','#FFE29A','#C9F2C6','#BFE3FF','#E4C9FF','#FFD6B0','#C6FFF2','#F2C6E0',
@@ -92,15 +92,15 @@
     mkSprite('br20','Biscottino Blitz','legendaire',3,'propeller',[10,9,8,9])
   ];
 
-  // Rôles des personnages de base + personnages de départ (3 classiques, 1
-  // soutien, 1 archer par clan : de quoi former une équipe tout de suite).
+  // Rôles des personnages de base + personnage de départ (le premier de chaque clan).
   var ROLE_BY_ID = {
     cat04:'support', cat10:'support', cat14:'support', cat18:'support',
     cat05:'archer',  cat11:'archer',  cat16:'archer',  cat20:'archer',
     br04:'support',  br10:'support',  br14:'support',  br18:'support',
     br05:'archer',   br11:'archer',   br16:'archer',   br20:'archer'
   };
-  var STARTER_IDS = ['cat01','cat02','cat03','cat04','cat05','br01','br02','br03','br04','br05'];
+  // Un seul personnage offert par clan : les autres s'achètent (équipe de 5 communs ≈ 24 ⭐).
+  var STARTER_IDS = ['cat01','br01'];
   CAT_SPRITES.concat(BRAINROT_SPRITES).forEach(function(sp){
     if(ROLE_BY_ID[sp.id]) sp.role = ROLE_BY_ID[sp.id];
     if(STARTER_IDS.indexOf(sp.id) !== -1){ sp.starter = true; sp.cost = 0; }
@@ -343,11 +343,32 @@
     }
     attempt();
   }
-  function renderSpriteVisual(container, sprite){
+  // Cadre, aura et étoiles d'évolution posés sur le conteneur (CSS : .evo-1 / .evo-2, par clan).
+  function applyEvoLook(container, sprite, level){
+    ['evo-1','evo-2'].forEach(function(c){ container.classList.remove(c); });
+    Array.prototype.slice.call(container.querySelectorAll(':scope > .evo-badge, :scope > .evo-spark')).forEach(function(n){ n.remove(); });
+    if(level === undefined) level = spriteEvo(sprite);
+    container.removeAttribute('data-evo-clan');
+    if(!level) return;
+    container.classList.add('evo-' + level);
+    container.setAttribute('data-evo-clan', spriteSide(sprite));
+    var badge = document.createElement('span');
+    badge.className = 'evo-badge'; badge.setAttribute('aria-hidden','true');
+    badge.textContent = level === 2 ? '★★' : '★';
+    container.appendChild(badge);
+    for(var i=0;i<(level===2?3:2);i++){
+      var sp = document.createElement('span');
+      sp.className = 'evo-spark s' + i; sp.setAttribute('aria-hidden','true');
+      sp.textContent = spriteSide(sprite)==='cats' ? ['✨','💖','✨'][i] : ['⚡','🔥','⚡'][i];
+      container.appendChild(sp);
+    }
+  }
+  function renderSpriteVisual(container, sprite, level){
     var svg = document.createElementNS(svgNS,'svg');
     container.appendChild(svg);
     drawSpriteInto(svg, sprite);
     tryLoadCustomImage(container, svg, sprite);
+    applyEvoLook(container, sprite, level);
     return svg;
   }
 
@@ -380,15 +401,16 @@
     }
     attempt();
   }
-  function renderCreatureVisual(container, sprite, mode){
+  function renderCreatureVisual(container, sprite, mode, level){
     container.innerHTML = '';
     if(mode !== 'full'){
-      renderSpriteVisual(container, sprite);
+      renderSpriteVisual(container, sprite, level);
       return;
     }
     var side = spriteSide(sprite);
+    applyEvoLook(container, sprite, level);
     tryLoadFullBodyImage(sprite, side, function(img){
-      container.appendChild(img);
+      container.insertBefore(img, container.firstChild);
     }, function(){
       var wrap = document.createElement('div');
       wrap.className = 'fullbody-compose';
@@ -398,8 +420,8 @@
       var faceWrap = document.createElement('div');
       faceWrap.className = 'fb-face';
       wrap.appendChild(faceWrap);
-      renderSpriteVisual(faceWrap, sprite);
-      container.appendChild(wrap);
+      renderSpriteVisual(faceWrap, sprite, 0);
+      container.insertBefore(wrap, container.firstChild);
     });
   }
 
@@ -424,6 +446,42 @@
       localStorage.setItem('geo_owned_cats', JSON.stringify(Object.keys(ownedCats)));
       localStorage.setItem('geo_owned_brain', JSON.stringify(Object.keys(ownedBrain)));
     }catch(e){}
+  }
+  /* ---- Évolutions : 2 montées par personnage (0 = de base, 1 = Évolué, 2 = Ultime).
+     Chaque montée coûte le prix d'achat du personnage (rareté ; 12 ⭐ pour un personnage
+     de défi, qui est gratuit) et ajoute 20 % de ses points de base (au moins +1). ---- */
+  var EVO_MAX = 2, EVO_BONUS = 0.2, EVO_REWARD_COST = 12;
+  var EVO_NAMES = ['De base','Évolué','Ultime'];
+  var evoCats = {}, evoBrain = {};
+  (function loadEvo(){
+    try{
+      [['geo_evo_cats',evoCats],['geo_evo_brain',evoBrain]].forEach(function(pair){
+        var o = JSON.parse(localStorage.getItem(pair[0])||'{}') || {};
+        Object.keys(o).forEach(function(id){ var v = parseInt(o[id],10); if(v>=1 && v<=EVO_MAX) pair[1][id] = v; });
+      });
+    }catch(e){}
+  })();
+  function saveEvo(){
+    try{
+      localStorage.setItem('geo_evo_cats', JSON.stringify(evoCats));
+      localStorage.setItem('geo_evo_brain', JSON.stringify(evoBrain));
+    }catch(e){}
+  }
+  function evoMapFor(sprite){ return CAT_SPRITES.indexOf(sprite) >= 0 ? evoCats : evoBrain; }
+  function spriteEvo(sprite){ return evoMapFor(sprite)[sprite.id] || 0; }
+  function evoGain(sprite){ return Math.max(1, Math.round(sprite.pts * EVO_BONUS)); }
+  // Points d'un personnage à un niveau d'évolution donné (par défaut : le niveau possédé).
+  function spritePts(sprite, level){
+    if(level === undefined) level = spriteEvo(sprite);
+    return sprite.pts + level * evoGain(sprite);
+  }
+  function evoCost(sprite){ return sprite.rarity === 'defi' ? EVO_REWARD_COST : RARITY_META[sprite.rarity].cost; }
+  function tryEvolve(sprite){
+    var lvl = spriteEvo(sprite);
+    if(lvl >= EVO_MAX || !trySpendStars(evoCost(sprite))) return false;
+    evoMapFor(sprite)[sprite.id] = lvl + 1;
+    saveEvo();
+    return true;
   }
   function trySpendStars(n){
     if(stars < n) return false;
@@ -541,7 +599,7 @@
       body.appendChild(art);
       var role = document.createElement('p');
       role.className = 'muted';
-      role.textContent = roleLine(sprite) + ' · ' + RARITY_META[sprite.rarity].label;
+      role.textContent = roleLine(sprite) + ' · ' + RARITY_META[sprite.rarity].label + ' · ' + EVO_NAMES[spriteEvo(sprite)];
       body.appendChild(role);
     });
   }
@@ -651,7 +709,7 @@
   }
   function roleLine(sprite){
     var m = BT_ROLE_META[sprite.role];
-    return m.icon + ' ' + m.label + ' · ❤️ ' + sprite.pts;
+    return m.icon + ' ' + m.label + ' · ❤️ ' + spritePts(sprite);
   }
   function buildSpriteShopCard(sprite, isOwned){
     var card = document.createElement('div');
@@ -685,6 +743,32 @@
         renderShop();
       });
       card.appendChild(mascotBtn);
+      var lvl = spriteEvo(sprite);
+      var evoBtn = document.createElement('button');
+      evoBtn.type = 'button';
+      evoBtn.className = 'sp-evo-btn';
+      if(lvl >= EVO_MAX){
+        evoBtn.disabled = true; evoBtn.classList.add('max');
+        evoBtn.textContent = '🌟 Ultime (max)';
+        evoBtn.setAttribute('aria-label', sprite.name + ' est au niveau maximum : Ultime');
+      } else {
+        var gain = evoGain(sprite), cost = evoCost(sprite);
+        evoBtn.textContent = '⬆ ' + EVO_NAMES[lvl+1] + ' · ' + cost + ' ⭐ (+' + gain + ' ❤️)';
+        evoBtn.setAttribute('aria-label', 'Faire évoluer ' + sprite.name + ' au niveau ' + EVO_NAMES[lvl+1] + ' pour ' + cost + ' étoiles, plus ' + gain + ' points');
+        if(stars < cost) evoBtn.disabled = true;
+        evoBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          if(tryEvolve(sprite)){
+            playSound('good');
+            renderShop();
+            renderBtSetup();
+            renderMascotDock();
+            renderTopMascotIcon();
+            showReveal([sprite], 'Évolution : ' + EVO_NAMES[spriteEvo(sprite)] + ' !');
+          }
+        });
+      }
+      card.appendChild(evoBtn);
     } else if(isReward){
       card.classList.add('reward-locked');
       var lock = document.createElement('div'); lock.className='sp-cost'; lock.textContent = '🔒 Défi à relever';
@@ -847,13 +931,15 @@
      débloqués, mascotte, équipes de bataille et série en cours. Les
      réglages (thème, effets, affichage) sont conservés. ---- */
   function resetProgress(){
-    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_evo_cats','geo_evo_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
       try{ localStorage.removeItem(k); }catch(e){}
     });
     stars = 0;
     document.getElementById('starCount').textContent = '0';
     Object.keys(ownedCats).forEach(function(k){ delete ownedCats[k]; });
     Object.keys(ownedBrain).forEach(function(k){ delete ownedBrain[k]; });
+    Object.keys(evoCats).forEach(function(k){ delete evoCats[k]; });
+    Object.keys(evoBrain).forEach(function(k){ delete evoBrain[k]; });
     // On ne garde que le PREMIER personnage de chaque clan, qui redevient la mascotte.
     var firstCat = CAT_SPRITES.filter(function(sp){ return sp.starter; })[0];
     var firstBrain = BRAINROT_SPRITES.filter(function(sp){ return sp.starter; })[0];

@@ -9,13 +9,21 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 800 } }, asy
   for (const side of ['cats', 'brainrot']) {
     await ev(`applyTheme('${side}'); stars=500; document.getElementById('starCount').textContent=500; renderShop();`);
     await page.click('#stars-btn');
+    await page.evaluate(() => { window.__rv0 = performance.now(); });
     await page.evaluate(() => [...document.querySelectorAll('#shop-grid .sp-buy:not(.sp-info):not([disabled])')][0].click());
     await page.waitForTimeout(300);
     chk(await page.evaluate(() => { const o = document.getElementById('reveal-overlay'); return !!o && o.classList.contains('spinning'); }), side + ' : silhouette qui tourne');
     const f0 = await page.evaluate(() => getComputedStyle(document.querySelector('.rv-art.sil')).filter);
     chk(/brightness\(0\)/.test(f0), side + ' : silhouette noire (' + f0 + ')');
     await page.screenshot({ path: SHOTS + 'rv_' + side + '_1.png' });
-    await page.waitForTimeout(1900);          // t ≈ 2,2 s : rotation finie, pause de face
+    // rotation finie, pause de face (≈ 2,1 à 2,35 s) : on guette ce moment image par image
+    // plutôt que d'attendre une durée fixe (instable quand la machine est chargée)
+    await page.waitForFunction(() => {
+      const o = document.getElementById('reveal-overlay'); if (!o || !o.classList.contains('spinning')) return false;
+      if (performance.now() - window.__rv0 < 2000) return false;
+      const m = new DOMMatrix(getComputedStyle(document.querySelector('.rv-spinner')).transform);
+      return Math.abs(m.a - 1) < 0.02 && Math.abs(m.b) < 0.02;
+    }, null, { polling: 'raf', timeout: 5000 }).catch(() => {});
     const pause = await page.evaluate(() => { const o = document.getElementById('reveal-overlay'); const m = new DOMMatrix(getComputedStyle(document.querySelector('.rv-spinner')).transform); return { cls: o.className, a: m.a, b: m.b, col: getComputedStyle(document.querySelector('.rv-art.col')).clipPath }; });
     chk(Math.abs(pause.a - 1) < 0.02 && Math.abs(pause.b) < 0.02 && /spinning/.test(pause.cls) && /100%/.test(pause.col), side + ' : déjà de face, toujours en ombre (' + pause.cls.replace('reveal-overlay ', '') + ')');
     await page.screenshot({ path: SHOTS + 'rv_' + side + '_2.png' });
