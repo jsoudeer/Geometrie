@@ -6,17 +6,8 @@
           un radar de synthèse, un détail par compétence, l'activité des derniers jours ;
        2) orienter les séries sans faute (paliers 20, 25, 30) : les 3 dernières
           questions sont posées dans les sujets les plus faibles (progWeakPick).
-     Les 8 compétences regroupent les familles d'activités et les catégories de quiz. */
-  var PROG_SKILLS = [
-    { id:'formes',   icon:'🔷', label:'Formes & symétrie',   short:'Formes',   fams:['deform','atelier-sym','atelier-copie','atelier-erreur','atelier-axe'], cats:['formes'] },
-    { id:'repere',   icon:'🧭', label:'Repérage',            short:'Repérage', fams:[],                                     cats:['repere'] },
-    { id:'solides',  icon:'🧊', label:'Solides & patrons',   short:'Solides',  fams:['net'],                                cats:['solides'] },
-    { id:'temps',    icon:'🕒', label:'Heure & calendrier',  short:'Heure',    fams:['clock-lire','clock-regler'],          cats:['temps'] },
-    { id:'mesures',  icon:'📏', label:'Mesures',             short:'Mesures',  fams:['measure','estimate'],                 cats:['mesures'] },
-    { id:'nombres',  icon:'🔢', label:'Nombres & fractions', short:'Nombres',  fams:['atelier-fraction'],                   cats:['nombres'] },
-    { id:'calcul',   icon:'➕', label:'Calcul & problèmes',  short:'Calcul',   fams:[],                                     cats:['calcul','problemes'] },
-    { id:'logique',  icon:'🧩', label:'Logique & énigmes',   short:'Logique',  fams:[],                                     cats:['logique','autres'] }
-  ];
+     Les 9 compétences sont les thèmes (DOMAINS, noyau.js) : chaque famille et chaque type de quiz
+     y est rangé par son champ `domain`, rien à déclarer ici pour une nouvelle activité. */
   var PROG_MAX_EVENTS = 3000;    // on garde les 3000 dernières réponses
   var PROG_RECENT = 40;          // « niveau récent » d'une compétence = ses 40 dernières réponses
   var PROG_MIN_RECENT = 5;       // en dessous, pas assez de données pour juger
@@ -40,19 +31,17 @@
   }
   window.addEventListener('pagehide', progSave);
 
-  function progSkillIndex(family, cat){
-    for(var i=0;i<PROG_SKILLS.length;i++){
-      var sk = PROG_SKILLS[i];
-      if(family==='qcm' ? (cat && sk.cats.indexOf(cat)!==-1) : sk.fams.indexOf(family)!==-1) return i;
-    }
-    return PROG_SKILLS.length - 1;    // famille / catégorie inconnue : « Logique & énigmes »
+  function progSkillIndex(family, domain){
+    var d = domainOrFallback(family==='qcm' ? domain : (familyDef(family) || {}).domain);
+    for(var i=0;i<DOMAINS.length;i++){ if(DOMAINS[i].id===d) return i; }
+    return DOMAINS.length - 1;
   }
   // Appelé à chaque réponse (voir onPracticeAnswered).
   function progRecord(correct){
     if(!progEvents) return;
     var fam = currentFamily, isQcm = (fam==='qcm' && m4Current);
     progEvents.push([
-      Date.now(), progSkillIndex(fam, isQcm ? m4Current.cat : null), fam,
+      Date.now(), progSkillIndex(fam, isQcm ? m4Current.domain : null), fam,
       isQcm ? (m4Current.typeId || '') : '', globalLevel, correct ? 1 : 0
     ]);
     if(progEvents.length > PROG_MAX_EVENTS) progEvents.splice(0, progEvents.length - PROG_MAX_EVENTS);
@@ -68,7 +57,7 @@
   function progSkillEvents(i){ return progEvents.filter(function(e){ return e[1]===i; }); }
   // Par compétence : niveau récent, niveau global, tendance.
   function progSkillStats(){
-    return PROG_SKILLS.map(function(sk, i){
+    return DOMAINS.map(function(sk, i){
       var all = progSkillEvents(i), recent = all.slice(-PROG_RECENT);
       var prev = all.slice(-2*20, -20), last20 = all.slice(-20);
       var trend = 0;
@@ -83,7 +72,7 @@
   }
 
   /* ---- Défi des 20 : sujets à travailler ----
-     Renvoie { key, cat } (famille à poser, et catégorie de quiz si key==='qcm') ou null s'il
+     Renvoie { key, domain } (famille à poser, et thème du quiz si key==='qcm') ou null s'il
      n'y a pas assez de données. On prend l'une des 3 compétences les plus faibles (en
      tournant pour ne pas poser 3 fois le même sujet), puis, dans cette compétence,
      l'activité la moins réussie disponible au niveau en cours. */
@@ -95,20 +84,18 @@
     var weak = stats.slice(0, 3);
     var st = pickFresh('weakskill|' + weak.map(function(w){ return w.skill.id; }).join(','), weak);
     // activités disponibles pour cette compétence au niveau courant
-    var activeCats = {};
-    M4_LEVELS[globalLevel].types.forEach(function(t){ var d = quizTypeById(t); if(d) activeCats[quizCategoryId(d)] = true; });
-    var options = [];
-    st.skill.fams.forEach(function(f){ options.push({ key:f, cat:null }); });
-    st.skill.cats.forEach(function(c){ if(activeCats[c]) options.push({ key:'qcm', cat:c }); });
+    var dom = st.skill.id, options = [];
+    FAMILIES.forEach(function(f){ if(f.key!=='qcm' && domainOrFallback(f.domain)===dom) options.push({ key:f.key, domain:null }); });
+    if(M4_LEVELS[globalLevel].types.some(function(t){ var d = quizTypeById(t); return d && quizDomainId(d)===dom; })) options.push({ key:'qcm', domain:dom });
     if(!options.length) return null;
     // la moins réussie récemment (les activités sans donnée passent après)
     var all = progSkillEvents(st.index);
     function optionRate(o){
-      var l = all.filter(function(e){ return o.key==='qcm' ? (e[2]==='qcm' && eventCat(e)===o.cat) : e[2]===o.key; }).slice(-20);
+      var l = all.filter(function(e){ return o.key==='qcm' ? (e[2]==='qcm' && eventDomain(e)===o.domain) : e[2]===o.key; }).slice(-20);
       return l.length ? progRate(l) : 0.5;
     }
     options.sort(function(a,b){ return (optionRate(a) - optionRate(b)) || (Math.random() - .5); });
-    return { key:options[0].key, cat:options[0].cat };
+    return { key:options[0].key, domain:options[0].domain };
   }
   /* ---- Mode Révision : mettre en avant les exercices ratés et ceux jamais faits ----
      Une « unité » = une activité au niveau en cours (une famille, ou un type de quiz précis).
@@ -162,8 +149,8 @@
     var u = weightedPick(fam.units);
     return { key:u.key, type:u.type, why:u.why };
   }
-  // catégorie de quiz d'un événement, retrouvée à partir de son type
-  function eventCat(e){ var d = e[3] ? quizTypeById(e[3]) : null; return d ? quizCategoryId(d) : null; }
+  // thème de quiz d'un événement, retrouvée à partir de son type
+  function eventDomain(e){ var d = e[3] ? quizTypeById(e[3]) : null; return d ? quizDomainId(d) : null; }
 
   /* ---- Écran « Progression » (Réglages) ---- */
   var progTab = 0;                 // 0 synthèse · 1 détail · 2 activité

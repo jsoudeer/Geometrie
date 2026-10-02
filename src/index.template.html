@@ -12,7 +12,7 @@
        visuel vit aussi dans assets/branding/ pour réutilisation (icône,
        README, packaging futur). -->
   <div class="splash-overlay" id="splash-overlay">
-    <div class="splash-card">
+    <div class="splash-card sp-wait">
       <svg id="splashSvg" class="splash-art" viewBox="0 0 320 180" role="img" aria-label="Un chat kawaii et un personnage brainrot face à face"></svg>
       <h1 class="splash-title">Kawaii <span class="splash-vs-inline">VS</span> Brainrot</h1>
       <p class="splash-sub">La géométrie CE1 comme un jeu : mesure, formes, quiz et bataille de personnages !</p>
@@ -186,22 +186,11 @@
         <div id="manual-picker" hidden>
           <button class="btn ghost" id="manual-show-activities-btn" type="button" hidden>👁 Afficher les activités</button>
           <div id="manual-activity-picker">
-            <p class="muted">Choisis une activité à travailler :</p>
-            <div class="level-row" id="manual-family-row"></div>
-            <div id="manual-family-sub-wrap" hidden>
+            <p class="muted">Choisis un thème :</p>
+            <div class="level-row" id="manual-domain-row"></div>
+            <div id="manual-unit-wrap" hidden>
               <p class="muted">Activité :</p>
-              <div class="level-row" id="manual-family-sub-row"></div>
-            </div>
-            <!-- La famille "Quizz" contient à elle seule une vingtaine de
-                 types de questions différents (côtés, angles, coordonnées,
-                 symétrie, solides, énigmes, calcul...) : ce sélecteur permet
-                 de s'entraîner sur un type précis plutôt que de tous les
-                 mélanger au hasard. -->
-            <div id="manual-qcm-type-wrap" hidden>
-              <p class="muted">Thème (Quizz) :</p>
-              <div class="level-row" id="manual-qcm-cat-row"></div>
-              <p class="muted">Type de question :</p>
-              <div class="level-row" id="manual-qcm-type-row"></div>
+              <div class="level-row" id="manual-unit-row"></div>
             </div>
           </div>
           <div id="manual-level-wrap" hidden>

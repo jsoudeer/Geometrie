@@ -2,8 +2,8 @@
 const { withPage } = require('./lib');
 withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, async (page) => {
   const out = await page.evaluate(() => window.__t.__eval(`(function(){
-    var res=[]; var ids=[]; QCM_CATEGORIES.forEach(function(c){}); 
-    QCM_TYPE_DEFS.forEach(function(t){ var row={id:t.id,cat:quizCategoryId(t),lv:[]};
+    var res=[]; var ids=[]; 
+    QCM_TYPE_DEFS.forEach(function(t){ var row={id:t.id,cat:quizDomainId(t),lv:[]};
       for(var lv=0;lv<3;lv++){ var set={}, ans={}, n=0, err=0;
         for(var i=0;i<300;i++){ try{ var q=t.generate(lv); n++;
           var d=''; if(q.draw){ try{ q.draw(); d=document.getElementById('m4Svg').innerHTML.replace(/var\\(--[a-z0-9]+\\)/g,''); }catch(e){} }

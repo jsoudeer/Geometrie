@@ -57,7 +57,7 @@ function genMaQuestion(level){          // level : 0 Facile, 1 Moyen, 2 Difficil
 }
 registerQuizType({
   id: 'maQuestion',                      // identifiant unique
-  category: 'calcul',                    // sous-catégorie (voir QCM_CATEGORIES dans noyau.js)
+  domain: 'calcul',                      // thème (voir DOMAINS dans noyau.js : formes, symetrie, repere, solides, temps, mesures, nombres, calcul, logique)
   label: 'Ma question',                  // nom court (panneau de configuration)
   longLabel: 'Ma question, en détail',   // nom dans la liste du mode Manuel
   defaultLevels: [0,1,2],                // niveaux où elle apparaît par défaut
@@ -109,7 +109,7 @@ par leur thème avec `registerFamily` (contrat complet en tête du registre, dan
 
 ```js
 registerFamily({
-  key:'mon-activite', tag:'Mon activité', theme:'📐 Formes & mesures',
+  key:'mon-activite', tag:'Mon activité', domain:'formes',   // thème : id de DOMAINS
   order:70,               // rang d'affichage et de tirage
   weight:1,               // places dans le tirage aléatoire (le Quizz en a 3)
   timed:false,            // true : aussi en Chronométré (réponse en un toucher)
@@ -122,7 +122,7 @@ registerFamily({
 
 Le conteneur `#fam-mon-activite` existe dès le retour de `registerFamily` : on peut ensuite
 brancher ses boutons par leur id. L'activité apparaît alors seule dans le tirage, le
-Chronométré (si `timed`), le mode Manuel (groupe `theme`), le panneau de réglages et
+Chronométré (si `timed`), le mode Manuel (sous son `domain`), le panneau de réglages et
 l'anti-répétition. Pour des épreuves réglables niveau par niveau (comme les types du Quizz
 ou les patrons), ajouter `config:{ storageKey, defs(), groups()?, rebuild(overrides) }`.
 `makeAtelier()` (`atelier.js`) fournit un écran tout prêt pour une activité où l'on touche

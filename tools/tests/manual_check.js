@@ -7,7 +7,9 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   const levels = () => page.evaluate(() => [...document.querySelectorAll('#manual-level-row .level-btn')].map(b => b.textContent + (b.classList.contains('active') ? '*' : '')));
   await page.click('#menu-btn'); await page.click('.tab-btn[data-tab="manuel"]');
   chk(await vis('manual-picker') && !(await vis('practice-exercise')), 'entrée en Manuel : pas d\'épreuve');
-  await page.evaluate(() => [...document.querySelectorAll('#manual-family-row .level-btn')].find(x => x.textContent.includes('Solides')).click());
+  const pickDomain = n => page.evaluate(n => [...document.querySelectorAll('#manual-domain-row .level-btn')].find(x => x.textContent.includes(n)).click(), n);
+  const pickUnit = n => page.evaluate(n => [...document.querySelectorAll('#manual-unit-row .level-btn')].find(x => x.textContent.includes(n)).click(), n);
+  await pickDomain('Solides'); await pickUnit('Patron');
   chk(!(await vis('practice-exercise')) && await vis('manual-activity-picker'), 'activité choisie : toujours pas d\'épreuve, options visibles');
   chk(JSON.stringify(await levels()) === '["Facile","Moyen","Difficile"]', 'aucun niveau présélectionné : ' + JSON.stringify(await levels()));
   await page.screenshot({ path: SHOTS + 'man_1.png' });
@@ -24,18 +26,25 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(!(await vis('manual-activity-picker')), 'masquer');
   // changer d'activité : retour à « pas d'épreuve » jusqu'au choix du niveau
   await page.click('#manual-show-activities-btn');
-  await page.evaluate(() => [...document.querySelectorAll('#manual-family-row .level-btn')].find(x => x.textContent.includes('Quizz')).click());
+  await pickDomain('Formes'); await pickUnit('côtés');
   chk(!(await vis('practice-exercise')) && JSON.stringify(await levels()) === '["Facile","Moyen","Difficile"]', 'nouvelle activité : épreuve masquée, niveaux vierges');
   // quizz : changer de thème/type réinitialise aussi le niveau
   await page.evaluate(() => [...document.querySelectorAll('#manual-level-row .level-btn')].find(x => x.textContent.includes('Facile')).click());
   chk(await vis('practice-exercise'), 'Quizz : niveau touché → épreuve');
   await page.click('#manual-show-activities-btn');
-  await page.evaluate(() => document.querySelectorAll('#manual-qcm-cat-row .level-btn')[2].click());
+  await pickDomain('Heure');
   chk(!(await vis('practice-exercise')) && await vis('manual-activity-picker'), 'changer de thème : niveau à rechoisir');
+  // « un peu de tout » dans un thème : mélange les écrans propres ET les types de Quizz du thème
+  await pickDomain('Mesures'); await pickUnit('Un peu');
+  chk(!(await vis('practice-exercise')), 'un peu de tout : niveau à choisir');
+  await page.evaluate(() => [...document.querySelectorAll('#manual-level-row .level-btn')].find(x => x.textContent.includes('Moyen')).click());
+  const got = JSON.parse(await page.evaluate(() => window.__t.__eval(`JSON.stringify((function(){ var s={}; for(var i=0;i<40;i++){ nextPracticeQuestion(); s[currentFamily + (currentFamily==='qcm' ? ':' + m4Current.typeId : '')]=1; } return Object.keys(s).sort(); })())`)));
+  chk(got.join() === 'measure,estimate,qcm:mesures,qcm:perimetre'.split(',').sort().join() || (got.length >= 3 && got.every(k => /^(measure|estimate|qcm:(mesures|perimetre))$/.test(k))), 'un peu de tout (Mesures, Moyen) : ' + got.join(', '));
   // un atelier (sans niveaux) démarre tout de suite
-  await page.evaluate(() => { const n = [...document.querySelectorAll('#manual-family-row .level-btn')].map(x => x.textContent); });
-  const themes = await page.evaluate(() => [...document.querySelectorAll('#manual-family-row .level-btn')].map(x => x.textContent));
-  console.log('thèmes :', themes.join(' | '));
+  await page.click('#manual-show-activities-btn');
+  await pickDomain('Heure');   // niveau non choisi : c'est l'état testé au retour
+  const themes = await page.evaluate(() => [...document.querySelectorAll('#manual-domain-row .level-btn')].map(x => x.textContent.replace('✔ ', '')));
+  chk(themes.length === 9, 'les 9 thèmes : ' + themes.join(' | '));
   // retour à Facile (auto) puis Manuel : cohérent
   await page.click('#menu-btn'); await page.click('.tab-btn[data-tab="facile"]');
   chk(await vis('practice-exercise') && !(await vis('manual-picker')), 'Facile (auto) : épreuve visible comme avant');

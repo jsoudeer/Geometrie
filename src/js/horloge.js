@@ -14,7 +14,7 @@
 
   // ---- Mode "Lire l'heure" (même moteur que le QCM, ciblé sur m5Svg) ----
   registerFamily({
-    key:'clock-lire', tag:'Lire l\'heure', theme:'🕒 Horloge', order:50, timed:true,
+    key:'clock-lire', tag:'Lire l\'heure', domain:'temps', order:50, timed:true,
     note:'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
     markup:[
       '<div class="coach-row">',
@@ -69,7 +69,7 @@
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
   registerFamily({
-    key:'clock-regler', tag:'Régler l\'heure', theme:'🕒 Horloge', order:60,
+    key:'clock-regler', tag:'Régler l\'heure', domain:'temps', order:60,
     note:'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place sur 24 positions à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (à 15 ou 45 minutes, les deux positions voisines sont acceptées).',
     markup:[
       '<div class="coach-row">',
@@ -528,15 +528,15 @@
   }
 
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
-  registerQuizType({ id:'heure', category:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'heure', domain:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
     generate:function(level){ return genHeureQuestion('m4Svg', level); } });
-  registerQuizType({ id:'duree', category:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'duree', domain:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
     randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
     generate:function(level){ return genDureeQuestion(level); } });
-  registerQuizType({ id:'calendrier', category:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'calendrier', domain:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
     randomNote:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.',
     generate:genCalendrierQuestion });
-  registerQuizType({ id:'horlogeChoix', category:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'horlogeChoix', domain:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2],
     randomNote:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.',
     generate:genHorlogeChoixQuestion });

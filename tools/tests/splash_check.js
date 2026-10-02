@@ -3,7 +3,22 @@ const { withPage, SHOTS } = require('./lib');
 // Deux cas : image perso (assets/branding/splash.jpeg, scindée en deux) et dessin SVG de secours (image introuvable).
 const NO_IMG = `(function(){ var D=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,'src');
   Object.defineProperty(HTMLImageElement.prototype,'src',{ get:function(){ return D.get.call(this); }, set:function(v){ if(/branding\\/splash\\./.test(v)){ var t=this; setTimeout(function(){ if(t.onerror) t.onerror(); },0); return; } D.set.call(this,v); } }); })();`;
-(async () => { for (const mode of ['image', 'svg']) {
+const SLOW = NO_IMG.replace('setTimeout(function(){ if(t.onerror) t.onerror(); },0)', 'setTimeout(function(){ if(t.onerror) t.onerror(); },900)');
+// Recherche d'image lente : la carte attend (rien dessiné, rien animé) puis, au filet de 2,5 s, le dessin joue.
+(async () => {
+console.log('== attente');
+await withPage({ page: 'index_test.html', viewport: { width: 390, height: 780 }, init: SLOW }, async (page) => {
+  let bad = 0; const chk = (ok, m) => { console.log(ok ? '  ok' : '  ✘', m); if (!ok) bad++; };
+  await page.waitForTimeout(100);
+  const st = () => page.evaluate(() => ({ wait: document.querySelector('.splash-card').classList.contains('sp-wait'), drawn: document.getElementById('splashSvg').childNodes.length, vis: getComputedStyle(document.getElementById('splashSvg')).visibility, title: +getComputedStyle(document.querySelector('.splash-title')).opacity }));
+  const w = await st();
+  chk(w.wait && w.drawn === 0 && w.vis === 'hidden' && w.title === 0, 'pendant la recherche : carte en attente, rien dessiné, rien visible');
+  await page.waitForTimeout(3000);
+  const d = await st();
+  chk(!d.wait && d.drawn > 0, 'filet de 2,5 s : le dessin de secours est lancé');
+  console.log(bad ? 'ÉCHEC' : 'OK');
+});
+for (const mode of ['image', 'svg']) {
 console.log('== ' + mode);
 await withPage({ page: 'index_test.html', viewport: { width: 390, height: 780 }, init: mode === 'svg' ? NO_IMG : undefined }, async (page) => {
   const L = mode === 'svg' ? '.sp-left' : '.sp-hl', R = mode === 'svg' ? '.sp-right' : '.sp-hr';

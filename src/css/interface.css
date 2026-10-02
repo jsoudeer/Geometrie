@@ -72,6 +72,9 @@
 
   /* --- Choc des deux moitiés au lancement (~2,3 s) --- */
   .splash-art{ cursor:pointer; }
+  /* attente de la recherche d'image perso : rien ne bouge ni ne s'affiche encore */
+  .sp-wait .splash-art{ visibility:hidden; }
+  .sp-wait .splash-title, .sp-wait .splash-sub, .sp-wait .splash-start-btn{ opacity:0; }
   .sp-impact > *, .sp-vs{ transform-box:view-box; }
   .sp-flash, .sp-ring, .sp-bolt, .sp-spark{ opacity:0; }
   .sp-vs{ transform-origin:160px 148px; }

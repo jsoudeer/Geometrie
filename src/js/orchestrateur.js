@@ -39,14 +39,14 @@
   // Le Quizz est une famille comme les autres ; il pèse 3 places dans le
   // tirage aléatoire (il regroupe à lui seul une vingtaine de types).
   registerFamily({
-    key:'qcm', tag:'Quizz', theme:'🧠 Quizz', order:40, weight:3, timed:true,
-    // Chaque type de question se règle niveau par niveau, regroupé par sous-catégorie.
+    key:'qcm', tag:'Quizz', order:40, weight:3, timed:true,
+    // Chaque type de question se règle niveau par niveau, regroupé par thème.
     config:{
       storageKey:'geo_qcm_level_overrides',
       defs:function(){ return QCM_TYPE_DEFS; },
       groups:function(){
-        return QCM_CATEGORIES.map(function(cat){
-          return { id:cat.id, label:cat.icon + ' ' + cat.label, defs:QCM_TYPE_DEFS.filter(function(d){ return quizCategoryId(d)===cat.id; }) };
+        return DOMAINS.map(function(cat){
+          return { id:cat.id, label:cat.icon + ' ' + cat.label, defs:QCM_TYPE_DEFS.filter(function(d){ return quizDomainId(d)===cat.id; }) };
         });
       },
       rebuild:rebuildM4Types
@@ -67,13 +67,12 @@
     signature:function(){ return quizSignature(m4Current); }
   });
   var m4TypeFilter = 'random';
-  var m4CategoryFilter = 'all';   // mode Manuel : « Aléatoire » se limite à cette sous-catégorie
   var m4Current = null;
 
   // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
   var lastQcmType = null;
   var forcedQcmType = null;  // type de quiz imposé pour la prochaine question (mode Révision)
-  var forcedQcmCat = null;   // catégorie de quiz imposée pour la prochaine question (sujet à travailler)
+  var forcedQcmDomain = null;   // thème de quiz imposé pour la prochaine question (sujet à travailler)
   var lastFamily = null;
   function pickOther(arr, last){
     if(arr.length>1 && last!==null){
@@ -87,25 +86,25 @@
     var poolTypes = lv.types;
     var typeSel = forcedQcmType || m4TypeFilter;
     var freeType = (typeSel==='random' || lv.types.indexOf(typeSel)===-1);
-    var cat = forcedQcmCat || m4CategoryFilter;     // forcedQcmCat : sujet à travailler (voir progression.js)
+    var cat = forcedQcmDomain || 'all';     // forcedQcmDomain : sujet à travailler (voir progression.js)
     if(cat==='all' && freeType){
-      // Tirage « sans remise » au niveau des catégories : chacune sort une fois
-      // avant qu'aucune ne revienne.
+      // Tirage « sans remise » au niveau des thèmes : chacun sort une fois
+      // avant qu'aucun ne revienne.
       var cats = [];
-      lv.types.forEach(function(t){ var d = quizTypeById(t); var c = d && quizCategoryId(d); if(c && cats.indexOf(c)===-1) cats.push(c); });
+      lv.types.forEach(function(t){ var d = quizTypeById(t); var c = d && quizDomainId(d); if(c && cats.indexOf(c)===-1) cats.push(c); });
       if(cats.length) cat = pickFresh('qcmcat|' + globalLevel + '|' + cats.join(','), cats);
     }
     if(cat!=='all'){
-      var inCat = lv.types.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===cat; });
+      var inCat = lv.types.filter(function(t){ var d = quizTypeById(t); return d && quizDomainId(d)===cat; });
       if(inCat.length) poolTypes = inCat;
     }
-    // Idem pour les types au sein de la catégorie (sans remise).
+    // Idem pour les types au sein du thème (sans remise).
     var type = !freeType ? typeSel : pickFresh('qcmtype|' + globalLevel + '|' + poolTypes.join(','), poolTypes);
     lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     var qdef = quizTypeById(type) || quizTypeById('image');
     var q = qdef.generate(globalLevel);
-    q.typeId = qdef.id; q.cat = quizCategoryId(qdef);   // pour l'historique de progression
+    q.typeId = qdef.id; q.domain = quizDomainId(qdef);   // pour l'historique de progression
     return q;
   }
 
@@ -255,7 +254,7 @@
     wrap.innerHTML = '';
     var fam = familyDef(familyKey), cfg = fam && fam.config;
     if(cfg && cfg.groups){
-      // regroupé par sous-catégorie, chaque groupe repliable (le premier ouvert)
+      // regroupé par thème, chaque groupe repliable (le premier ouvert)
       cfg.groups().filter(function(g){ return g.defs.length; }).forEach(function(g, gi){
         var det = document.createElement('details'); det.className = 'aconf-cat';
         if(aconfOpenCats[g.id] === undefined ? gi===0 : aconfOpenCats[g.id]) det.open = true;
@@ -338,40 +337,6 @@
       if(M4_LEVELS[i].types.indexOf(type)!==-1) levels.push(i);
     }
     return levels.length ? levels : [0,1,2];
-  }
-  function refreshManualQcmTypes(){
-    var wrap = document.getElementById('manual-qcm-type-wrap');
-    m4CategoryFilter = 'all';
-    if(manualFamily !== 'qcm'){ wrap.hidden = true; m4TypeFilter = 'random'; return; }
-    wrap.hidden = false;
-    // Union de tous les types sur tous les niveaux, pour qu'une activité ne
-    // disparaisse jamais de la liste selon le niveau actuellement choisi.
-    var allTypes = [];
-    M4_LEVELS.forEach(function(lv){
-      lv.types.forEach(function(t){ if(allTypes.indexOf(t)===-1) allTypes.push(t); });
-    });
-    var cats = QCM_CATEGORIES.filter(function(c){
-      return allTypes.some(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===c.id; });
-    });
-    function typesOf(catId){
-      return catId==='all' ? allTypes : allTypes.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===catId; });
-    }
-    function buildTypeRow(catId){
-      var list = typesOf(catId);
-      var labels = ['Aléatoire'].concat(list.map(function(t){ return (quizTypeById(t) && quizTypeById(t).longLabel) || t; }));
-      m4TypeFilter = 'random';
-      buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
-        m4TypeFilter = idx===0 ? 'random' : list[idx-1];
-        rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));   // le niveau est à rechoisir
-      });
-    }
-    buildLevelRow(document.getElementById('manual-qcm-cat-row'), ['Toutes'].concat(cats.map(function(c){ return c.icon + ' ' + c.label; })), 0, function(idx){
-      m4CategoryFilter = idx===0 ? 'all' : cats[idx-1].id;
-      buildTypeRow(m4CategoryFilter);
-      rebuildManualLevelRow(qcmTypeLevels('random'));   // le niveau est à rechoisir
-    });
-    buildTypeRow('all');
-    rebuildManualLevelRow(qcmTypeLevels('random'));
   }
   // ---- Liste d'activités : repliée au choix d'un niveau, bouton pour la remontrer/cacher ----
   function updateManualToggle(){
@@ -470,14 +435,16 @@
   }
   function nextPracticeQuestion(){
     var sig = null, prevShown = lastFamily;
-    var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, cat} ou null
-    var review = null;                                               // mode Révision : {key, type, why}
+    var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, domain} ou null
+    var review = null;                                               // unité imposée : {key, type, why} (Révision ou « un peu de tout » du mode Manuel)
     var reviewing = (appMode==='auto' && practiceMode==='review');
+    var mixing = (appMode==='manual' && manualMix);
     for(var tries=0; tries<15; tries++){
       lastFamily = prevShown;   // on évite la famille réellement affichée, pas un essai rejeté
       if(reviewing) review = progReviewPick();
+      else if(mixing) review = manualMixPick();
       var key = focus ? focus.key : (review ? review.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh()));
-      forcedQcmCat = (focus && focus.key==='qcm') ? focus.cat : null;
+      forcedQcmDomain = (focus && focus.key==='qcm') ? focus.domain : null;
       forcedQcmType = (review && review.type) ? review.type : null;
       lastFamily = key;
       // d'abord on retente dans la même famille (elle garde son tour), puis on en change
@@ -489,7 +456,7 @@
       }
       if(fresh) break;
     }
-    forcedQcmCat = null; forcedQcmType = null;
+    forcedQcmDomain = null; forcedQcmType = null;
     if(review && review.why){
       document.getElementById('practice-family-tag').textContent += review.why==='raté' ? ' · 🔁 à revoir' : ' · ✨ pas encore fait';
     }
@@ -731,58 +698,79 @@
     document.getElementById('countdown-setup').hidden = false;
   });
 
-  // Mode "Manuel" : choix d'une activité précise à répéter en boucle. Le
-  // niveau (en dessous) dépend de l'activité choisie : moins de boutons si
-  // elle n'existe pas en Facile et/ou en Moyen (voir rebuildManualLevelRow).
-  // Deux étages : d'abord un THÈME (Quizz, Formes & mesures, Solides, Horloge),
-  // puis, s'il en contient plusieurs, l'activité précise.
-  // Les groupes viennent du champ `theme` de chaque famille ; cet ordre
-  // d'affichage est une simple préférence (un groupe inconnu va à la suite).
-  var THEME_DISPLAY_ORDER = ['🧠 Quizz', '📐 Formes & mesures', '📦 Solides', '🕒 Horloge'];
-  var FAMILY_THEMES = [];
-  FAMILIES.forEach(function(f){
-    var th = null;
-    FAMILY_THEMES.forEach(function(t){ if(t.label===f.theme) th = t; });
-    if(!th){ th = { label:f.theme, families:[] }; FAMILY_THEMES.push(th); }
-    th.families.push(f.key);
-  });
-  FAMILY_THEMES.forEach(function(t, i){
-    var r = THEME_DISPLAY_ORDER.indexOf(t.label);
-    t.rank = r===-1 ? THEME_DISPLAY_ORDER.length + i : r;
-  });
-  FAMILY_THEMES.sort(function(a, b){ return a.rank - b.rank; });
-  function startManualFamily(key){
-    manualFamily = key;
-    refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
-    if(manualFamily !== 'qcm'){
-      rebuildManualLevelRow(familyDef(manualFamily).levels || [0,1,2]);
-    }
+  // Mode "Manuel" : choix d'un THÈME (DOMAINS, noyau.js) puis d'une activité de ce thème, à répéter
+  // en boucle. Un thème réunit les écrans propres (Mesurer, Déformer, Patron…) ET les types de
+  // Quizz de même thème (Unités de longueur, Périmètre…), plus « un peu de tout » (tirage sans
+  // remise parmi les activités du thème disponibles au niveau choisi). Le niveau (en dessous)
+  // dépend de l'activité : moins de boutons si elle n'existe pas en Facile et/ou en Moyen.
+  var manualMix = null;   // « un peu de tout » : { id, units } ; manualFamily vaut alors 'mix'
+  // Activités d'un thème : [{ key, type, label, levels }] (type = type de Quizz, null pour un écran propre).
+  function domainUnits(domainId){
+    var units = [];
+    FAMILIES.forEach(function(f){
+      if(f.key!=='qcm' && domainOrFallback(f.domain)===domainId) units.push({ key:f.key, type:null, label:f.tag, levels:f.levels || [0,1,2] });
+    });
+    var seen = {};   // union des types de Quizz sur tous les niveaux : une activité ne disparaît jamais selon le niveau en cours
+    M4_LEVELS.forEach(function(lv){
+      lv.types.forEach(function(t){
+        var d = quizTypeById(t);
+        if(!d || seen[t] || quizDomainId(d)!==domainId) return;
+        seen[t] = true;
+        units.push({ key:'qcm', type:t, label:d.longLabel || t, levels:qcmTypeLevels(t) });
+      });
+    });
+    return units;
+  }
+  function unitAvailable(u, level){
+    return u.type ? M4_LEVELS[level].types.indexOf(u.type)!==-1 : u.levels.indexOf(level)!==-1;
+  }
+  // Activité suivante du « un peu de tout » (appelée par nextPracticeQuestion).
+  function manualMixPick(){
+    var av = manualMix.units.filter(function(u){ return unitAvailable(u, globalLevel); });
+    if(!av.length) av = manualMix.units;
+    var u = pickFresh('manualmix|' + manualMix.id + '|' + globalLevel + '|' + av.length, av);
+    return { key:u.key, type:u.type, why:'' };
+  }
+  function startManualUnit(u){
+    manualMix = null;
+    manualFamily = u.key;
+    m4TypeFilter = u.type || 'random';
+    rebuildManualLevelRow(u.levels);
     // Sans niveaux à choisir, l'épreuve démarre tout de suite ; sinon elle attend le choix du niveau.
     if(!manualAvailableLevels.length) showManualExercise();
   }
+  function startManualMix(domainId, units){
+    manualMix = { id:domainId, units:units };
+    manualFamily = 'mix';
+    m4TypeFilter = 'random';
+    rebuildManualLevelRow([0,1,2].filter(function(lv){ return units.some(function(u){ return unitAvailable(u, lv); }); }));
+  }
+  function resetManualChoice(){
+    manualFamily = null; manualMix = null;
+    m4TypeFilter = 'random';
+    document.getElementById('manual-level-wrap').hidden = true;
+    manualLevelChosen = false; manualAvailableLevels = [];
+    document.getElementById('practice-exercise').hidden = true;
+    updateManualToggle();
+  }
+  var MANUAL_DOMAINS = DOMAINS.filter(function(d){ return domainUnits(d.id).length; });
   buildLevelRow(
-    document.getElementById('manual-family-row'),
-    FAMILY_THEMES.map(function(t){ return t.label; }),
+    document.getElementById('manual-domain-row'),
+    MANUAL_DOMAINS.map(function(d){ return d.icon + ' ' + d.label; }),
     -1,
     function(idx){
-      var theme = FAMILY_THEMES[idx];
-      var subWrap = document.getElementById('manual-family-sub-wrap');
-      if(theme.families.length === 1){
-        subWrap.hidden = true;
-        startManualFamily(theme.families[0]);
+      var dom = MANUAL_DOMAINS[idx], units = domainUnits(dom.id);
+      var unitWrap = document.getElementById('manual-unit-wrap');
+      if(units.length === 1){
+        unitWrap.hidden = true;
+        startManualUnit(units[0]);
         return;
       }
-      subWrap.hidden = false;
-      manualFamily = null;
-      document.getElementById('manual-qcm-type-wrap').hidden = true;
-      m4TypeFilter = 'random'; m4CategoryFilter = 'all';
-      document.getElementById('manual-level-wrap').hidden = true;
-      manualLevelChosen = false; manualAvailableLevels = [];
-      document.getElementById('practice-exercise').hidden = true;
-      updateManualToggle();
-      buildLevelRow(document.getElementById('manual-family-sub-row'),
-        theme.families.map(function(k){ return FAMILY_TAGS[k]; }), -1,
-        function(j){ startManualFamily(theme.families[j]); });
+      unitWrap.hidden = false;
+      resetManualChoice();
+      buildLevelRow(document.getElementById('manual-unit-row'),
+        ['🎲 Un peu de tout'].concat(units.map(function(u){ return u.label; })), -1,
+        function(j){ if(j===0) startManualMix(dom.id, units); else startManualUnit(units[j-1]); });
     }
   );
 

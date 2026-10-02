@@ -24,8 +24,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   const stored = JSON.parse(await page.evaluate(() => localStorage.getItem('geo_history')));
   chk(stored.length === 30 && stored.every(e => e.length === 6 && e[5] === 1), 'historique enregistré et sauvegardé (30 réponses)');
   // ---------- 3) les 3 dernières questions sur les sujets faibles ----------
-  await ev(`progEvents=[]; var t=Date.now(); [['calcul',0.3],['mesures',0.4],['solides',0.5]].forEach(function(p){ var i=PROG_SKILLS.map(function(s){return s.id;}).indexOf(p[0]); for(var k=0;k<40;k++) progEvents.push([t-k*1000, i, p[0]==='mesures'?'measure':(p[0]==='solides'?'net':'qcm'), p[0]==='calcul'?'calc':'', 1, k/40<p[1]?1:0]); });
-    ['formes','repere','temps','nombres','logique'].forEach(function(id){ var i=PROG_SKILLS.map(function(s){return s.id;}).indexOf(id); for(var k=0;k<40;k++) progEvents.push([t-k*1000, i, id==='formes'?'deform':(id==='temps'?'clock-lire':'qcm'), id==='repere'?'coordFind':'', 1, 1]); });`);
+  await ev(`progEvents=[]; var t=Date.now(); [['calcul',0.3],['mesures',0.4],['solides',0.5]].forEach(function(p){ var i=DOMAINS.map(function(s){return s.id;}).indexOf(p[0]); for(var k=0;k<40;k++) progEvents.push([t-k*1000, i, p[0]==='mesures'?'measure':(p[0]==='solides'?'net':'qcm'), p[0]==='calcul'?'calc':'', 1, k/40<p[1]?1:0]); });
+    ['formes','symetrie','repere','temps','nombres','logique'].forEach(function(id){ var i=DOMAINS.map(function(s){return s.id;}).indexOf(id); for(var k=0;k<40;k++) progEvents.push([t-k*1000, i, id==='formes'?'deform':(id==='temps'?'clock-lire':'qcm'), id==='repere'?'coordFind':'', 1, 1]); });`);
   // remet les défis à faire
   await ev(`Object.keys(ownedCats).forEach(function(k){ delete ownedCats[k]; }); CAT_SPRITES.forEach(function(s){ if(s.starter) ownedCats[s.id]=true; }); setAppMode('auto'); setGlobalLevel(1); resetFreeStreak();`);
   const focus = [];
@@ -39,7 +39,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     await ev(`freeStreak=${17 + (k % 3)}; var f=progWeakPick(); window.__p=f;`);
     picks.push(await ev(`JSON.stringify(window.__p)`));
   }
-  const keys = [...new Set(picks.map(p => JSON.parse(p)).map(p => p.key + (p.cat ? ':' + p.cat : '')))];
+  const keys = [...new Set(picks.map(p => JSON.parse(p)).map(p => p.key + (p.domain ? ':' + p.domain : '')))];
   chk(keys.every(k => ['qcm:calcul', 'measure', 'net', 'qcm:solides'].includes(k)), 'sujets choisis parmi les plus faibles : ' + keys.join(', '));
   // défi déjà réussi : pas de ciblage
   await ev(`ownedCats[CAT_REWARDS[12].id]=true; freeStreak=18; nextPracticeQuestion();`);
@@ -54,13 +54,13 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(await page.evaluate(() => !document.getElementById('progress-overlay').hidden && document.getElementById('settings-overlay').hidden), 'bouton « Progression de l\'enfant » ouvre l\'écran');
   chk(await page.evaluate(() => /Pas encore de résultats/.test(document.getElementById('progress-body').textContent)), 'sans données : message clair');
   // avec données
-  await ev(`progEvents=[]; var t=Date.now(); PROG_SKILLS.forEach(function(s,i){ for(var k=0;k<45;k++) progEvents.push([t-k*3600000*5, i, s.fams[0]||'qcm', s.fams[0]?'':(quizTypeById('calc')?'calc':''), k%3, (k%(i+2)===0)?0:1]); }); renderProgress();`);
+  await ev(`progEvents=[]; var t=Date.now(); var fk=function(s){ var f=FAMILIES.filter(function(f){ return f.key!=='qcm' && f.domain===s.id; })[0]; return f ? f.key : 'qcm'; }; DOMAINS.forEach(function(s,i){ for(var k=0;k<45;k++) progEvents.push([t-k*3600000*5, i, fk(s), fk(s)==='qcm'?'calc':'', k%3, (k%(i+2)===0)?0:1]); }); renderProgress();`);
   const radar = await page.evaluate(() => ({ svg: !!document.querySelector('#progress-body svg.prog-radar'), labels: document.querySelectorAll('#progress-body svg.prog-radar text').length, polys: document.querySelectorAll('#progress-body svg.prog-radar polygon').length }));
-  chk(radar.svg && radar.labels === 16 && radar.polys >= 6, 'radar : 8 axes (16 textes), ' + radar.polys + ' polygones');
+  chk(radar.svg && radar.labels === 18 && radar.polys >= 6, 'radar : 9 axes (18 textes), ' + radar.polys + ' polygones');
   await page.screenshot({ path: SHOTS + 'prog_radar.png', fullPage: false });
   await page.evaluate(() => [...document.querySelectorAll('#progress-tabs .level-btn')][1].click());
   const det = await page.evaluate(() => ({ skills: document.querySelectorAll('#progress-body .prog-skill').length, rows: document.querySelectorAll('#progress-body .prog-acts li').length }));
-  chk(det.skills === 8 && det.rows > 0, 'détail : 8 compétences avec leurs activités (' + det.rows + ' lignes)');
+  chk(det.skills === 9 && det.rows > 0, 'détail : 9 compétences avec leurs activités (' + det.rows + ' lignes)');
   await page.evaluate(() => document.querySelector('#progress-body .prog-skill').open = true);
   await page.screenshot({ path: SHOTS + 'prog_detail.png' });
   await page.evaluate(() => [...document.querySelectorAll('#progress-tabs .level-btn')][2].click());

@@ -56,8 +56,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     await ev(`practiceMode='countdown'; startCountdown(); for(var i=0;i<10;i++) nextPracticeQuestion(); endCountdown(); practiceMode='free';`);
     // mode Manuel : chaque activité, et panneau de configuration de chacune
     await ev(`(function(){ setAppMode('manual'); MANUAL_FAMILY_LIST.forEach(function(k){ manualFamily=k; nextPracticeQuestion(); renderActivityConfig(k); }); setAppMode('auto'); })()`);
-    const themes = await ev(`FAMILY_THEMES.map(function(t){ return t.label + ' (' + t.families.length + ')'; }).join(', ')`);
-    chk(true, 'groupes du mode Manuel : ' + themes);
+    const themes = await ev(`MANUAL_DOMAINS.map(function(d){ return d.label + ' (' + domainUnits(d.id).length + ')'; }).join(', ')`);
+    chk(true, 'thèmes du mode Manuel : ' + themes);
     chk(errs.length === 0, 'aucune erreur JavaScript' + (errs.length ? ' : ' + errs.slice(0, 2).join(' | ') : ''));
     page.off('pageerror', onErr);
   }
