@@ -70,7 +70,7 @@
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
   registerFamily({
     key:'clock-regler', tag:'Régler l\'heure', domain:'temps', order:60,
-    note:'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place sur 24 positions à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (à 15 ou 45 minutes, les deux positions voisines sont acceptées).',
+    note:'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place comme sur une vraie horloge : on choisit l\'heure (12 positions) et elle se décale toute seule d\'un peu plus en avant quand la grande aiguille avance (à 8 h 10, elle est un peu après le 8 ; à 8 h 30, à mi-chemin du 9). Elle est acceptée dès qu\'elle est sur la bonne heure.',
     markup:[
       '<div class="coach-row">',
       '  <div class="coach-bubble">Place les aiguilles sur <span id="m5-target">3 h</span></div>',
@@ -86,29 +86,27 @@
     generate:function(){ m5rGenTarget(); },
     signature:function(){ return m5Target.hour + ':' + m5Target.minute; }
   });
-  // Les deux aiguilles se règlent indépendamment, chacune se magnétise sur
-  // des crans qui dépendent du niveau (0 Facile, 1 Moyen, 2 Difficile) :
-  //   Facile     heure pile ou demie      (petite : crans de 15°, grande : 2 positions)
-  //   Moyen      + les quarts d'heure     (petite : 15°,           grande : 4 positions)
-  //   Difficile  toutes les 5 minutes, heure de 0 h à 23 h (petite : 15°, grande : 12 positions)
+  // Comme sur une vraie horloge : la grande aiguille se règle sur des crans qui dépendent du niveau
+  // (0 Facile, 1 Moyen, 2 Difficile) et la petite aiguille se pose sur une des 12 heures ; sa position
+  // affichée suit la grande aiguille (elle avance de 0,5° par minute) : à 8 h 10 elle est un peu après le 8,
+  // à 8 h 30 à mi-chemin du 9. L'enfant n'a donc jamais à « faire comme si il y avait 0 minute ».
+  //   Facile     heure pile ou demie      (grande : 2 positions)
+  //   Moyen      + les quarts d'heure     (grande : 4 positions)
+  //   Difficile  toutes les 5 minutes, heure de 0 h à 23 h (grande : 12 positions)
   var m5Target = { hour:3, minute:0, level:0 };
-  var m5rHourTick = 0, m5rMinTick = 0, m5rDragWhich = null;
-  var M5R_HOUR_STEP = [15, 15, 15];    // degrés par cran, petite aiguille : 24 positions (heures pleines + demi-heures) à tous les niveaux
+  var m5rHourTick = 0, m5rMinTick = 0, m5rDragWhich = null;   // m5rHourTick : 0..11 (l'heure choisie, 12 = 0)
   var M5R_MIN_STEP = [180, 90, 30];    // degrés par cran, grande aiguille
-  // écart accepté (degrés) sur la petite aiguille : la position exacte (heure + minutes/60) est
-  // arrondie au cran de 15° le plus proche ; à 15 ou 45 min, pile entre deux crans, les deux sont acceptés.
-  var M5R_HOUR_TOL = [7.51, 7.51, 7.51];
+  function m5rMinutes(){ return Math.round(m5rMinTick * M5R_MIN_STEP[m5Target.level] / 6) % 60; }
+  // Angle affiché de la petite aiguille : l'heure choisie + l'avance due aux minutes.
+  function m5rHourAngle(){ return m5rHourTick * 30 + m5rMinutes() * 0.5; }
 
-  // Où se place la petite aiguille : sur une heure ou entre deux heures, selon les minutes.
+  // Indice quand l'heure (petite aiguille) est fausse.
   function hourHandHint(h, m){
     var a = h%12 || 12, b = a%12 + 1;
-    if(m<=10) return 'Indice : elle est juste sur le ' + a + '.';
-    if(m>=50) return 'Indice : il est presque ' + b + ' h, elle est presque sur le ' + b + ' (on la place sur le ' + b + ').';
-    if(m===15) return 'Indice : elle est un peu après le ' + a + ' (sur le ' + a + ' ou à mi-chemin vers le ' + b + ').';
-    if(m===45) return 'Indice : elle est presque au ' + b + ' (à mi-chemin entre le ' + a + ' et le ' + b + ', ou sur le ' + b + ').';
-    return 'Indice : elle est entre le ' + a + ' et le ' + b + ', à mi-chemin.';
+    if(m===0) return 'Indice : à ' + a + ' h pile, la petite aiguille est exactement sur le ' + a + '.';
+    return 'Indice : à ' + a + ' h ' + (m<10 ? '0' + m : m) + ', la petite aiguille a dépassé le ' + a + ' sans atteindre le ' + b + ' (elle avance avec la grande).';
   }
-  function m5rHourTip(){ return angleToXY(m5rHourTick*M5R_HOUR_STEP[m5Target.level] - 90, 42); }
+  function m5rHourTip(){ return angleToXY(m5rHourAngle() - 90, 42); }
   function m5rMinTip(){ return angleToXY(m5rMinTick*M5R_MIN_STEP[m5Target.level] - 90, 62); }
 
   function drawSettableClock(){
@@ -130,13 +128,13 @@
       c.setAttribute('aria-valuetext', h[3]);
       c.setAttribute('aria-valuenow', h[0]==='hour' ? m5rHourTick : m5rMinTick);
       c.setAttribute('aria-valuemin', 0);
-      c.setAttribute('aria-valuemax', Math.round(360/(h[0]==='hour' ? M5R_HOUR_STEP[lvl] : M5R_MIN_STEP[lvl])) - 1);
+      c.setAttribute('aria-valuemax', h[0]==='hour' ? 11 : Math.round(360/M5R_MIN_STEP[lvl]) - 1);
       c.addEventListener('keydown', function(e){
         var d = (e.key==='ArrowRight' || e.key==='ArrowUp') ? 1 : (e.key==='ArrowLeft' || e.key==='ArrowDown') ? -1 : 0;
         if(!d || m5rFlow.closed) return;
         e.preventDefault();
         m5rFlow.clearHint();
-        if(h[0]==='hour'){ var nh = Math.round(360/M5R_HOUR_STEP[lvl]); m5rHourTick = (m5rHourTick + d + nh) % nh; }
+        if(h[0]==='hour'){ m5rHourTick = (m5rHourTick + d + 12) % 12; }
         else { var nm = Math.round(360/M5R_MIN_STEP[lvl]); m5rMinTick = (m5rMinTick + d + nm) % nm; }
         m5rFocus = h[0];
         drawSettableClock();
@@ -147,8 +145,8 @@
   }
   var m5rFocus = null;   // aiguille qui garde le focus clavier après un redessin
   function hourHandText(){
-    var half = m5rHourTick * M5R_HOUR_STEP[m5Target.level] / 30, h = Math.floor(half) || 12;
-    return Math.abs(half - Math.round(half)) < 0.01 ? 'sur le ' + (Math.round(half) || 12) : 'entre le ' + h + ' et le ' + (h===12 ? 1 : h+1);
+    var a = m5rHourTick || 12, m = m5rMinutes();
+    return m===0 ? 'sur le ' + a : 'un peu après le ' + a + ' (elle avance avec la grande aiguille)';
   }
   function minuteHandText(){
     var m = Math.round(m5rMinTick * M5R_MIN_STEP[m5Target.level] / 6) % 60;
@@ -172,7 +170,7 @@
       m5Target.minute = pick([0,5,10,15,20,25,30,35,40,45,50,55]);
       label = minutesToLabel24(m5Target.hour*60 + m5Target.minute) + ' (' + periodOfDay(m5Target.hour).phrase + ')';
     }
-    m5rHourTick = 0; m5rMinTick = 0; // les aiguilles repartent de midi bien net
+    m5rHourTick = 0; m5rMinTick = 0; // les aiguilles repartent de midi bien net (la petite se décale avec la grande)
     document.getElementById('m5-target').textContent = label;
     drawSettableClock();
     m5rFlow.start();
@@ -195,7 +193,8 @@
       var raw = Math.atan2(p.y-100, p.x-100)*180/Math.PI;
       var clockDeg = ((raw+90)%360+360)%360;
       var lvl = m5Target.level;
-      if(m5rDragWhich==='hour') m5rHourTick = Math.round(clockDeg/M5R_HOUR_STEP[lvl]) % Math.round(360/M5R_HOUR_STEP[lvl]);
+      // petite aiguille : l'heure dont la position AFFICHÉE (heure + avance des minutes) est la plus proche du doigt
+      if(m5rDragWhich==='hour') m5rHourTick = (((Math.round((clockDeg - m5rMinutes()*0.5)/30)) % 12) + 12) % 12;
       else m5rMinTick = Math.round(clockDeg/M5R_MIN_STEP[lvl]) % Math.round(360/M5R_MIN_STEP[lvl]);
       drawSettableClock();
     });
@@ -208,10 +207,8 @@
   document.getElementById('m5r-new').addEventListener('click', function(){ m5rFlow.skip(); });
   document.getElementById('m5r-check').addEventListener('click', function(){
     var lvl = m5Target.level;
-    function angGap(a, b){ var d = Math.abs(a - b) % 360; return Math.min(d, 360 - d); }
-    var exactHourDeg = ((m5Target.hour % 12) + m5Target.minute/60) * 30;
-    var hourOk = angGap(m5rHourTick * M5R_HOUR_STEP[lvl], exactHourDeg) <= M5R_HOUR_TOL[lvl];
-    var minOk = angGap(m5rMinTick * M5R_MIN_STEP[lvl], m5Target.minute * 6) < 0.01;
+    var hourOk = m5rHourTick === (m5Target.hour % 12);
+    var minOk = m5rMinutes() === m5Target.minute;
     var total = m5Target.hour*60 + m5Target.minute;
     // En Difficile, l'heure demandée est en 24 h : on rappelle comment elle se lit sur le cadran.
     var readAs = (lvl===2 && (m5Target.hour===0 || m5Target.hour>=13))
@@ -227,7 +224,7 @@
     var state = m5rFlow.answer(false, { hint:hint + (readAs ? ' ' + readAs : ''), solution:'Voici les aiguilles bien placées.' + (readAs ? ' ' + readAs : ''), explain:explain });
     if(state==='failed'){
       // on montre la bonne position des deux aiguilles
-      m5rHourTick = Math.round(exactHourDeg / M5R_HOUR_STEP[lvl]) % Math.round(360 / M5R_HOUR_STEP[lvl]);
+      m5rHourTick = m5Target.hour % 12;
       m5rMinTick = Math.round(m5Target.minute * 6 / M5R_MIN_STEP[lvl]) % Math.round(360 / M5R_MIN_STEP[lvl]);
       drawSettableClock();
     }

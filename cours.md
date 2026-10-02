@@ -142,11 +142,11 @@ On place soi-même les aiguilles sur une heure donnée.
 
 | Niveau | Consigne |
 |---|---|
-| F | Heure pile ou demie (la petite aiguille se cale toutes les demi-heures) |
+| F | Heure pile ou demie |
 | M | + quarts d'heure |
 | D | Toutes les 5 minutes, heures de 0 h à 23 h : l'énoncé rappelle l'heure sur l'horloge à 12 h |
 
-**Petite aiguille :** elle se place sur **24 positions** à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (5–10 min : sur l'heure ; 20–40 min : entre les deux ; 50–55 min : sur l'heure suivante ; à 15 ou 45 min, les deux positions voisines sont acceptées). Une **seule étoile** par heure demandée, même si on appuie plusieurs fois sur Vérifier (idem pour Déformer).
+**Petite aiguille :** comme sur une vraie horloge, on la pose sur l'**heure** (12 positions) et elle **se décale toute seule** quand on avance la grande aiguille (0,5° par minute) : à 8 h 10 elle est un peu après le 8, à 8 h 30 à mi-chemin du 9, à 8 h 50 presque sur le 9. Il n'y a donc jamais à placer l'heure « comme s'il y avait 0 minute ». Elle est acceptée dès qu'elle est sur la bonne heure (8 pour 8 h 10 ou 8 h 50) ; sinon l'indice dit où elle doit être. Une **seule étoile** par heure demandée, même si on appuie plusieurs fois sur Vérifier (idem pour Déformer).
 
 **Variété :** l'appli ne propose jamais deux fois de suite le même type de Quizz ni la même famille d'activités.
 
