@@ -10,12 +10,12 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   let at20 = null;
   for (let i = 0; i < 30; i++) {
     await ev(`nextPracticeQuestion(); onPracticeAnswered(true);`);
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(100);
     levels.push(await ev(`globalLevel`));
     if (i === 19) at20 = JSON.parse(await ev(`JSON.stringify([12,13,14].map(function(k){ return isChallengeDone(k); }))`));
   }
   console.log('niveaux :', levels.join(''));
-  chk(levels[4] === 1 && levels[9] === 2 && levels[29] === 2, 'montée automatique Facile → Moyen → Difficile (toutes les 5 bonnes réponses)');
+  chk(levels[4] === 0 && levels[5] === 1 && levels[9] === 1 && levels[10] === 2 && levels[29] === 2, 'montée automatique Facile → Moyen → Difficile (à la question suivante la 5e bonne réponse)');
   const done = JSON.parse(await ev(`JSON.stringify([12,13,14].map(function(k){ return isChallengeDone(k); }))`));
   chk(JSON.stringify(at20) === '[true,false,false]', 'à 20 (malgré les montées de niveau) : seul le défi Facile est débloqué : ' + JSON.stringify(at20));
   chk(done.every(Boolean), 'à 30 : les trois défis sont débloqués : ' + JSON.stringify(done));
