@@ -898,6 +898,8 @@
      Le conteneur existe dès le retour de registerFamily : le thème peut ensuite
      brancher ses boutons par leur id. */
   var FAMILIES = [];
+  // Une activité peut se limiter à certains niveaux (def.levels, ex. [0] = Facile seulement).
+  function familyAvailable(f, level){ return !f.levels || f.levels.indexOf(level) !== -1; }
   function registerFamily(def){
     var wrap = document.createElement('div');
     wrap.id = 'fam-' + def.key;

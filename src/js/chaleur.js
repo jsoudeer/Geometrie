@@ -73,5 +73,6 @@
     }
     if(lv && !heatTimer) heatTimer = setInterval(function(){ if(heatLevel){ heatSpawn(); if(heatLevel>1) heatSpawn(); } }, 520);
     if(!lv && heatTimer){ clearInterval(heatTimer); heatTimer = null; }
+    if(!lv) heatLayer.classList.remove('surge');
   }
   updateHeat();

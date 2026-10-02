@@ -33,15 +33,17 @@
   body[data-app-theme="brainrot"][data-heat="2"] .heat-flames{ opacity:.55; }
   body[data-app-theme="brainrot"][data-heat="3"] .heat-flames{ opacity:.95; height:30vh; }
   body[data-app-theme="brainrot"][data-heat="3"] main{ animation:heatShake 3s linear infinite; }
+  /* Chaleur éteinte : plus aucune animation ni halo (une animation d'opacité aurait pu le laisser visible) */
+  body[data-heat="0"] .heat-glow, body[data-heat="0"] .heat-flames{ animation:none; opacity:0; }
   /* --- Particules (créées en JS) --- */
   .heat-p{ position:absolute; bottom:-30px; font-size:22px; opacity:0; animation:heatRise var(--dur,3.2s) ease-out forwards; will-change:transform,opacity; }
   /* éclat à chaque nouveau palier */
-  .heat-layer.surge::after{ content:''; position:absolute; inset:0; animation:heatSurge .7s ease-out; }
+  .heat-layer.surge::after{ content:''; position:absolute; inset:0; opacity:0; animation:heatSurge .7s ease-out; }   /* opacity:0 au repos : sinon l'éclat resterait affiché (écran rosé) une fois l'animation finie */
   body[data-app-theme="cats"] .heat-layer.surge::after{ background:radial-gradient(circle, rgba(255,255,255,.55), rgba(255,180,200,.35) 45%, transparent 75%); }
   body[data-app-theme="brainrot"] .heat-layer.surge::after{ background:radial-gradient(circle, rgba(255,240,150,.7), rgba(255,80,0,.45) 45%, transparent 75%); }
   @keyframes heatBreath{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.18); } }
   @keyframes heatRainbow{ 0%{ filter:hue-rotate(0deg) brightness(1.1); } 100%{ filter:hue-rotate(360deg) brightness(1.1); } }
-  @keyframes heatFlicker{ 0%{ opacity:var(--o,1); } 50%{ filter:brightness(1.25); } 100%{ filter:brightness(.9); } }
+  @keyframes heatFlicker{ 0%{ filter:brightness(1); } 50%{ filter:brightness(1.25); } 100%{ filter:brightness(.9); } }
   @keyframes heatFlames{ from{ transform:scaleY(.82) skewX(-2deg); } to{ transform:scaleY(1.12) skewX(2deg); } }
   @keyframes heatShake{ 0%,92%,100%{ transform:translate(0,0); } 94%{ transform:translate(-2px,1px); } 96%{ transform:translate(2px,-1px); } 98%{ transform:translate(-1px,-1px); } }
   @keyframes heatRise{ 0%{ opacity:0; transform:translate(0,0) scale(.7); } 12%{ opacity:.95; } 100%{ opacity:0; transform:translate(var(--dx,0), -88vh) scale(1.15) rotate(var(--rot,0deg)); } }

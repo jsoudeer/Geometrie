@@ -363,6 +363,7 @@
   function familyKeys(){
     var keys = [];
     FAMILIES.forEach(function(f){
+      if(!familyAvailable(f, globalLevel)) return;
       if(practiceMode==='countdown'){ if(f.timed) keys.push(f.key); return; }
       for(var i=0;i<(f.weight || 1);i++) keys.push(f.key);
     });
@@ -422,6 +423,8 @@
     // on prend la première famille (par le haut du sac) différente de celle affichée
     var bag = FAM_BAG.bag, at = bag.length-1;
     while(at>0 && bag[at]===lastFamily) at--;
+    // Il ne reste dans le sac que la famille déjà affichée (des tirages écartés ont vidé le reste) : nouveau sac.
+    if(bag[at]===lastFamily && keys.some(function(k){ return k!==lastFamily; })){ FAM_BAG = { sig:'', bag:[] }; return pickFamilyFresh(); }
     var key = bag.splice(at,1)[0];
     return key;
   }

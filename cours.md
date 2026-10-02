@@ -157,7 +157,7 @@ Trois activités interactives, sans chronomètre. On touche les cases ou les par
 |---|---|---|---|---|
 | Compléter la symétrie | Colorier de l'autre côté de la ligne rouge | 4 cases (3×4) | 6 cases (3×5) | 9 cases, ligne verticale **ou horizontale** |
 | Colorier une fraction | « Colorie la moitié / le quart / les trois quarts / le tiers… » | 2 ou 4 parts | + 3 parts | 4, 6 ou 8 parts, parfois « 5/8 » |
-| Reproduire le modèle | Copier un motif sur une grille vide | 4×4, 5 cases | 5×5, 8 cases | 6×6, 12 cases |
+| Reproduire le modèle | Copier un motif sur une grille vide | 4×4, 5 cases | *(absent : trop long ; « Trouver l'erreur » à la place)* | *(absent)* |
 
 ---
 

@@ -1047,15 +1047,17 @@
   body[data-app-theme="brainrot"][data-heat="2"] .heat-flames{ opacity:.55; }
   body[data-app-theme="brainrot"][data-heat="3"] .heat-flames{ opacity:.95; height:30vh; }
   body[data-app-theme="brainrot"][data-heat="3"] main{ animation:heatShake 3s linear infinite; }
+  /* Chaleur éteinte : plus aucune animation ni halo (une animation d'opacité aurait pu le laisser visible) */
+  body[data-heat="0"] .heat-glow, body[data-heat="0"] .heat-flames{ animation:none; opacity:0; }
   /* --- Particules (créées en JS) --- */
   .heat-p{ position:absolute; bottom:-30px; font-size:22px; opacity:0; animation:heatRise var(--dur,3.2s) ease-out forwards; will-change:transform,opacity; }
   /* éclat à chaque nouveau palier */
-  .heat-layer.surge::after{ content:''; position:absolute; inset:0; animation:heatSurge .7s ease-out; }
+  .heat-layer.surge::after{ content:''; position:absolute; inset:0; opacity:0; animation:heatSurge .7s ease-out; }   /* opacity:0 au repos : sinon l'éclat resterait affiché (écran rosé) une fois l'animation finie */
   body[data-app-theme="cats"] .heat-layer.surge::after{ background:radial-gradient(circle, rgba(255,255,255,.55), rgba(255,180,200,.35) 45%, transparent 75%); }
   body[data-app-theme="brainrot"] .heat-layer.surge::after{ background:radial-gradient(circle, rgba(255,240,150,.7), rgba(255,80,0,.45) 45%, transparent 75%); }
   @keyframes heatBreath{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.18); } }
   @keyframes heatRainbow{ 0%{ filter:hue-rotate(0deg) brightness(1.1); } 100%{ filter:hue-rotate(360deg) brightness(1.1); } }
-  @keyframes heatFlicker{ 0%{ opacity:var(--o,1); } 50%{ filter:brightness(1.25); } 100%{ filter:brightness(.9); } }
+  @keyframes heatFlicker{ 0%{ filter:brightness(1); } 50%{ filter:brightness(1.25); } 100%{ filter:brightness(.9); } }
   @keyframes heatFlames{ from{ transform:scaleY(.82) skewX(-2deg); } to{ transform:scaleY(1.12) skewX(2deg); } }
   @keyframes heatShake{ 0%,92%,100%{ transform:translate(0,0); } 94%{ transform:translate(-2px,1px); } 96%{ transform:translate(2px,-1px); } 98%{ transform:translate(-1px,-1px); } }
   @keyframes heatRise{ 0%{ opacity:0; transform:translate(0,0) scale(.7); } 12%{ opacity:.95; } 100%{ opacity:0; transform:translate(var(--dx,0), -88vh) scale(1.15) rotate(var(--rot,0deg)); } }
@@ -2319,6 +2321,8 @@
      Le conteneur existe dès le retour de registerFamily : le thème peut ensuite
      brancher ses boutons par leur id. */
   var FAMILIES = [];
+  // Une activité peut se limiter à certains niveaux (def.levels, ex. [0] = Facile seulement).
+  function familyAvailable(f, level){ return !f.levels || f.levels.indexOf(level) !== -1; }
   function registerFamily(def){
     var wrap = document.createElement('div');
     wrap.id = 'fam-' + def.key;
@@ -6554,8 +6558,8 @@
   // 3. Reproduire le modèle sur une grille
   // ---------------------------------------------------------------------
   var atCopy = { n:0, model:null, mine:null, ui:null };
-  function atCopyGenerate(level){
-    var n = level===0 ? 4 : level===1 ? 5 : 6, count = level===0 ? 5 : level===1 ? 8 : 12;
+  function atCopyGenerate(){
+    var n = 4, count = 5;     // Facile seulement : plus grand, la recopie est trop longue pour un CE1
     var model = [], r, c;
     for(r=0;r<n;r++){ model.push([]); for(c=0;c<n;c++) model[r].push(false); }
     var placed = 0, guard = 0;
@@ -6599,7 +6603,8 @@
   }
   registerFamily({
     key:'atelier-copie', tag:'Reproduire le modèle', domain:'formes',
-    note:'Un modèle est dessiné sur une grille ; on le reproduit case par case sur une grille vide (repérage, observation). Facile : grille 4×4, 5 cases ; Moyen : 5×5, 8 cases ; Difficile : 6×6, 12 cases. Les cases sont tirées au hasard.',
+    note:'Un modèle est dessiné sur une grille ; on le reproduit case par case sur une grille vide (repérage, observation). Facile seulement (grille 4×4, 5 cases tirées au hasard) : au-delà, la recopie est trop longue ; Moyen et Difficile proposent « Trouver l\'erreur » à la place.',
+    levels:[0],
     build:function(wrap){ atCopy.ui = makeAtelier('atelier-copie', wrap, atCopyCheck); },
     generate:atCopyGenerate,
     signature:function(){ return JSON.stringify(atCopy.model); }
@@ -7137,6 +7142,7 @@
   function familyKeys(){
     var keys = [];
     FAMILIES.forEach(function(f){
+      if(!familyAvailable(f, globalLevel)) return;
       if(practiceMode==='countdown'){ if(f.timed) keys.push(f.key); return; }
       for(var i=0;i<(f.weight || 1);i++) keys.push(f.key);
     });
@@ -7196,6 +7202,8 @@
     // on prend la première famille (par le haut du sac) différente de celle affichée
     var bag = FAM_BAG.bag, at = bag.length-1;
     while(at>0 && bag[at]===lastFamily) at--;
+    // Il ne reste dans le sac que la famille déjà affichée (des tirages écartés ont vidé le reste) : nouveau sac.
+    if(bag[at]===lastFamily && keys.some(function(k){ return k!==lastFamily; })){ FAM_BAG = { sig:'', bag:[] }; return pickFamilyFresh(); }
     var key = bag.splice(at,1)[0];
     return key;
   }
@@ -9294,7 +9302,7 @@
     var st = pickFresh('weakskill|' + weak.map(function(w){ return w.skill.id; }).join(','), weak);
     // activités disponibles pour cette compétence au niveau courant
     var dom = st.skill.id, options = [];
-    FAMILIES.forEach(function(f){ if(f.key!=='qcm' && domainOrFallback(f.domain)===dom) options.push({ key:f.key, domain:null }); });
+    FAMILIES.forEach(function(f){ if(f.key!=='qcm' && familyAvailable(f, globalLevel) && domainOrFallback(f.domain)===dom) options.push({ key:f.key, domain:null }); });
     if(M4_LEVELS[globalLevel].types.some(function(t){ var d = quizTypeById(t); return d && quizDomainId(d)===dom; })) options.push({ key:'qcm', domain:dom });
     if(!options.length) return null;
     // la moins réussie récemment (les activités sans donnée passent après)
@@ -9318,6 +9326,7 @@
   function progReviewUnits(){
     var units = [];
     FAMILIES.forEach(function(f){
+      if(!familyAvailable(f, globalLevel)) return;
       if(f.key==='qcm') M4_LEVELS[globalLevel].types.forEach(function(t){ units.push({ key:'qcm', type:t, id:'qcm|' + t }); });
       else units.push({ key:f.key, type:null, id:f.key });
     });
@@ -9830,6 +9839,7 @@
     }
     if(lv && !heatTimer) heatTimer = setInterval(function(){ if(heatLevel){ heatSpawn(); if(heatLevel>1) heatSpawn(); } }, 520);
     if(!lv && heatTimer){ clearInterval(heatTimer); heatTimer = null; }
+    if(!lv) heatLayer.classList.remove('surge');
   }
   updateHeat();
 })();
