@@ -49,12 +49,15 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 } }, asy
     await page.waitForTimeout(1500);
     const info = await page.evaluate(() => ({ glow: getComputedStyle(document.querySelector('.heat-glow')).opacity, particles: document.querySelectorAll('.heat-p').length, bg: getComputedStyle(document.querySelector('.heat-glow')).backgroundImage.slice(0, 60), pe: getComputedStyle(document.querySelector('.heat-layer')).pointerEvents }));
     chk(+info.glow > 0.9 && info.particles > 0 && info.pe === 'none', theme + ' : halo visible, ' + info.particles + ' particules, sans bloquer les clics');
+    chk(await page.evaluate(() => getComputedStyle(document.querySelector('.heat-layer'), '::after').opacity) === '0', theme + ' : l\'éclat de palier est éteint une fois joué (sinon écran rosé permanent)');
     await page.screenshot({ path: SHOTS + 'chaleur_' + theme + '_3.png' });
     await ev(`freeStreak=17; updateStreakPill();`); await page.waitForTimeout(1200);
     await page.screenshot({ path: SHOTS + 'chaleur_' + theme + '_1.png' });
   }
   await ev(`onPracticeAnswered(false)`);
   chk(await page.evaluate(() => document.body.getAttribute('data-heat')) === '0', 'une erreur éteint la chaleur');
+  await page.waitForTimeout(2500);
+  chk(await page.evaluate(() => { const l = document.querySelector('.heat-layer'); return !l.classList.contains('surge') && getComputedStyle(document.querySelector('.heat-glow')).opacity === '0'; }), 'après une erreur : plus aucun voile, écran normal');
   await ev(`freeStreak=22; updateStreakPill(); setAppMode('manual')`);
   chk(await page.evaluate(() => document.body.getAttribute('data-heat')) === '0', 'hors mode Aléatoire : pas de chaleur');
   // mouvement réduit : pas de particules

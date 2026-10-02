@@ -85,7 +85,7 @@
     var st = pickFresh('weakskill|' + weak.map(function(w){ return w.skill.id; }).join(','), weak);
     // activités disponibles pour cette compétence au niveau courant
     var dom = st.skill.id, options = [];
-    FAMILIES.forEach(function(f){ if(f.key!=='qcm' && domainOrFallback(f.domain)===dom) options.push({ key:f.key, domain:null }); });
+    FAMILIES.forEach(function(f){ if(f.key!=='qcm' && familyAvailable(f, globalLevel) && domainOrFallback(f.domain)===dom) options.push({ key:f.key, domain:null }); });
     if(M4_LEVELS[globalLevel].types.some(function(t){ var d = quizTypeById(t); return d && quizDomainId(d)===dom; })) options.push({ key:'qcm', domain:dom });
     if(!options.length) return null;
     // la moins réussie récemment (les activités sans donnée passent après)
@@ -109,6 +109,7 @@
   function progReviewUnits(){
     var units = [];
     FAMILIES.forEach(function(f){
+      if(!familyAvailable(f, globalLevel)) return;
       if(f.key==='qcm') M4_LEVELS[globalLevel].types.forEach(function(t){ units.push({ key:'qcm', type:t, id:'qcm|' + t }); });
       else units.push({ key:f.key, type:null, id:f.key });
     });

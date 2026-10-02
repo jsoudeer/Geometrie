@@ -204,8 +204,8 @@
   // 3. Reproduire le modèle sur une grille
   // ---------------------------------------------------------------------
   var atCopy = { n:0, model:null, mine:null, ui:null };
-  function atCopyGenerate(level){
-    var n = level===0 ? 4 : level===1 ? 5 : 6, count = level===0 ? 5 : level===1 ? 8 : 12;
+  function atCopyGenerate(){
+    var n = 4, count = 5;     // Facile seulement : plus grand, la recopie est trop longue pour un CE1
     var model = [], r, c;
     for(r=0;r<n;r++){ model.push([]); for(c=0;c<n;c++) model[r].push(false); }
     var placed = 0, guard = 0;
@@ -249,7 +249,8 @@
   }
   registerFamily({
     key:'atelier-copie', tag:'Reproduire le modèle', domain:'formes',
-    note:'Un modèle est dessiné sur une grille ; on le reproduit case par case sur une grille vide (repérage, observation). Facile : grille 4×4, 5 cases ; Moyen : 5×5, 8 cases ; Difficile : 6×6, 12 cases. Les cases sont tirées au hasard.',
+    note:'Un modèle est dessiné sur une grille ; on le reproduit case par case sur une grille vide (repérage, observation). Facile seulement (grille 4×4, 5 cases tirées au hasard) : au-delà, la recopie est trop longue ; Moyen et Difficile proposent « Trouver l\'erreur » à la place.',
+    levels:[0],
     build:function(wrap){ atCopy.ui = makeAtelier('atelier-copie', wrap, atCopyCheck); },
     generate:atCopyGenerate,
     signature:function(){ return JSON.stringify(atCopy.model); }

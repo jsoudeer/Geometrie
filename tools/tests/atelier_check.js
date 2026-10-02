@@ -44,7 +44,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   await check('atelier-fraction');
   console.log('fraction tout coloré :', await fbText('atelier-fraction'));
   // captures
-  for (const [key, lvl] of [['atelier-sym', 2], ['atelier-fraction', 2], ['atelier-copie', 1]]) {
+  for (const [key, lvl] of [['atelier-sym', 2], ['atelier-fraction', 2], ['atelier-copie', 0]]) {
     await ev(`globalLevel=${lvl}; showFamily('${key}'); extraFamily('${key}').generate(${lvl});`);
     if (key === 'atelier-copie') await clickIdx(key, [0, 1, 7]);
     await check(key);
