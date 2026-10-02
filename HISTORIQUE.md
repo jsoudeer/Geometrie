@@ -181,3 +181,10 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - Hors série sans faute, hors chaleur, hors montée de niveau automatique (conditions `practiceMode==='free'` conservées) ; les réponses alimentent bien l'historique.
 - `cours.md` : ligne du tableau + règle de poids ; correction d'une phrase périmée sur l'avancement automatique et la série. Étape du guide d'accueil mise à jour.
 - Test : `revision_check.js`.
+
+## 33. Lancement différé et un seul découpage en thèmes (02/10/2026)
+- **Lancement** : la carte d'accueil attend la fin de la recherche d'une image perso (`splashSettle`, classe `sp-wait` : dessin et textes invisibles) avant de jouer l'animation ; image trouvée → moitiés de l'image ; rien → dessin SVG ; vidéo → lue telle quelle. Filet de sécurité à 2,5 s. Plus de double lecture.
+- **Thèmes** : `DOMAINS` (noyau.js) remplace `QCM_CATEGORIES`, `PROG_SKILLS`, `FAMILY_THEMES`/`THEME_DISPLAY_ORDER` et les champs `theme`/`category` : 9 thèmes (Formes & angles, Symétrie, Repérage, Solides & patrons, Heure & calendrier, Mesures, Nombres & fractions, Calcul & problèmes, Logique & énigmes). Chaque famille et chaque type de quiz déclare `domain`. Ce même découpage sert au mode Manuel, au panneau de réglages, à la Progression (radar de 9 compétences, `progSkillIndex`) et au ciblage des sujets faibles. Fusions : « Mesures » du Quizz + Mesurer + Estimer ; Problèmes & monnaie → Calcul ; Énigme → Logique ; Symétrie sort de Formes (ateliers Compléter/Axes + Vrai-faux + Visuel).
+- **Mode Manuel** : thème (`manual-domain-row`) → activité (`manual-unit-row`) ou « 🎲 Un peu de tout » (`manualMix`, tirage sans remise parmi les activités du thème disponibles au niveau, `manualMixPick`). Les anciens sélecteurs Quizz (catégorie/type) disparaissent ; `m4CategoryFilter` supprimé.
+- L'historique de réponses existant n'est pas migré (pas en production).
+- Tests : `domaines_check.js` (nouveau), `splash_check.js` (cas « recherche lente »), `manual_check.js`, `progress_check.js`, `mascot_layer.js`, `contrast_audit.js`, `theme_removal_check.js`, `variete_audit.js` adaptés.

@@ -13,7 +13,7 @@ Ce fichier reprend, sur le même modèle que **⚙️ Réglages → Configurer l
 | **Aléatoire** (onglets Facile / Moyen / Difficile) | Une activité tirée au hasard à chaque question | Les 6 familles ci-dessous |
 | **Révision** (à côté d'Aléatoire) | Le jeu repose surtout les exercices ratés, avec aussi des exercices jamais faits | Mêmes activités ; étiquette « 🔁 à revoir » ou « ✨ pas encore fait » |
 | **Chronométré** (1, 2, 3 ou 5 min) | Un maximum de bonnes réponses avant la fin du temps | Seulement Mesurer, Quizz et Lire l'heure (réponse en un geste) |
-| **Manuel** | On choisit une activité (et, pour le Quizz, un type de question précis), puis un niveau : **aucun niveau n'est choisi d'office et aucune épreuve n'apparaît** tant qu'on n'a pas touché Facile, Moyen ou Difficile ; ce toucher affiche l'épreuve et replie la liste des activités (bouton « Afficher / Masquer les activités », plus de minuterie) | Toutes les familles |
+| **Manuel** | On choisit un **thème** (🔷 Formes & angles, 🦋 Symétrie, 🧭 Repérage, 🧊 Solides & patrons, 🕒 Heure & calendrier, 📏 Mesures, 🔢 Nombres & fractions, ➕ Calcul & problèmes, 🧩 Logique & énigmes), puis une activité de ce thème ou « 🎲 Un peu de tout » (mélange des activités du thème), puis un niveau : **aucun niveau n'est choisi d'office et aucune épreuve n'apparaît** tant qu'on n'a pas touché Facile, Moyen ou Difficile ; ce toucher affiche l'épreuve et replie la liste des activités (bouton « Afficher / Masquer les activités », plus de minuterie) | Toutes les familles |
 
 En chronométré, à la fin : +1 ⭐ pour 2 bonnes réponses (au moins 1 ⭐).
 
@@ -72,7 +72,7 @@ Après la réponse, le patron se plie **lentement, une face après l'autre** (fa
 *Explication :* elle est écrite à partir du pliage réellement calculé (par exemple « une face se pose sur une autre (en trop) et il reste un trou »). La bonne réponse elle-même se déduit du calcul : un patron ajouté ne peut pas être mal étiqueté. Le dessin est fixe pour un patron donné ; seul le choix du patron est tiré au hasard.
 
 ### 🧠 Quizz (39 types de questions)
-Les types sont regroupés en **sous-catégories** : 🔷 Formes, 🧭 Repérage, 🧊 Solides & énigmes, 🕒 Heure & calendrier, 📏 Mesures, 🔢 Nombres, ➕ Calcul, 🪙 Problèmes & monnaie, 🧩 Suites logiques. Dans « Activités & difficulté » chaque groupe est repliable ; en mode Manuel, on choisit d'abord un thème (🧠 Quizz, 📐 Formes & mesures, 📦 Solides, 🕒 Horloge), puis l'activité ou, pour le Quizz, la sous-catégorie puis le type.
+Les types sont rangés dans les **mêmes 9 thèmes** que les autres activités (un seul découpage pour tout le jeu : mode Manuel, réglages, progression) : par exemple le thème 📏 Mesures réunit Mesurer, Estimer une longueur, Unités de longueur et Périmètre. Dans « Activités & difficulté » chaque thème est repliable.
 
 Les questions « (visuel) » proposent des **réponses dessinées** (petits schémas à toucher) au lieu de mots.
 

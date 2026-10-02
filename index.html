@@ -482,6 +482,9 @@
 
   /* --- Choc des deux moitiés au lancement (~2,3 s) --- */
   .splash-art{ cursor:pointer; }
+  /* attente de la recherche d'image perso : rien ne bouge ni ne s'affiche encore */
+  .sp-wait .splash-art{ visibility:hidden; }
+  .sp-wait .splash-title, .sp-wait .splash-sub, .sp-wait .splash-start-btn{ opacity:0; }
   .sp-impact > *, .sp-vs{ transform-box:view-box; }
   .sp-flash, .sp-ring, .sp-bolt, .sp-spark{ opacity:0; }
   .sp-vs{ transform-origin:160px 148px; }
@@ -992,7 +995,7 @@
        visuel vit aussi dans assets/branding/ pour réutilisation (icône,
        README, packaging futur). -->
   <div class="splash-overlay" id="splash-overlay">
-    <div class="splash-card">
+    <div class="splash-card sp-wait">
       <svg id="splashSvg" class="splash-art" viewBox="0 0 320 180" role="img" aria-label="Un chat kawaii et un personnage brainrot face à face"></svg>
       <h1 class="splash-title">Kawaii <span class="splash-vs-inline">VS</span> Brainrot</h1>
       <p class="splash-sub">La géométrie CE1 comme un jeu : mesure, formes, quiz et bataille de personnages !</p>
@@ -1166,22 +1169,11 @@
         <div id="manual-picker" hidden>
           <button class="btn ghost" id="manual-show-activities-btn" type="button" hidden>👁 Afficher les activités</button>
           <div id="manual-activity-picker">
-            <p class="muted">Choisis une activité à travailler :</p>
-            <div class="level-row" id="manual-family-row"></div>
-            <div id="manual-family-sub-wrap" hidden>
+            <p class="muted">Choisis un thème :</p>
+            <div class="level-row" id="manual-domain-row"></div>
+            <div id="manual-unit-wrap" hidden>
               <p class="muted">Activité :</p>
-              <div class="level-row" id="manual-family-sub-row"></div>
-            </div>
-            <!-- La famille "Quizz" contient à elle seule une vingtaine de
-                 types de questions différents (côtés, angles, coordonnées,
-                 symétrie, solides, énigmes, calcul...) : ce sélecteur permet
-                 de s'entraîner sur un type précis plutôt que de tous les
-                 mélanger au hasard. -->
-            <div id="manual-qcm-type-wrap" hidden>
-              <p class="muted">Thème (Quizz) :</p>
-              <div class="level-row" id="manual-qcm-cat-row"></div>
-              <p class="muted">Type de question :</p>
-              <div class="level-row" id="manual-qcm-type-row"></div>
+              <div class="level-row" id="manual-unit-row"></div>
             </div>
           </div>
           <div id="manual-level-wrap" hidden>
@@ -1710,11 +1702,20 @@
     void splashArt.getBoundingClientRect();
     splashArt.classList.add('sp-go'); if(card) card.classList.add('sp-shake');
   }
-  drawSplashArt(splashSvgEl);
-  if(splashSvgEl){
-    splashSvgEl.classList.add('sp-go');
-    splashSvgEl.closest('.splash-card').classList.add('sp-shake');
-    splashSvgEl.addEventListener('click', playSplashClash);
+  // L'animation ne démarre qu'une fois la recherche d'une image perso terminée (trySplashCustomMedia) :
+  // jusque-là la carte reste en attente (classe sp-wait : dessin et textes invisibles).
+  var splashSettled = false;
+  function splashSettle(kind){
+    if(splashSettled) return;
+    splashSettled = true;
+    var card = splashSvgEl && splashSvgEl.closest('.splash-card');
+    if(kind==='svg'){
+      drawSplashArt(splashSvgEl);
+      splashSvgEl.addEventListener('click', playSplashClash);
+    }
+    if(card) card.classList.remove('sp-wait');
+    if(kind==='video'){ if(card) card.classList.add('sp-shake'); return; }   // la vidéo joue d'elle-même : seulement l'apparition des textes
+    playSplashClash();
   }
 
   /* ---- Splash perso en remplacement du dessin procédural -----------------
@@ -1725,7 +1726,7 @@
      priorité : vidéo mp4/webm d'abord, puis gif/webp/png/jpg/svg) — un écran
      de démarrage se prête bien à une petite animation en boucle. Si aucun
      fichier n'est trouvé (ex : aperçu publié seul, sans le reste du dépôt),
-     le dessin procédural (drawSplashArt ci-dessus) reste affiché tel quel. */
+     ou au bout de 2,5 s, c'est le dessin procédural (drawSplashArt) qui joue. */
   function trySplashCustomMedia(){
     var svg = document.getElementById('splashSvg');
     if(!svg) return;
@@ -1733,10 +1734,11 @@
     var VIDEO_EXTS = ['mp4','webm'];
     var IMAGE_EXTS = ['gif','webp','png','jpg','jpeg','svg'];
     function tryImage(i){
-      if(i >= IMAGE_EXTS.length) return; // rien trouvé : on garde le SVG procédural
+      if(i >= IMAGE_EXTS.length){ splashSettle('svg'); return; } // rien trouvé : dessin procédural
       var img = new Image();
       img.onerror = function(){ tryImage(i+1); };
       img.onload = function(){
+        if(splashSettled) return;
         // Une image fixe est scindée en deux moitiés (fond CSS) qui s'entrechoquent comme le dessin SVG.
         var box = document.createElement('div');
         box.className = 'splash-art splash-custom-media sp-split sp-go';
@@ -1751,7 +1753,7 @@
         fx.appendChild(g); box.appendChild(fx); splashImpact(box, g);
         box.addEventListener('click', playSplashClash);
         svg.style.display = 'none'; container.insertBefore(box, svg); splashArt = box;
-        playSplashClash();   // repart à zéro : l'image a pu arriver après le début de l'animation du dessin
+        splashSettle('image');
       };
       img.src = 'assets/branding/splash.' + IMAGE_EXTS[i];
     }
@@ -1761,13 +1763,14 @@
       v.className = 'splash-art splash-custom-media';
       v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
       v.setAttribute('aria-label','Écran de démarrage');
-      v.addEventListener('loadeddata', function(){ svg.style.display = 'none'; container.insertBefore(v, svg); });
+      v.addEventListener('loadeddata', function(){ if(splashSettled) return; svg.style.display = 'none'; container.insertBefore(v, svg); splashSettle('video'); });
       v.addEventListener('error', function(){ tryVideo(i+1); });
       v.src = 'assets/branding/splash.' + VIDEO_EXTS[i];
     }
     tryVideo(0);
   }
   trySplashCustomMedia();
+  setTimeout(function(){ splashSettle('svg'); }, 2500);   // filet de sécurité : recherche trop longue
 
   document.getElementById('splash-start-btn').addEventListener('click', function(){
     var overlay = document.getElementById('splash-overlay');
@@ -2174,33 +2177,35 @@
   // ---- Registre des types de Quizz ----
   // Chaque thème appelle registerQuizType() pour déclarer ses types de questions :
   //   id            identifiant unique (ex. 'sides')
+  //   domain        thème (id de DOMAINS, ex. 'formes')
   //   label         nom court (panneau « Configurer les activités »)
-  //   longLabel     nom affiché dans la liste du mode Manuel
+  //   longLabel     nom affiché dans la liste du mode Manuel (sous son thème)
   //   defaultLevels niveaux où le type apparaît par défaut : 0 Facile, 1 Moyen, 2 Difficile
   //   randomNote    ce qui est tiré au hasard, pour le panneau de configuration
   //   generate(level)  renvoie la question :
   //     { tag, question, sub, explain, draw:function(){…}, cols3:bool, choices:[{label, ok}] }
   var QCM_TYPE_DEFS = [];
-  // Sous-catégories d'affichage (panneau « Activités & difficulté » et mode Manuel).
-  // Un thème peut en ajouter avec registerQuizCategory ; un type sans catégorie
-  // connue tombe dans « Autres ».
-  var QCM_CATEGORIES = [
-    { id:'formes',    label:'Formes', icon:'🔷' },
-    { id:'repere',    label:'Repérage', icon:'🧭' },
-    { id:'solides',   label:'Solides & énigmes', icon:'🧊' },
-    { id:'temps',     label:'Heure & calendrier', icon:'🕒' },
-    { id:'mesures',   label:'Mesures', icon:'📏' },
-    { id:'nombres',   label:'Nombres', icon:'🔢' },
-    { id:'calcul',    label:'Calcul', icon:'➕' },
-    { id:'problemes', label:'Problèmes & monnaie', icon:'🪙' },
-    { id:'logique',   label:'Suites logiques', icon:'🧩' },
-    { id:'autres',    label:'Autres', icon:'✨' }
+  // THÈMES (domaines) : UN seul découpage pour tout le jeu. Il sert au mode Manuel (thème puis
+  // activité), au panneau « Activités & difficulté », à la Progression (radar de 9 compétences)
+  // et au ciblage des sujets faibles. Chaque activité y est rangée : une famille d'écran par son
+  // champ `domain` (registerFamily), un type de Quizz par son champ `domain` (registerQuizType).
+  // Un domaine inconnu tombe dans le dernier (« Logique & énigmes »).
+  var DOMAINS = [
+    { id:'formes',   icon:'🔷', label:'Formes & angles',     short:'Formes' },
+    { id:'symetrie', icon:'🦋', label:'Symétrie',            short:'Symétrie' },
+    { id:'repere',   icon:'🧭', label:'Repérage',            short:'Repérage' },
+    { id:'solides',  icon:'🧊', label:'Solides & patrons',   short:'Solides' },
+    { id:'temps',    icon:'🕒', label:'Heure & calendrier',  short:'Heure' },
+    { id:'mesures',  icon:'📏', label:'Mesures',             short:'Mesures' },
+    { id:'nombres',  icon:'🔢', label:'Nombres & fractions', short:'Nombres' },
+    { id:'calcul',   icon:'➕', label:'Calcul & problèmes',  short:'Calcul' },
+    { id:'logique',  icon:'🧩', label:'Logique & énigmes',   short:'Logique' }
   ];
-  function registerQuizCategory(cat){ QCM_CATEGORIES.splice(QCM_CATEGORIES.length-1, 0, cat); }
-  function quizCategoryId(def){
-    for(var i=0;i<QCM_CATEGORIES.length;i++){ if(QCM_CATEGORIES[i].id===def.category) return def.category; }
-    return 'autres';
+  function domainOrFallback(id){
+    for(var i=0;i<DOMAINS.length;i++){ if(DOMAINS[i].id===id) return id; }
+    return DOMAINS[DOMAINS.length-1].id;
   }
+  function quizDomainId(def){ return domainOrFallback(def.domain); }
   function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
   /* ===================== REGISTRE DES ACTIVITÉS (familles) =====================
      TOUTES les activités (Mesurer, Déformer, Patron, Quizz, Horloge, ateliers…)
@@ -2208,7 +2213,8 @@
      connaît aucune activité par son nom. Retirer un thème du manifeste retire
      simplement ses activités. Contrat d'une famille :
        key        identifiant unique (conteneur d'écran : #fam-<key>)
-       tag        nom affiché ; theme : groupe du mode Manuel (ex. '🕒 Horloge')
+       tag        nom affiché
+       domain     thème (id de DOMAINS : 'formes', 'mesures', 'temps'…) ; le Quizz n'en a pas : chacun de ses types a le sien
        order      rang d'affichage et de tirage (les plus petits d'abord)
        weight     nombre de places dans le tirage aléatoire (1 par défaut ; 3 pour le Quizz)
        timed      true : proposée aussi en mode Chronométré (réponse en un toucher)
@@ -2273,7 +2279,7 @@
 
   /* ===================== MODULE 1 : MESURER ===================== */
   registerFamily({
-    key:'measure', tag:'Mesurer', theme:'📐 Formes & mesures', order:10, timed:true,
+    key:'measure', tag:'Mesurer', domain:'mesures', order:10, timed:true,
     note:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
     markup:[
       '<div class="coach-row">',
@@ -2424,7 +2430,7 @@
   ];
   var estLen = 5, estStart = 0;
   registerFamily({
-    key:'estimate', tag:'Estimer une longueur', theme:'📐 Formes & mesures', order:12, timed:true,
+    key:'estimate', tag:'Estimer une longueur', domain:'mesures', order:12, timed:true,
     note:'La règle mesure toujours 10 cm mais seuls le 0 et le 10 sont écrits : on estime la longueur du trait à l\'œil. Facile : le trait part du 0, longueurs de 1 à 9 cm, réponses espacées d\'au moins 2 cm. Moyen : le trait part du 0, réponses à 1 cm près. Difficile : le trait est posé plus bas et ne part pas du 0, longueurs en demi-centimètres. La longueur, la position et les réponses proposées sont tirées au hasard. Après la réponse, les graduations apparaissent pour vérifier.',
     markup:[
       '<div class="coach-row">',
@@ -2543,7 +2549,7 @@
 
   /* ===================== MODULE 2 : DEFORMER ===================== */
   registerFamily({
-    key:'deform', tag:'Déformer', theme:'📐 Formes & mesures', order:20,
+    key:'deform', tag:'Déformer', domain:'formes', order:20,
     note:'Une seule épreuve avec 5 formes cibles (losange, rectangle, parallélogramme, triangle isocèle, triangle rectangle) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins (2 pour un triangle) en Moyen, tous les coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
     markup:[
       '<div class="coach-row">',
@@ -4095,61 +4101,61 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Géométrie ----
-  registerQuizType({ id:'sides', category:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
+  registerQuizType({ id:'sides', domain:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
     randomNote:'La forme est tirée au hasard parmi celles autorisées à ce niveau ; son nombre de côtés en découle de façon fixe (ce n\'est pas lui qui est tiré, seule la forme l\'est).',
     generate:function(level){ return genSidesVerticesQuestion('sides', level); } });
-  registerQuizType({ id:'vertices', category:'formes', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
+  registerQuizType({ id:'vertices', domain:'formes', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
     randomNote:'Même principe que "Côtés" : la forme est tirée au hasard, son nombre de sommets en découle de façon fixe.',
     generate:function(level){ return genSidesVerticesQuestion('vertices', level); } });
-  registerQuizType({ id:'name', category:'formes', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
+  registerQuizType({ id:'name', domain:'formes', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
     randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.',
     generate:genNameQuestion });
-  registerQuizType({ id:'align', category:'formes', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
+  registerQuizType({ id:'align', domain:'formes', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
     randomNote:'Facile : 3 points, alignés ou non, en ligne ou en colonne. Moyen : + diagonales, points espacés, « presque alignés », et deux nouvelles variantes (parmi 4 points, lesquels sont alignés ; quel point numéroté est aligné avec A et B). Difficile : + droites penchées (2 colonnes pour 1 ligne). Les points sont tirés au hasard ; les bonnes réponses sont vérifiées par le calcul (une seule possible).',
     generate:genAlignQuestion });
-  registerQuizType({ id:'milieu', category:'formes', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
+  registerQuizType({ id:'milieu', domain:'formes', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
     randomNote:'Facile : 3 formes sur le segment, on cherche celle du milieu. Moyen : segment de 3 ou 5 cases avec 3 ou 5 formes (une au milieu), ou 2 ou 4 formes (aucune au milieu : « Aucune forme » est toujours proposée). Difficile : idem, et une variante où l\'on lit les coordonnées du milieu de [AB] (horizontal, vertical ou diagonal). Position, formes et couleurs sont tirées au hasard.',
     generate:genMilieuQuestion });
-  registerQuizType({ id:'coord', category:'repere', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
+  registerQuizType({ id:'coord', domain:'repere', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
     randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.',
     generate:genCoordQuestion });
-  registerQuizType({ id:'angle', category:'formes', label:'Angles', longLabel:'Angles (droit, aigu, obtus, comparer)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'angle', domain:'formes', label:'Angles', longLabel:'Angles (droit, aigu, obtus, comparer)', defaultLevels:[0,1,2],
     randomNote:'Trois variantes en alternance. Facile : comparer 2 angles très différents, ou compter les angles droits d\'un rectangle, carré ou triangle. Moyen : + classer un angle (droit/aigu/obtus, écart de 14° autour de 90°), comparer 2 ou 3 angles, trapèze rectangle et maison. Difficile : écart de 7°, comparaisons très serrées (ou angles égaux aux branches inégales), + losange, parallélogramme et figures penchées. Valeurs et branches tirées au hasard.',
     generate:genAngleQuestion });
-  registerQuizType({ id:'image', category:'formes', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
+  registerQuizType({ id:'image', domain:'formes', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
     randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.',
     generate:function(){ return pickFresh('image', IMAGE_QUESTIONS)(); } });
-  registerQuizType({ id:'coordFind', category:'repere', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
+  registerQuizType({ id:'coordFind', domain:'repere', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
     randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.',
     generate:genCoordFindQuestion });
-  registerQuizType({ id:'codage', category:'repere', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
+  registerQuizType({ id:'codage', domain:'repere', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
     randomNote:'Le point de départ et la suite de flèches (2 à 3 déplacements) sont tirés au hasard.',
     generate:genCodageQuestion });
-  registerQuizType({ id:'chasse', category:'formes', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
+  registerQuizType({ id:'chasse', domain:'formes', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
     randomNote:'Le nombre et la disposition des formes affichées sont tirés au hasard à chaque question.',
     generate:genChasseQuestion });
-  registerQuizType({ id:'decodage', category:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
+  registerQuizType({ id:'decodage', domain:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
     randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.',
     generate:genDecodageQuestion });
-  registerQuizType({ id:'symVrai', category:'formes', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
+  registerQuizType({ id:'symVrai', domain:'symetrie', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
     randomNote:'4 figures tirées en alternance : rectangle (jamais carré), carré (ses diagonales sont de vrais axes), triangle isocèle, cercle (toute droite par le centre est un axe). La droite est soit un vrai axe, soit décalée ou oblique ; la figure et les mesures sont tirées au hasard.',
     generate:genSymVraiQuestion });
-  registerQuizType({ id:'enigme', category:'solides', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
+  registerQuizType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
     randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
-  registerQuizType({ id:'suiteFormes', category:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
+  registerQuizType({ id:'suiteFormes', domain:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
     randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
     generate:genSuiteFormesQuestion });
-  registerQuizType({ id:'mesures', category:'mesures', label:'Unités de longueur', longLabel:'Mesures : unités et conversions', defaultLevels:[0,1,2],
+  registerQuizType({ id:'mesures', domain:'mesures', label:'Unités de longueur', longLabel:'Mesures : unités et conversions', defaultLevels:[0,1,2],
     randomNote:'Facile : choisir l\'unité (mm, cm, m, km). Moyen : + comparer des longueurs en cm et en m. Difficile : conversions (m → cm, km → m) et comparaisons.',
     generate:genMesuresQuestion });
-  registerQuizType({ id:'perimetre', category:'mesures', label:'Périmètre', longLabel:'Périmètre (le tour d\'une figure)', defaultLevels:[1,2],
+  registerQuizType({ id:'perimetre', domain:'mesures', label:'Périmètre', longLabel:'Périmètre (le tour d\'une figure)', defaultLevels:[1,2],
     randomNote:'Facile : rectangle sur quadrillage (on compte les carreaux du tour). Moyen : rectangle ou carré aux côtés donnés. Difficile : triangle équilatéral, pentagone ou hexagone régulier.',
     generate:genPerimetreQuestion });
-  registerQuizType({ id:'intrus', category:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'intrus', domain:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
     randomNote:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.',
     generate:genIntrusQuestion });
-  registerQuizType({ id:'symVisuel', category:'formes', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
+  registerQuizType({ id:'symVisuel', domain:'symetrie', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
     randomNote:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).',
     generate:genSymVisuelQuestion });
   /* ===================== THÈME HORLOGE =====================
@@ -4168,7 +4174,7 @@
 
   // ---- Mode "Lire l'heure" (même moteur que le QCM, ciblé sur m5Svg) ----
   registerFamily({
-    key:'clock-lire', tag:'Lire l\'heure', theme:'🕒 Horloge', order:50, timed:true,
+    key:'clock-lire', tag:'Lire l\'heure', domain:'temps', order:50, timed:true,
     note:'Une seule épreuve. L\'heure affichée est tirée au hasard à chaque question. Le niveau fixe uniquement la précision autorisée : heure pile ou demie en Facile, + quarts d\'heure en Moyen. En Difficile : toutes les 5 minutes et les heures de 0 h à 23 h (l\'énoncé précise le moment de la journée).',
     markup:[
       '<div class="coach-row">',
@@ -4223,7 +4229,7 @@
 
   // ---- Mode "Régler l'heure" (glisser les aiguilles au doigt) ----
   registerFamily({
-    key:'clock-regler', tag:'Régler l\'heure', theme:'🕒 Horloge', order:60,
+    key:'clock-regler', tag:'Régler l\'heure', domain:'temps', order:60,
     note:'Une seule épreuve. L\'heure cible à reproduire est tirée au hasard à chaque question. Le niveau fixe la précision : heure pile ou demie en Facile, + quarts d\'heure en Moyen, toutes les 5 minutes et heure de 0 h à 23 h en Difficile (l\'énoncé donne alors le moment de la journée ; il faut placer la petite aiguille comme sur le cadran, par exemple 15 h se lit 3 h). La petite aiguille se place sur 24 positions à tous les niveaux : sur une heure pleine ou à mi-chemin entre deux heures, selon les minutes (à 15 ou 45 minutes, les deux positions voisines sont acceptées).',
     markup:[
       '<div class="coach-row">',
@@ -4682,16 +4688,16 @@
   }
 
   // ---- Déclaration du type de Quizz « Lire l'heure » ----
-  registerQuizType({ id:'heure', category:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'heure', domain:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
     randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
     generate:function(level){ return genHeureQuestion('m4Svg', level); } });
-  registerQuizType({ id:'duree', category:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'duree', domain:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
     randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
     generate:function(level){ return genDureeQuestion(level); } });
-  registerQuizType({ id:'calendrier', category:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'calendrier', domain:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
     randomNote:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.',
     generate:genCalendrierQuestion });
-  registerQuizType({ id:'horlogeChoix', category:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'horlogeChoix', domain:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2],
     randomNote:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.',
     generate:genHorlogeChoixQuestion });
   /* ===================== THÈME CALCUL =====================
@@ -5132,43 +5138,43 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Calcul ----
-  registerQuizType({ id:'calc', category:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
+  registerQuizType({ id:'calc', domain:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
     generate:genCalcQuestion });
-  registerQuizType({ id:'monnaie', category:'problemes', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
+  registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
     generate:genMonnaieQuestion });
-  registerQuizType({ id:'vie', category:'problemes', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
+  registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
-  registerQuizType({ id:'soustraction', category:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
+  registerQuizType({ id:'soustraction', domain:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
     randomNote:'a - b avec b plus petit que a. Facile : nombres jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 60 (avec retenues).',
     generate:genSoustractionQuestion });
-  registerQuizType({ id:'doubleMoitie', category:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
+  registerQuizType({ id:'doubleMoitie', domain:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
     randomNote:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 50.',
     generate:genDoubleMoitieQuestion });
-  registerQuizType({ id:'complement', category:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'complement', domain:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
     randomNote:'« a + ? = cible ». Facile : compléments à 10 ; Moyen : à 20 ; Difficile : à 100 (multiples de 5).',
     generate:genComplementQuestion });
-  registerQuizType({ id:'tables', category:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
+  registerQuizType({ id:'tables', domain:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
     randomNote:'Facile : tables de 2 et de 10 ; Moyen : 2, 5 et 10 ; Difficile : 2, 3, 4, 5, 10, avec parfois le facteur manquant (5 × ? = 35).',
     generate:genTableQuestion });
-  registerQuizType({ id:'compare', category:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'compare', domain:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
     randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
     generate:genCompareQuestion });
-  registerQuizType({ id:'suiteNombres', category:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
+  registerQuizType({ id:'suiteNombres', domain:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
     randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
     generate:genSuiteNombresQuestion });
-  registerQuizType({ id:'numeration', category:'nombres', label:'Dizaines et unités', longLabel:'Dizaines et unités (numération)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'numeration', domain:'nombres', label:'Dizaines et unités', longLabel:'Dizaines et unités (numération)', defaultLevels:[0,1,2],
     randomNote:'Chiffre des dizaines/unités (centaines en Difficile), nombre de dizaines, ou composer un nombre (30 + 4). Facile : jusqu\'à 59 ; Moyen : jusqu\'à 99 ; Difficile : jusqu\'à 999.',
     generate:genNumerationQuestion });
-  registerQuizType({ id:'ordre', category:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'ordre', domain:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
     randomNote:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à 20 ; Moyen : jusqu\'à 100 ; Difficile : jusqu\'à 1000, souvent autour des changements de dizaine.',
     generate:genOrdreQuestion });
-  registerQuizType({ id:'fraction', category:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'fraction', domain:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2],
     randomNote:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).',
     generate:genFractionQuestion });
-  registerQuizType({ id:'comptage', category:'nombres', label:'Dénombrement (visuel)', longLabel:'Dénombrement : compter des objets, des blocs', defaultLevels:[0,1,2],
+  registerQuizType({ id:'comptage', domain:'nombres', label:'Dénombrement (visuel)', longLabel:'Dénombrement : compter des objets, des blocs', defaultLevels:[0,1,2],
     randomNote:'Facile : compter 3 à 12 objets éparpillés. Moyen : lire des blocs (barres de 10, cubes). Difficile : + plaques de 100.',
     generate:genComptageQuestion });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
@@ -5473,7 +5479,7 @@
     });
   }
   registerFamily({
-    key:'net', tag:'Patron → Solide', theme:'📦 Solides', order:30,
+    key:'net', tag:'Patron → Solide', domain:'solides', order:30,
     // Chaque patron se règle niveau par niveau dans « Activités & difficulté ».
     config:{
       storageKey:'geo_net_level_overrides', defs:function(){ return NET_DEFS; }, rebuild:rebuildM3Pools,
@@ -6066,10 +6072,10 @@
   }
 
   // ---- Déclaration des types de Quizz sur les solides ----
-  registerQuizType({ id:'solideNom', category:'solides', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
+  registerQuizType({ id:'solideNom', domain:'solides', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
     randomNote:'Le solide est tiré au hasard parmi les 6 solides connus ; son nom (la réponse) en découle de façon fixe.',
     generate:genSolideNomQuestion });
-  registerQuizType({ id:'solideCompte', category:'solides', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
+  registerQuizType({ id:'solideCompte', domain:'solides', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
     randomNote:'Le solide (cube/pavé/pyramide) et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant est ensuite fixe pour ce solide.',
     generate:genSolideCompteQuestion });
   // =====================================================================
@@ -6204,7 +6210,7 @@
     if(state==='failed'){ atSym.mine = atSym.solution.map(function(row){ return row.slice(); }); atSymDraw(false); }
   }
   registerFamily({
-    key:'atelier-sym', tag:'Compléter la symétrie', theme:'✋ Ateliers',
+    key:'atelier-sym', tag:'Compléter la symétrie', domain:'symetrie',
     note:'Une moitié de figure est donnée ; on touche les cases de l\'autre côté de la ligne rouge pour la compléter en miroir. Facile : 4 cases sur 3×4 ; Moyen : 6 cases sur 3×5 ; Difficile : 9 cases, et la ligne peut être verticale OU horizontale. La figure est tirée au hasard (au moins une case touche la ligne).',
     build:function(wrap){ atSym.ui = makeAtelier('atelier-sym', wrap, atSymCheck); },
     generate:function(level){
@@ -6267,7 +6273,7 @@
     if(state==='failed'){ atFrac.on = atFrac.on.map(function(v, i){ return i < need; }); atFracDraw(); }
   }
   registerFamily({
-    key:'atelier-fraction', tag:'Colorier une fraction', theme:'✋ Ateliers',
+    key:'atelier-fraction', tag:'Colorier une fraction', domain:'nombres',
     note:'Un disque ou une bande est partagé(e) en parts égales ; on colorie la fraction demandée (la moitié, le quart, les trois quarts, le tiers, les deux tiers). Facile : 2 ou 4 parts ; Moyen : + 3 parts ; Difficile : 4, 6 ou 8 parts, parfois une fraction écrite (5/8).',
     build:function(wrap){ atFrac.ui = makeAtelier('atelier-fraction', wrap, atFracCheck); },
     generate:atFracGenerate,
@@ -6322,7 +6328,7 @@
     if(state==='failed'){ atCopy.mine = atCopy.model.map(function(row){ return row.slice(); }); atCopyDraw(false); }
   }
   registerFamily({
-    key:'atelier-copie', tag:'Reproduire le modèle', theme:'✋ Ateliers',
+    key:'atelier-copie', tag:'Reproduire le modèle', domain:'formes',
     note:'Un modèle est dessiné sur une grille ; on le reproduit case par case sur une grille vide (repérage, observation). Facile : grille 4×4, 5 cases ; Moyen : 5×5, 8 cases ; Difficile : 6×6, 12 cases. Les cases sont tirées au hasard.',
     build:function(wrap){ atCopy.ui = makeAtelier('atelier-copie', wrap, atCopyCheck); },
     generate:atCopyGenerate,
@@ -6401,7 +6407,7 @@
     if(state==='failed'){ atErr.marks = atErr.marks.map(function(row, rr){ return row.map(function(v, cc){ return atErrIsDiff(rr, cc); }); }); atErrDraw('bad'); }
   }
   registerFamily({
-    key:'atelier-erreur', tag:'Trouver l\'erreur', theme:'✋ Ateliers',
+    key:'atelier-erreur', tag:'Trouver l\'erreur', domain:'formes',
     note:'Un modèle et sa copie sont côte à côte ; la copie contient des erreurs (case coloriée en trop ou case oubliée) qu\'on touche pour les signaler. Facile : grille 4×4, 1 erreur ; Moyen : 5×5, 2 erreurs ; Difficile : 6×6, 3 erreurs sans que le nombre soit donné. Les cases et les erreurs sont tirées au hasard (avec à la fois « en trop » et « manquante » dès 2 erreurs).',
     build:function(wrap){ atErr.ui = makeAtelier('atelier-erreur', wrap, atErrCheck); },
     generate:atErrGenerate,
@@ -6490,7 +6496,7 @@
     if(state==='failed'){ atAxe.cands.forEach(function(a){ atAxe.sel[a] = atAxe.truth.indexOf(a)>=0; }); atAxeDraw(null); }
   }
   registerFamily({
-    key:'atelier-axe', tag:'Axes de symétrie', theme:'✋ Ateliers',
+    key:'atelier-axe', tag:'Axes de symétrie', domain:'symetrie',
     note:'Une figure en cases et des lignes de pliage en pointillés : on touche celles qui sont de vrais axes de symétrie. Si on se trompe, les cases qui ne se superposent pas au pliage sont entourées en rouge. Facile : 4×4, la figure a 1 axe (vertical ou horizontal) ; Moyen : 5×5, lignes verticale/horizontale, 0, 1 ou 2 axes ; Difficile : 5×5 ou 6×6, avec les 2 diagonales, de 0 à 4 axes. La figure est construite pour avoir exactement les axes voulus (et vérifiée), le reste est tiré au hasard.',
     build:function(wrap){ atAxe.ui = makeAtelier('atelier-axe', wrap, atAxeCheck); },
     generate:atAxeGenerate,
@@ -6537,14 +6543,14 @@
   // Le Quizz est une famille comme les autres ; il pèse 3 places dans le
   // tirage aléatoire (il regroupe à lui seul une vingtaine de types).
   registerFamily({
-    key:'qcm', tag:'Quizz', theme:'🧠 Quizz', order:40, weight:3, timed:true,
-    // Chaque type de question se règle niveau par niveau, regroupé par sous-catégorie.
+    key:'qcm', tag:'Quizz', order:40, weight:3, timed:true,
+    // Chaque type de question se règle niveau par niveau, regroupé par thème.
     config:{
       storageKey:'geo_qcm_level_overrides',
       defs:function(){ return QCM_TYPE_DEFS; },
       groups:function(){
-        return QCM_CATEGORIES.map(function(cat){
-          return { id:cat.id, label:cat.icon + ' ' + cat.label, defs:QCM_TYPE_DEFS.filter(function(d){ return quizCategoryId(d)===cat.id; }) };
+        return DOMAINS.map(function(cat){
+          return { id:cat.id, label:cat.icon + ' ' + cat.label, defs:QCM_TYPE_DEFS.filter(function(d){ return quizDomainId(d)===cat.id; }) };
         });
       },
       rebuild:rebuildM4Types
@@ -6565,13 +6571,12 @@
     signature:function(){ return quizSignature(m4Current); }
   });
   var m4TypeFilter = 'random';
-  var m4CategoryFilter = 'all';   // mode Manuel : « Aléatoire » se limite à cette sous-catégorie
   var m4Current = null;
 
   // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
   var lastQcmType = null;
   var forcedQcmType = null;  // type de quiz imposé pour la prochaine question (mode Révision)
-  var forcedQcmCat = null;   // catégorie de quiz imposée pour la prochaine question (sujet à travailler)
+  var forcedQcmDomain = null;   // thème de quiz imposé pour la prochaine question (sujet à travailler)
   var lastFamily = null;
   function pickOther(arr, last){
     if(arr.length>1 && last!==null){
@@ -6585,25 +6590,25 @@
     var poolTypes = lv.types;
     var typeSel = forcedQcmType || m4TypeFilter;
     var freeType = (typeSel==='random' || lv.types.indexOf(typeSel)===-1);
-    var cat = forcedQcmCat || m4CategoryFilter;     // forcedQcmCat : sujet à travailler (voir progression.js)
+    var cat = forcedQcmDomain || 'all';     // forcedQcmDomain : sujet à travailler (voir progression.js)
     if(cat==='all' && freeType){
-      // Tirage « sans remise » au niveau des catégories : chacune sort une fois
-      // avant qu'aucune ne revienne.
+      // Tirage « sans remise » au niveau des thèmes : chacun sort une fois
+      // avant qu'aucun ne revienne.
       var cats = [];
-      lv.types.forEach(function(t){ var d = quizTypeById(t); var c = d && quizCategoryId(d); if(c && cats.indexOf(c)===-1) cats.push(c); });
+      lv.types.forEach(function(t){ var d = quizTypeById(t); var c = d && quizDomainId(d); if(c && cats.indexOf(c)===-1) cats.push(c); });
       if(cats.length) cat = pickFresh('qcmcat|' + globalLevel + '|' + cats.join(','), cats);
     }
     if(cat!=='all'){
-      var inCat = lv.types.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===cat; });
+      var inCat = lv.types.filter(function(t){ var d = quizTypeById(t); return d && quizDomainId(d)===cat; });
       if(inCat.length) poolTypes = inCat;
     }
-    // Idem pour les types au sein de la catégorie (sans remise).
+    // Idem pour les types au sein du thème (sans remise).
     var type = !freeType ? typeSel : pickFresh('qcmtype|' + globalLevel + '|' + poolTypes.join(','), poolTypes);
     lastQcmType = type;
     // (repli sur « image » comme avant si le niveau n'a plus aucun type actif)
     var qdef = quizTypeById(type) || quizTypeById('image');
     var q = qdef.generate(globalLevel);
-    q.typeId = qdef.id; q.cat = quizCategoryId(qdef);   // pour l'historique de progression
+    q.typeId = qdef.id; q.domain = quizDomainId(qdef);   // pour l'historique de progression
     return q;
   }
 
@@ -6753,7 +6758,7 @@
     wrap.innerHTML = '';
     var fam = familyDef(familyKey), cfg = fam && fam.config;
     if(cfg && cfg.groups){
-      // regroupé par sous-catégorie, chaque groupe repliable (le premier ouvert)
+      // regroupé par thème, chaque groupe repliable (le premier ouvert)
       cfg.groups().filter(function(g){ return g.defs.length; }).forEach(function(g, gi){
         var det = document.createElement('details'); det.className = 'aconf-cat';
         if(aconfOpenCats[g.id] === undefined ? gi===0 : aconfOpenCats[g.id]) det.open = true;
@@ -6836,40 +6841,6 @@
       if(M4_LEVELS[i].types.indexOf(type)!==-1) levels.push(i);
     }
     return levels.length ? levels : [0,1,2];
-  }
-  function refreshManualQcmTypes(){
-    var wrap = document.getElementById('manual-qcm-type-wrap');
-    m4CategoryFilter = 'all';
-    if(manualFamily !== 'qcm'){ wrap.hidden = true; m4TypeFilter = 'random'; return; }
-    wrap.hidden = false;
-    // Union de tous les types sur tous les niveaux, pour qu'une activité ne
-    // disparaisse jamais de la liste selon le niveau actuellement choisi.
-    var allTypes = [];
-    M4_LEVELS.forEach(function(lv){
-      lv.types.forEach(function(t){ if(allTypes.indexOf(t)===-1) allTypes.push(t); });
-    });
-    var cats = QCM_CATEGORIES.filter(function(c){
-      return allTypes.some(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===c.id; });
-    });
-    function typesOf(catId){
-      return catId==='all' ? allTypes : allTypes.filter(function(t){ var d = quizTypeById(t); return d && quizCategoryId(d)===catId; });
-    }
-    function buildTypeRow(catId){
-      var list = typesOf(catId);
-      var labels = ['Aléatoire'].concat(list.map(function(t){ return (quizTypeById(t) && quizTypeById(t).longLabel) || t; }));
-      m4TypeFilter = 'random';
-      buildLevelRow(document.getElementById('manual-qcm-type-row'), labels, 0, function(idx){
-        m4TypeFilter = idx===0 ? 'random' : list[idx-1];
-        rebuildManualLevelRow(qcmTypeLevels(m4TypeFilter));   // le niveau est à rechoisir
-      });
-    }
-    buildLevelRow(document.getElementById('manual-qcm-cat-row'), ['Toutes'].concat(cats.map(function(c){ return c.icon + ' ' + c.label; })), 0, function(idx){
-      m4CategoryFilter = idx===0 ? 'all' : cats[idx-1].id;
-      buildTypeRow(m4CategoryFilter);
-      rebuildManualLevelRow(qcmTypeLevels('random'));   // le niveau est à rechoisir
-    });
-    buildTypeRow('all');
-    rebuildManualLevelRow(qcmTypeLevels('random'));
   }
   // ---- Liste d'activités : repliée au choix d'un niveau, bouton pour la remontrer/cacher ----
   function updateManualToggle(){
@@ -6968,14 +6939,16 @@
   }
   function nextPracticeQuestion(){
     var sig = null, prevShown = lastFamily;
-    var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, cat} ou null
-    var review = null;                                               // mode Révision : {key, type, why}
+    var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, domain} ou null
+    var review = null;                                               // unité imposée : {key, type, why} (Révision ou « un peu de tout » du mode Manuel)
     var reviewing = (appMode==='auto' && practiceMode==='review');
+    var mixing = (appMode==='manual' && manualMix);
     for(var tries=0; tries<15; tries++){
       lastFamily = prevShown;   // on évite la famille réellement affichée, pas un essai rejeté
       if(reviewing) review = progReviewPick();
+      else if(mixing) review = manualMixPick();
       var key = focus ? focus.key : (review ? review.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh()));
-      forcedQcmCat = (focus && focus.key==='qcm') ? focus.cat : null;
+      forcedQcmDomain = (focus && focus.key==='qcm') ? focus.domain : null;
       forcedQcmType = (review && review.type) ? review.type : null;
       lastFamily = key;
       // d'abord on retente dans la même famille (elle garde son tour), puis on en change
@@ -6987,7 +6960,7 @@
       }
       if(fresh) break;
     }
-    forcedQcmCat = null; forcedQcmType = null;
+    forcedQcmDomain = null; forcedQcmType = null;
     if(review && review.why){
       document.getElementById('practice-family-tag').textContent += review.why==='raté' ? ' · 🔁 à revoir' : ' · ✨ pas encore fait';
     }
@@ -7229,58 +7202,79 @@
     document.getElementById('countdown-setup').hidden = false;
   });
 
-  // Mode "Manuel" : choix d'une activité précise à répéter en boucle. Le
-  // niveau (en dessous) dépend de l'activité choisie : moins de boutons si
-  // elle n'existe pas en Facile et/ou en Moyen (voir rebuildManualLevelRow).
-  // Deux étages : d'abord un THÈME (Quizz, Formes & mesures, Solides, Horloge),
-  // puis, s'il en contient plusieurs, l'activité précise.
-  // Les groupes viennent du champ `theme` de chaque famille ; cet ordre
-  // d'affichage est une simple préférence (un groupe inconnu va à la suite).
-  var THEME_DISPLAY_ORDER = ['🧠 Quizz', '📐 Formes & mesures', '📦 Solides', '🕒 Horloge'];
-  var FAMILY_THEMES = [];
-  FAMILIES.forEach(function(f){
-    var th = null;
-    FAMILY_THEMES.forEach(function(t){ if(t.label===f.theme) th = t; });
-    if(!th){ th = { label:f.theme, families:[] }; FAMILY_THEMES.push(th); }
-    th.families.push(f.key);
-  });
-  FAMILY_THEMES.forEach(function(t, i){
-    var r = THEME_DISPLAY_ORDER.indexOf(t.label);
-    t.rank = r===-1 ? THEME_DISPLAY_ORDER.length + i : r;
-  });
-  FAMILY_THEMES.sort(function(a, b){ return a.rank - b.rank; });
-  function startManualFamily(key){
-    manualFamily = key;
-    refreshManualQcmTypes(); // gère aussi le niveau quand la famille est 'qcm'
-    if(manualFamily !== 'qcm'){
-      rebuildManualLevelRow(familyDef(manualFamily).levels || [0,1,2]);
-    }
+  // Mode "Manuel" : choix d'un THÈME (DOMAINS, noyau.js) puis d'une activité de ce thème, à répéter
+  // en boucle. Un thème réunit les écrans propres (Mesurer, Déformer, Patron…) ET les types de
+  // Quizz de même thème (Unités de longueur, Périmètre…), plus « un peu de tout » (tirage sans
+  // remise parmi les activités du thème disponibles au niveau choisi). Le niveau (en dessous)
+  // dépend de l'activité : moins de boutons si elle n'existe pas en Facile et/ou en Moyen.
+  var manualMix = null;   // « un peu de tout » : { id, units } ; manualFamily vaut alors 'mix'
+  // Activités d'un thème : [{ key, type, label, levels }] (type = type de Quizz, null pour un écran propre).
+  function domainUnits(domainId){
+    var units = [];
+    FAMILIES.forEach(function(f){
+      if(f.key!=='qcm' && domainOrFallback(f.domain)===domainId) units.push({ key:f.key, type:null, label:f.tag, levels:f.levels || [0,1,2] });
+    });
+    var seen = {};   // union des types de Quizz sur tous les niveaux : une activité ne disparaît jamais selon le niveau en cours
+    M4_LEVELS.forEach(function(lv){
+      lv.types.forEach(function(t){
+        var d = quizTypeById(t);
+        if(!d || seen[t] || quizDomainId(d)!==domainId) return;
+        seen[t] = true;
+        units.push({ key:'qcm', type:t, label:d.longLabel || t, levels:qcmTypeLevels(t) });
+      });
+    });
+    return units;
+  }
+  function unitAvailable(u, level){
+    return u.type ? M4_LEVELS[level].types.indexOf(u.type)!==-1 : u.levels.indexOf(level)!==-1;
+  }
+  // Activité suivante du « un peu de tout » (appelée par nextPracticeQuestion).
+  function manualMixPick(){
+    var av = manualMix.units.filter(function(u){ return unitAvailable(u, globalLevel); });
+    if(!av.length) av = manualMix.units;
+    var u = pickFresh('manualmix|' + manualMix.id + '|' + globalLevel + '|' + av.length, av);
+    return { key:u.key, type:u.type, why:'' };
+  }
+  function startManualUnit(u){
+    manualMix = null;
+    manualFamily = u.key;
+    m4TypeFilter = u.type || 'random';
+    rebuildManualLevelRow(u.levels);
     // Sans niveaux à choisir, l'épreuve démarre tout de suite ; sinon elle attend le choix du niveau.
     if(!manualAvailableLevels.length) showManualExercise();
   }
+  function startManualMix(domainId, units){
+    manualMix = { id:domainId, units:units };
+    manualFamily = 'mix';
+    m4TypeFilter = 'random';
+    rebuildManualLevelRow([0,1,2].filter(function(lv){ return units.some(function(u){ return unitAvailable(u, lv); }); }));
+  }
+  function resetManualChoice(){
+    manualFamily = null; manualMix = null;
+    m4TypeFilter = 'random';
+    document.getElementById('manual-level-wrap').hidden = true;
+    manualLevelChosen = false; manualAvailableLevels = [];
+    document.getElementById('practice-exercise').hidden = true;
+    updateManualToggle();
+  }
+  var MANUAL_DOMAINS = DOMAINS.filter(function(d){ return domainUnits(d.id).length; });
   buildLevelRow(
-    document.getElementById('manual-family-row'),
-    FAMILY_THEMES.map(function(t){ return t.label; }),
+    document.getElementById('manual-domain-row'),
+    MANUAL_DOMAINS.map(function(d){ return d.icon + ' ' + d.label; }),
     -1,
     function(idx){
-      var theme = FAMILY_THEMES[idx];
-      var subWrap = document.getElementById('manual-family-sub-wrap');
-      if(theme.families.length === 1){
-        subWrap.hidden = true;
-        startManualFamily(theme.families[0]);
+      var dom = MANUAL_DOMAINS[idx], units = domainUnits(dom.id);
+      var unitWrap = document.getElementById('manual-unit-wrap');
+      if(units.length === 1){
+        unitWrap.hidden = true;
+        startManualUnit(units[0]);
         return;
       }
-      subWrap.hidden = false;
-      manualFamily = null;
-      document.getElementById('manual-qcm-type-wrap').hidden = true;
-      m4TypeFilter = 'random'; m4CategoryFilter = 'all';
-      document.getElementById('manual-level-wrap').hidden = true;
-      manualLevelChosen = false; manualAvailableLevels = [];
-      document.getElementById('practice-exercise').hidden = true;
-      updateManualToggle();
-      buildLevelRow(document.getElementById('manual-family-sub-row'),
-        theme.families.map(function(k){ return FAMILY_TAGS[k]; }), -1,
-        function(j){ startManualFamily(theme.families[j]); });
+      unitWrap.hidden = false;
+      resetManualChoice();
+      buildLevelRow(document.getElementById('manual-unit-row'),
+        ['🎲 Un peu de tout'].concat(units.map(function(u){ return u.label; })), -1,
+        function(j){ if(j===0) startManualMix(dom.id, units); else startManualUnit(units[j-1]); });
     }
   );
 
@@ -8702,17 +8696,8 @@
           un radar de synthèse, un détail par compétence, l'activité des derniers jours ;
        2) orienter les séries sans faute (paliers 20, 25, 30) : les 3 dernières
           questions sont posées dans les sujets les plus faibles (progWeakPick).
-     Les 8 compétences regroupent les familles d'activités et les catégories de quiz. */
-  var PROG_SKILLS = [
-    { id:'formes',   icon:'🔷', label:'Formes & symétrie',   short:'Formes',   fams:['deform','atelier-sym','atelier-copie','atelier-erreur','atelier-axe'], cats:['formes'] },
-    { id:'repere',   icon:'🧭', label:'Repérage',            short:'Repérage', fams:[],                                     cats:['repere'] },
-    { id:'solides',  icon:'🧊', label:'Solides & patrons',   short:'Solides',  fams:['net'],                                cats:['solides'] },
-    { id:'temps',    icon:'🕒', label:'Heure & calendrier',  short:'Heure',    fams:['clock-lire','clock-regler'],          cats:['temps'] },
-    { id:'mesures',  icon:'📏', label:'Mesures',             short:'Mesures',  fams:['measure','estimate'],                 cats:['mesures'] },
-    { id:'nombres',  icon:'🔢', label:'Nombres & fractions', short:'Nombres',  fams:['atelier-fraction'],                   cats:['nombres'] },
-    { id:'calcul',   icon:'➕', label:'Calcul & problèmes',  short:'Calcul',   fams:[],                                     cats:['calcul','problemes'] },
-    { id:'logique',  icon:'🧩', label:'Logique & énigmes',   short:'Logique',  fams:[],                                     cats:['logique','autres'] }
-  ];
+     Les 9 compétences sont les thèmes (DOMAINS, noyau.js) : chaque famille et chaque type de quiz
+     y est rangé par son champ `domain`, rien à déclarer ici pour une nouvelle activité. */
   var PROG_MAX_EVENTS = 3000;    // on garde les 3000 dernières réponses
   var PROG_RECENT = 40;          // « niveau récent » d'une compétence = ses 40 dernières réponses
   var PROG_MIN_RECENT = 5;       // en dessous, pas assez de données pour juger
@@ -8736,19 +8721,17 @@
   }
   window.addEventListener('pagehide', progSave);
 
-  function progSkillIndex(family, cat){
-    for(var i=0;i<PROG_SKILLS.length;i++){
-      var sk = PROG_SKILLS[i];
-      if(family==='qcm' ? (cat && sk.cats.indexOf(cat)!==-1) : sk.fams.indexOf(family)!==-1) return i;
-    }
-    return PROG_SKILLS.length - 1;    // famille / catégorie inconnue : « Logique & énigmes »
+  function progSkillIndex(family, domain){
+    var d = domainOrFallback(family==='qcm' ? domain : (familyDef(family) || {}).domain);
+    for(var i=0;i<DOMAINS.length;i++){ if(DOMAINS[i].id===d) return i; }
+    return DOMAINS.length - 1;
   }
   // Appelé à chaque réponse (voir onPracticeAnswered).
   function progRecord(correct){
     if(!progEvents) return;
     var fam = currentFamily, isQcm = (fam==='qcm' && m4Current);
     progEvents.push([
-      Date.now(), progSkillIndex(fam, isQcm ? m4Current.cat : null), fam,
+      Date.now(), progSkillIndex(fam, isQcm ? m4Current.domain : null), fam,
       isQcm ? (m4Current.typeId || '') : '', globalLevel, correct ? 1 : 0
     ]);
     if(progEvents.length > PROG_MAX_EVENTS) progEvents.splice(0, progEvents.length - PROG_MAX_EVENTS);
@@ -8764,7 +8747,7 @@
   function progSkillEvents(i){ return progEvents.filter(function(e){ return e[1]===i; }); }
   // Par compétence : niveau récent, niveau global, tendance.
   function progSkillStats(){
-    return PROG_SKILLS.map(function(sk, i){
+    return DOMAINS.map(function(sk, i){
       var all = progSkillEvents(i), recent = all.slice(-PROG_RECENT);
       var prev = all.slice(-2*20, -20), last20 = all.slice(-20);
       var trend = 0;
@@ -8779,7 +8762,7 @@
   }
 
   /* ---- Défi des 20 : sujets à travailler ----
-     Renvoie { key, cat } (famille à poser, et catégorie de quiz si key==='qcm') ou null s'il
+     Renvoie { key, domain } (famille à poser, et thème du quiz si key==='qcm') ou null s'il
      n'y a pas assez de données. On prend l'une des 3 compétences les plus faibles (en
      tournant pour ne pas poser 3 fois le même sujet), puis, dans cette compétence,
      l'activité la moins réussie disponible au niveau en cours. */
@@ -8791,20 +8774,18 @@
     var weak = stats.slice(0, 3);
     var st = pickFresh('weakskill|' + weak.map(function(w){ return w.skill.id; }).join(','), weak);
     // activités disponibles pour cette compétence au niveau courant
-    var activeCats = {};
-    M4_LEVELS[globalLevel].types.forEach(function(t){ var d = quizTypeById(t); if(d) activeCats[quizCategoryId(d)] = true; });
-    var options = [];
-    st.skill.fams.forEach(function(f){ options.push({ key:f, cat:null }); });
-    st.skill.cats.forEach(function(c){ if(activeCats[c]) options.push({ key:'qcm', cat:c }); });
+    var dom = st.skill.id, options = [];
+    FAMILIES.forEach(function(f){ if(f.key!=='qcm' && domainOrFallback(f.domain)===dom) options.push({ key:f.key, domain:null }); });
+    if(M4_LEVELS[globalLevel].types.some(function(t){ var d = quizTypeById(t); return d && quizDomainId(d)===dom; })) options.push({ key:'qcm', domain:dom });
     if(!options.length) return null;
     // la moins réussie récemment (les activités sans donnée passent après)
     var all = progSkillEvents(st.index);
     function optionRate(o){
-      var l = all.filter(function(e){ return o.key==='qcm' ? (e[2]==='qcm' && eventCat(e)===o.cat) : e[2]===o.key; }).slice(-20);
+      var l = all.filter(function(e){ return o.key==='qcm' ? (e[2]==='qcm' && eventDomain(e)===o.domain) : e[2]===o.key; }).slice(-20);
       return l.length ? progRate(l) : 0.5;
     }
     options.sort(function(a,b){ return (optionRate(a) - optionRate(b)) || (Math.random() - .5); });
-    return { key:options[0].key, cat:options[0].cat };
+    return { key:options[0].key, domain:options[0].domain };
   }
   /* ---- Mode Révision : mettre en avant les exercices ratés et ceux jamais faits ----
      Une « unité » = une activité au niveau en cours (une famille, ou un type de quiz précis).
@@ -8858,8 +8839,8 @@
     var u = weightedPick(fam.units);
     return { key:u.key, type:u.type, why:u.why };
   }
-  // catégorie de quiz d'un événement, retrouvée à partir de son type
-  function eventCat(e){ var d = e[3] ? quizTypeById(e[3]) : null; return d ? quizCategoryId(d) : null; }
+  // thème de quiz d'un événement, retrouvée à partir de son type
+  function eventDomain(e){ var d = e[3] ? quizTypeById(e[3]) : null; return d ? quizDomainId(d) : null; }
 
   /* ---- Écran « Progression » (Réglages) ---- */
   var progTab = 0;                 // 0 synthèse · 1 détail · 2 activité

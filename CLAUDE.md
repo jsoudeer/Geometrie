@@ -41,8 +41,9 @@ Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction c
 
 ## Conventions de contenu
 - Niveaux : 0 Facile, 1 Moyen, 2 Difficile ; `globalLevel`. Séries sans faute : `STREAK_GOALS=[20,25,30]` (orchestrateur.js) ↔ défis d'index `12 + palier` (Facile/Moyen/Difficile), quel que soit le niveau joué ; chaleur Overload : `chaleur.js` (15/20/25).
-- Historique de progression : `progression.js` (clé `geo_history`, 3000 réponses). Une nouvelle famille d'activité doit
-  être rattachée à une compétence dans `PROG_SKILLS`.
+- Historique de progression : `progression.js` (clé `geo_history`, 3000 réponses). Un seul découpage en thèmes : `DOMAINS` (noyau.js). Toute activité
+  (`registerFamily`) et tout type de quiz (`registerQuizType`) déclare son `domain` ; il sert au mode Manuel, aux réglages,
+  à la Progression (compétences) et aux sujets faibles : rien d'autre à déclarer.
 - Variété : tirage sans remise (`pickFresh`, `pickFamilyFresh`) ; mesurer avec `tools/tests/variete_audit.js`.
 - Pas de texte « Facile/Moyen/Difficile » qui contredit le code : les notes de réglage (`note`, `randomNote`) décrivent
   ce que fait réellement chaque niveau, à tenir à jour.

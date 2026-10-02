@@ -61,15 +61,15 @@ const AUDIT = () => {
         ['settings', async () => { await page.click('#settings-btn'); }],
         ['shop', async () => { await page.evaluate(() => document.getElementById('settings-overlay').hidden = true); await page.click('#stars-btn'); }],
         ['battle-setup', async () => { await page.click('#battle-btn'); }],
-        ['manual-quizz', async () => {
+        ['manual-formes', async () => {
           await openTab('manuel');
-          await page.evaluate(() => [...document.querySelectorAll('#manual-family-row .level-btn')].find(x => x.textContent.includes('Quizz')).click());
+          await page.evaluate(() => [...document.querySelectorAll('#manual-domain-row .level-btn')].find(x => x.textContent.includes('Formes')).click());
         }],
       ];
       for (const [name, act] of screens) {
         await act(); await page.waitForTimeout(200);
         // répondre faux à une question quiz pour voir le feedback
-        if (name === 'manual-quizz') {
+        if (name === 'manual-formes') {
           await page.evaluate(() => { const b = document.querySelector('#m4-choices button'); if (b) b.click(); });
           await page.waitForTimeout(200);
         }

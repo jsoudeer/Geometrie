@@ -6,7 +6,7 @@
 
   /* ===================== MODULE 1 : MESURER ===================== */
   registerFamily({
-    key:'measure', tag:'Mesurer', theme:'📐 Formes & mesures', order:10, timed:true,
+    key:'measure', tag:'Mesurer', domain:'mesures', order:10, timed:true,
     note:'Une seule épreuve, sans sous-types. Le niveau fixe les paramètres du tirage : longueur du trait (1 à 9 cm en Facile, avec des plages plus larges et des demi-cm en Difficile), position de départ de la règle (toujours 0 en Facile/Moyen, peut démarrer dans les négatifs en Difficile) et décalage du segment. À l\'intérieur de cette plage, tout est tiré au hasard à chaque question — c\'est la plage elle-même qui est fixée par le niveau, pas les valeurs.',
     markup:[
       '<div class="coach-row">',
@@ -157,7 +157,7 @@
   ];
   var estLen = 5, estStart = 0;
   registerFamily({
-    key:'estimate', tag:'Estimer une longueur', theme:'📐 Formes & mesures', order:12, timed:true,
+    key:'estimate', tag:'Estimer une longueur', domain:'mesures', order:12, timed:true,
     note:'La règle mesure toujours 10 cm mais seuls le 0 et le 10 sont écrits : on estime la longueur du trait à l\'œil. Facile : le trait part du 0, longueurs de 1 à 9 cm, réponses espacées d\'au moins 2 cm. Moyen : le trait part du 0, réponses à 1 cm près. Difficile : le trait est posé plus bas et ne part pas du 0, longueurs en demi-centimètres. La longueur, la position et les réponses proposées sont tirées au hasard. Après la réponse, les graduations apparaissent pour vérifier.',
     markup:[
       '<div class="coach-row">',
@@ -276,7 +276,7 @@
 
   /* ===================== MODULE 2 : DEFORMER ===================== */
   registerFamily({
-    key:'deform', tag:'Déformer', theme:'📐 Formes & mesures', order:20,
+    key:'deform', tag:'Déformer', domain:'formes', order:20,
     note:'Une seule épreuve avec 5 formes cibles (losange, rectangle, parallélogramme, triangle isocèle, triangle rectangle) : la forme est tirée au hasard à CHAQUE question, quel que soit le niveau — le niveau ne choisit jamais la forme. Ce que change le niveau, c\'est la déformation de départ par rapport à la cible : 1 seul coin décalé en Facile, 3 coins (2 pour un triangle) en Moyen, tous les coins en Difficile (avec une amplitude de décalage elle aussi croissante). Tout le reste (quel(s) coin(s), direction, amplitude exacte dans la plage) est tiré au hasard.',
     markup:[
       '<div class="coach-row">',
@@ -1828,60 +1828,60 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Géométrie ----
-  registerQuizType({ id:'sides', category:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
+  registerQuizType({ id:'sides', domain:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
     randomNote:'La forme est tirée au hasard parmi celles autorisées à ce niveau ; son nombre de côtés en découle de façon fixe (ce n\'est pas lui qui est tiré, seule la forme l\'est).',
     generate:function(level){ return genSidesVerticesQuestion('sides', level); } });
-  registerQuizType({ id:'vertices', category:'formes', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
+  registerQuizType({ id:'vertices', domain:'formes', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
     randomNote:'Même principe que "Côtés" : la forme est tirée au hasard, son nombre de sommets en découle de façon fixe.',
     generate:function(level){ return genSidesVerticesQuestion('vertices', level); } });
-  registerQuizType({ id:'name', category:'formes', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
+  registerQuizType({ id:'name', domain:'formes', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
     randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.',
     generate:genNameQuestion });
-  registerQuizType({ id:'align', category:'formes', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
+  registerQuizType({ id:'align', domain:'formes', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
     randomNote:'Facile : 3 points, alignés ou non, en ligne ou en colonne. Moyen : + diagonales, points espacés, « presque alignés », et deux nouvelles variantes (parmi 4 points, lesquels sont alignés ; quel point numéroté est aligné avec A et B). Difficile : + droites penchées (2 colonnes pour 1 ligne). Les points sont tirés au hasard ; les bonnes réponses sont vérifiées par le calcul (une seule possible).',
     generate:genAlignQuestion });
-  registerQuizType({ id:'milieu', category:'formes', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
+  registerQuizType({ id:'milieu', domain:'formes', label:'Milieu', longLabel:'Milieu d\'un segment', defaultLevels:[0,1,2],
     randomNote:'Facile : 3 formes sur le segment, on cherche celle du milieu. Moyen : segment de 3 ou 5 cases avec 3 ou 5 formes (une au milieu), ou 2 ou 4 formes (aucune au milieu : « Aucune forme » est toujours proposée). Difficile : idem, et une variante où l\'on lit les coordonnées du milieu de [AB] (horizontal, vertical ou diagonal). Position, formes et couleurs sont tirées au hasard.',
     generate:genMilieuQuestion });
-  registerQuizType({ id:'coord', category:'repere', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
+  registerQuizType({ id:'coord', domain:'repere', label:'Coordonnées', longLabel:'Lire des coordonnées', defaultLevels:[0,1,2],
     randomNote:'Le point marqué sur le quadrillage est tiré au hasard ; ses coordonnées en découlent de façon fixe.',
     generate:genCoordQuestion });
-  registerQuizType({ id:'angle', category:'formes', label:'Angles', longLabel:'Angles (droit, aigu, obtus, comparer)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'angle', domain:'formes', label:'Angles', longLabel:'Angles (droit, aigu, obtus, comparer)', defaultLevels:[0,1,2],
     randomNote:'Trois variantes en alternance. Facile : comparer 2 angles très différents, ou compter les angles droits d\'un rectangle, carré ou triangle. Moyen : + classer un angle (droit/aigu/obtus, écart de 14° autour de 90°), comparer 2 ou 3 angles, trapèze rectangle et maison. Difficile : écart de 7°, comparaisons très serrées (ou angles égaux aux branches inégales), + losange, parallélogramme et figures penchées. Valeurs et branches tirées au hasard.',
     generate:genAngleQuestion });
-  registerQuizType({ id:'image', category:'formes', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
+  registerQuizType({ id:'image', domain:'formes', label:'Image', longLabel:'Photo / illustration', defaultLevels:[1,2],
     randomNote:'La scène est tirée au hasard parmi 5 illustrations fixes (maison, clôture, château, robot, train) ; certaines valeurs (nombre de wagons, présence d\'une fenêtre...) varient aussi au hasard à l\'intérieur d\'une même scène.',
     generate:function(){ return pickFresh('image', IMAGE_QUESTIONS)(); } });
-  registerQuizType({ id:'coordFind', category:'repere', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
+  registerQuizType({ id:'coordFind', domain:'repere', label:'Repérage', longLabel:'Trouver sur le quadrillage', defaultLevels:[1,2],
     randomNote:'Les 4 cases et les formes qui s\'y trouvent sont tirées au hasard à chaque question.',
     generate:genCoordFindQuestion });
-  registerQuizType({ id:'codage', category:'repere', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
+  registerQuizType({ id:'codage', domain:'repere', label:'Déplacement', longLabel:'Déplacement (codage)', defaultLevels:[1,2],
     randomNote:'Le point de départ et la suite de flèches (2 à 3 déplacements) sont tirés au hasard.',
     generate:genCodageQuestion });
-  registerQuizType({ id:'chasse', category:'formes', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
+  registerQuizType({ id:'chasse', domain:'formes', label:'Chasse aux formes', longLabel:'Chasse aux formes', defaultLevels:[1,2],
     randomNote:'Le nombre et la disposition des formes affichées sont tirés au hasard à chaque question.',
     generate:genChasseQuestion });
-  registerQuizType({ id:'decodage', category:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
+  registerQuizType({ id:'decodage', domain:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
     randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.',
     generate:genDecodageQuestion });
-  registerQuizType({ id:'symVrai', category:'formes', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
+  registerQuizType({ id:'symVrai', domain:'symetrie', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
     randomNote:'4 figures tirées en alternance : rectangle (jamais carré), carré (ses diagonales sont de vrais axes), triangle isocèle, cercle (toute droite par le centre est un axe). La droite est soit un vrai axe, soit décalée ou oblique ; la figure et les mesures sont tirées au hasard.',
     generate:genSymVraiQuestion });
-  registerQuizType({ id:'enigme', category:'solides', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
+  registerQuizType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
     randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
-  registerQuizType({ id:'suiteFormes', category:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
+  registerQuizType({ id:'suiteFormes', domain:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
     randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
     generate:genSuiteFormesQuestion });
-  registerQuizType({ id:'mesures', category:'mesures', label:'Unités de longueur', longLabel:'Mesures : unités et conversions', defaultLevels:[0,1,2],
+  registerQuizType({ id:'mesures', domain:'mesures', label:'Unités de longueur', longLabel:'Mesures : unités et conversions', defaultLevels:[0,1,2],
     randomNote:'Facile : choisir l\'unité (mm, cm, m, km). Moyen : + comparer des longueurs en cm et en m. Difficile : conversions (m → cm, km → m) et comparaisons.',
     generate:genMesuresQuestion });
-  registerQuizType({ id:'perimetre', category:'mesures', label:'Périmètre', longLabel:'Périmètre (le tour d\'une figure)', defaultLevels:[1,2],
+  registerQuizType({ id:'perimetre', domain:'mesures', label:'Périmètre', longLabel:'Périmètre (le tour d\'une figure)', defaultLevels:[1,2],
     randomNote:'Facile : rectangle sur quadrillage (on compte les carreaux du tour). Moyen : rectangle ou carré aux côtés donnés. Difficile : triangle équilatéral, pentagone ou hexagone régulier.',
     generate:genPerimetreQuestion });
-  registerQuizType({ id:'intrus', category:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'intrus', domain:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
     randomNote:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.',
     generate:genIntrusQuestion });
-  registerQuizType({ id:'symVisuel', category:'formes', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
+  registerQuizType({ id:'symVisuel', domain:'symetrie', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
     randomNote:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).',
     generate:genSymVisuelQuestion });

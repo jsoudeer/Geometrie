@@ -372,11 +372,20 @@
     void splashArt.getBoundingClientRect();
     splashArt.classList.add('sp-go'); if(card) card.classList.add('sp-shake');
   }
-  drawSplashArt(splashSvgEl);
-  if(splashSvgEl){
-    splashSvgEl.classList.add('sp-go');
-    splashSvgEl.closest('.splash-card').classList.add('sp-shake');
-    splashSvgEl.addEventListener('click', playSplashClash);
+  // L'animation ne démarre qu'une fois la recherche d'une image perso terminée (trySplashCustomMedia) :
+  // jusque-là la carte reste en attente (classe sp-wait : dessin et textes invisibles).
+  var splashSettled = false;
+  function splashSettle(kind){
+    if(splashSettled) return;
+    splashSettled = true;
+    var card = splashSvgEl && splashSvgEl.closest('.splash-card');
+    if(kind==='svg'){
+      drawSplashArt(splashSvgEl);
+      splashSvgEl.addEventListener('click', playSplashClash);
+    }
+    if(card) card.classList.remove('sp-wait');
+    if(kind==='video'){ if(card) card.classList.add('sp-shake'); return; }   // la vidéo joue d'elle-même : seulement l'apparition des textes
+    playSplashClash();
   }
 
   /* ---- Splash perso en remplacement du dessin procédural -----------------
@@ -387,7 +396,7 @@
      priorité : vidéo mp4/webm d'abord, puis gif/webp/png/jpg/svg) — un écran
      de démarrage se prête bien à une petite animation en boucle. Si aucun
      fichier n'est trouvé (ex : aperçu publié seul, sans le reste du dépôt),
-     le dessin procédural (drawSplashArt ci-dessus) reste affiché tel quel. */
+     ou au bout de 2,5 s, c'est le dessin procédural (drawSplashArt) qui joue. */
   function trySplashCustomMedia(){
     var svg = document.getElementById('splashSvg');
     if(!svg) return;
@@ -395,10 +404,11 @@
     var VIDEO_EXTS = ['mp4','webm'];
     var IMAGE_EXTS = ['gif','webp','png','jpg','jpeg','svg'];
     function tryImage(i){
-      if(i >= IMAGE_EXTS.length) return; // rien trouvé : on garde le SVG procédural
+      if(i >= IMAGE_EXTS.length){ splashSettle('svg'); return; } // rien trouvé : dessin procédural
       var img = new Image();
       img.onerror = function(){ tryImage(i+1); };
       img.onload = function(){
+        if(splashSettled) return;
         // Une image fixe est scindée en deux moitiés (fond CSS) qui s'entrechoquent comme le dessin SVG.
         var box = document.createElement('div');
         box.className = 'splash-art splash-custom-media sp-split sp-go';
@@ -413,7 +423,7 @@
         fx.appendChild(g); box.appendChild(fx); splashImpact(box, g);
         box.addEventListener('click', playSplashClash);
         svg.style.display = 'none'; container.insertBefore(box, svg); splashArt = box;
-        playSplashClash();   // repart à zéro : l'image a pu arriver après le début de l'animation du dessin
+        splashSettle('image');
       };
       img.src = 'assets/branding/splash.' + IMAGE_EXTS[i];
     }
@@ -423,13 +433,14 @@
       v.className = 'splash-art splash-custom-media';
       v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
       v.setAttribute('aria-label','Écran de démarrage');
-      v.addEventListener('loadeddata', function(){ svg.style.display = 'none'; container.insertBefore(v, svg); });
+      v.addEventListener('loadeddata', function(){ if(splashSettled) return; svg.style.display = 'none'; container.insertBefore(v, svg); splashSettle('video'); });
       v.addEventListener('error', function(){ tryVideo(i+1); });
       v.src = 'assets/branding/splash.' + VIDEO_EXTS[i];
     }
     tryVideo(0);
   }
   trySplashCustomMedia();
+  setTimeout(function(){ splashSettle('svg'); }, 2500);   // filet de sécurité : recherche trop longue
 
   document.getElementById('splash-start-btn').addEventListener('click', function(){
     var overlay = document.getElementById('splash-overlay');
@@ -836,33 +847,35 @@
   // ---- Registre des types de Quizz ----
   // Chaque thème appelle registerQuizType() pour déclarer ses types de questions :
   //   id            identifiant unique (ex. 'sides')
+  //   domain        thème (id de DOMAINS, ex. 'formes')
   //   label         nom court (panneau « Configurer les activités »)
-  //   longLabel     nom affiché dans la liste du mode Manuel
+  //   longLabel     nom affiché dans la liste du mode Manuel (sous son thème)
   //   defaultLevels niveaux où le type apparaît par défaut : 0 Facile, 1 Moyen, 2 Difficile
   //   randomNote    ce qui est tiré au hasard, pour le panneau de configuration
   //   generate(level)  renvoie la question :
   //     { tag, question, sub, explain, draw:function(){…}, cols3:bool, choices:[{label, ok}] }
   var QCM_TYPE_DEFS = [];
-  // Sous-catégories d'affichage (panneau « Activités & difficulté » et mode Manuel).
-  // Un thème peut en ajouter avec registerQuizCategory ; un type sans catégorie
-  // connue tombe dans « Autres ».
-  var QCM_CATEGORIES = [
-    { id:'formes',    label:'Formes', icon:'🔷' },
-    { id:'repere',    label:'Repérage', icon:'🧭' },
-    { id:'solides',   label:'Solides & énigmes', icon:'🧊' },
-    { id:'temps',     label:'Heure & calendrier', icon:'🕒' },
-    { id:'mesures',   label:'Mesures', icon:'📏' },
-    { id:'nombres',   label:'Nombres', icon:'🔢' },
-    { id:'calcul',    label:'Calcul', icon:'➕' },
-    { id:'problemes', label:'Problèmes & monnaie', icon:'🪙' },
-    { id:'logique',   label:'Suites logiques', icon:'🧩' },
-    { id:'autres',    label:'Autres', icon:'✨' }
+  // THÈMES (domaines) : UN seul découpage pour tout le jeu. Il sert au mode Manuel (thème puis
+  // activité), au panneau « Activités & difficulté », à la Progression (radar de 9 compétences)
+  // et au ciblage des sujets faibles. Chaque activité y est rangée : une famille d'écran par son
+  // champ `domain` (registerFamily), un type de Quizz par son champ `domain` (registerQuizType).
+  // Un domaine inconnu tombe dans le dernier (« Logique & énigmes »).
+  var DOMAINS = [
+    { id:'formes',   icon:'🔷', label:'Formes & angles',     short:'Formes' },
+    { id:'symetrie', icon:'🦋', label:'Symétrie',            short:'Symétrie' },
+    { id:'repere',   icon:'🧭', label:'Repérage',            short:'Repérage' },
+    { id:'solides',  icon:'🧊', label:'Solides & patrons',   short:'Solides' },
+    { id:'temps',    icon:'🕒', label:'Heure & calendrier',  short:'Heure' },
+    { id:'mesures',  icon:'📏', label:'Mesures',             short:'Mesures' },
+    { id:'nombres',  icon:'🔢', label:'Nombres & fractions', short:'Nombres' },
+    { id:'calcul',   icon:'➕', label:'Calcul & problèmes',  short:'Calcul' },
+    { id:'logique',  icon:'🧩', label:'Logique & énigmes',   short:'Logique' }
   ];
-  function registerQuizCategory(cat){ QCM_CATEGORIES.splice(QCM_CATEGORIES.length-1, 0, cat); }
-  function quizCategoryId(def){
-    for(var i=0;i<QCM_CATEGORIES.length;i++){ if(QCM_CATEGORIES[i].id===def.category) return def.category; }
-    return 'autres';
+  function domainOrFallback(id){
+    for(var i=0;i<DOMAINS.length;i++){ if(DOMAINS[i].id===id) return id; }
+    return DOMAINS[DOMAINS.length-1].id;
   }
+  function quizDomainId(def){ return domainOrFallback(def.domain); }
   function registerQuizType(def){ QCM_TYPE_DEFS.push(def); }
   /* ===================== REGISTRE DES ACTIVITÉS (familles) =====================
      TOUTES les activités (Mesurer, Déformer, Patron, Quizz, Horloge, ateliers…)
@@ -870,7 +883,8 @@
      connaît aucune activité par son nom. Retirer un thème du manifeste retire
      simplement ses activités. Contrat d'une famille :
        key        identifiant unique (conteneur d'écran : #fam-<key>)
-       tag        nom affiché ; theme : groupe du mode Manuel (ex. '🕒 Horloge')
+       tag        nom affiché
+       domain     thème (id de DOMAINS : 'formes', 'mesures', 'temps'…) ; le Quizz n'en a pas : chacun de ses types a le sien
        order      rang d'affichage et de tirage (les plus petits d'abord)
        weight     nombre de places dans le tirage aléatoire (1 par défaut ; 3 pour le Quizz)
        timed      true : proposée aussi en mode Chronométré (réponse en un toucher)

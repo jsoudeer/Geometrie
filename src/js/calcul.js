@@ -436,42 +436,42 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Calcul ----
-  registerQuizType({ id:'calc', category:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
+  registerQuizType({ id:'calc', domain:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
     generate:genCalcQuestion });
-  registerQuizType({ id:'monnaie', category:'problemes', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
+  registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
     generate:genMonnaieQuestion });
-  registerQuizType({ id:'vie', category:'problemes', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
+  registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
-  registerQuizType({ id:'soustraction', category:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
+  registerQuizType({ id:'soustraction', domain:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
     randomNote:'a - b avec b plus petit que a. Facile : nombres jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 60 (avec retenues).',
     generate:genSoustractionQuestion });
-  registerQuizType({ id:'doubleMoitie', category:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
+  registerQuizType({ id:'doubleMoitie', domain:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
     randomNote:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 50.',
     generate:genDoubleMoitieQuestion });
-  registerQuizType({ id:'complement', category:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'complement', domain:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
     randomNote:'« a + ? = cible ». Facile : compléments à 10 ; Moyen : à 20 ; Difficile : à 100 (multiples de 5).',
     generate:genComplementQuestion });
-  registerQuizType({ id:'tables', category:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
+  registerQuizType({ id:'tables', domain:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
     randomNote:'Facile : tables de 2 et de 10 ; Moyen : 2, 5 et 10 ; Difficile : 2, 3, 4, 5, 10, avec parfois le facteur manquant (5 × ? = 35).',
     generate:genTableQuestion });
-  registerQuizType({ id:'compare', category:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'compare', domain:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
     randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
     generate:genCompareQuestion });
-  registerQuizType({ id:'suiteNombres', category:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
+  registerQuizType({ id:'suiteNombres', domain:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
     randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
     generate:genSuiteNombresQuestion });
-  registerQuizType({ id:'numeration', category:'nombres', label:'Dizaines et unités', longLabel:'Dizaines et unités (numération)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'numeration', domain:'nombres', label:'Dizaines et unités', longLabel:'Dizaines et unités (numération)', defaultLevels:[0,1,2],
     randomNote:'Chiffre des dizaines/unités (centaines en Difficile), nombre de dizaines, ou composer un nombre (30 + 4). Facile : jusqu\'à 59 ; Moyen : jusqu\'à 99 ; Difficile : jusqu\'à 999.',
     generate:genNumerationQuestion });
-  registerQuizType({ id:'ordre', category:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'ordre', domain:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
     randomNote:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à 20 ; Moyen : jusqu\'à 100 ; Difficile : jusqu\'à 1000, souvent autour des changements de dizaine.',
     generate:genOrdreQuestion });
-  registerQuizType({ id:'fraction', category:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2],
+  registerQuizType({ id:'fraction', domain:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2],
     randomNote:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).',
     generate:genFractionQuestion });
-  registerQuizType({ id:'comptage', category:'nombres', label:'Dénombrement (visuel)', longLabel:'Dénombrement : compter des objets, des blocs', defaultLevels:[0,1,2],
+  registerQuizType({ id:'comptage', domain:'nombres', label:'Dénombrement (visuel)', longLabel:'Dénombrement : compter des objets, des blocs', defaultLevels:[0,1,2],
     randomNote:'Facile : compter 3 à 12 objets éparpillés. Moyen : lire des blocs (barres de 10, cubes). Difficile : + plaques de 100.',
     generate:genComptageQuestion });

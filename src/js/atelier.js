@@ -130,7 +130,7 @@
     if(state==='failed'){ atSym.mine = atSym.solution.map(function(row){ return row.slice(); }); atSymDraw(false); }
   }
   registerFamily({
-    key:'atelier-sym', tag:'Compléter la symétrie', theme:'✋ Ateliers',
+    key:'atelier-sym', tag:'Compléter la symétrie', domain:'symetrie',
     note:'Une moitié de figure est donnée ; on touche les cases de l\'autre côté de la ligne rouge pour la compléter en miroir. Facile : 4 cases sur 3×4 ; Moyen : 6 cases sur 3×5 ; Difficile : 9 cases, et la ligne peut être verticale OU horizontale. La figure est tirée au hasard (au moins une case touche la ligne).',
     build:function(wrap){ atSym.ui = makeAtelier('atelier-sym', wrap, atSymCheck); },
     generate:function(level){
@@ -193,7 +193,7 @@
     if(state==='failed'){ atFrac.on = atFrac.on.map(function(v, i){ return i < need; }); atFracDraw(); }
   }
   registerFamily({
-    key:'atelier-fraction', tag:'Colorier une fraction', theme:'✋ Ateliers',
+    key:'atelier-fraction', tag:'Colorier une fraction', domain:'nombres',
     note:'Un disque ou une bande est partagé(e) en parts égales ; on colorie la fraction demandée (la moitié, le quart, les trois quarts, le tiers, les deux tiers). Facile : 2 ou 4 parts ; Moyen : + 3 parts ; Difficile : 4, 6 ou 8 parts, parfois une fraction écrite (5/8).',
     build:function(wrap){ atFrac.ui = makeAtelier('atelier-fraction', wrap, atFracCheck); },
     generate:atFracGenerate,
@@ -248,7 +248,7 @@
     if(state==='failed'){ atCopy.mine = atCopy.model.map(function(row){ return row.slice(); }); atCopyDraw(false); }
   }
   registerFamily({
-    key:'atelier-copie', tag:'Reproduire le modèle', theme:'✋ Ateliers',
+    key:'atelier-copie', tag:'Reproduire le modèle', domain:'formes',
     note:'Un modèle est dessiné sur une grille ; on le reproduit case par case sur une grille vide (repérage, observation). Facile : grille 4×4, 5 cases ; Moyen : 5×5, 8 cases ; Difficile : 6×6, 12 cases. Les cases sont tirées au hasard.',
     build:function(wrap){ atCopy.ui = makeAtelier('atelier-copie', wrap, atCopyCheck); },
     generate:atCopyGenerate,
@@ -327,7 +327,7 @@
     if(state==='failed'){ atErr.marks = atErr.marks.map(function(row, rr){ return row.map(function(v, cc){ return atErrIsDiff(rr, cc); }); }); atErrDraw('bad'); }
   }
   registerFamily({
-    key:'atelier-erreur', tag:'Trouver l\'erreur', theme:'✋ Ateliers',
+    key:'atelier-erreur', tag:'Trouver l\'erreur', domain:'formes',
     note:'Un modèle et sa copie sont côte à côte ; la copie contient des erreurs (case coloriée en trop ou case oubliée) qu\'on touche pour les signaler. Facile : grille 4×4, 1 erreur ; Moyen : 5×5, 2 erreurs ; Difficile : 6×6, 3 erreurs sans que le nombre soit donné. Les cases et les erreurs sont tirées au hasard (avec à la fois « en trop » et « manquante » dès 2 erreurs).',
     build:function(wrap){ atErr.ui = makeAtelier('atelier-erreur', wrap, atErrCheck); },
     generate:atErrGenerate,
@@ -416,7 +416,7 @@
     if(state==='failed'){ atAxe.cands.forEach(function(a){ atAxe.sel[a] = atAxe.truth.indexOf(a)>=0; }); atAxeDraw(null); }
   }
   registerFamily({
-    key:'atelier-axe', tag:'Axes de symétrie', theme:'✋ Ateliers',
+    key:'atelier-axe', tag:'Axes de symétrie', domain:'symetrie',
     note:'Une figure en cases et des lignes de pliage en pointillés : on touche celles qui sont de vrais axes de symétrie. Si on se trompe, les cases qui ne se superposent pas au pliage sont entourées en rouge. Facile : 4×4, la figure a 1 axe (vertical ou horizontal) ; Moyen : 5×5, lignes verticale/horizontale, 0, 1 ou 2 axes ; Difficile : 5×5 ou 6×6, avec les 2 diagonales, de 0 à 4 axes. La figure est construite pour avoir exactement les axes voulus (et vérifiée), le reste est tiré au hasard.',
     build:function(wrap){ atAxe.ui = makeAtelier('atelier-axe', wrap, atAxeCheck); },
     generate:atAxeGenerate,
