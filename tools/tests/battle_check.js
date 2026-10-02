@@ -1,5 +1,7 @@
 const { withPage, SHOTS } = require('./lib');
-withPage({ viewport: { width: 390, height: 900 } }, async (page) => {
+withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, async (page) => {
+  const ev = c => page.evaluate(x => window.__t.__eval(x), c);
+  await ev(`BT_SPEED = 0.1; ['cat01','cat02','cat03','cat04','cat05'].forEach(function(id){ ownedCats[id]=true; }); ['br01','br02','br03','br04','br05'].forEach(function(id){ ownedBrain[id]=true; }); renderBtSetup(); renderShop();`);
   async function openArena() {
     await page.click('#stars-btn');
     await page.waitForTimeout(150);
@@ -24,7 +26,7 @@ withPage({ viewport: { width: 390, height: 900 } }, async (page) => {
   await page.waitForTimeout(150);
   // team pick: all starters should be selectable
   const counts = await page.evaluate(() => ['classic','support','archer'].map(r => document.querySelectorAll('#bt-grid-' + r + ' .sprite-card').length));
-  console.log('owned per role (expected 3/1/1 for a fresh start):', counts);
+  console.log('owned per role (expected 3/1/1 once the 5 first are bought):', counts);
   // auto-pick
   for (const role of ['classic', 'support', 'archer']) {
     const n = await page.evaluate(r => document.querySelectorAll('#bt-grid-' + r + ' .sprite-card').length, role);
@@ -47,6 +49,7 @@ withPage({ viewport: { width: 390, height: 900 } }, async (page) => {
     if (canPick) {
       await page.evaluate(() => { const b = [...document.querySelectorAll('#bt-player-field .bcard')].find(x => !x.disabled); b.click(); });
       await page.waitForTimeout(50);
+      await page.evaluate(() => { const n = document.getElementById('bt-boost-none'); if (n && !document.getElementById('bt-boost').hidden) n.click(); });
       await page.evaluate(() => { const t = [...document.querySelectorAll('#bt-enemy-field .bcard')].find(x => !x.disabled); if (t) t.click(); });
       turns++;
       if (turns === 2) { await page.waitForTimeout(700); await page.screenshot({ path: SHOTS + 'b_arena_mid.png', fullPage: true }); }

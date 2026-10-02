@@ -1,0 +1,32 @@
+  /* ===== Évolutions des personnages (niveau 1 « Évolué », niveau 2 « Ultime ») =====
+     Posées sur le conteneur de l'image (classe evo-1 / evo-2 + data-evo-clan) par
+     applyEvoLook() (boutique.js) : fonctionne pour tous les affichages (boutique,
+     bataille, aperçu, mascotte) et pour les images comme pour les dessins. */
+  :where(.evo-1, .evo-2){ position:relative; }
+  .evo-1, .evo-2{ --evo-c:#FF8FC1; --evo-c2:#FFE27A; border-radius:14px; }
+  .evo-1[data-evo-clan="cats"]{ --evo-c:#FF8FC1; --evo-c2:#FFD4E8; }
+  .evo-2[data-evo-clan="cats"]{ --evo-c:#FFC83D; --evo-c2:#FF8FC1; }
+  .evo-1[data-evo-clan="brainrot"]{ --evo-c:#3DDC97; --evo-c2:#B8FF5A; }
+  .evo-2[data-evo-clan="brainrot"]{ --evo-c:#FF3DE0; --evo-c2:#B8FF5A; }
+  .evo-1{ box-shadow:0 0 0 2px var(--evo-c), 0 0 10px var(--evo-c); }
+  .evo-2{ box-shadow:0 0 0 3px var(--evo-c), 0 0 0 5px var(--evo-c2), 0 0 18px var(--evo-c); animation:evoPulse 2.2s ease-in-out infinite; }
+  .evo-1 > img, .evo-1 > svg{ filter:drop-shadow(0 0 4px var(--evo-c)); }
+  .evo-2 > img, .evo-2 > svg{ filter:drop-shadow(0 0 7px var(--evo-c)) drop-shadow(0 0 2px var(--evo-c2)); }
+  .evo-2 > .sp-custom-img, .evo-2 > .sp-full-img{ transform:scale(1.06); }
+  .evo-2[data-evo-clan="brainrot"] > img{ animation:evoGlitch 2.6s steps(1) infinite; }
+  .evo-badge{ position:absolute; left:3px; bottom:3px; z-index:3; pointer-events:none; font-size:11px; line-height:1; font-weight:900;
+    color:#5A3600; background:#FFE27A; border:1.5px solid #B57A00; border-radius:9px; padding:1px 4px; letter-spacing:-1px; }
+  .evo-spark{ position:absolute; z-index:3; pointer-events:none; font-size:12px; line-height:1; animation:evoTwinkle 1.8s ease-in-out infinite; }
+  .evo-spark.s0{ top:2px; right:3px; }
+  .evo-spark.s1{ top:38%; left:1px; animation-delay:.6s; }
+  .evo-spark.s2{ bottom:34%; right:1px; animation-delay:1.2s; }
+  @keyframes evoPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.12); } }
+  @keyframes evoTwinkle{ 0%,100%{ opacity:.25; transform:scale(.7) rotate(0); } 50%{ opacity:1; transform:scale(1.2) rotate(18deg); } }
+  @keyframes evoGlitch{ 0%,88%,100%{ transform:scale(1.06) translate(0,0); } 90%{ transform:scale(1.06) translate(-2px,1px); } 94%{ transform:scale(1.06) translate(2px,-1px); } }
+  .info-art.evo-1, .info-art.evo-2{ padding:8px; }
+  .sprite-card .sp-evo-btn{ min-height:32px; border:2px solid var(--control-border, var(--border)); border-radius:10px; background:var(--surface2); color:var(--text);
+    font-family:var(--font-body); font-weight:800; font-size:11.5px; line-height:1.15; padding:4px 6px; cursor:pointer; }
+  .sprite-card .sp-evo-btn:not([disabled]){ background:var(--accent2); border-color:var(--accent2); color:var(--on-accent); }
+  .sprite-card .sp-evo-btn[disabled]{ opacity:.55; cursor:default; }
+  .sprite-card .sp-evo-btn.max{ opacity:1; background:transparent; border-style:dashed; color:var(--text-soft); }
+  @media (prefers-reduced-motion: reduce){ .evo-2, .evo-spark, .evo-2[data-evo-clan="brainrot"] > img{ animation:none; } .evo-spark{ opacity:.9; } }

@@ -166,15 +166,25 @@ Trois activités interactives, sans chronomètre. On touche les cases ou les par
 **Accès** : le menu ☰ ne contient plus que Facile, Moyen, Difficile et Manuel. La **Boutique** s'ouvre en touchant le **compteur d'étoiles** ⭐ (en haut à droite), la **Bataille** avec l'icône ⚔️ à sa droite ; on ferme en retouchant le bouton ou avec « ↩️ Retour aux exercices » (retour au dernier niveau joué).
 
 ### Boutique
-Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratuits, 30 à obtenir. La boutique affiche le clan actif (bouton à gauche des ⭐).
+Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : **un seul offert** (le premier : Lavandou / Baguetto Montone), 34 à obtenir (19 à acheter, 15 par défis). La boutique affiche le clan actif (bouton à gauche des ⭐).
 
 | Rareté | Prix |
 |---|---|
-| Commun | 8 ⭐ |
-| Rare | 15 ⭐ |
-| Épique | 28 ⭐ |
-| Légendaire | 45 ⭐ |
+| Commun | 6 ⭐ |
+| Rare | 12 ⭐ |
+| Épique | 24 ⭐ |
+| Légendaire | 40 ⭐ |
 | **Défi** | Ne s'achète pas : se débloque par un défi |
+
+Repères : une équipe de 5 communs (3 classiques, 1 soutien, 1 archer) coûte environ 24 ⭐ (1 à 2 jours de jeu : 1 ⭐ par bonne réponse, +3 ⭐ par victoire en bataille) ; tout acheter vaut environ 300 ⭐ par clan.
+
+### Évolutions
+Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué / Ultime » sur sa carte, dans la Boutique) : niveau 0 *De base*, 1 *Évolué*, 2 *Ultime*.
+- **Prix** : le même que son achat (6 / 12 / 24 / 40 ⭐ selon la rareté ; 12 ⭐ pour un personnage de défi, qui est gratuit).
+- **Puissance** : chaque niveau ajoute **20 % des points de base** (au moins +1) : ×1,2 puis ×1,4. Le total des deux évolutions coûte donc deux fois le prix d'achat. Tout acheter et tout faire évoluer vaut ~900 ⭐ par clan (plusieurs semaines de jeu).
+- **Visuel** (sur toutes les cartes et images) : niveau 1 = cadre coloré lumineux + ★ + 2 étincelles ; niveau 2 = double cadre doré (chats) ou magenta/vert (brainrots) qui pulse, ★★, 3 étincelles, personnage un peu plus grand (effet « glitch » chez les brainrots). Chats : rose puis or ; Brainrots : vert néon puis magenta.
+- Les adversaires ne sont jamais évolués (leur total de points suit celui de ton équipe, évolutions comprises).
+- « Effacer ma progression » efface aussi les évolutions.
 
 ### Rôles (une seule caractéristique : les points ❤️, qui sont l'attaque **et** l'énergie)
 - ⚔️ **Classique** : attaque normale.
@@ -183,6 +193,8 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : 5 de départ gratui
 
 ### Bataille
 Équipe de **jusqu'à 3 classiques + 1 Soutien + 1 Archer** du clan actif (on peut se passer du Soutien ou de l'Archer, à soi d'assumer ce choix ; il faut au moins 1 carte, et l'équipe adverse a la même composition). 3 cartes au hasard sur le terrain ; quand une carte est battue (0 point), une autre la remplace. Quand A attaque B : B perd autant de points que A en a, et A perd les points de B (sauf l'Archer). Victoire : **+3 ⭐**.
+
+**Boost** : au début de chaque **3e tour** du joueur (3, 6, 9…), un boost 🎁 apparaît sur l'une de ses 3 cartes du terrain et y reste jusqu'à ce qu'il soit utilisé (ou que la carte soit battue). En touchant cette carte, le joueur choisit : **✖️2** (dégâts doublés) ou **🎯 N dégâts fixes**, où N vaut tour à tour (dans un ordre mélangé, une fois chacun tous les 3 boosts) **autant que le double**, **30 % de moins** ou **30 % de plus** que le double des points de la carte : il faut calculer pour choisir. Un petit message dit ensuite si le choix était le meilleur. Le boost ne change que les dégâts infligés (pas ceux reçus) ; on peut aussi attaquer « sans boost » (il reste alors disponible). L'adversaire n'a pas de boost.
 
 **Difficulté** (choisie avant le combat) : le total des points ❤️ de l'équipe adverse vaut celui de la tienne en **Normal**, **20 % de moins en Facile**, **20 % de plus en Difficile** (l'adversaire garde 3 classiques + 1 soutien + 1 archer, tirés au plus près de cette cible ; le total est affiché avant et pendant le combat). Le choix est mémorisé.
 
@@ -223,7 +235,7 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 
 ## Bataille : choix d'équipe et animations
 - **Choix d'équipe** : trois boutons — « ⚡ Équipe complète (les plus forts) », « 🎲 Au hasard » et « Vider ». Quand la place d'un rôle est pleine, choisir un personnage de plus fait sortir le **plus ancien** choisi de ce rôle.
-- **Combat** : chaque carte garde son image pendant tout le combat (plus de clignotement). L'attaquant fonce sur sa cible (l'archer tire une flèche), la cible tremble, les points défilent avec un « −8 » / « +5 » flottant, puis les cartes battues s'effacent et les remplaçants apparaissent.
+- **Combat, au ralenti** (une attaque + la riposte adverse durent ~8 s) : l'attaquant se gonfle et la cible s'encadre (préparation) ; il fonce (ou l'archer tire une flèche) avec un petit arrêt à l'impact ; **un grand effet sonore s'affiche au milieu** (« POW ! », « BAM ! », « PAF ! », « CRAC ! », « BOUM ! » en corps à corps, « ZIIIP ! », « TCHAK ! », « PIOU ! » pour l'archer, « K.O. ! » quand une carte tombe, « HOP ! » à l'arrivée d'un remplaçant, « +2 ❤️ » pour le soutien, « ✖️2 BOOM ! » / « 🎯 N ! » pour un boost) et l'écran tremble ; les points défilent avec un « −8 » flottant ; les cartes battues s'effacent, les remplaçants arrivent. Le descriptif écrit du milieu a disparu (il reste pour les lecteurs d'écran). Chaque carte garde son image pendant tout le combat.
 
 ## Reveal d'un nouveau personnage
 À chaque déblocage (achat en boutique ou défi réussi), un écran plein écran révèle le personnage en deux temps. **1) L'ombre chinoise** : sa silhouette noire en pied grossit au milieu de l'écran en pivotant sur elle-même (deux tours) et s'arrête **de face, toujours en ombre**. **2) Le balayage** : un trait de lumière la traverse de gauche à droite et fait apparaître ses couleurs derrière lui, avec le son du clan (arpège de harpe et « miaou » pour les Chats kawaii, boum grave et bips « glitch » pour les Brainrots) ; puis éclat, étincelles, nom et rôle. Un toucher pendant l'animation passe directement à la fin ; « Super ! » ou Échap ferme. Les animations sont supprimées si l'appareil demande de réduire les animations.
@@ -247,4 +259,4 @@ Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma p
 Au démarrage, l'image se coupe en deux : le côté Italian Brainrot et le côté Kawaii Cats se percutent avec éclair et étincelles. Un clic sur l'image rejoue le choc.
 
 ## Guides (tutoriels)
-Quatre guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 50 étoiles quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille, **Série sans faute** au premier 10 d'affilée. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.
+Quatre guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 6 étoiles (le prix du moins cher) quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille, **Série sans faute** au premier 10 d'affilée. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.

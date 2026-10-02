@@ -4,6 +4,7 @@ const { withPage } = require('./lib');
 withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, async (page) => {
   const ev = c => page.evaluate(x => window.__t.__eval(x), c);
   let bad = 0; const chk = (ok, msg) => { console.log(ok ? '  ok' : '  ✘', msg); if (!ok) bad++; };
+  await ev('BT_SPEED = 0.05');   // déroulé accéléré (en vrai : lent, pour bien voir les attaques)
   // on possède tout pour tester la rotation
   await ev(`(function(){ CAT_SPRITES.forEach(function(s){ ownedCats[s.id]=true; }); BRAINROT_SPRITES.forEach(function(s){ ownedBrain[s.id]=true; }); btSel.cats={classic:[],support:[],archer:[]}; renderBtSetup(); })()`);
   await page.click('#battle-btn');
@@ -37,7 +38,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   let midHtml = { floats: 0 };
   for (let i = 0; i < 20 && !midHtml.floats; i++) { await page.waitForTimeout(100); midHtml = await page.evaluate(() => ({ floats: document.querySelectorAll('.dmg-float').length })); }
   chk(midHtml.floats >= 1, 'chiffres flottants pendant l\'attaque (' + midHtml.floats + ')');
-  await page.waitForTimeout(2600);
+  await page.waitForTimeout(600);
   const after = await page.evaluate((u) => { const c = document.querySelector('#bt-arena [data-uid="' + u + '"]'); return { kept: c ? c.__id === 'X' : 'mort', txt: c && c.querySelector('.bcard-pts').textContent }; }, uid);
   chk(after.kept === true || after.kept === 'mort', 'la carte de l\'attaquant est la même après le combat (' + after.kept + ')');
   // cohérence affichée / interne
@@ -49,6 +50,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     if (await page.evaluate(() => !document.getElementById('bt-over').hidden)) break;
     await page.evaluate(() => { const b = document.querySelector('#bt-player-field .bcard:not(:disabled)'); if (b) b.click(); });
     await page.waitForTimeout(40);
+    await page.evaluate(() => { const n = document.getElementById('bt-boost-none'); if (n && !document.getElementById('bt-boost').hidden) n.click(); });
     await page.evaluate(() => { const t = document.querySelector('#bt-enemy-field .bcard:not(:disabled)'); if (t) t.click(); });
     await page.waitForTimeout(500);
   }
