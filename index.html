@@ -7207,7 +7207,12 @@
     if(appMode!=='auto' || practiceMode!=='free' || countdownRunning) return false;
     return STREAK_GOALS.some(function(g, idx){ return freeStreak >= g - 3 && freeStreak < g && !isChallengeDone(12 + idx); });
   }
+  // Montée de niveau automatique : elle est APPLIQUÉE quand l'enfant demande la question suivante
+  // (et non après un délai) : sinon elle remplaçait la question qu'il était en train de lire et
+  // son toucher tombait sur la nouvelle (réponse comptée fausse, série perdue).
+  var pendingAdvance = null;
   function nextPracticeQuestion(){
+    if(pendingAdvance){ var adv = pendingAdvance; pendingAdvance = null; if(adv()) return; }
     var sig = null, prevShown = lastFamily;
     var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, domain} ou null
     var review = null;                                               // unité imposée : {key, type, why} (Révision ou « un peu de tout » du mode Manuel)
@@ -7242,6 +7247,7 @@
     if(seenSigs.length > SEEN_MAX) seenSigs.shift();
   }
   function setGlobalLevel(idx){
+    pendingAdvance = null;
     resetSeenQuestions();
     globalLevel = idx;
     resetFreeStreak();
@@ -7253,6 +7259,7 @@
     }
   }
   function setAppMode(mode){
+    pendingAdvance = null;
     resetSeenQuestions();
     appMode = mode;
     resetFreeStreak();
@@ -7326,18 +7333,18 @@
       // La série sans faute (freeStreak) continue, elle, à travers les niveaux.
       if(correct && autoAdvanceEnabled && levelStreak >= autoAdvanceThreshold && globalLevel < 2 && !countdownRunning){
         var fromLevel = globalLevel;
-        setTimeout(function(){
-          if(appMode!=='auto' || practiceMode!=='free' || globalLevel!==fromLevel) return;
+        pendingAdvance = function(){
+          if(appMode!=='auto' || practiceMode!=='free' || globalLevel!==fromLevel) return false;
           var tabName = ['facile','moyen','difficile'][fromLevel+1];
           var tabBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
-          if(tabBtn){
-            var keepStreak = freeStreak;
-            tabBtn.click();                                   // (remet les séries à zéro...)
-            freeStreak = keepStreak;                          // ...sauf la série sans faute
-            updateStreakPill();
-            showAutoAdvanceToast(LEVEL_NAMES[fromLevel+1]);
-          }
-        }, 700);
+          if(!tabBtn) return false;
+          var keepStreak = freeStreak;
+          tabBtn.click();                                     // change de niveau ET tire la question (remet les séries à zéro...)
+          freeStreak = keepStreak;                            // ...sauf la série sans faute
+          updateStreakPill();
+          showAutoAdvanceToast(LEVEL_NAMES[fromLevel+1]);
+          return true;
+        };
       }
     }
     if(appMode==='manual' && manualFamily){
@@ -7349,8 +7356,11 @@
           manualStreak = 0;
           var pos = manualAvailableLevels.indexOf(globalLevel);
           if(pos !== -1 && pos < manualAvailableLevels.length - 1){
-            var nextLevel = manualAvailableLevels[pos+1];
-            setTimeout(function(){ manualAdvanceLevel(nextLevel); }, 700);
+            var nextLevel = manualAvailableLevels[pos+1], fromManual = globalLevel;
+            pendingAdvance = function(){
+              if(appMode!=='manual' || globalLevel!==fromManual) return false;
+              manualAdvanceLevel(nextLevel); return true;
+            };
           }
         }
       }
