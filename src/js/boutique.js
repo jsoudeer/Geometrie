@@ -5,16 +5,17 @@
      AUCUN personnage précis (ceux-ci sont des personnages protégés/reconnaissables,
      pas des images libres de droit) — noms, couleurs et accessoires inventés. */
 
-  var STAT_KEYS = ['pow','spd','chaos','charm'];
-  var STAT_LABELS = { pow:'💪 Puissance', spd:'⚡ Vitesse', chaos:'🌀 Chaos', charm:'✨ Charme' };
-  // Les fonds des pastilles de rareté sont assez foncés pour que le texte
-  // blanc posé dessus soit lisible (contraste ≥ 4,5:1, accessibilité).
+  /* Raretés (règle du 04/10/2026) : un personnage DESSINÉ EN SVG est commun, un personnage
+     illustré à la main (une image existe dans CUSTOM_IMG) est rare ; les personnages de défi
+     (non achetables) ont leur propre rareté. Les points de base dépendent de la rareté : un commun a
+     moins de points. Tout personnage achetable coûte BUY_COST ⭐. Les couleurs `color` des pastilles
+     sont assez foncées pour que le texte blanc posé dessus soit lisible (contraste ≥ 4,5:1) ;
+     `glow` est la lumière qui apparaît à la révélation. */
+  var BUY_COST = 25;
   var RARITY_META = {
-    commun:     { label:'Commun',     cost:6,  color:'#595959' },
-    rare:       { label:'Rare',       cost:12, color:'#1D5EA6' },
-    epique:     { label:'Épique',     cost:24, color:'#7B3FB8' },
-    legendaire: { label:'Légendaire', cost:40, color:'#8A5200' },
-    defi:       { label:'Défi',       cost:0,  color:'#A3246B' }
+    commun: { label:'Commun', cost:BUY_COST, color:'#595959', glow:'#B4BCC6', pts:5 },
+    rare:   { label:'Rare',   cost:BUY_COST, color:'#1D5EA6', glow:'#3D8BFF', pts:9 },
+    defi:   { label:'Défi',   cost:0,        color:'#A3246B', glow:'#FF4FA3', pts:0 }
   };
   var CAT_COLORS   = ['#FFC2D1','#FFE29A','#C9F2C6','#BFE3FF','#E4C9FF','#FFD6B0','#C6FFF2','#F2C6E0',
                       '#FFB0A3','#B8C7FF','#D9D2C5','#C8E6A0'];
@@ -25,14 +26,14 @@
   // sont à la fois sa force d'attaque et son énergie (PV) au combat. Il a
   // aussi un rôle : "classic" (attaque normale), "support" (Soutien : donne
   // +5 points à tous ses alliés en arrivant sur le terrain) ou "archer"
-  // (attaque sans subir de dégâts en retour).
-  function mkSprite(id, name, rarity, colorIdx, accessory, statArr, starter){
-    var sum = statArr[0]+statArr[1]+statArr[2]+statArr[3];
+  // (attaque sans subir de dégâts en retour). Les points viennent de la rareté
+  // (+ 0, 1 ou 2 selon le numéro, pour que deux personnages ne soient pas identiques).
+  function mkSprite(id, name, colorIdx, accessory, starter){
+    var rarity = (typeof CUSTOM_IMG !== 'undefined' && CUSTOM_IMG[id]) ? 'rare' : 'commun';
     return {
       id:id, name:name, rarity:rarity, colorIdx:colorIdx, accessory:accessory,
       cost: starter ? 0 : RARITY_META[rarity].cost, starter: !!starter,
-      stats:{ pow:statArr[0], spd:statArr[1], chaos:statArr[2], charm:statArr[3] },
-      pts: Math.max(4, Math.round(sum/2.4)), role:'classic', challenge:-1
+      pts: RARITY_META[rarity].pts + (parseInt(id.replace(/\D/g,''),10) % 3), role:'classic', challenge:-1
     };
   }
   // Personnage "récompense" : impossible à acheter, il se débloque en
@@ -40,56 +41,56 @@
   function mkReward(id, name, colorIdx, accessory, pts, role, challenge){
     return {
       id:id, name:name, rarity:'defi', colorIdx:colorIdx, accessory:accessory,
-      cost:0, starter:false, stats:{ pow:pts, spd:pts, chaos:pts, charm:pts },
+      cost:0, starter:false,
       pts:pts, role:role, challenge:challenge
     };
   }
 
 
   var CAT_SPRITES = [
-    mkSprite('cat01','Lavandou','commun',0,'none',[4,5,3,6],true),
-    mkSprite('cat02','Cœurette','commun',1,'bow',[3,6,4,5]),
-    mkSprite('cat03','Pétale','commun',2,'none',[5,4,3,5]),
-    mkSprite('cat04','Étoilou','commun',3,'bell',[4,4,4,6]),
-    mkSprite('cat05','Éclairon','commun',4,'flower',[3,5,5,4]),
-    mkSprite('cat06','Gouttelette','commun',5,'heart',[5,3,4,5]),
-    mkSprite('cat07','Matchou','commun',6,'none',[4,4,5,5]),
-    mkSprite('cat08','Capuche','commun',7,'bow',[3,5,4,5]),
-    mkSprite('cat09','Footin','rare',0,'star',[6,6,5,7]),
-    mkSprite('cat10','Merlinou','rare',1,'glasses',[7,5,6,5]),
-    mkSprite('cat11','Fleurette','rare',2,'crown',[5,7,6,6]),
-    mkSprite('cat12','Flammèche','rare',3,'bell',[6,6,7,5]),
-    mkSprite('cat13','Velours','rare',4,'flower',[7,6,5,6]),
-    mkSprite('cat14','Chamallow','rare',5,'bow',[6,7,5,6]),
-    mkSprite('cat15','Pixel','epique',6,'star',[8,8,6,7]),
-    mkSprite('cat16','Étincelle','epique',7,'crown',[7,7,8,8]),
-    mkSprite('cat17','Câline','epique',0,'heart',[8,7,7,8]),
-    mkSprite('cat18','Nougat','epique',1,'glasses',[7,8,8,7]),
-    mkSprite('cat19','Impériale','legendaire',2,'crown',[9,9,8,9]),
-    mkSprite('cat20','Céleste','legendaire',3,'star',[9,8,9,10])
+    mkSprite('cat01','Lavandou',0,'none',true),
+    mkSprite('cat02','Cœurette',1,'bow'),
+    mkSprite('cat03','Pétale',2,'none'),
+    mkSprite('cat04','Étoilou',3,'bell'),
+    mkSprite('cat05','Éclairon',4,'flower'),
+    mkSprite('cat06','Gouttelette',5,'heart'),
+    mkSprite('cat07','Matchou',6,'none'),
+    mkSprite('cat08','Capuche',7,'bow'),
+    mkSprite('cat09','Footin',0,'star'),
+    mkSprite('cat10','Merlinou',1,'glasses'),
+    mkSprite('cat11','Fleurette',2,'crown'),
+    mkSprite('cat12','Flammèche',3,'bell'),
+    mkSprite('cat13','Velours',4,'flower'),
+    mkSprite('cat14','Chamallow',5,'bow'),
+    mkSprite('cat15','Pixel',6,'star'),
+    mkSprite('cat16','Étincelle',7,'crown'),
+    mkSprite('cat17','Câline',0,'heart'),
+    mkSprite('cat18','Nougat',1,'glasses'),
+    mkSprite('cat19','Impériale',2,'crown'),
+    mkSprite('cat20','Céleste',3,'star')
   ];
 
   var BRAINROT_SPRITES = [
-    mkSprite('br01','Baguetto Montone','commun',0,'spiky',[5,4,3,4],true),
-    mkSprite('br02','Maiale Cuvetto','commun',1,'mustache',[4,3,5,3]),
-    mkSprite('br03','Waffolo Papero','commun',2,'legs',[4,5,4,3]),
-    mkSprite('br04','Spaghettino Orsetto','commun',3,'drill',[3,6,4,4]),
-    mkSprite('br05','Televisiogatto','commun',4,'oneeye',[5,4,4,4]),
-    mkSprite('br06','Elefantino Aspiro','commun',5,'antenna',[6,3,4,3]),
-    mkSprite('br07','Cagnolino Ventilo','commun',6,'propeller',[3,5,5,4]),
-    mkSprite('br08','Cannolotto Caos','commun',7,'horns',[4,4,5,4]),
-    mkSprite('br09','Raviolone Rex','rare',0,'propeller',[6,6,5,6]),
-    mkSprite('br10','Basilico Boom','rare',1,'legs',[7,5,6,5]),
-    mkSprite('br11','Tortellino Tornado','rare',2,'antenna',[5,7,7,5]),
-    mkSprite('br12','Focacciotto Fury','rare',3,'horns',[6,6,6,7]),
-    mkSprite('br13','Zeppolino Zap','rare',4,'drill',[7,7,5,6]),
-    mkSprite('br14','Panettonio Punch','rare',5,'spiky',[6,5,7,6]),
-    mkSprite('br15','Mortadellone Max','epique',6,'antenna',[8,7,7,6]),
-    mkSprite('br16','Caprese Comet','epique',7,'propeller',[7,8,6,8]),
-    mkSprite('br17','Arancino Alieno','epique',0,'oneeye',[8,8,6,7]),
-    mkSprite('br18','Struzzolino Strike','epique',1,'horns',[7,7,8,8]),
-    mkSprite('br19','Gnoccotto Gigante','legendaire',2,'mustache',[9,8,9,8]),
-    mkSprite('br20','Biscottino Blitz','legendaire',3,'propeller',[10,9,8,9])
+    mkSprite('br01','Baguetto Montone',0,'spiky',true),
+    mkSprite('br02','Maiale Cuvetto',1,'mustache'),
+    mkSprite('br03','Waffolo Papero',2,'legs'),
+    mkSprite('br04','Spaghettino Orsetto',3,'drill'),
+    mkSprite('br05','Televisiogatto',4,'oneeye'),
+    mkSprite('br06','Elefantino Aspiro',5,'antenna'),
+    mkSprite('br07','Cagnolino Ventilo',6,'propeller'),
+    mkSprite('br08','Cannolotto Caos',7,'horns'),
+    mkSprite('br09','Raviolone Rex',0,'propeller'),
+    mkSprite('br10','Basilico Boom',1,'legs'),
+    mkSprite('br11','Tortellino Tornado',2,'antenna'),
+    mkSprite('br12','Focacciotto Fury',3,'horns'),
+    mkSprite('br13','Zeppolino Zap',4,'drill'),
+    mkSprite('br14','Panettonio Punch',5,'spiky'),
+    mkSprite('br15','Mortadellone Max',6,'antenna'),
+    mkSprite('br16','Caprese Comet',7,'propeller'),
+    mkSprite('br17','Arancino Alieno',0,'oneeye'),
+    mkSprite('br18','Struzzolino Strike',1,'horns'),
+    mkSprite('br19','Gnoccotto Gigante',2,'mustache'),
+    mkSprite('br20','Biscottino Blitz',3,'propeller')
   ];
 
   // Rôles des personnages de base + personnage de départ (le premier de chaque clan).
@@ -455,8 +456,8 @@
     }catch(e){}
   }
   /* ---- Évolutions : 2 montées par personnage (0 = de base, 1 = Évolué, 2 = Ultime).
-     Chaque montée coûte le prix d'achat du personnage (rareté ; 12 ⭐ pour un personnage
-     de défi, qui est gratuit) et ajoute 20 % de ses points de base (au moins +1). ---- */
+     Chaque montée coûte le prix d'achat du personnage (25 ⭐ ; 12 ⭐ pour un personnage
+     de défi, qui est gratuit), ajoute 20 % de ses points de base (au moins +2) et améliore sa compétence. ---- */
   var EVO_MAX = 2, EVO_BONUS = 0.2, EVO_REWARD_COST = 12;
   var EVO_NAMES = ['De base','Évolué','Ultime'];
   var evoCats = {}, evoBrain = {};
@@ -476,7 +477,7 @@
   }
   function evoMapFor(sprite){ return CAT_SPRITES.indexOf(sprite) >= 0 ? evoCats : evoBrain; }
   function spriteEvo(sprite){ return evoMapFor(sprite)[sprite.id] || 0; }
-  function evoGain(sprite){ return Math.max(1, Math.round(sprite.pts * EVO_BONUS)); }
+  function evoGain(sprite){ return Math.max(2, Math.round(sprite.pts * EVO_BONUS)); }
   // Points d'un personnage à un niveau d'évolution donné (par défaut : le niveau possédé).
   function spritePts(sprite, level){
     if(level === undefined) level = spriteEvo(sprite);
@@ -602,6 +603,7 @@
      milieu de l'écran en pivotant sur elle-même, puis s'arrête et se dévoile
      en pleine couleur avec un petit son propre à son clan. Un toucher pendant
      l'animation passe directement à la fin. Plusieurs personnages : à la suite. */
+  var REVEAL_TINT_MS = 1700;   // ≈ la moitié de l'animation (rotation 2,35 s + balayage 1 s)
   var revealTimers = [];
   function revealClearTimers(){ revealTimers.forEach(clearTimeout); revealTimers = []; }
   function showReveal(list, headline, onClose){
@@ -625,7 +627,8 @@
       ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label', 'Nouveau personnage : ' + sp.name);
       var head = document.createElement('p'); head.className = 'rv-head'; head.textContent = '🎉 ' + (headline || 'Nouveau personnage !');
       var stage = document.createElement('div'); stage.className = 'rv-stage';
-      var lv = sp.rarity==='legendaire' || sp.rarity==='epique' ? 2 : sp.rarity==='rare' ? 1 : 0;   // intensité de la mise en scène
+      var lv = sp.rarity==='commun' ? 0 : 1;   // intensité de la mise en scène (rare et défi : plus forte)
+      ov.style.setProperty('--rv-c', RARITY_META[sp.rarity].glow); ov.style.setProperty('--rv-chip', RARITY_META[sp.rarity].color);
       ov.classList.add('lv' + lv);
       var rays = document.createElement('div'); rays.className = 'rv-rays'; rays.setAttribute('aria-hidden','true');
       var fxBack = document.createElement('div'); fxBack.className = 'rv-fx back'; fxBack.setAttribute('aria-hidden','true');
@@ -641,9 +644,12 @@
       var scan = document.createElement('div'); scan.className = 'rv-scan'; scan.setAttribute('aria-hidden','true');
       spinner.appendChild(art); spinner.appendChild(artCol); spinner.appendChild(scan);
       var flash = document.createElement('div'); flash.className = 'rv-flash';
-      stage.appendChild(rays); stage.appendChild(fxBack); stage.appendChild(glow);
+      // À la moitié de l'animation, la lumière de la rareté se lève autour de l'ombre (aura + pastille).
+      var aura = document.createElement('div'); aura.className = 'rv-aura'; aura.setAttribute('aria-hidden','true');
+      var chip = document.createElement('p'); chip.className = 'rv-rarity'; chip.setAttribute('aria-hidden','true'); chip.textContent = RARITY_META[sp.rarity].label;
+      stage.appendChild(rays); stage.appendChild(fxBack); stage.appendChild(aura); stage.appendChild(glow);
       ['r1','r2','r3'].forEach(function(r){ var ring = document.createElement('div'); ring.className = 'eo-ring ' + r; ring.setAttribute('aria-hidden','true'); stage.appendChild(ring); });
-      stage.appendChild(spinner); stage.appendChild(fxFront); stage.appendChild(flash);
+      stage.appendChild(spinner); stage.appendChild(chip); stage.appendChild(fxFront); stage.appendChild(flash);
       var info = document.createElement('div'); info.className = 'rv-info';
       var nm = document.createElement('p'); nm.className = 'rv-name'; nm.textContent = sp.name;
       var rl = document.createElement('p'); rl.className = 'rv-role'; rl.textContent = roleLine(sp) + ' · ' + RARITY_META[sp.rarity].label;
@@ -654,8 +660,9 @@
       document.body.appendChild(ov);
       // Étape 1 : le personnage, déjà de face en ombre chinoise, est balayé par un trait de
       // lumière qui fait apparaître ses couleurs (+ son du clan). Étape 2 : éclat, étincelles, nom.
+      function tint(){ ov.classList.add('tint'); }
       function burst(){
-        if(done) return; done = true;
+        if(done) return; done = true; tint();
         revealClearTimers();
         ov.classList.remove('scanning'); ov.classList.add('shown');
         playRevealBoom(side, lv);
@@ -681,6 +688,7 @@
       if(reduced){ skip(); return; }
       ov.classList.add('spinning');
       playRevealWhoosh();
+      revealTimers.push(setTimeout(tint, REVEAL_TINT_MS));   // la couleur de la rareté, à la moitié de l'animation
       revealTimers.push(setTimeout(reveal, 2350));   // 2,1 s de rotation + une courte pause, de face
     }
     next();
@@ -723,6 +731,12 @@
     card.appendChild(rarity);
     var roleEl = document.createElement('div'); roleEl.className='sp-role'; roleEl.textContent = isOwned ? roleLine(sprite) : '❔ Mystère';
     card.appendChild(roleEl);
+    if(isOwned){
+      var skEl = document.createElement('div'); skEl.className = 'sp-skill'; skEl.textContent = skillLine(sprite, spriteEvo(sprite));
+      var skd = skillOf(sprite);
+      if(skd) skEl.title = skd.desc;
+      card.appendChild(skEl);
+    }
     if(isOwned){
       var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
       card.appendChild(tag);

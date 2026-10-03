@@ -30,13 +30,13 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 }, guide
   // ---------- Échap passe le guide
   await ev(`guideStart('accueil')`); await page.keyboard.press('Escape');
   chk(!(await open()), 'Échap ferme le guide');
-  // ---------- boutique : 6 étoiles (prix du moins cher) et jamais acheté
-  await ev(`stars=5; document.getElementById('starCount').textContent=5; delete guideSeen.boutique; guideSave();`);
+  // ---------- boutique : 25 étoiles (prix d'un personnage) et jamais acheté
+  await ev(`stars=24; document.getElementById('starCount').textContent=24; delete guideSeen.boutique; guideSave();`);
   await page.waitForTimeout(3200);
-  chk(!(await open()), 'à 5 étoiles : pas de guide boutique');
+  chk(!(await open()), 'à 24 étoiles : pas de guide boutique');
   await ev(`addStar(1)`);
   await page.waitForFunction(() => { const l = document.querySelector('.guide-layer'); return l && !l.hidden; }, null, { timeout: 5000 }).catch(() => {});
-  chk(await open() && /boutique|étoiles/i.test(await txt()), 'à 6 étoiles, sans achat : le guide boutique démarre');
+  chk(await open() && /boutique|étoiles/i.test(await txt()), 'à 25 étoiles, sans achat : le guide boutique démarre');
   await next(); await page.waitForTimeout(350);
   chk(await page.evaluate(() => !document.getElementById('tab-shop').hidden), 'étape 2 : la boutique s\'ouvre');
   await page.screenshot({ path: SHOTS + 'guide_2_boutique.png' });

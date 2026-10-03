@@ -49,7 +49,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     if (canPick) {
       await page.evaluate(() => { const b = [...document.querySelectorAll('#bt-player-field .bcard')].find(x => !x.disabled); b.click(); });
       await page.waitForTimeout(50);
-      await page.evaluate(() => { const n = document.getElementById('bt-boost-none'); if (n && !document.getElementById('bt-boost').hidden) n.click(); });
+      await page.evaluate(() => { const n = document.getElementById('bt-skill-none'); if (n && !document.getElementById('bt-skill').hidden) n.click(); });
       await page.evaluate(() => { const t = [...document.querySelectorAll('#bt-enemy-field .bcard')].find(x => !x.disabled); if (t) t.click(); });
       turns++;
       if (turns === 2) { await page.waitForTimeout(700); await page.screenshot({ path: SHOTS + 'b_arena_mid.png', fullPage: true }); }

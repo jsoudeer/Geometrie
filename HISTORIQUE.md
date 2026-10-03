@@ -287,3 +287,18 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 
 ## 52. Décisions pour l'éditeur d'activités (04/10/2026, documentation seule)
 - `AUDIT_ACTIVITES.md` §9.4 / §10 / §11 : architecture **modulaire par paquets JSON** (`kvb-pack`) avec fournisseurs interchangeables (`appareil`, `fichier`, puis `lien` et `cloud`), activités de type `gabarit`, `fixe` (questions écrites à la main) et `réglage` ; aucun code dans un paquet ; validation à l'installation ; progression de l'enfant gardée sur l'appareil par défaut. Parent et enseignant = même rôle. Aucun code de jeu modifié ; chantier en pause jusqu'aux tests en conditions réelles.
+
+## 53. Raretés, points et compétences de personnage (04/10/2026)
+- **Demande** : peur de l'effet addictif → pas de gatcha ; on garde l'achat direct et on code le concept de compétences.
+- **Raretés** (`boutique.js`) : commun (SVG) / rare (image dans `CUSTOM_IMG`) / défi. Plus de statistiques par rareté : `mkSprite` donne
+  5–7 points aux communs et 9–11 aux rares (+ numéro % 3). Achat et évolution : 25 ⭐ pour tout non-défi (`BUY_COST`). Évolution : +20 % (au moins +2).
+- **Pas de migration** : les clés de sauvegarde ne changent pas.
+- **Reveal** : la couleur de rareté (halo `.rv-aura`, pastille `.rv-rarity`) apparaît à la moitié de l'animation (`REVEAL_TINT_MS`).
+- **Compétences** (`competences.js`, nouveau) : 10 compétences (doubler/fixe, complément, table, doubles, moitiés, plus grand, heure,
+  monnaie, partage, suite), 7 personnages chacune (`SKILL_BY_ID`). Niveau 0 : ×2 tous les 3 tours ; Évolué : ×2,5 ; Ultime : ×2,5 tous les 2 tours.
+  Un commun gagne sa compétence au niveau Ultime (`skillFor`). Remplace le boost global.
+- **Bataille** (`bataille.js`) : panneau `#bt-skill` (3 propositions, option « sans la compétence »), `btMakeProc`, `btSkillResult` ; bonne
+  réponse = gros dégâts, erreur = dégâts normaux. Cartes : icône de compétence, `.skilled`.
+- **Tests** : `skills_check.js` (ex-boost_check), `competences_check.js` (8100 questions vérifiées par oracles), `evolution_check`,
+  `reveal_check`, `guide_check`, `battle_check`, `bataille_ui_check` mis à jour.
+- **Docs** : `cours.md` (raretés, compétences, évolutions, reveal, guides), `PROJETS.md`, `src/README.md`.

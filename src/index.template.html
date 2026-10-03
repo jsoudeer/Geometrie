@@ -250,7 +250,7 @@
     <section class="tabpanel" id="tab-shop" hidden>
       <div class="card">
         <div class="panel-head"><h2>Boutique 🛒</h2><button class="btn ghost small" type="button" data-back>↩️ Retour aux exercices</button></div>
-        <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis. Le clan affiché est le clan actif (bouton 👹 / 🐱 en haut).</p>
+        <p class="muted">Débloque des personnages avec tes étoiles ⭐ (25 ⭐ chacun) ou en relevant des défis. Le clan affiché est le clan actif (bouton 👹 / 🐱 en haut).</p>
         <div id="arena-shop-wrap">
           <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
           <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
@@ -283,8 +283,8 @@
                 <li>Quand tu attaques, la carte visée perd autant de points que ton attaquant en a, et ton attaquant perd autant de points que la carte adverse en avait. Une carte à 0 est battue.</li>
                 <li>💖 Le <strong>Soutien</strong> donne +5 points à tous ses alliés quand il arrive sur le terrain, puis <strong>+2 points à chaque allié à la fin de chaque tour</strong> de son camp.</li>
                 <li>🏹 L'<strong>Archer</strong> attaque de loin : il n'est jamais blessé en retour.</li>
-                <li>🎁 <strong>Boost</strong> : tous les 3 tours, un boost apparaît sur une de tes cartes. Tu choisis : <strong>✖️2</strong> (dégâts doublés) ou un nombre de <strong>dégâts fixes</strong>, qui vaut tantôt autant que le double, tantôt 30 % de moins, tantôt 30 % de plus. Calcule le double des points de ta carte pour choisir le meilleur !</li>
-                <li>⬆ <strong>Évolutions</strong> (Boutique) : chaque personnage peut évoluer 2 fois (Évolué, puis Ultime). Chaque évolution coûte le prix d'achat du personnage et ajoute 20 % de ses points de base.</li>
+                <li>🎁 <strong>Compétences</strong> : un personnage <em>rare</em> ou de <em>défi</em> a une compétence dès le départ ; un personnage <em>commun</em> gagne la sienne quand il est au niveau <em>Ultime</em>. Tous les 3 tours, une de tes cartes « chargées » brille : touche-la et réponds à une petite question de maths (compléments, tables, doubles, moitiés, monnaie, heure…). <strong>Bonne réponse = dégâts ×2</strong> ; une erreur = dégâts normaux, sans pénalité. La compétence « Doubler ou fixe » demande de choisir entre « ✖️2 » et un nombre de dégâts fixes : calcule pour prendre le plus grand !</li>
+                <li>⬆ <strong>Évolutions</strong> (Boutique) : chaque personnage peut évoluer 2 fois (Évolué, puis Ultime). Chaque évolution coûte le prix d'achat du personnage et ajoute 20 % de ses points de base (au moins 2). Elle améliore aussi sa compétence : dégâts ×2,5 dès « Évolué », puis une compétence tous les 2 tours en « Ultime ».</li>
                 <li>Ton équipe : jusqu'à 3 classiques, 1 soutien et 1 archer. Soutien et archer ne sont pas obligatoires : à toi de choisir ! L'équipe adverse a la même composition que la tienne. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
               </ul>
             </details>
@@ -319,13 +319,10 @@
             </div>
             <div class="bt-mid">
               <div class="bt-sfx" id="bt-sfx" aria-hidden="true"></div>
-              <div class="bt-boost" id="bt-boost" role="group" aria-label="Choix du boost" hidden>
-                <p class="bt-boost-title">🎁 Boost : lequel fait le plus de dégâts ?</p>
-                <div class="bt-boost-row">
-                  <button class="btn bt-boost-btn" id="bt-boost-x2" type="button"></button>
-                  <button class="btn bt-boost-btn" id="bt-boost-fixed" type="button"></button>
-                </div>
-                <button class="btn ghost bt-boost-none" id="bt-boost-none" type="button">Attaquer sans boost</button>
+              <div class="bt-skill" id="bt-skill" role="group" aria-label="Compétence du personnage" hidden>
+                <p class="bt-skill-title" id="bt-skill-title"></p>
+                <div class="bt-skill-row" id="bt-skill-row"></div>
+                <button class="btn ghost bt-skill-none" id="bt-skill-none" type="button">Attaquer sans la compétence</button>
               </div>
             </div>
             <div class="sr-only" id="bt-log" role="log" aria-live="polite"></div>

@@ -50,7 +50,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     if (await page.evaluate(() => !document.getElementById('bt-over').hidden)) break;
     await page.evaluate(() => { const b = document.querySelector('#bt-player-field .bcard:not(:disabled)'); if (b) b.click(); });
     await page.waitForTimeout(40);
-    await page.evaluate(() => { const n = document.getElementById('bt-boost-none'); if (n && !document.getElementById('bt-boost').hidden) n.click(); });
+    await page.evaluate(() => { const n = document.getElementById('bt-skill-none'); if (n && !document.getElementById('bt-skill').hidden) n.click(); });
     await page.evaluate(() => { const t = document.querySelector('#bt-enemy-field .bcard:not(:disabled)'); if (t) t.click(); });
     await page.waitForTimeout(500);
   }

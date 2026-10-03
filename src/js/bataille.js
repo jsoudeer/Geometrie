@@ -15,17 +15,19 @@
        dès qu'une carte est battue (à 0 point ou moins) ;
      - le camp qui n'a plus aucune carte (terrain + réserve) a perdu ;
      - évolutions (boutique) : spritePts() ajoute 20 % des points de base par niveau ;
-     - BOOST : au début de chaque 3e tour du joueur, un boost apparaît devant une de ses
-       cartes (tant qu'il n'est pas utilisé). Au choix : « ×2 » (dégâts doublés) ou
-       « N dégâts fixes », N valant tour à tour le double, 30 % de moins ou 30 % de plus
-       que le double (BT_BOOST_FACTORS) : il faut calculer pour bien choisir. */
+     - COMPÉTENCES (competences.js) : un personnage rare ou de défi a une compétence dès le départ, un commun
+       la gagne au niveau Ultime. Tous les 3 tours du joueur (2 pour une compétence au niveau Ultime), une de ses
+       cartes « chargées » reçoit un déclencheur 🎁 (un seul à la fois, conservé tant qu'il n'est pas utilisé).
+       En choisissant cette carte, le joueur résout une petite question de maths : bonne réponse = dégâts ×2 (×2,5 à
+       partir du niveau Évolué), erreur = dégâts normaux. La compétence « Doubler ou fixe » propose à la place le choix
+       entre « ×2 » et « N dégâts fixes », N valant tour à tour le double, 30 % de moins ou 30 % de plus : il faut
+       calculer pour bien choisir. L'adversaire n'a pas de compétence. */
   var BT_ROLE_META = {
     classic:{ label:'Classique', icon:'⚔️' },
     support:{ label:'Soutien',   icon:'💖' },
     archer: { label:'Archer',    icon:'🏹' }
   };
   var BT_FIELD_SIZE = 3, BT_SUPPORT_BONUS = 5, BT_SUPPORT_TURN = 2;
-  var BT_BOOST_EVERY = 3, BT_BOOST_FACTORS = [1, 0.7, 1.3];
   // Vitesse du déroulé (1 = lent, pour bien voir attaques et conséquences ; les tests l'accélèrent).
   var BT_SPEED = 1;
   function btT(ms){ return Math.round(ms * BT_SPEED); }
@@ -85,9 +87,10 @@
     card.className = 'sprite-card owned' + (picked ? ' selected' : '') + (full && !picked ? ' is-full' : '');
     if(card._evo !== evo){ card._evo = evo; applyEvoLook(card, sprite, evo); }
     else if(evo) card.classList.add('evo-' + evo);
-    card._pts.textContent = '❤️ ' + pts + ' points';
+    var sk = skillFor(sprite, evo);
+    card._pts.textContent = '❤️ ' + pts + ' points' + (sk ? ' · ' + sk.icon : '');
     card.setAttribute('aria-pressed', picked ? 'true' : 'false');
-    card.setAttribute('aria-label', sprite.name + ', ' + BT_ROLE_META[sprite.role].label + (evo ? ', ' + EVO_NAMES[evo] : '') + ', ' + pts + ' points' + (picked ? ', choisi' : ''));
+    card.setAttribute('aria-label', sprite.name + ', ' + BT_ROLE_META[sprite.role].label + (evo ? ', ' + EVO_NAMES[evo] : '') + ', ' + pts + ' points' + (sk ? ', compétence ' + sk.name : '') + (picked ? ', choisi' : ''));
   }
   // Clic sur un personnage : on le retire s'il est choisi ; sinon on l'ajoute,
   // et si la place est pleine, le PLUS ANCIEN choisi de ce rôle sort.
@@ -175,7 +178,7 @@
   // own = carte du joueur (points évolués) ; les cartes adverses restent à leurs points de base.
   function btMakeUnit(sprite, own){
     var evo = own ? spriteEvo(sprite) : 0, base = spritePts(sprite, evo);
-    return { uid:++btUid, sprite:sprite, pts:base, base:base, evo:evo, buffed:false };
+    return { uid:++btUid, sprite:sprite, pts:base, base:base, evo:evo, buffed:false, skill: own ? skillFor(sprite, evo) : null };
   }
   function btOnArrive(sideObj, unit, notes){
     if(unit.sprite.role === 'support'){
@@ -253,7 +256,7 @@
       pl: { field:[], reserve:myUnits },
       en: { field:[], reserve:enUnits },
       phase: 'pick-attacker', selected: null, over: false, log: [], cards: {}, animateArrivals: false,
-      turn: 0, boost: null, boostChoice: null, factors: []
+      turn: 0, proc: null, skillChoice: null, factors: []
     };
     var notes = [];
     for(var i=0;i<BT_FIELD_SIZE;i++){ btDrawFromReserve(bt.pl, notes); btDrawFromReserve(bt.en, notes); }
@@ -267,51 +270,97 @@
     btStartPlayerTurn();
   }
   var BT_STATUS_PICK = 'À toi ! Touche une de tes cartes pour attaquer.';
-  // Début de chaque tour du joueur : tous les 3 tours, un boost apparaît devant une de ses cartes.
+  // Début de chaque tour du joueur : une compétence se déclenche sur une des cartes qui en ont une (voir l'en-tête).
   function btStartPlayerTurn(){
     bt.turn++;
-    bt.phase = 'pick-attacker'; bt.selected = null; bt.boostChoice = null;
-    var spawned = false;
-    if(bt.turn % BT_BOOST_EVERY === 0 && !bt.boost && bt.pl.field.length){
-      if(!bt.factors.length) bt.factors = btShuffle(BT_BOOST_FACTORS.slice());
-      bt.boost = { unit: pick_(bt.pl.field), factor: bt.factors.pop() };
-      spawned = true;
-      btSfx('🎁 BOOST !', 'boost', { sub:'Une de tes cartes a un boost : choisis-le avec elle.', ms:2200 });
-      playSound('good');
+    bt.phase = 'pick-attacker'; bt.selected = null; bt.skillChoice = null;
+    var spawned = false, skilled = bt.pl.field.filter(function(u){ return !!u.skill; });
+    if(skilled.length && !bt.proc){
+      var every = Math.min.apply(null, skilled.map(function(u){ return SKILL_LEVELS[Math.min(u.evo, SKILL_LEVELS.length - 1)].every; }));
+      if(bt.turn % every === 0){
+        var unit = pick_(skilled);
+        bt.proc = btMakeProc(unit);
+        spawned = true;
+        btSfx('🎁 ' + unit.skill.name.toUpperCase() + ' !', 'skill', { sub:'Une de tes cartes a une compétence : choisis-la avec elle.', ms:2200 });
+        playSound('good');
+      }
     }
-    btSetStatus(spawned ? '🎁 Un boost est apparu sur ' + bt.boost.unit.sprite.name + ' ! Touche cette carte pour le choisir (ou attaque avec une autre).' : BT_STATUS_PICK);
+    btSetStatus(spawned ? '🎁 ' + bt.proc.unit.skill.name + ' est prête sur ' + bt.proc.unit.sprite.name + ' ! Touche cette carte pour l\'utiliser (ou attaque avec une autre).' : BT_STATUS_PICK);
     btRender();
   }
-  // Valeurs du boost pour l'attaquant : « ×2 » = 2 fois ses points actuels ; « fixe » = le double ± 30 %.
-  function btBoostValues(unit){
-    var dbl = unit.pts * 2;
-    return { x2: dbl, fixed: Math.max(1, Math.round(dbl * bt.boost.factor)) };
+  function btSkillLevel(unit){ return SKILL_LEVELS[Math.min(unit.evo, SKILL_LEVELS.length - 1)]; }
+  // Déclencheur : la question est tirée tout de suite et reste la même tant que la carte ne s'en sert pas.
+  // Pour « Doubler ou fixe », seul le facteur du nombre fixe est tiré (sans remise sur 3 déclenchements).
+  function btMakeProc(unit){
+    var proc = { unit:unit, skill:unit.skill, q:null, factor:1 };
+    if(unit.skill.id === 'boost'){
+      if(!bt.factors.length) bt.factors = btShuffle(BOOST_FACTORS.slice());
+      proc.factor = bt.factors.pop();
+    } else proc.q = unit.skill.ask(unit.evo);
+    return proc;
   }
-  function btBoostFor(unit){ return bt && bt.boost && bt.boost.unit === unit ? bt.boost : null; }
-  function btClearBoostIfGone(){
-    if(bt.boost && bt.pl.field.indexOf(bt.boost.unit) === -1) bt.boost = null;
+  // Valeurs de « Doubler ou fixe » : ×m des points actuels, ou « fixe » = ce ×m à ± 30 %.
+  function btBoostValues(proc){
+    var base = Math.round(proc.unit.pts * btSkillLevel(proc.unit).mult);
+    return { x2: base, fixed: Math.max(1, Math.round(base * proc.factor)) };
   }
-  function btRenderBoostPanel(){
-    var panel = document.getElementById('bt-boost');
+  function btProcFor(unit){ return bt && bt.proc && bt.proc.unit === unit ? bt.proc : null; }
+  function btClearProcIfGone(){
+    if(bt.proc && bt.pl.field.indexOf(bt.proc.unit) === -1) bt.proc = null;
+  }
+  // Panneau de la compétence : une question et 2 ou 3 boutons (reconstruit seulement si le déclencheur change).
+  function btRenderSkillPanel(){
+    var panel = document.getElementById('bt-skill');
     if(!panel) return;
-    var show = !!(bt && !bt.over && bt.phase === 'pick-boost' && bt.selected && btBoostFor(bt.selected));
+    var show = !!(bt && !bt.over && bt.phase === 'pick-skill' && bt.selected && btProcFor(bt.selected));
     panel.hidden = !show;
     if(!show) return;
-    var v = btBoostValues(bt.selected);
-    var bx = document.getElementById('bt-boost-x2'), bf = document.getElementById('bt-boost-fixed');
-    bx.textContent = '✖️2 dégâts doublés';
-    bf.textContent = '🎯 ' + v.fixed + ' dégâts fixes';
-    bx.setAttribute('aria-label', 'Boost : dégâts doublés');
-    bf.setAttribute('aria-label', 'Boost : ' + v.fixed + ' dégâts fixes');
+    var proc = bt.proc, sk = proc.skill, mult = skFmtMult(btSkillLevel(proc.unit).mult);
+    var title = document.getElementById('bt-skill-title'), row = document.getElementById('bt-skill-row');
+    if(panel._proc === proc && row.children.length) return;
+    panel._proc = proc;
+    var opts;
+    if(sk.id === 'boost'){
+      var v = btBoostValues(proc);
+      title.textContent = '🎁 ' + sk.name + ' : lequel fait le plus de dégâts ?';
+      opts = [{ label:'✖️ Dégâts ' + mult + ' (' + v.x2 + ')', aria:'Dégâts multipliés par ' + String(btSkillLevel(proc.unit).mult).replace('.', ',') + ', soit ' + v.x2, value:v.x2 },
+              { label:'🎯 ' + v.fixed + ' dégâts fixes', aria:v.fixed + ' dégâts fixes', value:v.fixed }];
+      opts = btShuffle(opts);
+    } else {
+      title.textContent = sk.icon + ' ' + sk.name + ' : ' + proc.q.text + ' (bonne réponse = dégâts ' + mult + ')';
+      opts = proc.q.options.map(function(o){ return { label:o.label, aria:o.label, ok:o.ok }; });
+    }
+    proc.opts = opts;
+    row.innerHTML = '';
+    opts.forEach(function(o, i){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'btn bt-skill-btn';
+      b.textContent = o.label; b.setAttribute('aria-label', o.aria);
+      b.addEventListener('click', function(){ btChooseSkill(i); });
+      row.appendChild(b);
+    });
   }
-  function btChooseBoost(kind){
-    if(!bt || bt.phase !== 'pick-boost') return;
-    bt.boostChoice = kind;          // 'x2' | 'fixed' | 'none'
+  // Choix du joueur dans le panneau (index de la proposition) ou -1 : attaquer sans la compétence.
+  function btChooseSkill(i){
+    if(!bt || bt.phase !== 'pick-skill') return;
+    bt.skillChoice = i;             // index d'une proposition, ou -1
     bt.phase = 'pick-target';
-    btSetStatus(kind === 'none'
-      ? bt.selected.sprite.name + ' attaque sans boost : touche la carte adverse à viser.'
-      : 'Boost choisi ! Touche la carte adverse à viser.');
+    btSetStatus(i < 0
+      ? bt.selected.sprite.name + ' attaque sans compétence : touche la carte adverse à viser.'
+      : 'Réponse donnée ! Touche la carte adverse à viser.');
     btRender();
+  }
+  // Résultat de la compétence pour l'attaque : dégâts, mot affiché, ligne du journal, verdict pédagogique. null = pas de compétence.
+  function btSkillResult(attacker, proc, choice){
+    if(!proc || choice === null || choice < 0) return null;
+    var o = proc.opts[choice], sk = proc.skill, lvl = btSkillLevel(attacker), mult = skFmtMult(lvl.mult);
+    if(sk.id === 'boost'){
+      var v = btBoostValues(proc), mine = o.value, other = Math.max(v.x2, v.fixed) === mine ? Math.min(v.x2, v.fixed) : Math.max(v.x2, v.fixed);
+      var verdict = mine > other ? '👍 Bon calcul : c\'était le meilleur choix !' : mine === other ? '🟰 Les deux choix faisaient pareil (' + mine + ').' : '🤔 L\'autre choix faisait ' + other + ' (tu en as fait ' + mine + ').';
+      return { dmg:mine, ok:mine >= other, word:'🎯 ' + mine + ' !', verdict:verdict, line:sk.name + ' : ' + mine + ' dégâts. ' + verdict };
+    }
+    var right = proc.q.options.filter(function(x){ return x.ok; })[0].label;
+    if(o.ok) return { dmg:Math.round(attacker.pts * lvl.mult), ok:true, word:'✖️ ' + mult + ' BOOM !', verdict:'👍 Bonne réponse : dégâts ' + mult + ' ! ' + proc.q.explain, line:sk.name + ' : bonne réponse, dégâts ' + mult + '.' };
+    return { dmg:attacker.pts, ok:false, word:btWord('hit'), verdict:'🤔 La bonne réponse était ' + right + '. ' + proc.q.explain, line:sk.name + ' : pas cette fois (réponse : ' + right + '), dégâts normaux.' };
   }
   function btSetStatus(text){ document.getElementById('bt-status').textContent = text; }
   function btLog(lines, reset){
@@ -365,8 +414,8 @@
     var art = document.createElement('div'); art.className = 'bcard-art';
     renderCreatureVisual(art, unit.sprite, fighterDisplayMode, unit.evo);
     card.appendChild(art);
-    var tag = document.createElement('div'); tag.className = 'boost-tag'; tag.setAttribute('aria-hidden','true'); tag.textContent = '🎁 BOOST'; tag.hidden = true;
-    card.appendChild(tag); card._boostTag = tag;
+    var tag = document.createElement('div'); tag.className = 'skill-tag'; tag.setAttribute('aria-hidden','true'); tag.textContent = unit.skill ? unit.skill.icon + ' ' + unit.skill.name : ''; tag.hidden = true;
+    card.appendChild(tag); card._skillTag = tag;
     var m = BT_ROLE_META[unit.sprite.role];
     var nameEl = document.createElement('div'); nameEl.className = 'bcard-name'; nameEl.textContent = unit.sprite.name;
     card.appendChild(nameEl);
@@ -381,25 +430,24 @@
       if(!bt || bt.over) return;
       if(isEnemy){
         if(bt.phase !== 'pick-target') return;
-        var attacker = bt.selected, choice = bt.boostChoice;
-        var boost = btBoostFor(attacker) && (choice === 'x2' || choice === 'fixed') ? { kind:choice, values:btBoostValues(attacker) } : null;
-        if(boost) bt.boost = null;      // le boost est consommé
-        bt.selected = null; bt.boostChoice = null; bt.phase = 'busy';
+        var attacker = bt.selected, res = btSkillResult(attacker, btProcFor(attacker), bt.skillChoice);
+        if(btProcFor(attacker) && bt.skillChoice !== null && bt.skillChoice >= 0) bt.proc = null;      // la compétence est consommée
+        bt.selected = null; bt.skillChoice = null; bt.phase = 'busy';
         btSetStatus('Attaque en cours…');
         btRender();
-        btResolveAttack(bt.pl, attacker, bt.en, unit, false, btAfterPlayerAttack, boost);
+        btResolveAttack(bt.pl, attacker, bt.en, unit, false, btAfterPlayerAttack, res);
       } else if(bt.phase === 'pick-attacker'){
-        bt.selected = unit; bt.boostChoice = null;
-        if(btBoostFor(unit)){
-          bt.phase = 'pick-boost';
-          btSetStatus('🎁 Boost sur ' + unit.sprite.name + ' : lequel fait le plus de dégâts ? Calcule, puis choisis !');
+        bt.selected = unit; bt.skillChoice = null;
+        if(btProcFor(unit)){
+          bt.phase = 'pick-skill';
+          btSetStatus('🎁 ' + unit.skill.name + ' sur ' + unit.sprite.name + ' : réponds pour gagner des dégâts en plus ! (ou attaque sans.)');
         } else {
           bt.phase = 'pick-target';
           btSetStatus(unit.sprite.name + ' est prêt : touche la carte adverse à attaquer (ou retouche ta carte pour changer).');
         }
         btRender();
-      } else if((bt.phase === 'pick-target' || bt.phase === 'pick-boost') && bt.selected === unit){
-        bt.selected = null; bt.boostChoice = null; bt.phase = 'pick-attacker';
+      } else if((bt.phase === 'pick-target' || bt.phase === 'pick-skill') && bt.selected === unit){
+        bt.selected = null; bt.skillChoice = null; bt.phase = 'pick-attacker';
         btSetStatus(BT_STATUS_PICK);
         btRender();
       }
@@ -437,9 +485,9 @@
     card.setAttribute('aria-label', (isEnemy ? 'Adversaire : ' : 'Ta carte : ') + unit.sprite.name + ', ' + m.label + ', ' + shown + ' points');
     card.classList.toggle('selected', isSel);
     card.classList.toggle('targetable', canTarget);
-    var hasBoost = !isEnemy && !!btBoostFor(unit);
-    card.classList.toggle('boosted', hasBoost);
-    if(card._boostTag) card._boostTag.hidden = !hasBoost;
+    var hasSkill = !isEnemy && !!btProcFor(unit);
+    card.classList.toggle('skilled', hasSkill);
+    if(card._skillTag) card._skillTag.hidden = !hasSkill;
     if(isSel) card.setAttribute('aria-pressed','true'); else card.removeAttribute('aria-pressed');
     card.disabled = isEnemy ? !canTarget : !canPick;
     if(shown !== card._shown){
@@ -454,7 +502,7 @@
     var plField = document.getElementById('bt-player-field'), enField = document.getElementById('bt-enemy-field');
     btReconcile(plField, bt.pl.field.map(function(u){
       var c = btCardFor(u, false), isSel = bt.selected === u;
-      btSyncCard(c, u, false, !bt.over && ((bt.phase === 'pick-attacker') || ((bt.phase === 'pick-target' || bt.phase === 'pick-boost') && isSel)), isSel, false);
+      btSyncCard(c, u, false, !bt.over && ((bt.phase === 'pick-attacker') || ((bt.phase === 'pick-target' || bt.phase === 'pick-skill') && isSel)), isSel, false);
       return c;
     }));
     btReconcile(enField, bt.en.field.map(function(u){
@@ -463,7 +511,7 @@
       return c;
     }));
     bt.animateArrivals = true;
-    btRenderBoostPanel();
+    btRenderSkillPanel();
     document.getElementById('bt-player-reserve').textContent = 'Réserve : ' + bt.pl.reserve.length + ' carte' + (bt.pl.reserve.length>1 ? 's' : '');
     document.getElementById('bt-enemy-reserve').textContent = 'Réserve adverse : ' + bt.en.reserve.length + ' carte' + (bt.en.reserve.length>1 ? 's' : '');
   }
@@ -471,8 +519,8 @@
 
   // Résout une attaque, au ralenti : préparation → charge (ou tir) → impact avec effet sonore →
   // points qui défilent → cartes battues (K.O.) → remplaçants → soutien, puis rappelle done().
-  // boost (joueur seulement) : { kind:'x2'|'fixed', values:{x2,fixed} } ; il ne change que les dégâts infligés.
-  function btResolveAttack(attSide, attacker, defSide, target, attackerIsEnemy, done, boost){
+  // skill (joueur seulement) : résultat de la compétence { dmg, word, verdict, line } ; il ne change que les dégâts infligés.
+  function btResolveAttack(attSide, attacker, defSide, target, attackerIsEnemy, done, skill){
     var archer = attacker.sprite.role === 'archer';
     var fromEl = btEl(attacker), toEl = btEl(target);
     if(fromEl) fromEl.classList.add('charging');
@@ -490,7 +538,7 @@
 
     function impact(){
       if(!bt) return;
-      var dmgToTarget = boost ? boost.values[boost.kind] : attacker.pts;
+      var dmgToTarget = skill ? skill.dmg : attacker.pts;
       var dmgToAttacker = archer ? 0 : target.pts;
       target.pts -= dmgToTarget;
       attacker.pts -= dmgToAttacker;
@@ -501,16 +549,9 @@
       } else {
         lines.push(attacker.sprite.name + ' attaque ' + target.sprite.name + ' : ' + target.sprite.name + ' perd ' + dmgToTarget + ' points et ' + attacker.sprite.name + ' en perd ' + dmgToAttacker + '.');
       }
-      var verdict = null;
-      if(boost){
-        var mine = boost.values[boost.kind], other = boost.values[boost.kind === 'x2' ? 'fixed' : 'x2'];
-        verdict = mine > other ? '👍 Bon calcul : c\'était le meilleur choix !'
-          : mine === other ? '🟰 Les deux boosts faisaient pareil (' + mine + ').'
-          : '🤔 L\'autre boost faisait ' + other + ' (tu en as fait ' + mine + ').';
-        lines.push('Boost : ' + (boost.kind === 'x2' ? 'dégâts doublés' : dmgToTarget + ' dégâts fixes') + '. ' + verdict);
-      }
-      var word = boost ? (boost.kind === 'x2' ? '✖️2 BOOM !' : '🎯 ' + dmgToTarget + ' !') : btWord(archer ? 'shot' : 'hit');
-      btSfx(word, boost ? 'boost' : (archer ? 'shot' : 'hit'), { sub: verdict, ms: boost ? 2400 : 1300 });
+      var verdict = skill ? skill.verdict : null;
+      if(skill) lines.push(skill.line);
+      btSfx(skill ? skill.word : btWord(archer ? 'shot' : 'hit'), skill && skill.ok ? 'skill' : (archer ? 'shot' : 'hit'), { sub: verdict, ms: skill ? 2800 : 1300 });
       btShake();
       var hitEl = btEl(target); if(hitEl) btFloat(hitEl, archer ? '🏹' : (attackerIsEnemy ? '💥' : '⚔️'), 'impact');
       playSound(attackerIsEnemy ? 'bad' : 'good');
@@ -523,7 +564,7 @@
       // 3) on laisse le temps de lire les chiffres ; puis K.O., remplaçants, soutien
       function finish(){
         if(!bt) return;
-        btClearBoostIfGone();
+        btClearProcIfGone();
         if(btSupportTick(attSide)){
           btSfx('+' + BT_SUPPORT_TURN + ' ❤️', 'heal', { ms:1300 });
           btRender(); setTimeout(function(){ if(bt) done(); }, btT(1500));
@@ -551,7 +592,7 @@
           entered = notes.filter(function(n){ return /entre sur le terrain/.test(n); }).length;
           if(notes.length) btLog(notes);
           if(entered) btSfx(btWord('enter'), 'enter', { ms:1200 });
-          btClearBoostIfGone();
+          btClearProcIfGone();
           btRender();
           setTimeout(finish, btT(900));   // le temps de voir arriver les remplaçants
         }, btT(850));
@@ -618,7 +659,7 @@
   function btBackToSetup(){
     bt = null;
     btClearSfx();
-    var bp = document.getElementById('bt-boost'); if(bp) bp.hidden = true;
+    var bp = document.getElementById('bt-skill'); if(bp) bp.hidden = true;
     document.getElementById('bt-arena').hidden = true;
     document.getElementById('bt-over').hidden = true;
     document.getElementById('bt-setup').hidden = false;
@@ -634,9 +675,7 @@
   document.getElementById('bt-auto-random').addEventListener('click', function(){ btAutoTeam('random'); });
   document.getElementById('bt-auto-clear').addEventListener('click', function(){ btAutoTeam('clear'); });
   document.getElementById('bt-start').addEventListener('click', btStart);
-  document.getElementById('bt-boost-x2').addEventListener('click', function(){ btChooseBoost('x2'); });
-  document.getElementById('bt-boost-fixed').addEventListener('click', function(){ btChooseBoost('fixed'); });
-  document.getElementById('bt-boost-none').addEventListener('click', function(){ btChooseBoost('none'); });
+  document.getElementById('bt-skill-none').addEventListener('click', function(){ btChooseSkill(-1); });
   document.getElementById('bt-quit').addEventListener('click', btBackToSetup);
   document.getElementById('bt-change-team').addEventListener('click', btBackToSetup);
   document.getElementById('bt-again').addEventListener('click', btStart);

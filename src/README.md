@@ -33,8 +33,9 @@ src/
     images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py)
                         (chargé EN PREMIER : définit CUSTOM_IMG et SPLASH_IMG, lus par noyau.js)
     boutique.js         personnages, évolutions (spritePts, tryEvolve, applyEvoLook), défis, boutique, mascotte
+    competences.js      compétences des personnages (SKILLS, skillFor, skillLine) : 10 questions de maths, niveaux, compétence d'un commun à l'Ultime
     admiration.js       showAdmire (portrait en grand, inclinaison, particules), showEvolution (cérémonie), sons et particules partagés (fxBurst, fxAmbient)
-    bataille.js         combat de cartes (effets sonores btSfx, boost, vitesse BT_SPEED)
+    bataille.js         combat de cartes (effets sonores btSfx, compétences btMakeProc/btSkillResult, vitesse BT_SPEED)
     progression.js      historique des réponses, radar, détail, sujets à travailler, tirage du mode Révision (`progReviewPick`)
     guide.js            tutoriels en surbrillance (accueil, boutique, bataille, série) + Réglages → Guides
     chaleur.js          effet « heat » Overload (15/20/25 d'affilée) par clan, + css/chaleur.css
