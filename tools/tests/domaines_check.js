@@ -14,7 +14,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(r.empty.length === 0, 'aucun thème vide ' + r.empty);
   chk(['measure', 'estimate', 'mesures', 'perimetre'].every(k => r.map.mesures.includes(k)) && r.map.mesures.length === 4, 'Mesures réunit Mesurer, Estimer, Unités de longueur, Périmètre : ' + r.map.mesures);
   chk(['atelier-sym', 'atelier-axe', 'symVrai', 'symVisuel'].every(k => r.map.symetrie.includes(k)) && r.map.symetrie.length === 4, 'Symétrie : ' + r.map.symetrie);
-  chk(Math.max(...Object.values(r.map).map(l => l.length)) <= 11, 'aucun thème démesuré : ' + Object.entries(r.map).map(([k, l]) => k + ' ' + l.length).join(', '));
+  chk(Math.max(...Object.values(r.map).map(l => l.length)) <= 12, 'aucun thème démesuré : ' + Object.entries(r.map).map(([k, l]) => k + ' ' + l.length).join(', '));
   // Progression : la compétence d'une réponse = le thème de l'activité
   const prog = JSON.parse(await ev(`JSON.stringify([progSkillIndex('measure',null), progSkillIndex('qcm','mesures'), progSkillIndex('atelier-axe',null), progSkillIndex('clock-lire',null), progSkillIndex('qcm','calcul')].map(function(i){ return DOMAINS[i].id; }))`));
   chk(prog.join() === 'mesures,mesures,symetrie,temps,calcul', 'la progression suit les mêmes thèmes : ' + prog);

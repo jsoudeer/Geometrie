@@ -26,7 +26,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(!(await vis('manual-activity-picker')), 'masquer');
   // changer d'activité : retour à « pas d'épreuve » jusqu'au choix du niveau
   await page.click('#manual-show-activities-btn');
-  await pickDomain('Formes'); await pickUnit('côtés');
+  await pickDomain('Formes'); await pickUnit('Côtés');
   chk(!(await vis('practice-exercise')) && JSON.stringify(await levels()) === '["Facile","Moyen","Difficile"]', 'nouvelle activité : épreuve masquée, niveaux vierges');
   // quizz : changer de thème/type réinitialise aussi le niveau
   await page.evaluate(() => [...document.querySelectorAll('#manual-level-row .level-btn')].find(x => x.textContent.includes('Facile')).click());

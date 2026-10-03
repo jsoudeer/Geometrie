@@ -324,6 +324,16 @@
   }
   .level-row.level-row-even .level-btn{ flex:1 1 auto; }
   .level-btn.active{ background:var(--accent3); border-color:var(--accent3); color:var(--on-accent); }
+  /* Tuiles (mode Manuel) : grille régulière, cibles tactiles hautes */
+  .tile-grid{ display:grid; gap:8px; }
+  .tile-grid.tiles-3{ grid-template-columns:repeat(3,1fr); }
+  .tile-grid.tiles-2{ grid-template-columns:repeat(2,1fr); }
+  .tile-grid .level-btn{ position:relative; min-height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:12.5px; padding:8px 6px; }
+  .tile-grid.tiles-3 .level-btn{ min-height:68px; }
+  .tile-grid .tile-wide{ grid-column:1 / -1; }
+  .tile-ico{ font-size:24px; line-height:1; }
+  .tile-grid .level-btn.active::before{ content:none; }
+  .tile-grid .level-btn.active::after{ content:'✔'; position:absolute; top:4px; right:7px; font-size:12px; }
   /* la sélection se voit aussi sans la couleur (RGAA 3.1) */
   .level-btn.active::before, .aconf-level-btn.active::before{ content:'✔ '; }
 
