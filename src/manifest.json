@@ -15,6 +15,7 @@
   "js": [
     "js/images-data.js",
     "js/noyau.js",
+    "js/vocabulaire.js",
     "js/geometrie.js",
     "js/horloge.js",
     "js/calcul.js",
