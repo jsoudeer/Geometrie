@@ -32,21 +32,21 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   await page.waitForTimeout(300);
   chk(await ev(`stars`) === 94 && await ev(`spriteEvo(CAT_SPRITES[0])`) === 1, 'niveau 1 : −6 ⭐');
   chk(await ev(`spritePts(CAT_SPRITES[0])`) === base + gain, 'niveau 1 : points = ' + (base + gain));
-  await page.evaluate(() => document.getElementById('reveal-overlay') && document.getElementById('reveal-overlay').click());
-  await page.waitForTimeout(200);
-  await page.evaluate(() => { const o = document.getElementById('reveal-overlay'); if (o) { const b = o.querySelector('.rv-ok'); if (b) b.click(); } });
+  chk(await page.evaluate(() => !!document.getElementById('evo-overlay') && !document.getElementById('reveal-overlay')), 'la cérémonie d\'évolution s\'ouvre (pas le reveal)');
+  await page.evaluate(() => { const o = document.getElementById('evo-overlay'); if (o) { o.click(); const b = o.querySelector('.eo-ok'); if (b) b.click(); } });
   await page.waitForTimeout(300);
-  chk(await page.evaluate(() => !!document.querySelector('#shop-grid .sprite-card.owned.evo-1 .evo-badge')), 'cadre + étoile niveau 1 sur la carte');
+  chk(await page.evaluate(() => !document.getElementById('evo-overlay')), 'cérémonie fermée (un toucher passe à la fin, le bouton ferme)');
+  chk(await page.evaluate(() => !!document.querySelector('#shop-grid .sprite-card.owned.evo-1 .evo-badge') && document.querySelectorAll('#shop-grid .sprite-card.owned.evo-1 .evo-spark').length === 4 && !!document.querySelector('#shop-grid .sprite-card.owned.evo-1 .evo-halo')), 'cadre + étoile + 4 particules + halo niveau 1 sur la carte');
   t = await btnTxt();
   chk(/Ultime/.test(t) && /6 ⭐/.test(t), 'bouton niveau 2 : « ' + t + ' »');
   await page.evaluate(() => document.querySelector('#shop-grid .sprite-card.owned .sp-evo-btn').click());
   await page.waitForTimeout(300);
-  await page.evaluate(() => { const o = document.getElementById('reveal-overlay'); if (o) { const b = o.querySelector('.rv-ok'); if (b) { b.click(); b.click(); } } });
+  await page.evaluate(() => { const o = document.getElementById('evo-overlay'); if (o) { o.click(); const b = o.querySelector('.eo-ok'); if (b) b.click(); } });
   await page.waitForTimeout(400);
   chk(await ev(`stars`) === 88 && await ev(`spriteEvo(CAT_SPRITES[0])`) === 2, 'niveau 2 : −6 ⭐ (total 12)');
   chk(await ev(`spritePts(CAT_SPRITES[0])`) === base + 2 * gain, 'niveau 2 : points = ' + (base + 2 * gain) + ' (+40 % du de base)');
   chk(await page.evaluate(() => document.querySelector('#shop-grid .sprite-card.owned .sp-evo-btn').disabled), 'niveau maximum : bouton grisé');
-  chk(await page.evaluate(() => !!document.querySelector('#shop-grid .sprite-card.owned.evo-2 .evo-badge') && document.querySelectorAll('#shop-grid .sprite-card.owned.evo-2 .evo-spark').length === 3), 'cadre doré, 2 étoiles, étincelles niveau 2');
+  chk(await page.evaluate(() => !!document.querySelector('#shop-grid .sprite-card.owned.evo-2 .evo-badge') && document.querySelectorAll('#shop-grid .sprite-card.owned.evo-2 .evo-spark').length === 7), 'cadre doré, 2 étoiles, 7 particules niveau 2');
   chk(await ev(`tryEvolve(CAT_SPRITES[0])`) === false && await ev(`stars`) === 88, 'impossible d\'aller au-delà du niveau 2');
   await page.screenshot({ path: SHOTS + 'evo_shop2.png' });
   // pas assez d'étoiles

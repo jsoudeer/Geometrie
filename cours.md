@@ -189,9 +189,11 @@ Repères : une équipe de 5 communs (3 classiques, 1 soutien, 1 archer) coûte e
 
 ### Évolutions
 Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué / Ultime » sur sa carte, dans la Boutique) : niveau 0 *De base*, 1 *Évolué*, 2 *Ultime*.
+- **Cérémonie** : à chaque évolution, un écran spécial : le personnage se charge (il tremble, des lumières convergent, un son qui monte), puis **flash**, **ondes de choc** (3 au niveau Ultime, avec secousse de l'écran), explosion de particules, étoiles ★ qui apparaissent une à une avec leur « ding », et les points qui montent (❤️ 8 → 10). Un toucher passe directement à la fin. Le son change selon le clan, et la fanfare est plus grande au niveau Ultime.
+- **Admirer** : le bouton 🔍 d'une carte (ou un toucher sur la carte, ou sur la mascotte du clan en haut de la Boutique) ouvre le personnage en grand, en pied. On le **fait tourner du doigt** (effet de profondeur : fond, ombre au sol et particules bougent à des vitesses différentes), un toucher le fait sauter dans une pluie d'étincelles ; ◀ ▶ (ou les flèches du clavier) passent aux autres personnages possédés. Plus il a évolué, plus la scène est riche : particules, halo, rayons, et un anneau d'étoiles qui tourne autour du personnage Ultime.
 - **Prix** : le même que son achat (6 / 12 / 24 / 40 ⭐ selon la rareté ; 12 ⭐ pour un personnage de défi, qui est gratuit).
 - **Puissance** : chaque niveau ajoute **20 % des points de base** (au moins +1) : ×1,2 puis ×1,4. Le total des deux évolutions coûte donc deux fois le prix d'achat. Tout acheter et tout faire évoluer vaut ~900 ⭐ par clan (plusieurs semaines de jeu).
-- **Visuel** (sur toutes les cartes et images) : niveau 1 = cadre coloré lumineux + ★ + 2 étincelles ; niveau 2 = double cadre doré (chats) ou magenta/vert (brainrots) qui pulse, ★★, 3 étincelles, personnage un peu plus grand (effet « glitch » chez les brainrots). Chats : rose puis or ; Brainrots : vert néon puis magenta.
+- **Visuel** (sur toutes les cartes et images) : niveau 1 = cadre coloré lumineux + ★ + 4 particules qui montent + halo lumineux derrière le personnage ; niveau 2 = double cadre doré (chats) ou magenta/vert (brainrots) qui pulse, ★★, 7 particules, halo avec rayons qui tournent, personnage un peu plus grand (effet « glitch » chez les brainrots). Chats : rose puis or ; Brainrots : vert néon puis magenta.
 - Les adversaires ne sont jamais évolués (leur total de points suit celui de ton équipe, évolutions comprises).
 - « Effacer ma progression » efface aussi les évolutions.
 

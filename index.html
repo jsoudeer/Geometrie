@@ -942,12 +942,21 @@
   .evo-2[data-evo-clan="brainrot"] > img{ animation:evoGlitch 2.6s steps(1) infinite; }
   .evo-badge{ position:absolute; left:3px; bottom:3px; z-index:3; pointer-events:none; font-size:11px; line-height:1; font-weight:900;
     color:#5A3600; background:#FFE27A; border:1.5px solid #B57A00; border-radius:9px; padding:1px 4px; letter-spacing:-1px; }
-  .evo-spark{ position:absolute; z-index:3; pointer-events:none; font-size:12px; line-height:1; animation:evoTwinkle 1.8s ease-in-out infinite; }
-  .evo-spark.s0{ top:2px; right:3px; }
-  .evo-spark.s1{ top:38%; left:1px; animation-delay:.6s; }
-  .evo-spark.s2{ bottom:34%; right:1px; animation-delay:1.2s; }
+  /* particules qui montent en continu le long du personnage (4 au niveau 1, 7 au niveau 2) */
+  .evo-spark{ position:absolute; z-index:3; pointer-events:none; font-size:11px; line-height:1; left:var(--x,50%); bottom:18%; opacity:0; animation:evoRise 2.8s ease-out infinite; animation-delay:var(--d,0s); }
+  .evo-2 .evo-spark{ font-size:13px; animation-duration:2.2s; }
+  /* profondeur : halo derrière l'image (+ rayons qui tournent au niveau 2) */
+  .evo-1, .evo-2{ isolation:isolate; }
+  .evo-halo{ position:absolute; inset:-6%; z-index:-1; pointer-events:none; border-radius:inherit;
+    background:radial-gradient(closest-side circle at 50% 58%, color-mix(in srgb, var(--evo-c) 50%, transparent) 0, transparent 100%); }
+  .evo-2 .evo-halo{ background:radial-gradient(closest-side circle at 50% 58%, color-mix(in srgb, var(--evo-c2) 60%, transparent) 0, color-mix(in srgb, var(--evo-c) 32%, transparent) 55%, transparent 100%); animation:evoBreath 2.4s ease-in-out infinite; }
+  .evo-2 .evo-halo::after{ content:''; position:absolute; inset:-30%; border-radius:50%;
+    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--evo-c2) 35%, transparent) 0 6deg, transparent 6deg 20deg);
+    -webkit-mask:radial-gradient(circle, #000 0, transparent 60%); mask:radial-gradient(circle, #000 0, transparent 60%); animation:admSpin 14s linear infinite; }
+  .evo-1 .evo-halo{ animation:evoBreath 3.2s ease-in-out infinite; }
+  @keyframes evoRise{ 0%{ opacity:0; transform:translateY(0) scale(.5); } 20%{ opacity:1; } 100%{ opacity:0; transform:translateY(-46px) scale(1.1) rotate(40deg); } }
+  @keyframes evoBreath{ 0%,100%{ opacity:.65; transform:scale(.96); } 50%{ opacity:1; transform:scale(1.05); } }
   @keyframes evoPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.12); } }
-  @keyframes evoTwinkle{ 0%,100%{ opacity:.25; transform:scale(.7) rotate(0); } 50%{ opacity:1; transform:scale(1.2) rotate(18deg); } }
   @keyframes evoGlitch{ 0%,88%,100%{ transform:scale(1.06) translate(0,0); } 90%{ transform:scale(1.06) translate(-2px,1px); } 94%{ transform:scale(1.06) translate(2px,-1px); } }
   .info-art.evo-1, .info-art.evo-2{ padding:8px; }
   .sprite-card .sp-evo-btn{ min-height:32px; border:2px solid var(--control-border, var(--border)); border-radius:10px; background:var(--surface2); color:var(--text);
@@ -955,7 +964,140 @@
   .sprite-card .sp-evo-btn:not([disabled]){ background:var(--accent2); border-color:var(--accent2); color:var(--on-accent); }
   .sprite-card .sp-evo-btn[disabled]{ opacity:.55; cursor:default; }
   .sprite-card .sp-evo-btn.max{ opacity:1; background:transparent; border-style:dashed; color:var(--text-soft); }
-  @media (prefers-reduced-motion: reduce){ .evo-2, .evo-spark, .evo-2[data-evo-clan="brainrot"] > img{ animation:none; } .evo-spark{ opacity:.9; } }
+  @media (prefers-reduced-motion: reduce){ .evo-2, .evo-spark, .evo-halo, .evo-2 .evo-halo::after, .evo-2[data-evo-clan="brainrot"] > img{ animation:none; } .evo-spark{ opacity:.9; bottom:auto; top:var(--x); } }
+  /* ===== Admirer un personnage + cérémonie d'évolution (admiration.js) ===== */
+  .adm-overlay, .evo-ov{
+    --a:#FF8FC1; --b:#FFD4E8;
+    position:fixed; inset:0; z-index:125; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    background:radial-gradient(ellipse at 50% 40%, #4a3260 0%, #150f20 78%); color:#fff; padding:14px; text-align:center; perspective:900px;
+    animation:rvFade .3s ease-out; overflow:hidden;
+  }
+  .adm-overlay.brainrot, .evo-ov.brainrot{ --a:#3DDC97; --b:#B8FF5A; background:radial-gradient(ellipse at 50% 40%, #1f4a33 0%, #07110b 80%); }
+  .adm-overlay.cats.lv1, .evo-ov.cats.lv1{ --a:#FF6FB0; --b:#FFD4E8; }
+  .adm-overlay.cats.lv2, .evo-ov.cats.lv2{ --a:#FFC83D; --b:#FF8FC1; background:radial-gradient(ellipse at 50% 40%, #5a3a58 0%, #1a0f1c 78%); }
+  .adm-overlay.brainrot.lv2, .evo-ov.brainrot.lv2{ --a:#FF3DE0; --b:#B8FF5A; background:radial-gradient(ellipse at 50% 40%, #3a1f4a 0%, #0a0714 80%); }
+
+  /* ---------- Admirer ---------- */
+  .adm-stage{ position:relative; width:min(86vw,340px); height:min(56vh,430px); transform-style:preserve-3d; touch-action:none; cursor:grab; --rx:0; --ry:0; user-select:none; }
+  .adm-stage img{ -webkit-user-drag:none; user-select:none; pointer-events:none; }
+  .adm-stage.tilting{ cursor:grabbing; }
+  .adm-rays{ position:absolute; left:50%; top:46%; width:200%; aspect-ratio:1; margin:-100% 0 0 -100%; border-radius:50%; pointer-events:none;
+    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--a) 30%, transparent) 0 8deg, transparent 8deg 24deg);
+    -webkit-mask:radial-gradient(circle, #000 0, transparent 58%); mask:radial-gradient(circle, #000 0, transparent 58%);
+    animation:admSpin 40s linear infinite; transform:translateZ(-280px) translate(calc(var(--ry) * -.9px), calc(var(--rx) * .9px)); opacity:.75; }
+  .adm-overlay.lv2 .adm-rays{ animation-duration:22s; opacity:1; }
+  .adm-aura{ position:absolute; left:50%; top:52%; width:160%; aspect-ratio:1; margin:-80% 0 0 -80%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, color-mix(in srgb, var(--a) 42%, transparent) 0, color-mix(in srgb, var(--a) 16%, transparent) 38%, transparent 62%); transform:translateZ(-240px); animation:evoBreath 3.2s ease-in-out infinite; }
+  .adm-overlay.lv0 .adm-aura{ opacity:.55; }
+  .adm-floor{ position:absolute; left:50%; bottom:2%; width:92%; height:17%; margin-left:-46%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(ellipse, rgba(0,0,0,.55) 0, rgba(0,0,0,.25) 45%, transparent 70%);
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--a) 55%, transparent), 0 0 26px color-mix(in srgb, var(--a) 60%, transparent); transform:translateZ(-90px); animation:admFloor 3.2s ease-in-out infinite; }
+  .adm-overlay.lv0 .adm-floor{ box-shadow:0 0 0 1px color-mix(in srgb, var(--a) 35%, transparent), 0 0 14px color-mix(in srgb, var(--a) 35%, transparent); }
+  .adm-figure{ position:absolute; inset:0 8% 7% 8%; display:flex; align-items:flex-end; justify-content:center; transform-style:preserve-3d;
+    transform:rotateY(calc(var(--ry) * 1deg)) rotateX(calc(var(--rx) * 1deg)); transition:transform .5s cubic-bezier(.2,1.4,.4,1); }
+  .adm-stage.tilting .adm-figure{ transition:transform .06s linear; }
+  .adm-bob{ width:100%; height:100%; display:flex; align-items:flex-end; justify-content:center; animation:admBob 3.2s ease-in-out infinite; }
+  .adm-art{ width:100%; height:100%; display:flex; align-items:flex-end; justify-content:center; padding:0 0 0; }
+  .adm-art .sp-full-img, .adm-art .fullbody-compose{ width:auto; max-width:100%; height:auto; max-height:100%; object-fit:contain; display:block; margin:0;
+    filter:drop-shadow(0 0 3px color-mix(in srgb, var(--a) 80%, transparent)); }
+  .adm-overlay.lv2 .adm-art .sp-full-img, .adm-overlay.lv2 .adm-art .fullbody-compose{ filter:drop-shadow(0 0 4px var(--a)) drop-shadow(0 0 2px var(--b)); }
+  .adm-art .fullbody-compose{ width:min(60vw,230px); }
+  .adm-figure.hop .adm-bob{ animation:admHop .55s cubic-bezier(.3,1.6,.5,1), admBob 3.2s ease-in-out .55s infinite; }
+  .adm-stage.swap-r .adm-art{ animation:admInR .45s cubic-bezier(.2,1.2,.4,1); }
+  .adm-stage.swap-l .adm-art{ animation:admInL .45s cubic-bezier(.2,1.2,.4,1); }
+  .adm-fx{ position:absolute; inset:0; pointer-events:none; transform-style:preserve-3d; }
+  .adm-fx.back{ transform:translateZ(-160px) translate(calc(var(--ry) * -.5px), 0); }
+  .adm-fx.front{ transform:translateZ(80px) translate(calc(var(--ry) * .7px), calc(var(--rx) * -.4px)); }
+  /* anneau d'étoiles qui tourne autour du personnage (niveau Ultime) */
+  .adm-orbit{ position:absolute; left:50%; top:60%; width:0; height:0; transform-style:preserve-3d; transform:rotateX(74deg); display:none; pointer-events:none; }
+  .adm-overlay.lv2 .adm-orbit{ display:block; }
+  .adm-orbit-spin{ position:absolute; left:0; top:0; width:0; height:0; transform-style:preserve-3d; animation:admOrbit 7s linear infinite; }
+  .adm-orbit-spin span{ position:absolute; left:0; top:0; font-size:26px; line-height:1; color:var(--a); text-shadow:0 0 10px var(--a), 0 0 3px #fff;
+    transform:rotateZ(var(--a)) translateX(122px) rotateZ(calc(var(--a) * -1)) rotateX(-74deg) translate(-50%,-50%); }
+  .adm-info{ min-height:96px; z-index:2; }
+  .adm-name{ font-family:var(--font-display); font-weight:900; font-size:26px; margin:0; text-shadow:0 2px 10px rgba(0,0,0,.6); }
+  .adm-overlay.lv2 .adm-name{ background:linear-gradient(90deg,#fff3b0,var(--a),#fff3b0); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:admShine 2.4s linear infinite; text-shadow:none; }
+  .adm-line{ margin:2px 0; font-weight:800; font-size:15px; }
+  .adm-stars{ color:#FFE27A; letter-spacing:-2px; text-shadow:0 0 8px var(--a); }
+  .adm-role{ margin:0; font-size:14px; opacity:.9; }
+  .adm-hint{ margin:8px 0 0; font-size:12px; opacity:.7; }
+  .adm-close{ position:absolute; top:12px; right:12px; width:44px; height:44px; border-radius:50%; border:2px solid rgba(255,255,255,.55); background:rgba(0,0,0,.35); color:#fff; font-size:18px; cursor:pointer; z-index:5; }
+  .adm-nav{ position:absolute; top:46%; width:46px; height:56px; border-radius:14px; border:2px solid rgba(255,255,255,.5); background:rgba(0,0,0,.3); color:#fff; font-size:20px; cursor:pointer; z-index:5; }
+  .adm-prev{ left:6px; } .adm-next{ right:6px; }
+  .adm-nav[hidden]{ display:none; }
+  .adm-close:focus-visible, .adm-nav:focus-visible, .eo-ok:focus-visible{ outline:3px solid #fff; outline-offset:2px; }
+
+  /* particules (partagées par l'admiration et l'évolution) */
+  .fx-rise{ position:absolute; bottom:6%; font-size:var(--sz,18px); line-height:1; opacity:0; animation:fxRise var(--dur,3.4s) ease-out forwards; filter:drop-shadow(0 0 5px var(--a)); }
+  .fx-rise.far{ filter:blur(.6px) drop-shadow(0 0 4px var(--a)); }
+  .fx-burst{ position:absolute; left:50%; top:46%; font-size:var(--sz,20px); line-height:1; animation:fxBurst 1.25s cubic-bezier(.1,.8,.3,1) forwards; filter:drop-shadow(0 0 6px var(--a)); }
+  @keyframes fxRise{ 0%{ opacity:0; transform:translate(0,0) scale(.5) rotate(0); } 15%{ opacity:1; } 100%{ opacity:0; transform:translate(var(--drift,0), -230px) scale(1.1) rotate(90deg); } }
+  @keyframes fxBurst{ 0%{ opacity:1; transform:translate(-50%,-50%) scale(.3) rotate(0); } 70%{ opacity:1; } 100%{ opacity:0; transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2) rotate(var(--rot)); } }
+  @keyframes admSpin{ to{ rotate:360deg; } }
+  @keyframes admBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-10px); } }
+  @keyframes admFloor{ 0%,100%{ transform:translateZ(-90px) scale(1); } 50%{ transform:translateZ(-90px) scale(.88); opacity:.85; } }
+  @keyframes admHop{ 0%{ transform:translateY(0) scale(1,1); } 30%{ transform:translateY(-34px) scale(.96,1.06); } 60%{ transform:translateY(0) scale(1.06,.94); } 100%{ transform:translateY(0) scale(1,1); } }
+  @keyframes admInR{ from{ opacity:0; transform:translateX(70px) rotateY(-50deg) scale(.8); } to{ opacity:1; transform:none; } }
+  @keyframes admInL{ from{ opacity:0; transform:translateX(-70px) rotateY(50deg) scale(.8); } to{ opacity:1; transform:none; } }
+  @keyframes admOrbit{ to{ transform:rotateZ(360deg); } }
+  @keyframes admShine{ to{ background-position:-200% 0; } }
+
+  /* ---------- Cérémonie d'évolution ---------- */
+  .eo-head{ font-family:var(--font-display); font-weight:900; font-size:22px; margin:0; text-shadow:0 2px 10px rgba(0,0,0,.6); min-height:30px; z-index:3; }
+  .evo-ov.boom .eo-head, .evo-ov.shown .eo-head{ font-size:32px; color:var(--b); text-shadow:0 0 14px var(--a), 0 2px 8px rgba(0,0,0,.6); animation:eoPop .6s cubic-bezier(.2,1.6,.4,1); }
+  .eo-stage{ position:relative; width:min(84vw,320px); height:min(48vh,380px); display:flex; align-items:center; justify-content:center; }
+  .eo-rays{ position:absolute; left:50%; top:50%; width:170%; aspect-ratio:1; margin:-85% 0 0 -85%; border-radius:50%; pointer-events:none; opacity:0;
+    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--a) 45%, transparent) 0 7deg, transparent 7deg 20deg);
+    -webkit-mask:radial-gradient(circle, #000 0, transparent 60%); mask:radial-gradient(circle, #000 0, transparent 60%); animation:admSpin 16s linear infinite; }
+  .evo-ov.boom .eo-rays, .evo-ov.shown .eo-rays{ opacity:1; transition:opacity .5s; }
+  .eo-fx{ position:absolute; inset:0; pointer-events:none; }
+  .eo-figure{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .eo-art{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .eo-art .sp-full-img, .eo-art .fullbody-compose{ width:auto; max-width:100%; height:auto; max-height:100%; object-fit:contain; display:block; margin:0; }
+  .eo-art .fullbody-compose{ width:min(60vw,220px); }
+  .eo-art{ padding:10px; }
+  .evo-ov.charging .eo-figure{ animation:eoCharge 1.55s ease-in forwards; }
+  .evo-ov.charging .eo-art{ animation:eoGlow 1.55s ease-in forwards; }
+  .evo-ov.boom .eo-figure{ animation:eoPopFig .7s cubic-bezier(.2,1.7,.4,1); }
+  .evo-ov.lv2.boom{ animation:eoShake .6s linear; }
+  .eo-charge span{ position:absolute; left:50%; top:50%; font-size:20px; opacity:0; animation:eoConverge 1.1s ease-in infinite; display:none; filter:drop-shadow(0 0 5px var(--a)); }
+  .evo-ov.charging .eo-charge span{ display:block; }
+  .eo-ring{ position:absolute; left:50%; top:50%; width:40px; height:40px; margin:-20px 0 0 -20px; border-radius:50%; border:6px solid var(--a); opacity:0; pointer-events:none; box-shadow:0 0 18px var(--a), inset 0 0 14px var(--a); }
+  .evo-ov.boom .eo-ring.r1{ animation:eoShock .9s ease-out forwards; }
+  .evo-ov.boom .eo-ring.r2{ animation:eoShock 1.1s ease-out .12s forwards; border-color:var(--b); }
+  .evo-ov.lv2.boom .eo-ring.r3{ animation:eoShock 1.3s ease-out .25s forwards; }
+  .eo-flash{ position:absolute; inset:-60%; background:radial-gradient(circle, #fff 0, #fff 30%, color-mix(in srgb, var(--b) 70%, transparent) 60%, transparent 75%); opacity:0; pointer-events:none; }
+  .evo-ov.lv2 .eo-flash{ background:radial-gradient(circle, #fff 0, #fff3b0 35%, color-mix(in srgb, var(--a) 70%, transparent) 62%, transparent 76%); }
+  .evo-ov.boom .eo-flash{ animation:eoFlash .8s ease-out; }
+  .eo-info{ min-height:130px; opacity:0; transform:translateY(14px); transition:opacity .4s, transform .4s; z-index:3; }
+  .evo-ov.shown .eo-info{ opacity:1; transform:none; }
+  .eo-title{ font-family:var(--font-display); font-weight:900; font-size:19px; margin:0 0 4px; }
+  .eo-stars{ margin:0; font-size:38px; line-height:1; color:#FFE27A; text-shadow:0 0 12px var(--a), 0 0 3px #fff; }
+  .eo-stars span{ display:inline-block; opacity:0; animation:eoStar .55s cubic-bezier(.2,1.8,.4,1) forwards; animation-delay:inherit; margin:0 3px; }
+  .eo-stat{ margin:4px 0 10px; font-weight:900; font-size:20px; min-height:26px; }
+  /* le personnage évolué garde son cadre/ses particules permanents ; ici on le laisse respirer */
+  .evo-ov .eo-art.evo-1, .evo-ov .eo-art.evo-2{ box-shadow:none; }
+  @keyframes eoCharge{ 0%{ transform:scale(1) translate(0,0); } 30%{ transform:scale(.96) translate(-2px,1px); } 60%{ transform:scale(.9) translate(3px,-2px); } 85%{ transform:scale(.84) translate(-4px,2px); } 100%{ transform:scale(.8) translate(0,0); } }
+  @keyframes eoGlow{ 0%{ filter:brightness(1) drop-shadow(0 0 0 var(--a)); } 100%{ filter:brightness(2.2) saturate(.3) drop-shadow(0 0 26px var(--a)); } }
+  @keyframes eoConverge{ 0%{ opacity:0; transform:translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(1.2); } 25%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-50%) scale(.2); } }
+  @keyframes eoFlash{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(1.4); } }
+  @keyframes eoShock{ 0%{ opacity:.95; transform:scale(.4); } 100%{ opacity:0; transform:scale(9); border-width:1px; } }
+  @keyframes eoPopFig{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.22); } 100%{ transform:scale(1); } }
+  @keyframes eoPop{ 0%{ transform:scale(.3); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+  @keyframes eoStar{ 0%{ opacity:0; transform:scale(.1) rotate(-120deg); } 100%{ opacity:1; transform:scale(1) rotate(0); } }
+  @keyframes eoShake{ 0%,100%{ transform:translate(0,0); } 15%{ transform:translate(-7px,4px); } 30%{ transform:translate(6px,-5px); } 45%{ transform:translate(-5px,-3px); } 60%{ transform:translate(4px,5px); } 80%{ transform:translate(-2px,2px); } }
+
+  /* ---------- Cartes : mini-bouton « admirer » ---------- */
+  .sprite-card.owned{ position:relative; }
+  .sprite-card .sp-admire{ position:absolute; top:4px; right:4px; width:30px; height:30px; border-radius:50%; border:2px solid var(--control-border, var(--border)); background:var(--surface); color:var(--text); font-size:14px; line-height:1; cursor:pointer; z-index:4; padding:0; }
+  .shop-mascot.admirable{ cursor:pointer; }
+  .shop-mascot .sm-hint{ font-size:11.5px; color:var(--text-soft); }
+
+  @media (prefers-reduced-motion: reduce){
+    .adm-overlay, .evo-ov, .adm-rays, .adm-floor, .adm-bob, .adm-orbit-spin, .eo-rays, .fx-rise, .fx-burst,
+    .evo-ov.charging .eo-figure, .evo-ov.charging .eo-art, .evo-ov.boom .eo-figure, .evo-ov.boom .eo-ring, .evo-ov.boom .eo-flash, .eo-stars span{ animation:none; }
+    .eo-stars span{ opacity:1; } .fx-rise, .fx-burst{ display:none; } .eo-info{ transition:none; }
+  }
   /* ===== Bataille : effets sonores affichés, charge, boost, secousse ===== */
   .sr-only{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
   .bt-mid{ position:relative; margin:6px 0; display:flex; align-items:center; justify-content:center; }
@@ -8250,7 +8392,7 @@
   // Cadre, aura et étoiles d'évolution posés sur le conteneur (CSS : .evo-1 / .evo-2, par clan).
   function applyEvoLook(container, sprite, level){
     ['evo-1','evo-2'].forEach(function(c){ container.classList.remove(c); });
-    Array.prototype.slice.call(container.querySelectorAll(':scope > .evo-badge, :scope > .evo-spark')).forEach(function(n){ n.remove(); });
+    Array.prototype.slice.call(container.querySelectorAll(':scope > .evo-badge, :scope > .evo-spark, :scope > .evo-halo')).forEach(function(n){ n.remove(); });
     if(level === undefined) level = spriteEvo(sprite);
     container.removeAttribute('data-evo-clan');
     if(!level) return;
@@ -8260,10 +8402,17 @@
     badge.className = 'evo-badge'; badge.setAttribute('aria-hidden','true');
     badge.textContent = level === 2 ? '★★' : '★';
     container.appendChild(badge);
-    for(var i=0;i<(level===2?3:2);i++){
+    var halo = document.createElement('span');
+    halo.className = 'evo-halo'; halo.setAttribute('aria-hidden','true');
+    container.insertBefore(halo, container.firstChild);
+    var set = spriteSide(sprite)==='cats' ? ['✨','💖','⭐','✨','🌸','💫','✨'] : ['⚡','🔥','💥','⚡','👾','🔥','⚡'];
+    var POS = [8,78,30,62,16,88,48];
+    for(var i=0;i<(level===2?7:4);i++){
       var sp = document.createElement('span');
       sp.className = 'evo-spark s' + i; sp.setAttribute('aria-hidden','true');
-      sp.textContent = spriteSide(sprite)==='cats' ? ['✨','💖','✨'][i] : ['⚡','🔥','⚡'][i];
+      sp.textContent = set[i];
+      sp.style.setProperty('--x', POS[i] + '%');
+      sp.style.setProperty('--d', (i*0.55) + 's');
       container.appendChild(sp);
     }
   }
@@ -8494,19 +8643,6 @@
       body.appendChild(p);
     });
   }
-  // Aperçu en pied d'un personnage (touche sur sa carte dans la Boutique).
-  function showSpritePreview(sprite){
-    openInfoDialog(sprite.name, function(body){
-      var art = document.createElement('div');
-      art.className = 'info-art full';
-      renderCreatureVisual(art, sprite, 'full');
-      body.appendChild(art);
-      var role = document.createElement('p');
-      role.className = 'muted';
-      role.textContent = roleLine(sprite) + ' · ' + RARITY_META[sprite.rarity].label + ' · ' + EVO_NAMES[spriteEvo(sprite)];
-      body.appendChild(role);
-    });
-  }
   /* ---- Reveal d'un nouveau personnage ----
      Plein écran : sa silhouette noire (ombre chinoise, en pied) grossit au
      milieu de l'écran en pivotant sur elle-même, puis s'arrête et se dévoile
@@ -8623,7 +8759,7 @@
     // Personnage pas encore débloqué : image « ? » commune ; le nom reste visible, le rôle est caché.
     var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
     card.appendChild(nameEl);
-    if(isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showSpritePreview(sprite); });
+    if(isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showAdmire(sprite); });
     var rarity = document.createElement('div'); rarity.className='rarity-pill';
     rarity.textContent = RARITY_META[sprite.rarity].label;
     rarity.style.background = RARITY_META[sprite.rarity].color;
@@ -8633,6 +8769,11 @@
     if(isOwned){
       var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
       card.appendChild(tag);
+      var admireBtn = document.createElement('button');
+      admireBtn.type = 'button'; admireBtn.className = 'sp-admire'; admireBtn.textContent = '🔍';
+      admireBtn.setAttribute('aria-label', 'Admirer ' + sprite.name);
+      admireBtn.addEventListener('click', function(e){ e.stopPropagation(); showAdmire(sprite); });
+      card.appendChild(admireBtn);
       var isMascot = activeMascotId() === sprite.id;
       var mascotBtn = document.createElement('button');
       mascotBtn.type = 'button';
@@ -8668,7 +8809,7 @@
             renderBtSetup();
             renderMascotDock();
             renderTopMascotIcon();
-            showReveal([sprite], 'Évolution : ' + EVO_NAMES[spriteEvo(sprite)] + ' !');
+            showEvolution(sprite, lvl, lvl + 1);
           }
         });
       }
@@ -8714,10 +8855,14 @@
     var art = document.createElement('div'); art.className = 'sm-art';
     renderCreatureVisual(art, sprite, 'full');
     var txt = document.createElement('div'); txt.className = 'sm-txt';
-    txt.innerHTML = '<span>Mascotte du clan</span><strong></strong><span></span>';
+    txt.innerHTML = '<span>Mascotte du clan</span><strong></strong><span></span><span class="sm-hint">🔍 Touche pour l\'admirer</span>';
     txt.querySelector('strong').textContent = sprite.name;
-    txt.lastChild.textContent = roleLine(sprite);
+    txt.children[2].textContent = roleLine(sprite);
     panel.appendChild(art); panel.appendChild(txt);
+    panel.classList.add('admirable');
+    panel.setAttribute('role','button'); panel.setAttribute('tabindex','0'); panel.setAttribute('aria-label', 'Admirer ' + sprite.name + ', mascotte du clan');
+    panel.onclick = function(){ showAdmire(sprite); };
+    panel.onkeydown = function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); showAdmire(sprite); } };
   }
   // Bouton d'entraînement : +50 étoiles d'un clic pour essayer les déblocages.
   document.getElementById('shop-plus50').addEventListener('click', function(){
@@ -8876,6 +9021,288 @@
     document.getElementById('reset-done').hidden = false;
   });
 
+  /* ===================== ADMIRER UN PERSONNAGE ET CÉRÉMONIE D'ÉVOLUTION =====================
+     showAdmire(sprite)    : grand portrait en pied qui se penche au doigt (profondeur), ombre au sol,
+                             rayons, particules selon le niveau d'évolution ; ◀ ▶ pour parcourir les
+                             personnages possédés du clan.
+     showEvolution(sprite, from, to) : cérémonie (charge → flash et ondes de choc → étoiles, points).
+     Utilise les outils de boutique.js (renderCreatureVisual, spriteEvo, spritePts, EVO_NAMES…) et les
+     sons du « reveal » de noyau.js (revealCtx, revealTone). CSS : css/admiration.css. */
+
+  var FX_EMOJIS = { cats:['✨','💖','⭐','🌸','💫'], brainrot:['⚡','🔥','💥','👾','✨'] };
+  var fxTimers = [];
+  function fxLater(fn, ms){ var t = setTimeout(fn, ms); fxTimers.push(t); return t; }
+  function fxClearTimers(){ fxTimers.forEach(clearTimeout); fxTimers = []; }
+  function fxReduced(){ return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+
+  // ---- Sons ----
+  function fxVol(){ return sfxMode==='overload' ? 1.6 : 1; }
+  function playAdmirePing(side){
+    try{
+      var ctx = revealCtx(); if(!ctx) return; var t0 = ctx.currentTime, k = fxVol();
+      if(side==='brainrot'){ revealTone(ctx,'square',392,784,t0,0.12,0.09*k); revealTone(ctx,'square',1046,523,t0+0.09,0.1,0.06*k); }
+      else { revealTone(ctx,'triangle',1568,2093,t0,0.22,0.16*k); revealTone(ctx,'sine',3136,3136,t0+0.05,0.18,0.04*k); }
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 600);
+    }catch(e){}
+  }
+  function playEvoCharge(side){
+    try{
+      var ctx = revealCtx(); if(!ctx) return; var t0 = ctx.currentTime, k = fxVol(), i;
+      revealTone(ctx,'sine',150,1500,t0,1.5,0.12*k);
+      revealTone(ctx,'triangle',75,750,t0,1.5,0.07*k);
+      // tic-tac de plus en plus rapide
+      for(i=0;i<14;i++){
+        var tt = 1.45*Math.pow(i/14, 1.6);
+        revealTone(ctx, side==='brainrot' ? 'square' : 'sine', 500 + i*95, 500 + i*95, t0 + tt, 0.05, (side==='brainrot' ? 0.06 : 0.1)*k);
+      }
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 1900);
+    }catch(e){}
+  }
+  function playEvoBoom(side, level){
+    try{
+      var ctx = revealCtx(); if(!ctx) return; var t0 = ctx.currentTime, k = fxVol(), i;
+      revealTone(ctx,'sine',160,34,t0,0.9,0.6*k);
+      revealTone(ctx,'sawtooth',1400,70,t0,0.45,0.13*k);
+      if(level>=2) revealTone(ctx,'sine',90,28,t0+0.12,1.1,0.55*k);
+      var arp = side==='brainrot' ? [262,330,392,523,659,784] : [1046.5,1318.5,1568,2093,2637,3136];
+      var n = level>=2 ? arp.length : 4;
+      for(i=0;i<n;i++){
+        var f = arp[i], tt = t0 + 0.28 + i*0.085;
+        revealTone(ctx, side==='brainrot' ? 'square' : 'triangle', f, f, tt, 0.55, (side==='brainrot' ? 0.1 : 0.2)*k);
+        if(side!=='brainrot') revealTone(ctx,'sine',f*2,f*2,tt,0.3,0.05*k);
+      }
+      if(level>=2){
+        // accord final tenu : fanfare de l'évolution ultime
+        [523.25,659.25,783.99,1046.5].forEach(function(f){ revealTone(ctx,'sine',f,f,t0+0.85,1.3,0.12*k); revealTone(ctx,'triangle',f*2,f*2,t0+0.85,1.0,0.05*k); });
+        if(side==='brainrot'){ for(i=0;i<8;i++) revealTone(ctx,'square',1568-i*120,1568-i*120,t0+0.9+i*0.05,0.04,0.07*k); }
+      }
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 2600);
+    }catch(e){}
+  }
+  function playStarPing(i){
+    try{
+      var ctx = revealCtx(); if(!ctx) return; var t0 = ctx.currentTime, k = fxVol();
+      var f = 1318.5 * (1 + i*0.5);
+      revealTone(ctx,'triangle',f,f,t0,0.3,0.2*k); revealTone(ctx,'sine',f*2,f*2,t0,0.2,0.05*k);
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 600);
+    }catch(e){}
+  }
+
+  // ---- Particules ----
+  // Éclat : n émojis projetés autour du centre de `layer`.
+  function fxBurst(layer, side, n, minDist, maxDist){
+    var set = FX_EMOJIS[side], i;
+    for(i=0;i<n;i++){
+      var s = document.createElement('span');
+      s.className = 'fx-burst'; s.setAttribute('aria-hidden','true');
+      s.textContent = set[i % set.length];
+      var ang = (i/n)*Math.PI*2 + Math.random()*0.4, dist = minDist + Math.random()*(maxDist-minDist);
+      s.style.setProperty('--dx', Math.round(Math.cos(ang)*dist)+'px');
+      s.style.setProperty('--dy', Math.round(Math.sin(ang)*dist)+'px');
+      s.style.setProperty('--sz', (14 + Math.round(Math.random()*16)) + 'px');
+      s.style.setProperty('--rot', Math.round(Math.random()*360 - 180) + 'deg');
+      s.addEventListener('animationend', function(){ this.remove(); });
+      layer.appendChild(s);
+    }
+  }
+  // Particules qui montent en continu (2 plans : derrière et devant le personnage). Renvoie l'arrêt.
+  function fxAmbient(back, front, side, level){
+    if(fxReduced()) return function(){};
+    var set = FX_EMOJIS[side], every = level>=2 ? 110 : level===1 ? 170 : 300;
+    var id = setInterval(function(){
+      var layer = Math.random()<0.45 ? back : front;
+      if(layer.childElementCount > 36) return;
+      var s = document.createElement('span');
+      s.className = 'fx-rise' + (layer===back ? ' far' : '');
+      s.setAttribute('aria-hidden','true');
+      s.textContent = set[Math.floor(Math.random()*set.length)];
+      s.style.left = Math.round(8 + Math.random()*84) + '%';
+      s.style.setProperty('--sz', (layer===back ? 10 + Math.random()*8 : 14 + Math.random()*14) + 'px');
+      s.style.setProperty('--drift', Math.round(Math.random()*60 - 30) + 'px');
+      s.style.setProperty('--dur', (2.6 + Math.random()*2.2) + 's');
+      s.addEventListener('animationend', function(){ this.remove(); });
+      layer.appendChild(s);
+    }, every);
+    return function(){ clearInterval(id); };
+  }
+  function fxEvoClass(side, level){ return side + ' lv' + level; }
+
+  // ---- Admirer ----
+  var admireStop = null;
+  function closeAdmire(){
+    if(admireStop){ admireStop(); admireStop = null; }
+    var o = document.getElementById('admire-overlay'); if(o) o.remove();
+    document.removeEventListener('keydown', onAdmireKey);
+    if(admireReturnFocus && admireReturnFocus.focus){ try{ admireReturnFocus.focus(); }catch(e){} }
+    admireReturnFocus = null;
+  }
+  var admireReturnFocus = null, admireList = [], admireIdx = 0;
+  function onAdmireKey(e){
+    if(e.key==='Escape'){ e.preventDefault(); closeAdmire(); }
+    else if(e.key==='ArrowLeft') admireStep(-1);
+    else if(e.key==='ArrowRight') admireStep(1);
+  }
+  function admireStep(d){
+    if(admireList.length<2) return;
+    admireIdx = (admireIdx + d + admireList.length) % admireList.length;
+    admireRender(d);
+  }
+  function admireRender(dir){
+    var ov = document.getElementById('admire-overlay'); if(!ov) return;
+    if(admireStop){ admireStop(); admireStop = null; }
+    var sp = admireList[admireIdx], side = spriteSide(sp), lvl = spriteEvo(sp);
+    ov.className = 'adm-overlay ' + fxEvoClass(side, lvl);
+    ov.setAttribute('aria-label', 'Admirer ' + sp.name);
+    var stage = ov.querySelector('.adm-stage'), art = ov.querySelector('.adm-art');
+    var back = ov.querySelector('.adm-fx.back'), front = ov.querySelector('.adm-fx.front');
+    back.innerHTML = ''; front.innerHTML = '';
+    renderCreatureVisual(art, sp, 'full', 0);   // niveau 0 : pas de cadre, la mise en scène s'en charge
+    stage.classList.remove('swap-l','swap-r'); void stage.offsetWidth;
+    if(dir) stage.classList.add(dir>0 ? 'swap-r' : 'swap-l');
+    ov.querySelector('.adm-name').textContent = sp.name;
+    ov.querySelector('.adm-stars').textContent = lvl===2 ? '★★' : lvl===1 ? '★' : '';
+    ov.querySelector('.adm-stars').hidden = !lvl;
+    ov.querySelector('.adm-role').textContent = roleLine(sp) + ' · ' + RARITY_META[sp.rarity].label;
+    ov.querySelector('.adm-evo').textContent = EVO_NAMES[lvl];
+    ov.querySelector('.adm-prev').hidden = ov.querySelector('.adm-next').hidden = admireList.length<2;
+    admireStop = fxAmbient(back, front, side, lvl);
+  }
+  function showAdmire(sprite){
+    closeAdmire();
+    var side = spriteSide(sprite);
+    var list = (side==='cats' ? CAT_SPRITES : BRAINROT_SPRITES);
+    var owned = side==='cats' ? ownedCats : ownedBrain;
+    admireList = list.filter(function(s){ return owned[s.id]; });
+    admireIdx = Math.max(0, admireList.indexOf(sprite));
+    admireReturnFocus = document.activeElement;
+    var ov = document.createElement('div');
+    ov.id = 'admire-overlay'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
+    ov.innerHTML =
+      '<button type="button" class="adm-close" aria-label="Fermer">✕</button>' +
+      '<div class="adm-stage"><div class="adm-rays" aria-hidden="true"></div><div class="adm-aura" aria-hidden="true"></div><div class="adm-orbit" aria-hidden="true"><div class="adm-orbit-spin"></div></div>' +
+      '<div class="adm-fx back" aria-hidden="true"></div><div class="adm-floor" aria-hidden="true"></div>' +
+      '<div class="adm-figure"><div class="adm-bob"><div class="adm-art"></div></div></div>' +
+      '<div class="adm-fx front" aria-hidden="true"></div></div>' +
+      '<div class="adm-info"><p class="adm-name"></p><p class="adm-line"><span class="adm-stars" aria-hidden="true"></span> <span class="adm-evo"></span></p><p class="adm-role"></p><p class="adm-hint">Touche et fais glisser pour la faire tourner</p></div>' +
+      '<button type="button" class="adm-nav adm-prev" aria-label="Personnage précédent">◀</button><button type="button" class="adm-nav adm-next" aria-label="Personnage suivant">▶</button>';
+    document.body.appendChild(ov);
+    var spin = ov.querySelector('.adm-orbit-spin');
+    for(var i=0;i<6;i++){ var st = document.createElement('span'); st.textContent = '★'; st.style.setProperty('--a', (i*60)+'deg'); spin.appendChild(st); }
+    ov.querySelector('.adm-close').addEventListener('click', closeAdmire);
+    ov.querySelector('.adm-prev').addEventListener('click', function(e){ e.stopPropagation(); admireStep(-1); });
+    ov.querySelector('.adm-next').addEventListener('click', function(e){ e.stopPropagation(); admireStep(1); });
+    ov.addEventListener('click', function(e){ if(e.target===ov) closeAdmire(); });
+    document.addEventListener('keydown', onAdmireKey);
+    // Inclinaison : suit le doigt / la souris (profondeur : chaque calque bouge d'une quantité différente).
+    var stage = ov.querySelector('.adm-stage'), fig = ov.querySelector('.adm-figure'), moved = false, down = false, sx = 0, sy = 0;
+    function tilt(e){
+      var r = stage.getBoundingClientRect();
+      var nx = Math.max(-1, Math.min(1, ((e.clientX - r.left)/r.width - 0.5)*2));
+      var ny = Math.max(-1, Math.min(1, ((e.clientY - r.top)/r.height - 0.5)*2));
+      stage.style.setProperty('--ry', (nx*28).toFixed(1));
+      stage.style.setProperty('--rx', (-ny*14).toFixed(1));
+      stage.classList.add('tilting');
+    }
+    stage.addEventListener('pointerdown', function(e){ down = true; moved = false; sx = e.clientX; sy = e.clientY; try{ stage.setPointerCapture(e.pointerId); }catch(x){} tilt(e); });
+    stage.addEventListener('pointermove', function(e){ if(down || e.pointerType==='mouse'){ if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy) > 6) moved = true; tilt(e); } });
+    function release(){ down = false; stage.classList.remove('tilting'); stage.style.setProperty('--ry','0'); stage.style.setProperty('--rx','0'); }
+    stage.addEventListener('pointerup', function(e){
+      var wasTap = !moved; release();
+      if(wasTap){
+        var sp = admireList[admireIdx], side2 = spriteSide(sp);
+        fig.classList.remove('hop'); void fig.offsetWidth; fig.classList.add('hop');
+        fxBurst(ov.querySelector('.adm-fx.front'), side2, 9, 60, 130);
+        playAdmirePing(side2);
+      }
+    });
+    stage.addEventListener('pointercancel', release);
+    stage.addEventListener('dragstart', function(e){ e.preventDefault(); });
+    stage.addEventListener('pointerleave', function(e){ if(!down) release(); });
+    admireRender(0);
+    ov.querySelector('.adm-close').focus();
+  }
+
+  // ---- Cérémonie d'évolution ----
+  var evoOverlayStop = null;
+  function showEvolution(sprite, from, to, onClose){
+    fxClearTimers();
+    var old = document.getElementById('evo-overlay'); if(old) old.remove();
+    var side = spriteSide(sprite), done = false, stopAmbient = function(){};
+    var ov = document.createElement('div');
+    ov.id = 'evo-overlay'; ov.className = 'evo-ov ' + fxEvoClass(side, to) + ' charging';
+    ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label', 'Évolution de ' + sprite.name);
+    ov.innerHTML =
+      '<p class="eo-head">⚡ ' + sprite.name + ' évolue…</p>' +
+      '<div class="eo-stage"><div class="eo-rays" aria-hidden="true"></div>' +
+      '<div class="eo-fx back" aria-hidden="true"></div>' +
+      '<div class="eo-ring r1" aria-hidden="true"></div><div class="eo-ring r2" aria-hidden="true"></div><div class="eo-ring r3" aria-hidden="true"></div>' +
+      '<div class="eo-charge" aria-hidden="true"></div>' +
+      '<div class="eo-figure"><div class="eo-art"></div></div>' +
+      '<div class="eo-fx front" aria-hidden="true"></div><div class="eo-flash" aria-hidden="true"></div></div>' +
+      '<div class="eo-info"><p class="eo-title"></p><p class="eo-stars" aria-hidden="true"></p><p class="eo-stat"></p>' +
+      '<button type="button" class="btn primary eo-ok">Super !</button></div>';
+    document.body.appendChild(ov);
+    var stage = ov.querySelector('.eo-stage'), art = ov.querySelector('.eo-art'), head = ov.querySelector('.eo-head');
+    var back = ov.querySelector('.eo-fx.back'), front = ov.querySelector('.eo-fx.front');
+    var ptsFrom = spritePts(sprite, from), ptsTo = spritePts(sprite, to);
+    renderCreatureVisual(art, sprite, 'full', from);
+    // grains de lumière qui convergent vers le personnage pendant la charge
+    var charge = ov.querySelector('.eo-charge'), set = FX_EMOJIS[side], i;
+    for(i=0;i<14;i++){
+      var c = document.createElement('span'); c.textContent = set[i % set.length];
+      var ang = (i/14)*Math.PI*2;
+      c.style.setProperty('--sx', Math.round(Math.cos(ang)*150)+'px'); c.style.setProperty('--sy', Math.round(Math.sin(ang)*150)+'px');
+      c.style.animationDelay = (i*0.07) + 's';
+      charge.appendChild(c);
+    }
+    function close(){
+      if(!document.getElementById('evo-overlay')) return;
+      fxClearTimers(); stopAmbient(); ov.remove();
+      document.removeEventListener('keydown', onKey);
+      if(onClose) onClose();
+    }
+    function onKey(e){ if(e.key==='Escape'){ e.preventDefault(); if(done) close(); else finish(true); } }
+    document.addEventListener('keydown', onKey);
+    var boomed = false;
+    function boom(silent){
+      if(boomed) return; boomed = true;
+      ov.classList.remove('charging'); ov.classList.add('boom');
+      art.innerHTML = ''; renderCreatureVisual(art, sprite, 'full', to);
+      head.textContent = (to>=2 ? '🌟 ' : '⭐ ') + EVO_NAMES[to] + ' !';
+      if(!silent) playEvoBoom(side, to);
+      fxBurst(front, side, to>=2 ? 30 : 18, 70, to>=2 ? 190 : 150);
+      if(to>=2) fxLater(function(){ fxBurst(front, side, 16, 90, 200); }, 350);
+    }
+    function reveal(silent){
+      ov.classList.add('shown');
+      ov.querySelector('.eo-title').textContent = sprite.name + ' passe au niveau « ' + EVO_NAMES[to] + ' »';
+      var stars = ov.querySelector('.eo-stars'); stars.textContent = '';
+      for(var k=0;k<to;k++){ (function(k){
+        var s = document.createElement('span'); s.textContent = '★'; s.style.animationDelay = (k*0.32) + 's'; stars.appendChild(s);
+        if(!silent) fxLater(function(){ playStarPing(k); }, 350 + k*320);
+      })(k); }
+      var stat = ov.querySelector('.eo-stat'), t = 0, steps = 14;
+      stat.textContent = '❤️ ' + ptsFrom + ' → ' + ptsTo + '  (+' + (ptsTo-ptsFrom) + ')';
+      if(!silent){
+        stat.textContent = '❤️ ' + ptsFrom;
+        fxLater(function(){
+          var iv = setInterval(function(){ t++; stat.textContent = '❤️ ' + Math.round(ptsFrom + (ptsTo-ptsFrom)*Math.min(1,t/steps)) + (t>=steps ? '  (+' + (ptsTo-ptsFrom) + ')' : ''); if(t>=steps) clearInterval(iv); }, 45);
+        }, 500);
+      }
+      stopAmbient = fxAmbient(back, front, side, to);
+      done = true;
+      ov.querySelector('.eo-ok').focus();
+    }
+    function finish(silent){ fxClearTimers(); boom(silent); reveal(silent); }
+    ov.addEventListener('click', function(e){
+      if(!done){ finish(false); return; }
+      if(e.target===ov || e.target.classList.contains('eo-ok')) close();
+    });
+    if(fxReduced()){ finish(true); return; }
+    playEvoCharge(side);
+    fxLater(function(){ boom(false); }, 1550);
+    fxLater(function(){ reveal(false); }, 2200);
+  }
   /* ===================== BATAILLE (équipes de cartes) =====================
      Règles (voir aussi le bloc "Comment ça marche ?" dans l'interface) :
      - une seule caractéristique par personnage : ses points (pts), qui sont

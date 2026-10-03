@@ -16,12 +16,21 @@
   .evo-2[data-evo-clan="brainrot"] > img{ animation:evoGlitch 2.6s steps(1) infinite; }
   .evo-badge{ position:absolute; left:3px; bottom:3px; z-index:3; pointer-events:none; font-size:11px; line-height:1; font-weight:900;
     color:#5A3600; background:#FFE27A; border:1.5px solid #B57A00; border-radius:9px; padding:1px 4px; letter-spacing:-1px; }
-  .evo-spark{ position:absolute; z-index:3; pointer-events:none; font-size:12px; line-height:1; animation:evoTwinkle 1.8s ease-in-out infinite; }
-  .evo-spark.s0{ top:2px; right:3px; }
-  .evo-spark.s1{ top:38%; left:1px; animation-delay:.6s; }
-  .evo-spark.s2{ bottom:34%; right:1px; animation-delay:1.2s; }
+  /* particules qui montent en continu le long du personnage (4 au niveau 1, 7 au niveau 2) */
+  .evo-spark{ position:absolute; z-index:3; pointer-events:none; font-size:11px; line-height:1; left:var(--x,50%); bottom:18%; opacity:0; animation:evoRise 2.8s ease-out infinite; animation-delay:var(--d,0s); }
+  .evo-2 .evo-spark{ font-size:13px; animation-duration:2.2s; }
+  /* profondeur : halo derrière l'image (+ rayons qui tournent au niveau 2) */
+  .evo-1, .evo-2{ isolation:isolate; }
+  .evo-halo{ position:absolute; inset:-6%; z-index:-1; pointer-events:none; border-radius:inherit;
+    background:radial-gradient(closest-side circle at 50% 58%, color-mix(in srgb, var(--evo-c) 50%, transparent) 0, transparent 100%); }
+  .evo-2 .evo-halo{ background:radial-gradient(closest-side circle at 50% 58%, color-mix(in srgb, var(--evo-c2) 60%, transparent) 0, color-mix(in srgb, var(--evo-c) 32%, transparent) 55%, transparent 100%); animation:evoBreath 2.4s ease-in-out infinite; }
+  .evo-2 .evo-halo::after{ content:''; position:absolute; inset:-30%; border-radius:50%;
+    background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--evo-c2) 35%, transparent) 0 6deg, transparent 6deg 20deg);
+    -webkit-mask:radial-gradient(circle, #000 0, transparent 60%); mask:radial-gradient(circle, #000 0, transparent 60%); animation:admSpin 14s linear infinite; }
+  .evo-1 .evo-halo{ animation:evoBreath 3.2s ease-in-out infinite; }
+  @keyframes evoRise{ 0%{ opacity:0; transform:translateY(0) scale(.5); } 20%{ opacity:1; } 100%{ opacity:0; transform:translateY(-46px) scale(1.1) rotate(40deg); } }
+  @keyframes evoBreath{ 0%,100%{ opacity:.65; transform:scale(.96); } 50%{ opacity:1; transform:scale(1.05); } }
   @keyframes evoPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.12); } }
-  @keyframes evoTwinkle{ 0%,100%{ opacity:.25; transform:scale(.7) rotate(0); } 50%{ opacity:1; transform:scale(1.2) rotate(18deg); } }
   @keyframes evoGlitch{ 0%,88%,100%{ transform:scale(1.06) translate(0,0); } 90%{ transform:scale(1.06) translate(-2px,1px); } 94%{ transform:scale(1.06) translate(2px,-1px); } }
   .info-art.evo-1, .info-art.evo-2{ padding:8px; }
   .sprite-card .sp-evo-btn{ min-height:32px; border:2px solid var(--control-border, var(--border)); border-radius:10px; background:var(--surface2); color:var(--text);
@@ -29,4 +38,4 @@
   .sprite-card .sp-evo-btn:not([disabled]){ background:var(--accent2); border-color:var(--accent2); color:var(--on-accent); }
   .sprite-card .sp-evo-btn[disabled]{ opacity:.55; cursor:default; }
   .sprite-card .sp-evo-btn.max{ opacity:1; background:transparent; border-style:dashed; color:var(--text-soft); }
-  @media (prefers-reduced-motion: reduce){ .evo-2, .evo-spark, .evo-2[data-evo-clan="brainrot"] > img{ animation:none; } .evo-spark{ opacity:.9; } }
+  @media (prefers-reduced-motion: reduce){ .evo-2, .evo-spark, .evo-halo, .evo-2 .evo-halo::after, .evo-2[data-evo-clan="brainrot"] > img{ animation:none; } .evo-spark{ opacity:.9; bottom:auto; top:var(--x); } }
