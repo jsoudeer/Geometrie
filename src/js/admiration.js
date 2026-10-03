@@ -56,6 +56,16 @@
       setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 2600);
     }catch(e){}
   }
+  // Impact de la révélation d'un nouveau personnage (l'arpège est déjà joué par playRevealSting).
+  function playRevealBoom(side, level){
+    try{
+      var ctx = revealCtx(); if(!ctx) return; var t0 = ctx.currentTime, k = fxVol();
+      revealTone(ctx,'sine',150,36,t0,0.8,0.5*k);
+      revealTone(ctx,'sawtooth',1200,80,t0,0.35,0.1*k);
+      if(level>=2){ [523.25,659.25,783.99,1046.5].forEach(function(f){ revealTone(ctx,'sine',f,f,t0+0.1,1.1,0.1*k); }); }
+      setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 1500);
+    }catch(e){}
+  }
   function playStarPing(i){
     try{
       var ctx = revealCtx(); if(!ctx) return; var t0 = ctx.currentTime, k = fxVol();

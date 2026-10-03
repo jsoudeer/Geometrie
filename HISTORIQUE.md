@@ -242,3 +242,7 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - **Visuel permanent** (`applyEvoLook`, `evolution.css`) : 4 particules (niveau 1) ou 7 (niveau 2) qui montent le long du personnage, halo respirant derrière l'image (`.evo-halo`), rayons tournants au niveau 2.
 - Piège rencontré : une image `<img>` déclenche un glisser natif (`pointercancel`) → `pointer-events:none` sur les images de la scène ; les `filter: drop-shadow` larges sont rognés dans un contexte 3D → l'aura est un calque à part.
 - Tests : `admiration_check.js` (nouveau), `evolution_check.js` adapté (cérémonie, 4/7 particules, halo).
+
+## 44. Révélation d'un nouveau personnage dans le style de la cérémonie d'évolution (03/10/2026)
+- `showReveal` (boutique.js) garde ses deux temps (ombre qui tourne → balayage de couleurs) et reçoit, à l'impact (`burst`), la mise en scène de `admiration.js` : rayons tournants (`.rv-rays`), ondes de choc (`.eo-ring`), éclats (`fxBurst`), particules en continu à deux plans (`fxAmbient`, arrêtées à la fermeture ou au personnage suivant), `playRevealBoom`. Intensité `lv0/1/2` selon la rareté (commun / rare / épique et légendaire) ; au plus fort : 3 ondes, secousse, accord final, nom doré.
+- Ancien éclat d'émojis (`.rv-spark`, `rvSpark`) supprimé.
