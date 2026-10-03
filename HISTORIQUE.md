@@ -254,7 +254,13 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - Le texte ne parle plus de « géométrie » : badge « Maths · CE1 », accroche « Le grand jeu de maths du CE1 », phrase d'accroche (nombres, calcul, formes, mesures, heure…), les 9 thèmes en pastilles (construites depuis `DOMAINS`, `buildSplashDecor` dans noyau.js, donc toujours à jour), symboles de maths flottants en fond (`#splash-bg`), titre plus grand, bouton dégradé avec reflet qui passe. L'animation du choc chat/brainrot et le chargement de l'image perso (`sp-wait`, `sp-go`, `sp-shake`) sont inchangés ; les nouveaux éléments entrent à la suite (pastilles en cascade).
 - Écrans bas (< 680 px de haut) : pastilles masquées pour garder le bouton visible. Mouvement réduit : symboles figés.
 - `lib.js` : `withPage({ splash:true })` laisse l'accueil affiché. Test : `accueil_check.js` (nouveau).
-- Piste : l'image perso `assets/branding/splash.jpeg` ne fait que 128×72 px (floue une fois agrandie) ; une version 3× plus grande rendrait l'accueil plus net.
+- (Résolu au §48 : nouvelle image d'accueil nette.)
 
 ## 47. Bannière Kawaii VS Brainrot (03/10/2026)
 - `tools/banniere.py` compose `assets/branding/banniere.png` (1920×640) avec les images en pied existantes : 3 chats à gauche (fond rose, étoiles), 3 brainrots à droite (fond sombre, éclairs et lignes « glitch »), diagonale lumineuse, « VS » doré, titre et bandeau « Le jeu de maths du CE1 ». Personnages en autocollants (contour clair, ombre au sol). Non utilisée dans le jeu pour l'instant.
+
+## 48. Image d'accueil nette (03/10/2026)
+- `tools/banniere.py` produit maintenant deux images : `banniere.png` (1920×640) et `assets/branding/splash.png` (1280×720, 3 chats | 3 brainrots, coupe droite au milieu, VS centré, sans titre). L'ancienne `splash.jpeg` (128×72, floue) est supprimée.
+- `tools/embed.py` encode aussi `splash.png` en WebP base64 (`SPLASH_IMG`, ~160 Ko) : l'image s'affiche donc aussi dans le jeu publié (fichier unique). `images-data.js` passe en premier dans `manifest.json` pour que `noyau.js` la lise.
+- `trySplashCustomMedia` : vidéo `assets/branding/splash.mp4/webm` si présente, sinon image embarquée, sinon fichiers image, sinon dessin SVG.
+- `splash_check.js` bloque aussi l'image embarquée pour tester le dessin de secours.

@@ -368,7 +368,7 @@
 
   /* ---- Splash perso en remplacement du dessin procédural -----------------
      Même principe que pour les personnages (tryLoadCustomImage) : si un
-     fichier assets/branding/splash.<ext> existe, il remplace automatiquement
+     fichier assets/branding/splash.<ext> existe (ou l'image embarquée SPLASH_IMG, qui est celle du jeu publié), il remplace automatiquement
      le dessin généré, sans rien à changer dans le code. Contrairement aux
      personnages, une VIDÉO ou un GIF animé sont aussi acceptés ici (ordre de
      priorité : vidéo mp4/webm d'abord, puis gif/webp/png/jpg/svg) — un écran
@@ -381,6 +381,7 @@
     var container = svg.parentNode;
     var VIDEO_EXTS = ['mp4','webm'];
     var IMAGE_EXTS = ['gif','webp','png','jpg','jpeg','svg'];
+    // i = -1 : image embarquée (SPLASH_IMG, générée par tools/embed.py) ; sinon fichier assets/branding/splash.<ext>
     function tryImage(i){
       if(i >= IMAGE_EXTS.length){ splashSettle('svg'); return; } // rien trouvé : dessin procédural
       var img = new Image();
@@ -403,10 +404,10 @@
         svg.style.display = 'none'; container.insertBefore(box, svg); splashArt = box;
         splashSettle('image');
       };
-      img.src = 'assets/branding/splash.' + IMAGE_EXTS[i];
+      img.src = i < 0 ? SPLASH_IMG : 'assets/branding/splash.' + IMAGE_EXTS[i];
     }
     function tryVideo(i){
-      if(i >= VIDEO_EXTS.length){ tryImage(0); return; }
+      if(i >= VIDEO_EXTS.length){ tryImage(typeof SPLASH_IMG === 'string' ? -1 : 0); return; }
       var v = document.createElement('video');
       v.className = 'splash-art splash-custom-media';
       v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;

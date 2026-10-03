@@ -30,6 +30,7 @@ src/
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
     images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py)
+                        (chargé EN PREMIER : définit CUSTOM_IMG et SPLASH_IMG, lus par noyau.js)
     boutique.js         personnages, évolutions (spritePts, tryEvolve, applyEvoLook), défis, boutique, mascotte
     admiration.js       showAdmire (portrait en grand, inclinaison, particules), showEvolution (cérémonie), sons et particules partagés (fxBurst, fxAmbient)
     bataille.js         combat de cartes (effets sonores btSfx, boost, vitesse BT_SPEED)

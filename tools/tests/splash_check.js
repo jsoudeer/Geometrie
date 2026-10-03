@@ -1,8 +1,8 @@
 // Écran de lancement : les deux moitiés arrivent, s'entrechoquent (flash, ondes, étincelles, VS), puis se posent. Clic sur l'image = rejouer.
 const { withPage, SHOTS } = require('./lib');
-// Deux cas : image perso (assets/branding/splash.jpeg, scindée en deux) et dessin SVG de secours (image introuvable).
+// Deux cas : image perso (assets/branding/splash.png, aussi embarquée en base64, scindée en deux) et dessin SVG de secours (image introuvable).
 const NO_IMG = `(function(){ var D=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,'src');
-  Object.defineProperty(HTMLImageElement.prototype,'src',{ get:function(){ return D.get.call(this); }, set:function(v){ if(/branding\\/splash\\./.test(v)){ var t=this; setTimeout(function(){ if(t.onerror) t.onerror(); },0); return; } D.set.call(this,v); } }); })();`;
+  Object.defineProperty(HTMLImageElement.prototype,'src',{ get:function(){ return D.get.call(this); }, set:function(v){ if(/branding\\/splash\\./.test(v) || (v.length>120000 && /^data:image\\/webp/.test(v))){ var t=this; setTimeout(function(){ if(t.onerror) t.onerror(); },0); return; } D.set.call(this,v); } }); })();`;
 const SLOW = NO_IMG.replace('setTimeout(function(){ if(t.onerror) t.onerror(); },0)', 'setTimeout(function(){ if(t.onerror) t.onerror(); },900)');
 // Recherche d'image lente : la carte attend (rien dessiné, rien animé) puis, au filet de 2,5 s, le dessin joue.
 (async () => {
