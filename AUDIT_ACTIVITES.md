@@ -29,7 +29,7 @@ sont corrigés (§8) ; le reste est de la feuille de route (§10). L'audit de va
 - **6 défauts réels trouvés et corrigés** dans cette passe (§8), avec un test qui les garde (`tools/tests/audit_check.js`).
 - **Recommandation** : un moteur unique « gabarit d'activité » (§9) piloté par des données, migré type par type
   (6 types arithmétiques d'abord), avec des bibliothèques partagées (prénoms, objets, lieux) ; l'éditeur vient *après*
-  (§10). Les patrons 3D sont déjà dans ce style (catalogue de données) : c'est le modèle à suivre.
+  (§10) ; le jeu lit des **paquets JSON** venant de l'appareil, d'un fichier ou, plus tard, d'un cloud de classe (§9.4). Les patrons 3D sont déjà dans ce style (catalogue de données) : c'est le modèle à suivre.
 
 ## 1. Méthode et étendue de la relecture
 
@@ -253,23 +253,73 @@ Mesurer, Estimer, Déformer, Régler l'heure, ateliers : on regroupe leurs const
 **Patron → Solide** est déjà un catalogue de données (motif en grille `'.X../XXXX/.X..'`) avec calcul automatique de la bonne réponse :
 l'éditeur peut le proposer tel quel (dessiner un patron en cochant des cases, le jeu dit s'il se plie en cube/pavé/… ou « aucun »).
 
-### 9.4 Où stocker
-- Fiches du jeu : `src/activities/*.json` assemblées par `build.py` (comme le CSS), donc visibles dans le dépôt.
-- Fiches d'un adulte : `localStorage` (`geo_custom_activities`) **+ export/import d'un fichier JSON** (partage entre appareils/parents sans serveur).
-  Un code adulte (comme le code de debug) protège l'éditeur.
+### 9.4 Architecture modulaire : le « paquet d'activités » (décisions du 04/10/2026)
+
+**Décisions prises avec le propriétaire du projet**
+- L'« adulte » est **un parent ou un enseignant, sans différence** : un seul rôle « créateur », un seul éditeur.
+- Une activité doit pouvoir être **ajoutée sur un appareil** (sans réseau) **ou venir d'un cloud partagé entre plusieurs élèves**.
+- Penser **modulaire** : le jeu ne doit pas savoir d'où vient une activité.
+- Les **questions fixes** (énoncé et réponses saisis à la main, sans variables) sont voulues, en plus des gabarits.
+- Les **mascottes sont des personnages de problèmes** (kawaii = filles, brainrots = garçons) : fait, voir HISTORIQUE §51.
+
+**Unité d'échange : le paquet (`pack`)**. Un paquet est un fichier JSON autonome, versionné, qui contient une ou plusieurs activités
+(et au besoin ses propres listes de vocabulaire). C'est la seule chose que l'éditeur écrit et que le jeu lit.
+```json
+{ "format": "kvb-pack", "formatVersion": 1,
+  "id": "ecole-bellevue.ce1.periode2", "version": 3, "titre": "Période 2 — CE1 B",
+  "auteur": "Mme Martin", "créé": "2026-10-04", "modifié": "2026-11-12",
+  "vocabulaire": { "prenoms": [{"nom":"Idriss","f":false}], "objets": [] },
+  "activités": [ { "id":"tables-7", "type":"gabarit", "...": "fiche du §9.2" },
+                 { "id":"capitales-ue", "type":"fixe", "domain":"nombres",
+                   "questions":[ { "q":"Combien font 7 × 8 ?", "bonnes":["56"], "fausses":["54","49","63"],
+                                   "explication":"7 × 8 = 56", "dessin":null } ],
+                   "tirage":"sans remise", "niveaux":[0,1,2] } ] }
+```
+Trois sortes d'activités dans un paquet : **`gabarit`** (variables + calcul, §9.2), **`fixe`** (liste de questions écrites à la main : le
+niveau « adulte débutant », mélange des réponses fait par le jeu, tirage sans remise, nombre de fausses réponses libre de 1 à 3,
+image facultative), et **`réglage`** (nouveaux paramètres d'une activité intégrée : « Mesurer de 1 à 5 cm seulement »).
+
+**Sources de paquets (« fournisseurs »)** : une interface unique `PackSource { list(), load(id), save(pack)?, remove(id)? }`, derrière laquelle on branche :
+| Fournisseur | Rôle | Réseau | Qui écrit |
+|---|---|---|---|
+| `integre` | les activités actuelles du jeu (converties peu à peu en fiches) | non | développeur |
+| `appareil` | stockage local (IndexedDB ; `localStorage` trop petit pour les images) | non | créateur sur cet appareil |
+| `fichier` | import / export d'un fichier `.kvb.json` (mail, clé USB, messagerie de l'école) | non | créateur |
+| `lien` | un paquet publié à une adresse (lecture seule, mis en cache hors ligne) | oui, lecture | créateur, hébergé n'importe où |
+| `cloud` | espace partagé d'une classe : l'élève s'abonne à un « code de classe », reçoit les paquets, et (option) renvoie sa progression | oui | créateur, via l'éditeur |
+Le jeu ne connaît que `PackSource` : ajouter un fournisseur ne change ni l'orchestrateur, ni les tests, ni l'éditeur. **Étape 1 = `appareil` + `fichier`**
+(aucun serveur, aucun compte, aucune donnée d'enfant qui sort) ; `lien` ensuite ; `cloud` seulement quand les besoins réels seront connus.
+
+**Cycle de vie** : un paquet est *installé* → *activé* (case par activité et par niveau, comme les réglages actuels) → *mis à jour* (la `version` plus haute
+remplace ; l'historique de réponses reste, car il est rangé par `id` d'activité) → *retiré*. Un paquet **ne peut jamais casser le jeu** : validation complète à l'installation
+(schéma, bornes, expressions évaluées sur 200 tirages d'essai, une seule bonne réponse, propositions distinctes), refus avec message en français sinon ; une activité qui échoue
+à l'exécution est écartée pour la session, le jeu continue.
+
+**Sécurité et vie privée** (importantes dès que des élèves reçoivent des paquets d'un tiers) :
+- Un paquet ne contient **jamais de code** : uniquement des données et des expressions arithmétiques évaluées par notre évaluateur (pas de `eval`, pas de `Function`, pas de HTML : le texte est inséré avec `textContent`).
+- Les **images** d'un paquet sont limitées (taille, formats `png/jpeg/webp/svg nettoyé`) et embarquées en base64 dans le paquet.
+- La **progression de l'enfant reste sur son appareil** par défaut. Le retour vers un cloud de classe (résultats par élève) est une option distincte, explicite, avec prénom ou pseudo seulement ; à cadrer avec le RGPD (données d'enfants) avant toute écriture de code.
+- Signature facultative d'un paquet (empreinte SHA-256 affichée) pour vérifier qu'un fichier reçu est celui que le créateur a publié.
+
+**Identifiants** : `id` d'activité = `<paquet>/<activité>` ; l'historique de progression (`geo_history`) garde le `typeId` ; les activités créées sont préfixées `custom:` pour ne jamais entrer en collision avec les types intégrés.
+
+**Où cela se range dans le code** (les fichiers actuels ne bougent pas) : `src/js/paquets.js` (schéma, validation, `PackSource`, registre), `src/js/gabarits.js` (évaluateur d'expressions, variables, distracteurs, scènes),
+`src/js/editeur.js` + `src/css/editeur.css` (IHM), `src/activities/*.json` (les activités intégrées converties). `registerQuizType` reste le point d'entrée : un paquet y enregistre ses activités au chargement.
 
 ## 10. Feuille de route proposée (chaque étape se livre et se teste seule)
 
 | Étape | Contenu | Test d'acceptation | Taille |
 |---|---|---|---|
 | P0 ✔ | Correctifs §8.1 + `audit_check.js` (structure, oracles, anti-régression) | `audit_check.js` | fait |
-| P1 ✔ (§50 de l'historique) | **Bibliothèques** `PRENOMS`, `OBJETS`, `LIEUX` + petit moteur de phrase (accord genre/nombre) ; migrer `vie` et `probleme2` (14 gabarits) sans changer leur logique | mêmes oracles ; 0 prénom/objet en dur ; ajout d'un prénom = 1 ligne | 1 séance |
+| P1 ✔ (§50-51 de l'historique : prénoms, objets, mascottes) | **Bibliothèques** `PRENOMS`, `OBJETS`, `LIEUX` + petit moteur de phrase (accord genre/nombre) ; migrer `vie` et `probleme2` (14 gabarits) sans changer leur logique | mêmes oracles ; 0 prénom/objet en dur ; ajout d'un prénom = 1 ligne | 1 séance |
 | P2 | **Objet de niveaux** par type (`params`), `randomNote` **générée** ; retirer `QCM_DISPLAY_ORDER`, corriger les notes ; faire lire `level` aux 12 types qui l'ignorent (au moins `solideNom`, `monnaie`) | audit : plus de note fausse ; `solideNom` Facile = 4 solides simples | 1-2 séances |
 | P3 | **Graine** (PRNG `mulberry32` injectable) et fin du hasard dans `draw()` | deux `generate` à graine égale = même question ; redessiner = même image | 1 séance |
 | P4 | **Moteur de gabarits arithmétiques** (`registerTemplateType(fiche)`), migration de 6 types (`calc`, `soustraction`, `doubleMoitie`, `complement`, `tables`, `addition`) ; fusion `comptage`/`blocs1000` | oracles identiques ; mêmes plages mesurées (annexe A) ; code ≈ −400 lignes | 2 séances |
 | P5 | Scènes réutilisables (`grid`, `numberline`, `blocks`, `clock`, `fraction`) et banque de texte générique (calendrier, énigmes, unités, durées) | `variete_audit` ≥ avant | 2-3 séances |
-| P6 | **IHM éditeur** (adulte, protégée par code) : choisir un modèle, régler plages/niveaux/vocabulaire, **« Tester 20 questions »** (aperçu avec explication), enregistrer, export/import JSON, activer/désactiver dans les niveaux | `editeur_check.js` ; tests a11y (clavier, contraste) | 3 séances |
-| P7 | Éditeur de **patrons** (grille de cases) et réglages des écrans propres (Mesurer, Horloge, ateliers) | `net_check.js` étendu | 2 séances |
+| P5b | **Paquets et fournisseurs** : schéma `kvb-pack`, validation, registre, fournisseurs `appareil` (IndexedDB) et `fichier` (import/export) ; activités `fixe` (questions écrites à la main) lisibles par le jeu, sans éditeur (on dépose un fichier de test) | `pack_check.js` : installer / activer / mettre à jour / retirer ; refus d'un paquet invalide ; une activité `fixe` se joue comme une activité intégrée | 2 séances |
+| P6 | **IHM éditeur** (parent ou enseignant, protégée par code) : choisir un modèle, régler plages/niveaux/vocabulaire, **« Tester 20 questions »** (aperçu avec explication), enregistrer, export/import JSON, activer/désactiver dans les niveaux | `editeur_check.js` ; tests a11y (clavier, contraste) | 3 séances |
+| P7 | Fournisseurs `lien` puis `cloud` (code de classe, retour de progression optionnel après cadrage RGPD) | tests de hors-ligne (cache), de conflit de versions | à cadrer |
+| P8 | Éditeur de **patrons** (grille de cases) et réglages des écrans propres (Mesurer, Horloge, ateliers) | `net_check.js` étendu | 2 séances |
 
 Points d'attention :
 - **Progression** : une activité créée doit déclarer son `domain` (déjà la règle) ; l'historique garde `typeId` : prévoir un préfixe `custom:`.
@@ -279,12 +329,23 @@ Points d'attention :
   les 20 premières questions avant activation ; l'oracle de l'éditeur est la fiche elle-même (le résultat est calculé, pas saisi).
 - **Taille du fichier** : le moteur remplace du code (≈ 700 lignes pour l'arithmétique) : le fichier ne grossit pas.
 
-## 11. Questions à trancher
+## 11. Décisions et questions restantes
 
-1. **Qui est l'adulte ?** Un parent sur l'appareil de l'enfant (code simple) ou un enseignant qui prépare des activités pour plusieurs enfants (export de fichier) ? Cela décide du stockage.
-2. **Les activités créées rapportent-elles des étoiles et comptent-elles dans la Progression ?** (je propose oui, dans le thème choisi par l'adulte)
-3. **Les personnages du jeu dans les problèmes** (« Miaou-Rose a 12 billes… ») plutôt que des prénoms : ça te plaît ?
-4. Faut-il garder la possibilité d'écrire une **question libre** (énoncé et 4 réponses saisis à la main, sans variables), en plus des gabarits ? C'est le niveau « adulte débutant » de l'éditeur.
+**Tranché (04/10/2026)**
+1. *Qui est l'adulte ?* Parent ou enseignant, **même rôle** : un seul éditeur, un seul code adulte.
+2. *Stockage* : sur l'appareil **ou** via un cloud partagé entre élèves ; le jeu reste agnostique grâce aux fournisseurs de paquets (§9.4). On commence hors ligne.
+3. *Mascottes dans les problèmes* : oui (kawaii = filles, brainrots = garçons) : **livré** (HISTORIQUE §51).
+4. *Questions fixes* : oui, activité de type `fixe` dans les paquets.
+5. *Modularité* : tout passe par des paquets JSON validés ; aucune activité créée n'embarque de code.
+
+**À trancher plus tard (après les tests en conditions réelles de la version actuelle)**
+- Une activité créée rapporte-t-elle des étoiles et compte-t-elle dans la Progression ? (proposition : oui, dans le thème choisi par le créateur, avec un plafond d'étoiles par jour pour éviter de « farmer » une activité trop facile.)
+- Cloud : qui l'héberge, qui paie, quel compte pour le créateur, quelles données d'élèves remontent (RGPD, consentement des parents) ? Alternative sans serveur à évaluer d'abord : un simple dossier partagé / une adresse publique de paquets (fournisseur `lien`).
+- L'éditeur vit-il **dans** le jeu (mode adulte protégé par code) ou comme **page séparée** (`editeur.html`, même moteur) ? Séparée = plus simple à protéger des enfants et à utiliser sur ordinateur ; intégrée = un seul fichier.
+- Langues : le jeu est en français ; les paquets portent un champ `langue` pour ne pas mélanger.
+- Droit d'auteur : un enseignant qui importe des images ou des textes d'un manuel (message d'avertissement dans l'éditeur).
+
+**À observer pendant les tests réels** (utile pour dimensionner l'éditeur) : quelles activités les enfants font le plus / le moins ; où ils se trompent (lecture de l'énoncé ou calcul) ; si les plages de nombres par niveau sont bien ajustées ; si l'écran tient bien sur leurs téléphones (HISTORIQUE §51) ; quelles questions le parent voudrait ajouter en premier (c'est la première liste de gabarits à migrer).
 
 ## Annexe A — Mesures par type (47 types × 3 niveaux × 400 questions)
 Colonnes : niveaux où le type est présent par défaut (F/M/D) ; plus petit…plus grand nombre lu dans l'énoncé ; plus petite…plus grande bonne réponse numérique ;

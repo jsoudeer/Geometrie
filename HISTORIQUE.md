@@ -284,3 +284,6 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
   - la pastille de série devient « 🔥 Série : 3 / 20 » sur petit écran (« sans faute » dès 400 px, paliers « (20 · 25 · 30) » dès 441 px) pour tenir sur la ligne de l'étiquette.
 - **Test** : `fit_check.js` (nouveau) mesure, à 360×640, 390×664, 375×667 et 412×760, les 12 familles et les 47 types × 3 niveaux, avant et après une réponse : la page ne défile pas et tous les boutons sont visibles (`--all` : 6 tirages par cas).
 - `drag_check.js` rendu stable : il glissait toujours vers la droite et butait parfois sur le bord de la figure ; il glisse maintenant vers le centre.
+
+## 52. Décisions pour l'éditeur d'activités (04/10/2026, documentation seule)
+- `AUDIT_ACTIVITES.md` §9.4 / §10 / §11 : architecture **modulaire par paquets JSON** (`kvb-pack`) avec fournisseurs interchangeables (`appareil`, `fichier`, puis `lien` et `cloud`), activités de type `gabarit`, `fixe` (questions écrites à la main) et `réglage` ; aucun code dans un paquet ; validation à l'installation ; progression de l'enfant gardée sur l'appareil par défaut. Parent et enseignant = même rôle. Aucun code de jeu modifié ; chantier en pause jusqu'aux tests en conditions réelles.
