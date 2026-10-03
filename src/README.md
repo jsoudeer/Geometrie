@@ -25,6 +25,7 @@ src/
     geometrie.js        Mesurer, Déformer + questions de Quizz de géométrie
     horloge.js          Lire l'heure, Régler l'heure + questions « Lire l'heure » et « Durées »
     calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
+    nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités

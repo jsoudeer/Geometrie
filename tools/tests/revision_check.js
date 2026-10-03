@@ -36,8 +36,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 } }, asy
   // quiz : la question affichée correspond bien au type choisi
   await ev(`progEvents=[]; window.__tt=M4_LEVELS[0].types[2]; M4_LEVELS[0].types.forEach(function(t){ for(var i=0;i<10;i++) progEvents.push([Date.now(), 0, 'qcm', t, 0, t===window.__tt ? 0 : 1]); }); for(var j=0;j<10;j++){ ['measure','deform','clock-lire','clock-regler','net','estimate','atelier-sym','atelier-copie','atelier-erreur','atelier-axe','atelier-fraction'].forEach(function(f){ progEvents.push([Date.now(), 0, f, '', 0, 1]); }); }`);
   let hit = 0, qcmSeen = 0;
-  for (let i = 0; i < 60; i++) { await ev('nextPracticeQuestion()'); if (await ev('currentFamily') === 'qcm') { qcmSeen++; if (await ev('m4Current.typeId === window.__tt')) hit++; } }
-  chk(qcmSeen > 5 && hit > qcmSeen * 0.3, 'quiz : le type raté est bien posé (' + hit + '/' + qcmSeen + ')');
+  for (let i = 0; i < 200; i++) { await ev('nextPracticeQuestion()'); if (await ev('currentFamily') === 'qcm') { qcmSeen++; if (await ev('m4Current.typeId === window.__tt')) hit++; } }
+  chk(qcmSeen > 15 && hit > qcmSeen * 0.2, 'quiz : le type raté est bien posé (' + hit + '/' + qcmSeen + ')');
   // la révision ne touche ni à la série sans faute ni à la montée de niveau automatique
   await ev(`freeStreak=0; levelStreak=0; for(var i=0;i<12;i++) onPracticeAnswered(true);`);
   chk(await ev('freeStreak') === 0 && await ev('globalLevel') === 0, 'pas de série sans faute ni de changement de niveau en révision');

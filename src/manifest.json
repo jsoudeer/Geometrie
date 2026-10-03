@@ -16,6 +16,7 @@
     "js/geometrie.js",
     "js/horloge.js",
     "js/calcul.js",
+    "js/nombres.js",
     "js/patron3d.js",
     "js/atelier.js",
     "js/orchestrateur.js",
