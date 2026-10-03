@@ -171,7 +171,6 @@
   .panel-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
   .panel-head h2{ margin:0; }
   .btn.small{ padding:6px 10px; font-size:13px; white-space:nowrap; }
-  #shop-plus50{ margin-left:auto; flex:none; }
   .topbar-right{ display:flex; align-items:center; gap:8px; flex:none; }
   .settings-btn{
     flex:none; width:38px; height:38px; border-radius:50%;
@@ -1315,7 +1314,24 @@
       <p class="muted settings-hint" id="reset-done" role="status" hidden>Progression effacée.</p>
 
       <hr class="settings-divider">
-      <button class="btn ghost" id="unlock-all-btn" type="button" style="width:100%;">🔓 Tout débloquer (pour tester)</button>
+      <!-- Outils de test : cachés derrière un code, à ressaisir à chaque session (rien n'est mémorisé). -->
+      <button class="btn ghost" id="debug-open-btn" type="button" style="width:100%;" aria-expanded="false" aria-controls="debug-panel">🔧 Mode débogage</button>
+      <div id="debug-panel" hidden>
+        <form id="debug-form" autocomplete="off">
+          <label class="muted" for="debug-code">Code de débogage :</label>
+          <div class="btn-row">
+            <input id="debug-code" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" style="flex:1;min-width:0;">
+            <button class="btn primary" type="submit">Valider</button>
+          </div>
+          <p class="muted settings-hint" id="debug-error" role="alert" hidden>Code incorrect.</p>
+        </form>
+        <div id="debug-tools" hidden>
+          <p class="muted settings-hint" role="status">Mode débogage actif jusqu'à la fermeture de la page.</p>
+          <button class="btn ghost" id="unlock-all-btn" type="button" style="width:100%;margin-bottom:8px;">🔓 Tout débloquer</button>
+          <button class="btn ghost" id="debug-plus50-btn" type="button" style="width:100%;margin-bottom:8px;">⭐ +50 étoiles</button>
+          <button class="btn ghost" id="debug-off-btn" type="button" style="width:100%;">🔒 Quitter le mode débogage</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1461,7 +1477,7 @@
         <div class="panel-head"><h2>Boutique 🛒</h2><button class="btn ghost small" type="button" data-back>↩️ Retour aux exercices</button></div>
         <p class="muted">Débloque des personnages avec tes étoiles ⭐ ou en relevant des défis. Le clan affiché est le clan actif (bouton 👹 / 🐱 en haut).</p>
         <div id="arena-shop-wrap">
-          <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span><button class="btn ghost small" id="shop-plus50" type="button" title="Pour s'entraîner à débloquer des personnages">+50 ⭐</button></div>
+          <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
           <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
           <div class="shop-mascot" id="shop-mascot-panel"></div>
           <div class="sprite-grid" id="shop-grid"></div>
@@ -8882,12 +8898,6 @@
     panel.onclick = function(){ showAdmire(sprite); };
     panel.onkeydown = function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); showAdmire(sprite); } };
   }
-  // Bouton d'entraînement : +50 étoiles d'un clic pour essayer les déblocages.
-  document.getElementById('shop-plus50').addEventListener('click', function(){
-    addStar(50);
-    playSound('good');
-    renderShop();
-  });
   function renderShop(){
     syncShopThemeToAppTheme();
     renderShopMascot();
@@ -8992,7 +9002,40 @@
     renderShop();
     renderBtSetup();
   }
+  /* ---- Mode débogage (Réglages) : « Tout débloquer » et « +50 étoiles », derrière un code saisi à chaque
+     session (variable seulement : ni localStorage, ni rechargement). ---- */
+  var DEBUG_CODE = '0303', debugActive = false;
+  function debugRender(){
+    var open = document.getElementById('debug-open-btn');
+    document.getElementById('debug-form').hidden = debugActive;
+    document.getElementById('debug-tools').hidden = !debugActive;
+    document.getElementById('debug-error').hidden = true;
+    document.getElementById('debug-code').value = '';
+    open.setAttribute('aria-expanded', document.getElementById('debug-panel').hidden ? 'false' : 'true');
+  }
+  document.getElementById('debug-open-btn').addEventListener('click', function(){
+    var panel = document.getElementById('debug-panel');
+    panel.hidden = !panel.hidden;
+    debugRender();
+    if(!panel.hidden && !debugActive) document.getElementById('debug-code').focus();
+  });
+  document.getElementById('debug-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    if(document.getElementById('debug-code').value === DEBUG_CODE){ debugActive = true; debugRender(); return; }
+    document.getElementById('debug-code').value = '';
+    document.getElementById('debug-error').hidden = false;
+  });
   document.getElementById('unlock-all-btn').addEventListener('click', unlockAllSprites);
+  document.getElementById('debug-plus50-btn').addEventListener('click', function(){
+    addStar(50);
+    playSound('good');
+    renderShop();
+  });
+  document.getElementById('debug-off-btn').addEventListener('click', function(){
+    debugActive = false;
+    document.getElementById('debug-panel').hidden = true;
+    debugRender();
+  });
 
   /* ---- Effacer la progression (réglages) : étoiles, personnages
      débloqués, mascotte, équipes de bataille et série en cours. Les
