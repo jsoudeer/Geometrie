@@ -7,6 +7,7 @@
     "css/interface.css",
     "css/boutique-bataille.css",
     "css/evolution.css",
+    "css/admiration.css",
     "css/bataille-fx.css",
     "css/guide.css",
     "css/chaleur.css"
@@ -22,6 +23,7 @@
     "js/orchestrateur.js",
     "js/images-data.js",
     "js/boutique.js",
+    "js/admiration.js",
     "js/bataille.js",
     "js/progression.js",
     "js/guide.js",

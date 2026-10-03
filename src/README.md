@@ -18,7 +18,7 @@ C'est pourquoi l'ordre des fichiers JS compte (voir ci-dessous).
 src/
   index.template.html   structure de la page (les lignes @@CSS@@ et @@JS@@ sont remplacées)
   manifest.json         liste ordonnée des fichiers CSS et JS
-  css/                  base, exercices, interface (mascotte, effets…), boutique-bataille, evolution (cadres d'évolution), bataille-fx (effets sonores, boost), guide, chaleur
+  css/                  base, exercices, interface (mascotte, effets…), boutique-bataille, evolution (cadres, halo et particules d'évolution), admiration (admirer, cérémonie), bataille-fx (effets sonores, boost), guide, chaleur
   js/
     noyau.js            outils partagés (el, shuffle, pick, rand…), thème, sons, effets,
                         mascotte, registre des types de Quizz
@@ -31,6 +31,7 @@ src/
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
     images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py)
     boutique.js         personnages, évolutions (spritePts, tryEvolve, applyEvoLook), défis, boutique, mascotte
+    admiration.js       showAdmire (portrait en grand, inclinaison, particules), showEvolution (cérémonie), sons et particules partagés (fxBurst, fxAmbient)
     bataille.js         combat de cartes (effets sonores btSfx, boost, vitesse BT_SPEED)
     progression.js      historique des réponses, radar, détail, sujets à travailler, tirage du mode Révision (`progReviewPick`)
     guide.js            tutoriels en surbrillance (accueil, boutique, bataille, série) + Réglages → Guides

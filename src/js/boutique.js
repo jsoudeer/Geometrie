@@ -346,7 +346,7 @@
   // Cadre, aura et étoiles d'évolution posés sur le conteneur (CSS : .evo-1 / .evo-2, par clan).
   function applyEvoLook(container, sprite, level){
     ['evo-1','evo-2'].forEach(function(c){ container.classList.remove(c); });
-    Array.prototype.slice.call(container.querySelectorAll(':scope > .evo-badge, :scope > .evo-spark')).forEach(function(n){ n.remove(); });
+    Array.prototype.slice.call(container.querySelectorAll(':scope > .evo-badge, :scope > .evo-spark, :scope > .evo-halo')).forEach(function(n){ n.remove(); });
     if(level === undefined) level = spriteEvo(sprite);
     container.removeAttribute('data-evo-clan');
     if(!level) return;
@@ -356,10 +356,17 @@
     badge.className = 'evo-badge'; badge.setAttribute('aria-hidden','true');
     badge.textContent = level === 2 ? '★★' : '★';
     container.appendChild(badge);
-    for(var i=0;i<(level===2?3:2);i++){
+    var halo = document.createElement('span');
+    halo.className = 'evo-halo'; halo.setAttribute('aria-hidden','true');
+    container.insertBefore(halo, container.firstChild);
+    var set = spriteSide(sprite)==='cats' ? ['✨','💖','⭐','✨','🌸','💫','✨'] : ['⚡','🔥','💥','⚡','👾','🔥','⚡'];
+    var POS = [8,78,30,62,16,88,48];
+    for(var i=0;i<(level===2?7:4);i++){
       var sp = document.createElement('span');
       sp.className = 'evo-spark s' + i; sp.setAttribute('aria-hidden','true');
-      sp.textContent = spriteSide(sprite)==='cats' ? ['✨','💖','✨'][i] : ['⚡','🔥','⚡'][i];
+      sp.textContent = set[i];
+      sp.style.setProperty('--x', POS[i] + '%');
+      sp.style.setProperty('--d', (i*0.55) + 's');
       container.appendChild(sp);
     }
   }
@@ -590,19 +597,6 @@
       body.appendChild(p);
     });
   }
-  // Aperçu en pied d'un personnage (touche sur sa carte dans la Boutique).
-  function showSpritePreview(sprite){
-    openInfoDialog(sprite.name, function(body){
-      var art = document.createElement('div');
-      art.className = 'info-art full';
-      renderCreatureVisual(art, sprite, 'full');
-      body.appendChild(art);
-      var role = document.createElement('p');
-      role.className = 'muted';
-      role.textContent = roleLine(sprite) + ' · ' + RARITY_META[sprite.rarity].label + ' · ' + EVO_NAMES[spriteEvo(sprite)];
-      body.appendChild(role);
-    });
-  }
   /* ---- Reveal d'un nouveau personnage ----
      Plein écran : sa silhouette noire (ombre chinoise, en pied) grossit au
      milieu de l'écran en pivotant sur elle-même, puis s'arrête et se dévoile
@@ -719,7 +713,7 @@
     // Personnage pas encore débloqué : image « ? » commune ; le nom reste visible, le rôle est caché.
     var nameEl = document.createElement('div'); nameEl.className='sp-name'; nameEl.textContent = sprite.name;
     card.appendChild(nameEl);
-    if(isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showSpritePreview(sprite); });
+    if(isOwned) card.addEventListener('click', function(e){ if(e.target.tagName!=='BUTTON') showAdmire(sprite); });
     var rarity = document.createElement('div'); rarity.className='rarity-pill';
     rarity.textContent = RARITY_META[sprite.rarity].label;
     rarity.style.background = RARITY_META[sprite.rarity].color;
@@ -729,6 +723,11 @@
     if(isOwned){
       var tag = document.createElement('div'); tag.className='sp-cost'; tag.textContent = 'Débloqué ✔';
       card.appendChild(tag);
+      var admireBtn = document.createElement('button');
+      admireBtn.type = 'button'; admireBtn.className = 'sp-admire'; admireBtn.textContent = '🔍';
+      admireBtn.setAttribute('aria-label', 'Admirer ' + sprite.name);
+      admireBtn.addEventListener('click', function(e){ e.stopPropagation(); showAdmire(sprite); });
+      card.appendChild(admireBtn);
       var isMascot = activeMascotId() === sprite.id;
       var mascotBtn = document.createElement('button');
       mascotBtn.type = 'button';
@@ -764,7 +763,7 @@
             renderBtSetup();
             renderMascotDock();
             renderTopMascotIcon();
-            showReveal([sprite], 'Évolution : ' + EVO_NAMES[spriteEvo(sprite)] + ' !');
+            showEvolution(sprite, lvl, lvl + 1);
           }
         });
       }
@@ -810,10 +809,14 @@
     var art = document.createElement('div'); art.className = 'sm-art';
     renderCreatureVisual(art, sprite, 'full');
     var txt = document.createElement('div'); txt.className = 'sm-txt';
-    txt.innerHTML = '<span>Mascotte du clan</span><strong></strong><span></span>';
+    txt.innerHTML = '<span>Mascotte du clan</span><strong></strong><span></span><span class="sm-hint">🔍 Touche pour l\'admirer</span>';
     txt.querySelector('strong').textContent = sprite.name;
-    txt.lastChild.textContent = roleLine(sprite);
+    txt.children[2].textContent = roleLine(sprite);
     panel.appendChild(art); panel.appendChild(txt);
+    panel.classList.add('admirable');
+    panel.setAttribute('role','button'); panel.setAttribute('tabindex','0'); panel.setAttribute('aria-label', 'Admirer ' + sprite.name + ', mascotte du clan');
+    panel.onclick = function(){ showAdmire(sprite); };
+    panel.onkeydown = function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); showAdmire(sprite); } };
   }
   // Bouton d'entraînement : +50 étoiles d'un clic pour essayer les déblocages.
   document.getElementById('shop-plus50').addEventListener('click', function(){
