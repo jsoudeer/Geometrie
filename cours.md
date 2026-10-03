@@ -13,7 +13,7 @@ Ce fichier reprend, sur le même modèle que **⚙️ Réglages → Configurer l
 | **Aléatoire** (onglets Facile / Moyen / Difficile) | Une activité tirée au hasard à chaque question | Les 6 familles ci-dessous |
 | **Révision** (à côté d'Aléatoire) | Le jeu repose surtout les exercices ratés, avec aussi des exercices jamais faits | Mêmes activités ; étiquette « 🔁 à revoir » ou « ✨ pas encore fait » |
 | **Chronométré** (1, 2, 3 ou 5 min) | Un maximum de bonnes réponses avant la fin du temps | Seulement Mesurer, Quizz et Lire l'heure (réponse en un geste) |
-| **Manuel** | On choisit un **thème** (🔷 Formes & angles, 🦋 Symétrie, 🧭 Repérage, 🧊 Solides & patrons, 🕒 Heure & calendrier, 📏 Mesures, 🔢 Nombres & fractions, ➕ Calcul & problèmes, 🧩 Logique & énigmes), puis une activité de ce thème ou « 🎲 Un peu de tout » (mélange des activités du thème), puis un niveau : **aucun niveau n'est choisi d'office et aucune épreuve n'apparaît** tant qu'on n'a pas touché Facile, Moyen ou Difficile ; ce toucher affiche l'épreuve et replie la liste des activités (bouton « Afficher / Masquer les activités », plus de minuterie) | Toutes les familles |
+| **Manuel** | On choisit un **thème** (grille de tuiles) (🔷 Formes & angles, 🦋 Symétrie, 🧭 Repérage, 🧊 Solides & patrons, 🕒 Heure & calendrier, 📏 Mesures, 🔢 Nombres & fractions, ➕ Calcul & problèmes, 🧩 Logique & énigmes), puis une activité de ce thème ou « 🎲 Un peu de tout » (mélange des activités du thème), puis un niveau : **aucun niveau n'est choisi d'office et aucune épreuve n'apparaît** tant qu'on n'a pas touché Facile, Moyen ou Difficile ; ce toucher affiche l'épreuve et replie la liste des activités (bouton « Afficher / Masquer les activités », plus de minuterie) | Toutes les familles |
 
 En chronométré, à la fin : +1 ⭐ pour 2 bonnes réponses (au moins 1 ⭐).
 
@@ -75,7 +75,7 @@ Après la réponse, le patron se plie **lentement, une face après l'autre** (fa
 
 *Explication :* elle est écrite à partir du pliage réellement calculé (par exemple « une face se pose sur une autre (en trop) et il reste un trou »). La bonne réponse elle-même se déduit du calcul : un patron ajouté ne peut pas être mal étiqueté. Le dessin est fixe pour un patron donné ; seul le choix du patron est tiré au hasard.
 
-### 🧠 Quizz (46 types de questions)
+### 🧠 Quizz (47 types de questions)
 Les types sont rangés dans les **mêmes 9 thèmes** que les autres activités (un seul découpage pour tout le jeu : mode Manuel, réglages, progression) : par exemple le thème 📏 Mesures réunit Mesurer, Estimer une longueur, Unités de longueur et Périmètre. Dans « Activités & difficulté » chaque thème est repliable.
 
 Les questions « (visuel) » proposent des **réponses dessinées** (petits schémas à toucher) au lieu de mots.
@@ -128,6 +128,7 @@ Question à choix multiples, avec illustration. Le tableau montre les niveaux o�
 | Additions posées | ✔ | ✔ | ✔ | Sans retenue jusqu'à 99 (F) ; avec retenue jusqu'à 99 (M) ; jusqu'à 999 (D). L'explication détaille chaque colonne |
 | Soustractions posées | ✔ | ✔ | ✔ | Sans emprunt jusqu'à 99 (F) ; avec emprunt jusqu'à 99 (M) ; jusqu'à 999 (D) |
 | Multiplier, partager | ✔ | ✔ | ✔ | Grille de points, additions répétées, partage en parts égales, paquets (dès M) |
+| Problèmes à 2 étapes | | ✔ | ✔ | Un énoncé à deux calculs (perdre puis gagner, deux achats, boîtes…) ; avec multiplication en D |
 | Choisir l'horloge (visuel) | ✔ | ✔ | ✔ | Heure écrite en chiffres, 4 horloges dessinées dont des pièges (aiguilles échangées, heure d'à côté) |
 | Symétrie : compléter (visuel) | | ✔ | ✔ | Moitié de figure sur grille + ligne miroir ; choisir la bonne moitié parmi 4 dessins |
 | Suite de nombres | | ✔ | ✔ | Nombre manquant : de 1, 2, 5, 10 (F) ; 2, 3, 5, 10, parfois en descendant (M) ; 3, 4, 6, 7, 9, 11, 20, 25 (D) |

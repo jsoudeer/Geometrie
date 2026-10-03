@@ -7,7 +7,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   const w = JSON.parse(await ev(`JSON.stringify([21,70,71,75,80,81,91,99,100,101,200,280,300,342,999].map(nombreEnLettres))`));
   chk(w.join('|') === 'vingt et un|soixante-dix|soixante et onze|soixante-quinze|quatre-vingts|quatre-vingt-un|quatre-vingt-onze|quatre-vingt-dix-neuf|cent|cent un|deux cents|deux cent quatre-vingts|trois cents|trois cent quarante-deux|neuf cent quatre-vingt-dix-neuf', 'nombres en lettres : ' + w.join(', '));
   // propriétés générales + exactitude des réponses
-  const ids = ['blocs1000','lettres','plusMoins','encadrer','droite','addition','soustractionPosee','multiplier'];
+  const ids = ['blocs1000','lettres','plusMoins','encadrer','droite','addition','soustractionPosee','multiplier','probleme2'];
   for (const id of ids) for (const lv of [0,1,2]) {
     const r = JSON.parse(await ev(`JSON.stringify((function(){ var def=quizTypeById('${id}'); var o={n:0,notOne:0,dup:0,few:0,empty:0,wrong:0,noDraw:0,clip:0,lv:def.defaultLevels.indexOf(${lv})!==-1};
       for(var i=0;i<250;i++){ var q=def.generate(${lv}); o.n++;
@@ -20,9 +20,10 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
         if((m=/Calcule (\\d+) \\+ (\\d+)\\./.exec(q.question)) && +ok!==+m[1]+ +m[2]) o.wrong++;
         if((m=/Calcule (\\d+) - (\\d+)\\./.exec(q.question)) && +ok!==+m[1]- +m[2]) o.wrong++;
         if((m=/résultat de (\\d+) ([+-]) (\\d+)/.exec(q.question)) && +ok!==(m[2]==='+'?+m[1]+ +m[3]:+m[1]- +m[3])) o.wrong++;
-        if((m=/(\\d+) fois (\\d+)/.exec(q.question)) && +ok!==+m[1]* +m[2]) o.wrong++;
+        if(q.tag==='Calcul' && (m=/(\\d+) fois (\\d+)/.exec(q.question)) && +ok!==+m[1]* +m[2]) o.wrong++;
         if((m=/partage (\\d+) .* entre (\\d+) enfants/.exec(q.question)) && +ok*+m[2]!==+m[1]) o.wrong++;
-        if((m=/(\\d+) .*paquets de (\\d+)/.exec(q.question)) && +ok*+m[2]!==+m[1]) o.wrong++;
+        if(q.tag==='Calcul' && (m=/(\\d+) .*paquets de (\\d+)/.exec(q.question)) && +ok*+m[2]!==+m[1]) o.wrong++;
+        if(q.tag==='Problèmes' && (!new RegExp('= '+ok+'\\.$').test(q.explain) || +ok<0)) o.wrong++;
         document.getElementById('m4Svg').innerHTML=''; q.draw();
         if(!document.getElementById('m4Svg').children.length) o.noDraw++;
         var svg=document.getElementById('m4Svg'), vb=svg.viewBox.baseVal; [].forEach.call(svg.querySelectorAll('text'),function(t){ var b=t.getBBox(); if(b.width>0 && (b.x<vb.x-0.5 || b.x+b.width>vb.x+vb.width+0.5)) o.clip++; });
@@ -42,7 +43,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   await page.waitForTimeout(900); await page.screenshot({ path: SHOTS + '/nombres_droite.png' });
   await ev(`globalLevel=2; m4TypeFilter='blocs1000'; showFamily('qcm'); newQCM();`);
   await page.waitForTimeout(900); await page.screenshot({ path: SHOTS + '/nombres_blocs.png' });
-  const dom = JSON.parse(await ev(`JSON.stringify(['blocs1000','lettres','plusMoins','encadrer','droite','addition','soustractionPosee','multiplier'].map(function(i){ return quizDomainId(quizTypeById(i)); }))`));
-  chk(dom.join() === 'nombres,nombres,nombres,nombres,nombres,calcul,calcul,calcul', 'domaines : ' + dom.join());
+  const dom = JSON.parse(await ev(`JSON.stringify(['blocs1000','lettres','plusMoins','encadrer','droite','addition','soustractionPosee','multiplier','probleme2'].map(function(i){ return quizDomainId(quizTypeById(i)); }))`));
+  chk(dom.join() === 'nombres,nombres,nombres,nombres,nombres,calcul,calcul,calcul,calcul', 'domaines : ' + dom.join());
   console.log(bad ? 'ÉCHEC' : 'OK');
 });

@@ -261,6 +261,35 @@
     };
   }
 
+  // ---- Problèmes à deux étapes ----
+  var PROBLEMES2 = [
+    function(L){ var A = L ? randInt(40,90) : randInt(10,20), B = randInt(3, Math.floor(A/2)), C = randInt(3, L ? 30 : 9), r = A-B+C;
+      return { icon:'🔵', q:'Léa a ' + A + ' billes. Elle en perd ' + B + ', puis elle en gagne ' + C + '. Combien de billes a-t-elle maintenant ?', ex:A + ' - ' + B + ' = ' + (A-B) + ', puis ' + (A-B) + ' + ' + C + ' = ' + r + '.', r:r, wrong:[A-B, A+C, A+B+C, A-B-C] }; },
+    function(L){ var A = L ? randInt(30,70) : randInt(8,15), B = randInt(2, Math.floor(A/2)), C = randInt(3, L ? 25 : 9), r = A-B+C;
+      return { icon:'🚌', q:'Dans un bus, il y a ' + A + ' personnes. À l\'arrêt, ' + B + ' personnes descendent et ' + C + ' montent. Combien y a-t-il de personnes dans le bus ?', ex:A + ' - ' + B + ' = ' + (A-B) + ', puis ' + (A-B) + ' + ' + C + ' = ' + r + '.', r:r, wrong:[A-B, A+C, A+B+C, A-B-C] }; },
+    function(L){ var B = L ? randInt(12,35) : randInt(2,8), C = L ? randInt(10,30) : randInt(2,8), A = B + C + randInt(1, L ? 30 : 8), r = A-B-C;
+      return { icon:'💰', q:'Tom a ' + A + '€. Il achète un livre à ' + B + '€ et un stylo à ' + C + '€. Combien d\'euros lui reste-t-il ?', ex:B + ' + ' + C + ' = ' + (B+C) + ', puis ' + A + ' - ' + (B+C) + ' = ' + r + '.', r:r, wrong:[A-B, A-C, B+C, A+B+C] }; },
+    function(L){ var B = L ? randInt(20,60) : randInt(3,9), C = L ? randInt(15,50) : randInt(3,9), T = B + C + randInt(2, L ? 40 : 9), r = T-B-C;
+      return { icon:'📖', q:'Nina lit ' + B + ' pages lundi et ' + C + ' pages mardi. Son livre a ' + T + ' pages. Combien de pages lui reste-t-il à lire ?', ex:B + ' + ' + C + ' = ' + (B+C) + ', puis ' + T + ' - ' + (B+C) + ' = ' + r + '.', r:r, wrong:[T-B, T-C, B+C, T+B+C] }; },
+    function(){ var b = randInt(3,6), p = randInt(3,6), e = randInt(2, b*p-2), r = b*p-e;
+      return { icon:'🍪', q:'Il y a ' + b + ' boîtes de ' + p + ' gâteaux. On mange ' + e + ' gâteaux. Combien de gâteaux reste-t-il ?', ex:b + ' × ' + p + ' = ' + (b*p) + ', puis ' + (b*p) + ' - ' + e + ' = ' + r + '.', r:r, wrong:[b*p, b*p+e, p-e > 0 ? p-e : r+2, b+p-e > 0 ? b+p-e : r+3] }; },
+    function(){ var n = randInt(2,5), c = randInt(2,5), A = n*c + randInt(1,15), r = A-n*c;
+      return { icon:'📒', q:'Léo a ' + A + '€. Il achète ' + n + ' cahiers à ' + c + '€ chacun. Combien d\'euros lui reste-t-il ?', ex:n + ' × ' + c + ' = ' + (n*c) + ', puis ' + A + ' - ' + (n*c) + ' = ' + r + '.', r:r, wrong:[n*c, A-c, A-n, A+n*c] }; },
+    function(){ var b = randInt(3,6), p = randInt(3,6), x = randInt(2,9), r = b*p+x;
+      return { icon:'⭐', q:'Maya a ' + b + ' paquets de ' + p + ' stickers et ' + x + ' stickers tout seuls. Combien de stickers a-t-elle en tout ?', ex:b + ' × ' + p + ' = ' + (b*p) + ', puis ' + (b*p) + ' + ' + x + ' = ' + r + '.', r:r, wrong:[b*p, b+p+x, r-x*2 > 0 ? r-x*2 : r+4, r+p] }; },
+    function(){ var p = randInt(2,5), k = randInt(2,5), u = randInt(2,5), r = p*(k+u);
+      return { icon:'🍎', q:'Un panier contient ' + k + ' pommes. Un autre en contient ' + u + '. On remplit ' + p + ' fois les deux paniers. Combien de pommes en tout ?', ex:k + ' + ' + u + ' = ' + (k+u) + ', puis ' + p + ' × ' + (k+u) + ' = ' + r + '.', r:r, wrong:[k+u, p*k, p*u, r+p] }; }
+  ];
+  function genProbleme2Question(level){
+    var pool = level===1 ? PROBLEMES2.slice(0,4) : PROBLEMES2;
+    var t = pickFresh('probleme2|' + level, pool)(level===2 ? 1 : 0);
+    return {
+      tag:'Problèmes', question:t.q, sub:'Il y a deux étapes : fais-les l\'une après l\'autre.', explain:t.ex,
+      draw:function(){ var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = ""; svg.appendChild(svgText(100,120,54,t.icon)); },
+      cols3:false, choices:numChoices(t.r, t.wrong.filter(function(v){ return v!==t.r; }))
+    };
+  }
+
   // ---- Déclaration des types ----
   registerQuizType({ id:'blocs1000', domain:'nombres', label:'Compter jusqu\'à 1000', longLabel:'Compter des blocs jusqu\'à 999', defaultLevels:[1,2],
     randomNote:'Lire un nombre fait de plaques (100), barres (10) et cubes (1). Moyen : 1 à 4 plaques (jusqu\'à 499) ; Difficile : jusqu\'à 9 plaques (999), avec des chiffres 0 pièges.',
@@ -286,3 +315,6 @@
   registerQuizType({ id:'multiplier', domain:'calcul', label:'Multiplier, partager', longLabel:'Multiplier et partager (grilles, paquets)', defaultLevels:[0,1,2],
     randomNote:'Compter une grille de points, additionner plusieurs fois le même nombre, partager en parts égales (Moyen/Difficile : aussi faire des paquets). Facile : 2 et 3 lignes, partage entre 2 ; Moyen : jusqu\'à 5 × 5 ; Difficile : plus de colonnes, partages entre 2 à 10.',
     generate:genMultiplierQuestion });
+  registerQuizType({ id:'probleme2', domain:'calcul', label:'Problèmes à 2 étapes', longLabel:'Problèmes à deux étapes', defaultLevels:[1,2],
+    randomNote:'Un énoncé qui demande deux calculs à la suite (perdre puis gagner, deux achats, boîtes de gâteaux…). Moyen : additions et soustractions, nombres jusqu\'à environ 30 ; Difficile : nombres jusqu\'à environ 100 et énoncés avec une multiplication. Les modèles sont tirés sans répétition.',
+    generate:genProbleme2Question });

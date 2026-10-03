@@ -729,7 +729,7 @@
         var d = quizTypeById(t);
         if(!d || seen[t] || quizDomainId(d)!==domainId) return;
         seen[t] = true;
-        units.push({ key:'qcm', type:t, label:d.longLabel || t, levels:qcmTypeLevels(t) });
+        units.push({ key:'qcm', type:t, label:d.label || t, title:d.longLabel || d.label || t, levels:qcmTypeLevels(t) });
       });
     });
     return units;
@@ -766,10 +766,24 @@
     document.getElementById('practice-exercise').hidden = true;
     updateManualToggle();
   }
+  // Choix en tuiles : grille régulière (icône au-dessus du nom) plutôt qu'une file de pastilles de largeurs inégales.
+  function tileRow(container, cols, icons, titles){
+    container.classList.add('tile-grid', 'tiles-' + cols);
+    container.querySelectorAll('.level-btn').forEach(function(b, i){
+      var txt = b.textContent;
+      if(icons && icons[i]){
+        b.textContent = '';
+        var ico = document.createElement('span'); ico.className = 'tile-ico'; ico.setAttribute('aria-hidden','true'); ico.textContent = icons[i];
+        var nm = document.createElement('span'); nm.textContent = txt;
+        b.appendChild(ico); b.appendChild(nm);
+      }
+      if(titles && titles[i]) b.title = titles[i];
+    });
+  }
   var MANUAL_DOMAINS = DOMAINS.filter(function(d){ return domainUnits(d.id).length; });
   buildLevelRow(
     document.getElementById('manual-domain-row'),
-    MANUAL_DOMAINS.map(function(d){ return d.icon + ' ' + d.label; }),
+    MANUAL_DOMAINS.map(function(d){ return d.short; }),
     -1,
     function(idx){
       var dom = MANUAL_DOMAINS[idx], units = domainUnits(dom.id);
@@ -784,8 +798,11 @@
       buildLevelRow(document.getElementById('manual-unit-row'),
         ['🎲 Un peu de tout'].concat(units.map(function(u){ return u.label; })), -1,
         function(j){ if(j===0) startManualMix(dom.id, units); else startManualUnit(units[j-1]); });
+      tileRow(document.getElementById('manual-unit-row'), 2, null, [''].concat(units.map(function(u){ return u.title || u.label; })));
+      document.querySelector('#manual-unit-row .level-btn').classList.add('tile-wide');
     }
   );
+  tileRow(document.getElementById('manual-domain-row'), 3, MANUAL_DOMAINS.map(function(d){ return d.icon; }));
 
   setGlobalLevel(0); // charge la toute première question, niveau Facile
 
