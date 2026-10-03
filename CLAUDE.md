@@ -1,6 +1,6 @@
 # Démarrage de session (à lire en premier, ne pas relire tout le code)
 
-Jeu de géométrie/maths CE1 « Kawaii vs Brainrot » (anciennement Géo Miaou vs GEO CHAOS 9000) : HTML5 + CSS + JS pur, sans bibliothèque,
+Jeu de maths CE1 (nombres, calcul, géométrie, mesures, temps) « Kawaii vs Brainrot » (anciennement Géo Miaou vs GEO CHAOS 9000) : HTML5 + CSS + JS pur, sans bibliothèque,
 un seul fichier `index.html` **généré**. L'utilisateur parle français, n'est pas développeur, et demande
 des évolutions de façon itérative. Toute réponse à l'utilisateur est en français, courte : résultat + une
 suggestion de suite.

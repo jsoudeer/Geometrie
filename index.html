@@ -465,17 +465,32 @@
 
   /* ============ ÉCRAN DE DÉMARRAGE (splash) ============ */
   .splash-overlay{
-    position:fixed; inset:0; z-index:200;
+    position:fixed; inset:0; z-index:200; overflow:hidden;
     display:flex; align-items:center; justify-content:center; padding:20px;
-    background:linear-gradient(160deg, #FFF6F0 0%, #FFE7EF 55%, #E9E1FF 100%);
+    background:radial-gradient(circle at 18% 12%, #FFE9A8 0, transparent 38%), radial-gradient(circle at 85% 88%, #CFC2FF 0, transparent 45%), linear-gradient(160deg, #FFF6F0 0%, #FFE0EC 55%, #DCD2FF 100%);
     transition:opacity .35s ease, visibility .35s ease;
   }
   .splash-overlay.splash-hide{ opacity:0; visibility:hidden; pointer-events:none; }
   .splash-card{
     background:#FFFFFF; border-radius:24px; box-shadow:0 24px 60px -20px rgba(91,64,52,.35);
-    padding:20px 22px 24px; max-width:360px; width:100%; text-align:center;
+    padding:16px 20px 22px; max-width:370px; width:100%; max-height:100%; overflow-y:auto; text-align:center; position:relative; z-index:1;
     animation:splashPop .55s cubic-bezier(.2,1.2,.4,1);
   }
+  /* Symboles de maths qui montent doucement derrière la carte */
+  .splash-bg{ position:absolute; inset:0; pointer-events:none; }
+  .splash-bg span{ position:absolute; bottom:-60px; font-family:var(--font-title); font-weight:900; font-size:var(--sz,28px); line-height:1; opacity:0;
+    animation:splashFloat var(--dur,14s) linear var(--dl,0s) infinite; }
+  @keyframes splashFloat{
+    0%{ opacity:0; transform:translate(0,0) rotate(-12deg); } 10%{ opacity:.45; }
+    90%{ opacity:.45; } 100%{ opacity:0; transform:translate(var(--dx,20px), -112vh) rotate(24deg); }
+  }
+  .splash-badge{ display:inline-block; margin:0 0 10px; padding:4px 12px; border-radius:999px; background:#FFE9A8; color:#5B4034; font-weight:900; font-size:12px; letter-spacing:.6px; text-transform:uppercase; border:2px solid #F2C94C; }
+  .splash-tagline{ margin:0 0 6px; font-family:var(--font-title); font-weight:900; font-size:17px; line-height:1.25;
+    background:linear-gradient(90deg,#B83280,#5B3FD6 60%,#1F7A5E); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .splash-topics{ list-style:none; margin:0 0 16px; padding:0; display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
+  .splash-topics li{ display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:999px; background:#F6F0FF; border:1.5px solid #D9CDFB; color:#5B4034; font-weight:800; font-size:11.5px; line-height:1.2; }
+  .splash-topics li span{ font-size:14px; }
+  .splash-topics li b{ font-weight:800; }
   .splash-art{
     width:100%; max-width:300px; height:auto; border-radius:18px; overflow:hidden;
     display:block; margin:0 auto 14px; box-shadow:0 6px 18px -8px rgba(0,0,0,.3);
@@ -485,24 +500,30 @@
      une image/vidéo peut avoir n'importe quel ratio, contrairement au
      viewBox 320x180 du dessin procédural. */
   .splash-custom-media{ aspect-ratio:16/9; object-fit:cover; background:#00000010; }
-  .splash-title{ font-size:18.5px; line-height:1.35; color:#5B4034; margin-bottom:8px; }
+  .splash-title{ font-size:27px; line-height:1.15; color:#5B4034; margin-bottom:6px; letter-spacing:-.3px; }
   .splash-vs-inline{
-    display:inline-block; background:#FFD24C; color:#5B4034; font-size:12px; font-weight:900;
+    display:inline-block; background:#FFD24C; color:#5B4034; font-size:14px; font-weight:900;
     border-radius:8px; padding:2px 7px; margin:0 3px; vertical-align:middle;
   }
-  .splash-sub{ color:#9C7C6E; font-size:13px; line-height:1.55; margin:0 0 18px; }
-  .splash-start-btn{ width:100%; font-size:15.5px; padding:14px; }
+  .splash-sub{ color:#7A5C4F; font-size:13px; line-height:1.55; margin:0 0 12px; }
+  .splash-start-btn{ width:100%; font-size:17px; padding:15px; position:relative; overflow:hidden; box-shadow:0 8px 20px -8px rgba(224,82,154,.7); animation:splashBtn 2.2s ease-in-out infinite; }
+  .splash-start-btn::after{ content:''; position:absolute; top:0; bottom:0; left:-60%; width:40%; background:linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform:skewX(-20deg); animation:splashShine 3.2s ease-in-out 1.6s infinite; }
+  /* le bouton ne bouge pas (cible stable pour le doigt et pour les tests) : seule sa lueur pulse */
+  @keyframes splashBtn{ 0%,100%{ box-shadow:0 8px 20px -8px rgba(224,82,154,.55); } 50%{ box-shadow:0 8px 28px -4px rgba(224,82,154,.95); } }
+  @keyframes splashShine{ 0%{ left:-60%; } 45%,100%{ left:130%; } }
   @keyframes splashPop{
     0%{ transform:scale(.86) translateY(14px); opacity:0; }
     100%{ transform:scale(1) translateY(0); opacity:1; }
   }
-  @media (prefers-reduced-motion: reduce){ .splash-card{ animation:none; } }
+  /* écrans bas : on garde l'essentiel (le bouton reste visible sans défiler) */
+  @media (max-height:680px){ .splash-topics{ display:none; } .splash-sub{ margin-bottom:14px; } }
+  @media (prefers-reduced-motion: reduce){ .splash-card, .splash-start-btn, .splash-start-btn::after{ animation:none; } .splash-bg span{ animation:none; opacity:.2; bottom:auto; top:calc(var(--dl,0s) * -4); } }
 
   /* --- Choc des deux moitiés au lancement (~2,3 s) --- */
   .splash-art{ cursor:pointer; }
   /* attente de la recherche d'image perso : rien ne bouge ni ne s'affiche encore */
   .sp-wait .splash-art{ visibility:hidden; }
-  .sp-wait .splash-title, .sp-wait .splash-sub, .sp-wait .splash-start-btn{ opacity:0; }
+  .sp-wait .splash-title, .sp-wait .splash-sub, .sp-wait .splash-start-btn, .sp-wait .splash-badge, .sp-wait .splash-tagline, .sp-wait .splash-topics{ opacity:0; }
   .sp-impact > *, .sp-vs{ transform-box:view-box; }
   .sp-flash, .sp-ring, .sp-bolt, .sp-spark{ opacity:0; }
   .sp-vs{ transform-origin:160px 148px; }
@@ -544,7 +565,9 @@
     30%{ transform:translate(5px,-3px) rotate(.6deg); } 50%{ transform:translate(-3px,-2px); }
     70%{ transform:translate(3px,2px); } 85%{ transform:translate(-1px,1px); }
   }
-  .sp-shake .splash-title, .sp-shake .splash-sub, .sp-shake .splash-start-btn{ animation:spTextIn .5s ease-out 1.05s both; }
+  .sp-shake .splash-title, .sp-shake .splash-sub, .sp-shake .splash-start-btn, .sp-shake .splash-badge, .sp-shake .splash-tagline{ animation:spTextIn .5s ease-out 1.05s both; }
+  .sp-shake .splash-topics li{ animation:spChip .45s cubic-bezier(.2,1.6,.4,1) both; animation-delay:calc(1.2s + var(--k,0) * .06s); }
+  @keyframes spChip{ 0%{ opacity:0; transform:scale(.4) translateY(8px); } 100%{ opacity:1; transform:none; } }
   @keyframes spTextIn{ 0%{ opacity:0; transform:translateY(8px); } 100%{ opacity:1; transform:none; } }
   /* Image perso scindée en deux moitiés (même chorégraphie, en pourcentages) */
   .sp-split{ position:relative; }
@@ -569,7 +592,7 @@
     100%{ transform:none; }
   }
   @media (prefers-reduced-motion: reduce){
-    .sp-go .sp-left, .sp-go .sp-right, .sp-go .sp-hl, .sp-go .sp-hr, .sp-go .sp-vs, .sp-shake, .sp-shake .splash-title, .sp-shake .splash-sub, .sp-shake .splash-start-btn{ animation:none; }
+    .sp-go .sp-left, .sp-go .sp-right, .sp-go .sp-hl, .sp-go .sp-hr, .sp-go .sp-vs, .sp-shake, .sp-shake .splash-title, .sp-shake .splash-sub, .sp-shake .splash-start-btn, .sp-shake .splash-badge, .sp-shake .splash-tagline, .sp-shake .splash-topics li{ animation:none; }
     .sp-flash, .sp-ring, .sp-bolt, .sp-spark{ display:none; }
   }
 
@@ -1241,10 +1264,14 @@
        visuel vit aussi dans assets/branding/ pour réutilisation (icône,
        README, packaging futur). -->
   <div class="splash-overlay" id="splash-overlay">
+    <div class="splash-bg" id="splash-bg" aria-hidden="true"></div>
     <div class="splash-card sp-wait">
+      <p class="splash-badge"><span aria-hidden="true">🎓</span> Maths · CE1</p>
       <svg id="splashSvg" class="splash-art" viewBox="0 0 320 180" role="img" aria-label="Un chat kawaii et un personnage brainrot face à face"></svg>
       <h1 class="splash-title">Kawaii <span class="splash-vs-inline">VS</span> Brainrot</h1>
-      <p class="splash-sub">La géométrie CE1 comme un jeu : mesure, formes, quiz et bataille de personnages !</p>
+      <p class="splash-tagline">Le grand jeu de maths du CE1</p>
+      <p class="splash-sub">Nombres, calcul, formes, mesures, heure… Réponds juste, gagne des ⭐ et envoie tes personnages au combat !</p>
+      <ul class="splash-topics" id="splash-topics" aria-label="Au programme"></ul>
       <button class="btn primary splash-start-btn" id="splash-start-btn" type="button">Commencer à jouer ▶</button>
     </div>
   </div>
@@ -2443,6 +2470,34 @@
     { id:'calcul',   icon:'➕', label:'Calcul & problèmes',  short:'Calcul' },
     { id:'logique',  icon:'🧩', label:'Logique & énigmes',   short:'Logique' }
   ];
+  /* ---- Écran d'accueil : symboles de maths qui flottent en fond + pastilles « au programme » (les 9 thèmes) ---- */
+  (function buildSplashDecor(){
+    var bg = document.getElementById('splash-bg'), ul = document.getElementById('splash-topics');
+    if(bg){
+      var SYMS = ['+','−','×','÷','=','π','½','7','3','▲','●','■','∞','%','12','100','★','9'];
+      var COLS = ['#FF8FC1','#7C5CFF','#3DB887','#F2A900','#4DA3FF'];
+      for(var i=0;i<22;i++){
+        var s = document.createElement('span');
+        s.textContent = SYMS[i % SYMS.length];
+        s.style.left = Math.round(2 + (i*47 % 96)) + '%';
+        s.style.setProperty('--sz', (20 + (i*13 % 28)) + 'px');
+        s.style.setProperty('--dur', (11 + (i*7 % 9)) + 's');
+        s.style.setProperty('--dl', (-(i*1.9)).toFixed(1) + 's');
+        s.style.setProperty('--dx', ((i%2 ? 1 : -1) * (14 + i*3 % 30)) + 'px');
+        s.style.color = COLS[i % COLS.length];
+        bg.appendChild(s);
+      }
+    }
+    if(ul){
+      DOMAINS.forEach(function(d, k){
+        var li = document.createElement('li');
+        li.style.setProperty('--k', k);
+        li.innerHTML = '<span aria-hidden="true"></span><b></b>';
+        li.firstChild.textContent = d.icon; li.lastChild.textContent = d.short;
+        ul.appendChild(li);
+      });
+    }
+  })();
   function domainOrFallback(id){
     for(var i=0;i<DOMAINS.length;i++){ if(DOMAINS[i].id===id) return id; }
     return DOMAINS[DOMAINS.length-1].id;

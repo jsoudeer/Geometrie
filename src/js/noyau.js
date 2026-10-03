@@ -849,6 +849,34 @@
     { id:'calcul',   icon:'➕', label:'Calcul & problèmes',  short:'Calcul' },
     { id:'logique',  icon:'🧩', label:'Logique & énigmes',   short:'Logique' }
   ];
+  /* ---- Écran d'accueil : symboles de maths qui flottent en fond + pastilles « au programme » (les 9 thèmes) ---- */
+  (function buildSplashDecor(){
+    var bg = document.getElementById('splash-bg'), ul = document.getElementById('splash-topics');
+    if(bg){
+      var SYMS = ['+','−','×','÷','=','π','½','7','3','▲','●','■','∞','%','12','100','★','9'];
+      var COLS = ['#FF8FC1','#7C5CFF','#3DB887','#F2A900','#4DA3FF'];
+      for(var i=0;i<22;i++){
+        var s = document.createElement('span');
+        s.textContent = SYMS[i % SYMS.length];
+        s.style.left = Math.round(2 + (i*47 % 96)) + '%';
+        s.style.setProperty('--sz', (20 + (i*13 % 28)) + 'px');
+        s.style.setProperty('--dur', (11 + (i*7 % 9)) + 's');
+        s.style.setProperty('--dl', (-(i*1.9)).toFixed(1) + 's');
+        s.style.setProperty('--dx', ((i%2 ? 1 : -1) * (14 + i*3 % 30)) + 'px');
+        s.style.color = COLS[i % COLS.length];
+        bg.appendChild(s);
+      }
+    }
+    if(ul){
+      DOMAINS.forEach(function(d, k){
+        var li = document.createElement('li');
+        li.style.setProperty('--k', k);
+        li.innerHTML = '<span aria-hidden="true"></span><b></b>';
+        li.firstChild.textContent = d.icon; li.lastChild.textContent = d.short;
+        ul.appendChild(li);
+      });
+    }
+  })();
   function domainOrFallback(id){
     for(var i=0;i<DOMAINS.length;i++){ if(DOMAINS[i].id===id) return id; }
     return DOMAINS[DOMAINS.length-1].id;

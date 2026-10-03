@@ -6,6 +6,11 @@ Ce fichier reprend, sur le même modèle que **⚙️ Réglages → Configurer l
 
 ---
 
+## 0. L'écran d'accueil
+Au lancement : une carte « 🎓 Maths · CE1 » avec le duo Kawaii VS Brainrot qui s'entrechoque, le titre, « Le grand jeu de maths du CE1 », une phrase d'accroche, les **9 thèmes au programme** en pastilles (Formes, Symétrie, Repérage, Solides, Heure, Mesures, Nombres, Calcul, Logique) et un gros bouton « Commencer à jouer ▶ » qui brille. En fond, des symboles de maths (+ − × ÷ = π ½ 100…) montent doucement. Sur un écran bas, les pastilles sont masquées pour que le bouton reste visible.
+
+---
+
 ## 1. Les trois façons de jouer
 
 | Mode | Comment | Ce qui est proposé |
