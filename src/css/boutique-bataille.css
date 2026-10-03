@@ -207,15 +207,13 @@
   .rv-flash{ position:absolute; inset:-30%; background:#fff; opacity:0; pointer-events:none; border-radius:50%; }
   .reveal-overlay.shown .rv-flash{ animation:rvFlash .6s ease-out; }
   @keyframes rvFlash{ 0%{ opacity:.95; transform:scale(.3); } 100%{ opacity:0; transform:scale(1.2); } }
-  .rv-spark{ position:absolute; left:50%; top:50%; font-size:22px; pointer-events:none; animation:rvSpark 1.2s ease-out forwards; }
-  @keyframes rvSpark{ 0%{ transform:translate(-50%,-50%) scale(.3); opacity:1; } 100%{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2); opacity:0; } }
   .rv-info{ min-height:120px; opacity:0; transform:translateY(12px); transition:opacity .4s .25s, transform .4s .25s; }
   .reveal-overlay.shown .rv-info{ opacity:1; transform:none; }
   .rv-name{ font-family:var(--font-display); font-weight:900; font-size:26px; margin:0; }
   .rv-role{ margin:2px 0 10px; font-size:14px; opacity:.85; }
   @media (prefers-reduced-motion: reduce){
-    .reveal-overlay, .reveal-overlay.spinning .rv-spinner, .reveal-overlay.shown .rv-glow, .reveal-overlay.shown .rv-flash, .rv-spark{ animation:none; }
-    .rv-spark{ display:none; } .rv-info{ transition:none; }
+    .reveal-overlay, .reveal-overlay.spinning .rv-spinner, .reveal-overlay.shown .rv-glow, .reveal-overlay.shown .rv-flash{ animation:none; }
+    .rv-info{ transition:none; }
   }
 
   /* Filet de sécurité (RGAA 13.8) : si l'appareil demande moins d'animations,

@@ -605,9 +605,9 @@
   var revealTimers = [];
   function revealClearTimers(){ revealTimers.forEach(clearTimeout); revealTimers = []; }
   function showReveal(list, headline, onClose){
-    var queue = list.slice();
+    var queue = list.slice(), stopAmbient = function(){};
     function closeAll(){
-      revealClearTimers();
+      revealClearTimers(); stopAmbient();
       var o = document.getElementById('reveal-overlay'); if(o) o.remove();
       document.removeEventListener('keydown', onKey);
       if(onClose) onClose();
@@ -617,13 +617,19 @@
     function next(){
       revealClearTimers();
       var old = document.getElementById('reveal-overlay'); if(old) old.remove();
-      if(!queue.length){ document.removeEventListener('keydown', onKey); if(onClose) onClose(); return; }
+      if(!queue.length){ stopAmbient(); document.removeEventListener('keydown', onKey); if(onClose) onClose(); return; }
       var sp = queue.shift(), side = spriteSide(sp), done = false;
+      stopAmbient(); stopAmbient = function(){};
       var ov = document.createElement('div');
       ov.id = 'reveal-overlay'; ov.className = 'reveal-overlay ' + side;
       ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label', 'Nouveau personnage : ' + sp.name);
       var head = document.createElement('p'); head.className = 'rv-head'; head.textContent = '🎉 ' + (headline || 'Nouveau personnage !');
       var stage = document.createElement('div'); stage.className = 'rv-stage';
+      var lv = sp.rarity==='legendaire' || sp.rarity==='epique' ? 2 : sp.rarity==='rare' ? 1 : 0;   // intensité de la mise en scène
+      ov.classList.add('lv' + lv);
+      var rays = document.createElement('div'); rays.className = 'rv-rays'; rays.setAttribute('aria-hidden','true');
+      var fxBack = document.createElement('div'); fxBack.className = 'rv-fx back'; fxBack.setAttribute('aria-hidden','true');
+      var fxFront = document.createElement('div'); fxFront.className = 'rv-fx front'; fxFront.setAttribute('aria-hidden','true');
       var glow = document.createElement('div'); glow.className = 'rv-glow';
       // Deux calques superposés : l'ombre chinoise (noire) et la version couleur, masquée
       // jusqu'au balayage lumineux qui la dévoile de gauche à droite.
@@ -635,7 +641,9 @@
       var scan = document.createElement('div'); scan.className = 'rv-scan'; scan.setAttribute('aria-hidden','true');
       spinner.appendChild(art); spinner.appendChild(artCol); spinner.appendChild(scan);
       var flash = document.createElement('div'); flash.className = 'rv-flash';
-      stage.appendChild(glow); stage.appendChild(spinner); stage.appendChild(flash);
+      stage.appendChild(rays); stage.appendChild(fxBack); stage.appendChild(glow);
+      ['r1','r2','r3'].forEach(function(r){ var ring = document.createElement('div'); ring.className = 'eo-ring ' + r; ring.setAttribute('aria-hidden','true'); stage.appendChild(ring); });
+      stage.appendChild(spinner); stage.appendChild(fxFront); stage.appendChild(flash);
       var info = document.createElement('div'); info.className = 'rv-info';
       var nm = document.createElement('p'); nm.className = 'rv-name'; nm.textContent = sp.name;
       var rl = document.createElement('p'); rl.className = 'rv-role'; rl.textContent = roleLine(sp) + ' · ' + RARITY_META[sp.rarity].label;
@@ -650,15 +658,10 @@
         if(done) return; done = true;
         revealClearTimers();
         ov.classList.remove('scanning'); ov.classList.add('shown');
-        for(var i=0;i<12;i++){
-          var sparkle = document.createElement('span');
-          sparkle.className = 'rv-spark'; sparkle.setAttribute('aria-hidden','true');
-          sparkle.textContent = side==='brainrot' ? ['💥','⚡','🔥'][i%3] : ['✨','⭐','💖'][i%3];
-          var ang = (i/12)*Math.PI*2, dist = 110 + (i%3)*30;
-          sparkle.style.setProperty('--dx', Math.round(Math.cos(ang)*dist)+'px');
-          sparkle.style.setProperty('--dy', Math.round(Math.sin(ang)*dist)+'px');
-          stage.appendChild(sparkle);
-        }
+        playRevealBoom(side, lv);
+        fxBurst(fxFront, side, lv===2 ? 28 : lv===1 ? 20 : 14, 80, lv===2 ? 190 : 150);
+        if(lv===2) revealTimers.push(setTimeout(function(){ fxBurst(fxFront, side, 14, 90, 200); }, 350));
+        stopAmbient = fxAmbient(fxBack, fxFront, side, lv);
         ok.focus();
       }
       var scanning = false;
