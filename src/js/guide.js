@@ -57,7 +57,7 @@
         { sel:'#shop-grid .sprite-card, #shop-grid > *', enter:function(){ showTab('shop'); },
           text:'Voici les personnages. Un seul est offert, chacun des autres a un prix en étoiles. Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Plus tard, tu pourras aussi le faire évoluer.' },
         { sel:'#shop-grid .sp-buy:not(:disabled)',
-          text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent avec 20 bonnes réponses d\'affilée.' },
+          text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent en relevant un défi (série sans faute ou course contre la montre).' },
         { sel:'#shop-mascot-panel',
           text:'Ta mascotte t\'accompagne et réagit à tes réponses. Pour en changer, ouvre un personnage que tu possèdes et touche « Devenir mascotte ».' }
       ]
@@ -206,6 +206,7 @@
     var splash = document.getElementById('splash-overlay');
     if(splash && !splash.hidden) return false;
     if(document.getElementById('reveal-overlay')) return false;
+    if(typeof countdownRunning !== 'undefined' && countdownRunning) return false;   // jamais en plein défi chronométré
     var blocked = ['settings-overlay','guides-overlay','progress-overlay','info-overlay','activity-config-overlay'].some(function(id){ var e = document.getElementById(id); return e && !e.hidden; });
     if(blocked) return false;
     return !document.getElementById('tab-practice').hidden || !document.getElementById('tab-battle').hidden;

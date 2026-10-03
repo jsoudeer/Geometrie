@@ -79,3 +79,7 @@ moins pertinent.
 - [ ] Polices Google Fonts chargées depuis Internet : les embarquer pour l'usage hors ligne
   (empaquetage Tauri / Capacitor).
 - [ ] Nettoyer `wip/` (11 Mo d'images brutes versionnées).
+
+
+## Éditeur d'activités pour adulte
+Voir `AUDIT_ACTIVITES.md` (§9 modèle, §10 feuille de route P1–P7, §11 questions ouvertes).

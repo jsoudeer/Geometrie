@@ -264,3 +264,8 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - `tools/embed.py` encode aussi `splash.png` en WebP base64 (`SPLASH_IMG`, ~160 Ko) : l'image s'affiche donc aussi dans le jeu publié (fichier unique). `images-data.js` passe en premier dans `manifest.json` pour que `noyau.js` la lise.
 - `trySplashCustomMedia` : vidéo `assets/branding/splash.mp4/webm` si présente, sinon image embarquée, sinon fichiers image, sinon dessin SVG.
 - `splash_check.js` bloque aussi l'image embarquée pour tester le dessin de secours.
+
+## 49. Audit des activités et 6 correctifs (03/10/2026)
+- **Nouveau** `AUDIT_ACTIVITES.md` : inventaire des 12 familles et 47 types de Quizz, construction des questions, part d'aléatoire, amplitudes de nombres (annexe A mesurée), absence de bibliothèque de prénoms/objets, redondances, modèle cible « fiche d'activité » et feuille de route P0–P7 vers un éditeur pour adulte.
+- **Correctifs** : « dix cent » dans les propositions de `lettres` ; arrondi d'un nombre terminé par 5 (`encadrer`) ; `milieu` Facile (bonne réponse toujours au 2e bouton) ; deux énigmes ambiguës (cercle/boule, cylindre/cercle) ; guide Boutique qui s'ouvrait pendant un chrono (`guideCanInterrupt`) ; texte du guide sur les séries.
+- **Test** : `tools/tests/audit_check.js` (47 types × 3 niveaux, structure, ~12 800 recalculs indépendants, anti-régressions).

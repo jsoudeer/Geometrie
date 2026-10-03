@@ -3776,7 +3776,7 @@
     pts.forEach(function(pt){ if(pt.pos===mid) correctShape = pt.shape; });
     var choices;
     if(level===0){
-      choices = shapeKeys.map(function(sh){ return { label:MARKER_LABELS[sh], ok: sh===correctShape }; });
+      choices = shuffle(shapeKeys.map(function(sh){ return { label:MARKER_LABELS[sh], ok: sh===correctShape }; }));   // mélangées : sinon la bonne réponse serait toujours la 2e
     } else {
       // 4 propositions : « Aucune forme » + 3 formes (dont la bonne s'il y en a une)
       var pool = shuffle(shapeKeys.filter(function(sh){ return sh!==correctShape; }));
@@ -4372,12 +4372,12 @@
 
   // ===================== Énigmes =====================
   var ENIGME_POOL = [
-    { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
+    { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','pavé droit','pyramide à base carrée'] },
     { text:'J\'ai 3 côtés et 3 sommets, ni plus ni moins. Qui suis-je ?', answer:'triangle', pool:['triangle','carré','pentagone','losange'] },
     { text:'J\'ai 4 côtés égaux et 4 angles droits. Qui suis-je ?', answer:'carré', pool:['carré','rectangle','losange','pentagone'] },
     { text:'J\'ai 6 faces carrées, 8 sommets et 12 arêtes. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] },
     { text:'J\'ai une pointe et une base carrée, avec 4 faces triangulaires. Qui suis-je ?', answer:'pyramide à base carrée', pool:['pyramide à base carrée','cube','cône','pavé droit'] },
-    { text:'Je suis tout rond et je n\'ai ni côté ni sommet. Qui suis-je ?', answer:'cercle', pool:['cercle','boule','losange','triangle'] },
+    { text:'Je suis tout plat, tout rond, et je n\'ai ni côté ni sommet. Qui suis-je ?', answer:'cercle', pool:['cercle','carré','losange','triangle'] },
     { text:'J\'ai 4 côtés égaux, mais mes angles ne sont pas droits : je suis un peu penché. Qui suis-je ?', answer:'losange', pool:['losange','carré','rectangle','pentagone'] },
     { text:'J\'ai 4 angles droits, mais mes côtés ne sont pas tous égaux. Qui suis-je ?', answer:'rectangle', pool:['rectangle','carré','losange','triangle'] },
     { text:'J\'ai 5 côtés, ni plus ni moins. Qui suis-je ?', answer:'pentagone', pool:['pentagone','hexagone','carré','triangle'] },
@@ -5718,7 +5718,7 @@
       };
       return q;
     }
-    var pool = [n+10, n-10, c ? c*100 + u*10 + d : u*10 + d, n+1, n-1, n+100, n-100].filter(function(v){ return v>9 && v!==n; });
+    var pool = [n+10, n-10, c ? c*100 + u*10 + d : u*10 + d, n+1, n-1, n+100, n-100].filter(function(v){ return v>9 && v<1000 && v!==n; });   // < 1000 : nombreEnLettres ne sait pas écrire « dix cent »
     var seen = {}; seen[w] = true; var wrong = [];
     shuffle(pool).forEach(function(v){ var t = nombreEnLettres(v); if(!seen[t] && wrong.length<3){ seen[t] = true; wrong.push(t); } });
     return {
@@ -5760,7 +5760,7 @@
     var hi = level===0 ? 99 : 999;
     var n;
     do { n = randInt(base===100 ? 101 : 11, hi); }
-    while(n%base===0 || (base===10 && n%10===5) || (base===100 && Math.floor(n/10)%10===5));
+    while(n%base===0 || n%10===5 || (base===100 && Math.floor(n/10)%10===5));   // jamais un 5 en dernier chiffre : « arrondis 605 à la dizaine » serait ambigu (milieu exact)
     var lo = Math.floor(n/base)*base, up = lo + base;
     var arrondi = level>0 && Math.random()<0.5;
     if(level===2 && arrondi && Math.random()<0.4){ base = 10; lo = Math.floor(n/10)*10; up = lo + 10; }
@@ -10448,7 +10448,7 @@
         { sel:'#shop-grid .sprite-card, #shop-grid > *', enter:function(){ showTab('shop'); },
           text:'Voici les personnages. Un seul est offert, chacun des autres a un prix en étoiles. Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Plus tard, tu pourras aussi le faire évoluer.' },
         { sel:'#shop-grid .sp-buy:not(:disabled)',
-          text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent avec 20 bonnes réponses d\'affilée.' },
+          text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent en relevant un défi (série sans faute ou course contre la montre).' },
         { sel:'#shop-mascot-panel',
           text:'Ta mascotte t\'accompagne et réagit à tes réponses. Pour en changer, ouvre un personnage que tu possèdes et touche « Devenir mascotte ».' }
       ]
@@ -10597,6 +10597,7 @@
     var splash = document.getElementById('splash-overlay');
     if(splash && !splash.hidden) return false;
     if(document.getElementById('reveal-overlay')) return false;
+    if(typeof countdownRunning !== 'undefined' && countdownRunning) return false;   // jamais en plein défi chronométré
     var blocked = ['settings-overlay','guides-overlay','progress-overlay','info-overlay','activity-config-overlay'].some(function(id){ var e = document.getElementById(id); return e && !e.hidden; });
     if(blocked) return false;
     return !document.getElementById('tab-practice').hidden || !document.getElementById('tab-battle').hidden;

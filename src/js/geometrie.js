@@ -1178,7 +1178,7 @@
     pts.forEach(function(pt){ if(pt.pos===mid) correctShape = pt.shape; });
     var choices;
     if(level===0){
-      choices = shapeKeys.map(function(sh){ return { label:MARKER_LABELS[sh], ok: sh===correctShape }; });
+      choices = shuffle(shapeKeys.map(function(sh){ return { label:MARKER_LABELS[sh], ok: sh===correctShape }; }));   // mélangées : sinon la bonne réponse serait toujours la 2e
     } else {
       // 4 propositions : « Aucune forme » + 3 formes (dont la bonne s'il y en a une)
       var pool = shuffle(shapeKeys.filter(function(sh){ return sh!==correctShape; }));
@@ -1774,12 +1774,12 @@
 
   // ===================== Énigmes =====================
   var ENIGME_POOL = [
-    { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','cylindre','cercle'] },
+    { text:'Je n\'ai pas de côtés, pas de sommets, et je peux rouler très loin. Qui suis-je ?', answer:'boule', pool:['boule','cube','pavé droit','pyramide à base carrée'] },
     { text:'J\'ai 3 côtés et 3 sommets, ni plus ni moins. Qui suis-je ?', answer:'triangle', pool:['triangle','carré','pentagone','losange'] },
     { text:'J\'ai 4 côtés égaux et 4 angles droits. Qui suis-je ?', answer:'carré', pool:['carré','rectangle','losange','pentagone'] },
     { text:'J\'ai 6 faces carrées, 8 sommets et 12 arêtes. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] },
     { text:'J\'ai une pointe et une base carrée, avec 4 faces triangulaires. Qui suis-je ?', answer:'pyramide à base carrée', pool:['pyramide à base carrée','cube','cône','pavé droit'] },
-    { text:'Je suis tout rond et je n\'ai ni côté ni sommet. Qui suis-je ?', answer:'cercle', pool:['cercle','boule','losange','triangle'] },
+    { text:'Je suis tout plat, tout rond, et je n\'ai ni côté ni sommet. Qui suis-je ?', answer:'cercle', pool:['cercle','carré','losange','triangle'] },
     { text:'J\'ai 4 côtés égaux, mais mes angles ne sont pas droits : je suis un peu penché. Qui suis-je ?', answer:'losange', pool:['losange','carré','rectangle','pentagone'] },
     { text:'J\'ai 4 angles droits, mais mes côtés ne sont pas tous égaux. Qui suis-je ?', answer:'rectangle', pool:['rectangle','carré','losange','triangle'] },
     { text:'J\'ai 5 côtés, ni plus ni moins. Qui suis-je ?', answer:'pentagone', pool:['pentagone','hexagone','carré','triangle'] },
