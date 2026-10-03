@@ -87,5 +87,43 @@ moins pertinent.
   après N tirages sans nouveauté), que devient un doublon au niveau maximum (étoiles rendues ?), les personnages
   « défi » (non achetables) restent hors tirage, migration des achats déjà faits, équilibrage de la Bataille.
 
+## Raretés, compétences de personnage et gatcha (idées du 04/10/2026 — à valider après les tests réels)
+
+**Règle de rareté à court terme** : un personnage **dessiné en SVG par Claude = commun** ; un personnage **illustré à la main
+(image) = rare**. Les raretés épique / légendaire / défi seront redéfinies plus tard (elles ne s'obtiendraient pas par simple
+changement d'image). Conséquence : la rareté se déduit du fait d'avoir une image (`CAT_IMAGES`/`BR_IMAGES`), à brancher dans le catalogue
+de `boutique.js` ; prix et probabilités du gatcha (voir plus haut) suivent la rareté.
+
+**Compétences (skills)**
+- Aujourd'hui, **tous** les personnages ont le BOOST : tous les 3 tours, une carte reçoit un choix « dégâts ×2 » ou « N dégâts fixes »
+  (N = double ± 30 %, il faut calculer pour bien choisir). **Ce boost devient la compétence d'un personnage non commun** (rare et plus).
+- Un **commun n'a aucune compétence** au départ ; il **gagne une compétence quand il atteint le niveau maximal** (Ultime).
+- **Monter de niveau (doublon au gatcha) améliore la compétence** : plus fréquente (tous les 3 tours → 2), plus forte (± 30 % → ± 20 %,
+  bonus plus grand), ou plus riche (une option de plus). Niveau maximal d'un commun = débloque *sa* compétence.
+- **Idée directrice** : chaque compétence est une **micro-situation de maths** où le calcul juste donne le meilleur résultat, sans punir
+  durement l'erreur (l'effet est seulement plus faible). Elle réutilise les générateurs de questions existants (donc les bornes de
+  nombres par niveau et, plus tard, les paquets d'activités du §9.4 de `AUDIT_ACTIVITES.md`).
+
+**Variantes pédagogiques proposées** (une compétence = un thème du programme CE1 ; une par personnage, selon son rôle) :
+| Compétence | Rôle conseillé | Mécanique | Maths travaillées |
+|---|---|---|---|
+| **Boost calculé** (existant) | classique | choisir entre ×2 et « N fixes » ; il faut comparer N au double | doubles, comparer, ±30 % |
+| **Complément** | archer | une cible affiche « 10 − ? » (puis 20, 100) : le tir fait autant de dégâts que le complément trouvé | compléments à 10/20/100 |
+| **Partage** | soutien | « répartis 12 points de soin entre tes 3 cartes » : le soin est maximal si le partage est égal (ou juste demandé) | division, partage équitable |
+| **Combo table** | classique | une table (×2, ×5, ×10…) s'affiche : n coups, n étant le résultat choisi parmi 3 propositions | tables de multiplication |
+| **Moitié / quart** | classique | « retire la moitié des points de l'ennemi » : l'enfant choisit la bonne moitié parmi 3 valeurs | moitiés, fractions simples |
+| **Plus grand, plus petit** | archer | deux nombres : toucher le plus grand pour frapper fort (ou le plus petit pour un tir précis) | comparer, ranger, numération |
+| **Miroir** | soutien | compléter une figure symétrique pour renvoyer la moitié des dégâts reçus | symétrie |
+| **Arrêt du temps** | soutien | lire l'heure d'une horloge : bonne lecture = l'ennemi passe son tour | lire l'heure, durées |
+| **Mesure juste** | archer | estimer une longueur sur une règle : plus c'est proche, plus le tir est précis | mesurer, estimer |
+| **Monnaie** | classique | « paie 17 € avec les pièces » : bonus d'étoiles en fin de combat | monnaie, calcul mental |
+Amélioration par niveau (exemples) : *Complément* : cibles 10 → 20 → 100 avec bonus croissant ; *Combo table* : tables plus grandes et
+coups en plus ; *Arrêt du temps* : heures pile → quarts → minutes ; *Partage* : 2 → 3 → 4 cartes.
+
+**À décider avant de coder** : qui a quelle compétence (une liste par personnage, ou par rôle, ou tirée à la création) ; si une compétence
+déjà débloquée peut être changée ; équilibrage de la Bataille (les communs sans compétence sont plus faibles : compenser par un meilleur
+prix ou plus de points de base) ; migration des personnages déjà possédés (tous avaient le boost) ; interface (le panneau BOOST actuel
+`#bt-boost` devient un panneau « compétence » générique) ; test `skills_check.js` (une compétence par type, bonnes réponses = effet plein, mauvaises = effet réduit, jamais de blocage).
+
 ## Éditeur d'activités pour adulte
 Voir `AUDIT_ACTIVITES.md` (§9 modèle et paquets modulaires, §10 feuille de route P1–P8, §11 décisions). En pause volontaire : on teste d'abord la version actuelle en conditions réelles.
