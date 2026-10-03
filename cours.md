@@ -75,7 +75,7 @@ Après la réponse, le patron se plie **lentement, une face après l'autre** (fa
 
 *Explication :* elle est écrite à partir du pliage réellement calculé (par exemple « une face se pose sur une autre (en trop) et il reste un trou »). La bonne réponse elle-même se déduit du calcul : un patron ajouté ne peut pas être mal étiqueté. Le dessin est fixe pour un patron donné ; seul le choix du patron est tiré au hasard.
 
-### 🧠 Quizz (39 types de questions)
+### 🧠 Quizz (46 types de questions)
 Les types sont rangés dans les **mêmes 9 thèmes** que les autres activités (un seul découpage pour tout le jeu : mode Manuel, réglages, progression) : par exemple le thème 📏 Mesures réunit Mesurer, Estimer une longueur, Unités de longueur et Périmètre. Dans « Activités & difficulté » chaque thème est repliable.
 
 Les questions « (visuel) » proposent des **réponses dessinées** (petits schémas à toucher) au lieu de mots.
@@ -120,6 +120,14 @@ Question à choix multiples, avec illustration. Le tableau montre les niveaux o�
 | Trouve l'intrus | ✔ | ✔ | ✔ | 4 formes dont une différente (nombre de côtés ; carrés contre rectangle en D) |
 | Fractions (visuel) | ✔ | ✔ | ✔ | Lire la fraction coloriée d'un disque/d'une bande, ou choisir LE DESSIN qui montre ½, ¼, ¾, ⅓. F : demis/quarts ; M : + tiers ; D : jusqu'aux huitièmes, fractions égales |
 | Dénombrement (visuel) | ✔ | ✔ | ✔ | Compter 3 à 12 objets (F) ; lire des blocs barres/cubes (M) ; + plaques de 100 (D) |
+| Compter jusqu'à 1000 (blocs) | | ✔ | ✔ | Plaques (100), barres (10), cubes (1) : jusqu'à 499 en M, jusqu'à 999 en D (avec des 0 pièges) |
+| Nombres en lettres | ✔ | ✔ | ✔ | Lettres → chiffres ou chiffres → lettres : 10-69 (F), 70-99 (M : soixante-dix, quatre-vingts…), 101-999 (D) |
+| Ajouter ou enlever 10, 100 | ✔ | ✔ | ✔ | ±10 jusqu'à 100 (F) ; + ±100 jusqu'à 1000 (M) ; + ±1 aux frontières (399 + 1), ±20, ±30, ±200 (D) |
+| Encadrer, arrondir | ✔ | ✔ | ✔ | Entre quelles dizaines (F) ; jusqu'à 999 et arrondi à la dizaine (M) ; centaines et arrondis (D) |
+| Droite graduée | ✔ | ✔ | ✔ | Lire le nombre pointé par une flèche : de 1 en 1 (F), de 10 ou 20 en 20 (M), de 50, 100 ou 10 entre deux centaines (D) |
+| Additions posées | ✔ | ✔ | ✔ | Sans retenue jusqu'à 99 (F) ; avec retenue jusqu'à 99 (M) ; jusqu'à 999 (D). L'explication détaille chaque colonne |
+| Soustractions posées | ✔ | ✔ | ✔ | Sans emprunt jusqu'à 99 (F) ; avec emprunt jusqu'à 99 (M) ; jusqu'à 999 (D) |
+| Multiplier, partager | ✔ | ✔ | ✔ | Grille de points, additions répétées, partage en parts égales, paquets (dès M) |
 | Choisir l'horloge (visuel) | ✔ | ✔ | ✔ | Heure écrite en chiffres, 4 horloges dessinées dont des pièges (aiguilles échangées, heure d'à côté) |
 | Symétrie : compléter (visuel) | | ✔ | ✔ | Moitié de figure sur grille + ligne miroir ; choisir la bonne moitié parmi 4 dessins |
 | Suite de nombres | | ✔ | ✔ | Nombre manquant : de 1, 2, 5, 10 (F) ; 2, 3, 5, 10, parfois en descendant (M) ; 3, 4, 6, 7, 9, 11, 20, 25 (D) |
