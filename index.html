@@ -2596,6 +2596,94 @@
     for(var i=0;i<QCM_TYPE_DEFS.length;i++){ if(QCM_TYPE_DEFS[i].id===id) return QCM_TYPE_DEFS[i]; }
     return null;
   }
+// ===================== Bibliothèques de vocabulaire =====================
+// Prénoms, objets, articles et couleurs utilisés par les problèmes écrits
+// (`vie`, `probleme2`). Ajouter un élément = une ligne dans la liste ; les accords
+// (il/elle, un/une, pluriel, chacun/chacune) se font par les fonctions ci-dessous,
+// jamais à la main dans une phrase.
+// Chargé après noyau.js (pickFresh, shuffle, pick).
+
+// f:true = fille (accord : elle). Un prénom ne doit pas commencer par une voyelle
+// seulement si une phrase élide devant lui (« d'Emma ») : aucune ne le fait aujourd'hui.
+var PRENOMS = [
+  {nom:'Léa',f:true},   {nom:'Tom',f:false},  {nom:'Léo',f:false},   {nom:'Nina',f:true},
+  {nom:'Maya',f:true},  {nom:'Emma',f:true},  {nom:'Lucas',f:false}, {nom:'Jade',f:true},
+  {nom:'Hugo',f:false}, {nom:'Inès',f:true},  {nom:'Noah',f:false},  {nom:'Zoé',f:true},
+  {nom:'Adam',f:false}, {nom:'Lina',f:true}
+];
+
+// Objets qu'on compte. genre : 'm' | 'f'. groupe : 'jeu' (paquets de…), 'gourmand' (boîtes de…), 'fruit'.
+var OBJETS = [
+  {sing:'bille',   plur:'billes',   genre:'f', icon:'🔵', groupe:'jeu'},
+  {sing:'carte',   plur:'cartes',   genre:'f', icon:'🃏', groupe:'jeu'},
+  {sing:'jeton',   plur:'jetons',   genre:'m', icon:'🪙', groupe:'jeu'},
+  {sing:'sticker', plur:'stickers', genre:'m', icon:'⭐', groupe:'jeu'},
+  {sing:'gâteau',  plur:'gâteaux',  genre:'m', icon:'🍪', groupe:'gourmand'},
+  {sing:'bonbon',  plur:'bonbons',  genre:'m', icon:'🍬', groupe:'gourmand'},
+  {sing:'chocolat',plur:'chocolats',genre:'m', icon:'🍫', groupe:'gourmand'},
+  {sing:'muffin',  plur:'muffins',  genre:'m', icon:'🧁', groupe:'gourmand'},
+  {sing:'pomme',   plur:'pommes',   genre:'f', icon:'🍎', groupe:'fruit'},
+  {sing:'poire',   plur:'poires',   genre:'f', icon:'🍐', groupe:'fruit'},
+  {sing:'orange',  plur:'oranges',  genre:'f', icon:'🍊', groupe:'fruit'},
+  {sing:'banane',  plur:'bananes',  genre:'f', icon:'🍌', groupe:'fruit'},
+  {sing:'fraise',  plur:'fraises',  genre:'f', icon:'🍓', groupe:'fruit'},
+  {sing:'kiwi',    plur:'kiwis',    genre:'m', icon:'🥝', groupe:'fruit'}
+];
+
+// Choses qu'on achète (avec un prix).
+var ARTICLES = [
+  {sing:'livre',   plur:'livres',   genre:'m'}, {sing:'stylo',   plur:'stylos',   genre:'m'},
+  {sing:'cahier',  plur:'cahiers',  genre:'m'}, {sing:'jouet',   plur:'jouets',   genre:'m'},
+  {sing:'puzzle',  plur:'puzzles',  genre:'m'}, {sing:'gomme',   plur:'gommes',   genre:'f'},
+  {sing:'règle',   plur:'règles',   genre:'f'}, {sing:'trousse', plur:'trousses', genre:'f'},
+  {sing:'balle',   plur:'balles',   genre:'f'}, {sing:'peluche', plur:'peluches', genre:'f'}
+];
+
+// Couleurs au singulier, par genre de l'objet décrit (le pluriel s'obtient avec un « s »).
+var COULEURS = [
+  {m:'rouge',f:'rouge'}, {m:'bleu',f:'bleue'}, {m:'vert',f:'verte'}, {m:'jaune',f:'jaune'}
+];
+
+function prenomAuHasard(){ return pickFresh('prenom', PRENOMS); }
+function objetAuHasard(groupe){
+  var l = OBJETS.filter(function(o){ return o.groupe===groupe; });
+  return pickFresh('objet|' + groupe, l);
+}
+function articleAuHasard(){ return pickFresh('article', ARTICLES); }
+// Deux éléments différents d'une liste.
+function deuxDifferents(liste){ return shuffle(liste.slice()).slice(0,2); }
+
+// « un livre », « une gomme »
+function unArticle(a){ return (a.genre==='f' ? 'une ' : 'un ') + a.sing; }
+// « 1 bille », « 5 billes »
+function nbObjet(n, o){ return n + ' ' + (n>1 ? o.plur : o.sing); }
+// « 1 bille rouge », « 5 billes rouges »
+function nbObjetCouleur(n, o, c){ return nbObjet(n, o) + ' ' + c[o.genre] + (n>1 ? 's' : ''); }
+
+// Variables d'accord d'un prénom et d'un objet, utilisables dans phrase() :
+//  {nom} {il} {Il} {at} (a-t-il / a-t-elle)
+//  {obj} (pluriel) {sing} {seuls} (tout seuls / toutes seules) {chacun} (chacun / chacune)
+function accords(prenom, objet){
+  var v = {};
+  if(prenom){
+    v.nom = prenom.nom; v.il = prenom.f ? 'elle' : 'il'; v.Il = prenom.f ? 'Elle' : 'Il';
+    v.at = 'a-t-' + v.il;
+  }
+  if(objet){
+    v.obj = objet.plur; v.sing = objet.sing;
+    v.seuls = objet.genre==='f' ? 'toutes seules' : 'tout seuls';
+    v.chacun = objet.genre==='f' ? 'chacune' : 'chacun';
+  }
+  return v;
+}
+// Remplace {clé} par vars[clé]. Une clé inconnue est une erreur de gabarit :
+// elle est levée tout de suite (les tests parcourent tous les gabarits).
+function phrase(tpl, vars){
+  return tpl.replace(/\{(\w+)\}/g, function(m, k){
+    if(!Object.prototype.hasOwnProperty.call(vars, k)) throw new Error('phrase : {' + k + '} inconnu dans « ' + tpl + ' »');
+    return vars[k];
+  });
+}
   /* ===================== THÈME GÉOMÉTRIE =====================
      Mesurer (règle), Estimer une longueur, Déformer (formes) et les questions de Quizz de géométrie :
      côtés, sommets, nom, angles, alignement, milieu, repérage, codage/décodage,
@@ -5235,28 +5323,29 @@
   function genVieQuestion(){
     var templates = [
       function(){
-        var a=randInt(1,10), b=randInt(1,10), sum=a+b;
-        return { icon:'🎒', question:'Léa a ' + a + ' billes rouges et ' + b + ' billes bleues. Combien de billes a-t-elle en tout ?', explain: a + ' + ' + b + ' = ' + sum + ' billes.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
+        var a=randInt(1,10), b=randInt(1,10), sum=a+b, w=prenomAuHasard(), o=objetAuHasard('jeu'), c=deuxDifferents(COULEURS);
+        var v = accords(w, o); v.a1 = nbObjetCouleur(a, o, c[0]); v.b1 = nbObjetCouleur(b, o, c[1]);
+        return { icon:o.icon, question:phrase('{nom} a {a1} et {b1}. Combien de {obj} {at} en tout ?', v), explain: a + ' + ' + b + ' = ' + sum + ' ' + o.plur + '.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
       },
       function(){
         var a=randInt(2,15), b=randInt(1,a-1), diff=a-b;
         return { icon:'📏', question:'Un crayon mesure ' + a + ' cm. Un autre mesure ' + b + ' cm. Quelle est la différence de longueur ?', explain: a + ' - ' + b + ' = ' + diff + ' cm.', correct:diff, pool:[diff-2,diff-1,diff+1,diff+2,diff+3] };
       },
       function(){
-        var p1=randInt(1,10), p2=randInt(1,10), sum=p1+p2;
-        return { icon:'💶', question:'Au marché, une pomme coûte ' + p1 + '€ et une poire coûte ' + p2 + '€. Combien coûtent les deux fruits ensemble ?', explain: p1 + '€ + ' + p2 + '€ = ' + sum + '€.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
+        var p1=randInt(1,10), p2=randInt(1,10), sum=p1+p2, f=deuxDifferents(OBJETS.filter(function(o){ return o.groupe==='fruit'; }));
+        return { icon:'💶', question:'Au marché, ' + unArticle(f[0]) + ' coûte ' + p1 + '€ et ' + unArticle(f[1]) + ' coûte ' + p2 + '€. Combien coûtent les deux fruits ensemble ?', explain: p1 + '€ + ' + p2 + '€ = ' + sum + '€.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
       },
       function(){
-        var total=randInt(10,20), done=randInt(1,total-1), remain=total-done;
-        return { icon:'🚶', question:'Sur le chemin de l\'école, il y a ' + total + ' arbres. Léo en a déjà compté ' + done + '. Combien lui en reste-t-il à compter ?', explain: total + ' - ' + done + ' = ' + remain + '.', correct:remain, pool:[remain-2,remain-1,remain+1,remain+2,remain+3] };
+        var total=randInt(10,20), done=randInt(1,total-1), remain=total-done, w=prenomAuHasard();
+        return { icon:'🚶', question:phrase('Sur le chemin de l\'école, il y a {total} arbres. {nom} en a déjà compté {done}. Combien lui en reste-t-il à compter ?', {nom:w.nom, total:total, done:done}), explain: total + ' - ' + done + ' = ' + remain + '.', correct:remain, pool:[remain-2,remain-1,remain+1,remain+2,remain+3] };
       },
       function(){
-        var boxes=randInt(2,6), perBox=randInt(2,5), total2=boxes*perBox;
-        return { icon:'🍪', question:'Il y a ' + boxes + ' boîtes de gâteaux. Chaque boîte contient ' + perBox + ' gâteaux. Combien de gâteaux y a-t-il en tout ?', explain: boxes + ' × ' + perBox + ' = ' + total2 + ' gâteaux.', correct:total2, pool:[total2-4,total2-2,total2+2,total2+4,total2+6] };
+        var boxes=randInt(2,6), perBox=randInt(2,5), total2=boxes*perBox, o=objetAuHasard('gourmand');
+        return { icon:o.icon, question:'Il y a ' + boxes + ' boîtes de ' + o.plur + '. Chaque boîte contient ' + perBox + ' ' + o.plur + '. Combien de ' + o.plur + ' y a-t-il en tout ?', explain: boxes + ' × ' + perBox + ' = ' + total2 + ' ' + o.plur + '.', correct:total2, pool:[total2-4,total2-2,total2+2,total2+4,total2+6] };
       },
       function(){
-        var paid=randInt(10,20), cost=randInt(1,paid-1), change=paid-cost;
-        return { icon:'💰', question:'Tom paie avec un billet de ' + paid + '€ un jouet qui coûte ' + cost + '€. Combien de monnaie va-t-on lui rendre ?', explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
+        var paid=randInt(10,20), cost=randInt(1,paid-1), change=paid-cost, w=prenomAuHasard(), x=articleAuHasard();
+        return { icon:'💰', question:phrase('{nom} paie avec un billet de {paid}€ {x} qui coûte {cost}€. Combien de monnaie va-t-on lui rendre ?', {nom:w.nom, paid:paid, x:unArticle(x), cost:cost}), explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
       }
     ];
     var t = pickFresh('vie', templates)();
@@ -5943,22 +6032,22 @@
 
   // ---- Problèmes à deux étapes ----
   var PROBLEMES2 = [
-    function(L){ var A = L ? randInt(40,90) : randInt(10,20), B = randInt(3, Math.floor(A/2)), C = randInt(3, L ? 30 : 9), r = A-B+C;
-      return { icon:'🔵', q:'Léa a ' + A + ' billes. Elle en perd ' + B + ', puis elle en gagne ' + C + '. Combien de billes a-t-elle maintenant ?', ex:A + ' - ' + B + ' = ' + (A-B) + ', puis ' + (A-B) + ' + ' + C + ' = ' + r + '.', r:r, wrong:[A-B, A+C, A+B+C, A-B-C] }; },
+    function(L){ var A = L ? randInt(40,90) : randInt(10,20), B = randInt(3, Math.floor(A/2)), C = randInt(3, L ? 30 : 9), r = A-B+C, w = prenomAuHasard(), o = objetAuHasard('jeu');
+      return { icon:o.icon, q:phrase('{nom} a {A} {obj}. {Il} en perd {B}, puis {il} en gagne {C}. Combien de {obj} {at} maintenant ?', Object.assign(accords(w, o), {A:A, B:B, C:C})), ex:A + ' - ' + B + ' = ' + (A-B) + ', puis ' + (A-B) + ' + ' + C + ' = ' + r + '.', r:r, wrong:[A-B, A+C, A+B+C, A-B-C] }; },
     function(L){ var A = L ? randInt(30,70) : randInt(8,15), B = randInt(2, Math.floor(A/2)), C = randInt(3, L ? 25 : 9), r = A-B+C;
       return { icon:'🚌', q:'Dans un bus, il y a ' + A + ' personnes. À l\'arrêt, ' + B + ' personnes descendent et ' + C + ' montent. Combien y a-t-il de personnes dans le bus ?', ex:A + ' - ' + B + ' = ' + (A-B) + ', puis ' + (A-B) + ' + ' + C + ' = ' + r + '.', r:r, wrong:[A-B, A+C, A+B+C, A-B-C] }; },
-    function(L){ var B = L ? randInt(12,35) : randInt(2,8), C = L ? randInt(10,30) : randInt(2,8), A = B + C + randInt(1, L ? 30 : 8), r = A-B-C;
-      return { icon:'💰', q:'Tom a ' + A + '€. Il achète un livre à ' + B + '€ et un stylo à ' + C + '€. Combien d\'euros lui reste-t-il ?', ex:B + ' + ' + C + ' = ' + (B+C) + ', puis ' + A + ' - ' + (B+C) + ' = ' + r + '.', r:r, wrong:[A-B, A-C, B+C, A+B+C] }; },
-    function(L){ var B = L ? randInt(20,60) : randInt(3,9), C = L ? randInt(15,50) : randInt(3,9), T = B + C + randInt(2, L ? 40 : 9), r = T-B-C;
-      return { icon:'📖', q:'Nina lit ' + B + ' pages lundi et ' + C + ' pages mardi. Son livre a ' + T + ' pages. Combien de pages lui reste-t-il à lire ?', ex:B + ' + ' + C + ' = ' + (B+C) + ', puis ' + T + ' - ' + (B+C) + ' = ' + r + '.', r:r, wrong:[T-B, T-C, B+C, T+B+C] }; },
-    function(){ var b = randInt(3,6), p = randInt(3,6), e = randInt(2, b*p-2), r = b*p-e;
-      return { icon:'🍪', q:'Il y a ' + b + ' boîtes de ' + p + ' gâteaux. On mange ' + e + ' gâteaux. Combien de gâteaux reste-t-il ?', ex:b + ' × ' + p + ' = ' + (b*p) + ', puis ' + (b*p) + ' - ' + e + ' = ' + r + '.', r:r, wrong:[b*p, b*p+e, p-e > 0 ? p-e : r+2, b+p-e > 0 ? b+p-e : r+3] }; },
-    function(){ var n = randInt(2,5), c = randInt(2,5), A = n*c + randInt(1,15), r = A-n*c;
-      return { icon:'📒', q:'Léo a ' + A + '€. Il achète ' + n + ' cahiers à ' + c + '€ chacun. Combien d\'euros lui reste-t-il ?', ex:n + ' × ' + c + ' = ' + (n*c) + ', puis ' + A + ' - ' + (n*c) + ' = ' + r + '.', r:r, wrong:[n*c, A-c, A-n, A+n*c] }; },
-    function(){ var b = randInt(3,6), p = randInt(3,6), x = randInt(2,9), r = b*p+x;
-      return { icon:'⭐', q:'Maya a ' + b + ' paquets de ' + p + ' stickers et ' + x + ' stickers tout seuls. Combien de stickers a-t-elle en tout ?', ex:b + ' × ' + p + ' = ' + (b*p) + ', puis ' + (b*p) + ' + ' + x + ' = ' + r + '.', r:r, wrong:[b*p, b+p+x, r-x*2 > 0 ? r-x*2 : r+4, r+p] }; },
-    function(){ var p = randInt(2,5), k = randInt(2,5), u = randInt(2,5), r = p*(k+u);
-      return { icon:'🍎', q:'Un panier contient ' + k + ' pommes. Un autre en contient ' + u + '. On remplit ' + p + ' fois les deux paniers. Combien de pommes en tout ?', ex:k + ' + ' + u + ' = ' + (k+u) + ', puis ' + p + ' × ' + (k+u) + ' = ' + r + '.', r:r, wrong:[k+u, p*k, p*u, r+p] }; }
+    function(L){ var B = L ? randInt(12,35) : randInt(2,8), C = L ? randInt(10,30) : randInt(2,8), A = B + C + randInt(1, L ? 30 : 8), r = A-B-C, w = prenomAuHasard(), x = deuxDifferents(ARTICLES);
+      return { icon:'💰', q:phrase('{nom} a {A}€. {Il} achète {x1} à {B}€ et {x2} à {C}€. Combien d\'euros lui reste-t-il ?', Object.assign(accords(w), {A:A, B:B, C:C, x1:unArticle(x[0]), x2:unArticle(x[1])})), ex:B + ' + ' + C + ' = ' + (B+C) + ', puis ' + A + ' - ' + (B+C) + ' = ' + r + '.', r:r, wrong:[A-B, A-C, B+C, A+B+C] }; },
+    function(L){ var B = L ? randInt(20,60) : randInt(3,9), C = L ? randInt(15,50) : randInt(3,9), T = B + C + randInt(2, L ? 40 : 9), r = T-B-C, w = prenomAuHasard();
+      return { icon:'📖', q:phrase('{nom} lit {B} pages lundi et {C} pages mardi. Son livre a {T} pages. Combien de pages lui reste-t-il à lire ?', {nom:w.nom, B:B, C:C, T:T}), ex:B + ' + ' + C + ' = ' + (B+C) + ', puis ' + T + ' - ' + (B+C) + ' = ' + r + '.', r:r, wrong:[T-B, T-C, B+C, T+B+C] }; },
+    function(){ var b = randInt(3,6), p = randInt(3,6), e = randInt(2, b*p-2), r = b*p-e, o = objetAuHasard('gourmand');
+      return { icon:o.icon, q:phrase('Il y a {b} boîtes de {p} {obj}. On mange {e} {obj}. Combien de {obj} reste-t-il ?', Object.assign(accords(null, o), {b:b, p:p, e:e})), ex:b + ' × ' + p + ' = ' + (b*p) + ', puis ' + (b*p) + ' - ' + e + ' = ' + r + '.', r:r, wrong:[b*p, b*p+e, p-e > 0 ? p-e : r+2, b+p-e > 0 ? b+p-e : r+3] }; },
+    function(){ var n = randInt(2,5), c = randInt(2,5), A = n*c + randInt(1,15), r = A-n*c, w = prenomAuHasard(), x = articleAuHasard();
+      return { icon:'📒', q:phrase('{nom} a {A}€. {Il} achète {n} {obj} à {c}€ {chacun}. Combien d\'euros lui reste-t-il ?', Object.assign(accords(w, {plur:x.plur, genre:x.genre}), {A:A, n:n, c:c})), ex:n + ' × ' + c + ' = ' + (n*c) + ', puis ' + A + ' - ' + (n*c) + ' = ' + r + '.', r:r, wrong:[n*c, A-c, A-n, A+n*c] }; },
+    function(){ var b = randInt(3,6), p = randInt(3,6), x = randInt(2,9), r = b*p+x, w = prenomAuHasard(), o = objetAuHasard('jeu');
+      return { icon:o.icon, q:phrase('{nom} a {b} paquets de {p} {obj} et {x} {obj} {seuls}. Combien de {obj} {at} en tout ?', Object.assign(accords(w, o), {b:b, p:p, x:x})), ex:b + ' × ' + p + ' = ' + (b*p) + ', puis ' + (b*p) + ' + ' + x + ' = ' + r + '.', r:r, wrong:[b*p, b+p+x, r-x*2 > 0 ? r-x*2 : r+4, r+p] }; },
+    function(){ var p = randInt(2,5), k = randInt(2,5), u = randInt(2,5), r = p*(k+u), o = objetAuHasard('fruit');
+      return { icon:o.icon, q:phrase('Un panier contient {k} {obj}. Un autre en contient {u}. On remplit {p} fois les deux paniers. Combien de {obj} en tout ?', Object.assign(accords(null, o), {k:k, u:u, p:p})), ex:k + ' + ' + u + ' = ' + (k+u) + ', puis ' + p + ' × ' + (k+u) + ' = ' + r + '.', r:r, wrong:[k+u, p*k, p*u, r+p] }; }
   ];
   function genProbleme2Question(level){
     var pool = level===1 ? PROBLEMES2.slice(0,4) : PROBLEMES2;

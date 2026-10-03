@@ -24,6 +24,7 @@ src/
                         mascotte, registre des types de Quizz
     geometrie.js        Mesurer, Déformer + questions de Quizz de géométrie
     horloge.js          Lire l'heure, Régler l'heure + questions « Lire l'heure » et « Durées »
+    vocabulaire.js      bibliothèques PRENOMS / OBJETS / ARTICLES / COULEURS et accords (`phrase`, `accords`) : à utiliser pour tout problème à histoire
     calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
     nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie

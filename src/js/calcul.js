@@ -32,28 +32,29 @@
   function genVieQuestion(){
     var templates = [
       function(){
-        var a=randInt(1,10), b=randInt(1,10), sum=a+b;
-        return { icon:'🎒', question:'Léa a ' + a + ' billes rouges et ' + b + ' billes bleues. Combien de billes a-t-elle en tout ?', explain: a + ' + ' + b + ' = ' + sum + ' billes.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
+        var a=randInt(1,10), b=randInt(1,10), sum=a+b, w=prenomAuHasard(), o=objetAuHasard('jeu'), c=deuxDifferents(COULEURS);
+        var v = accords(w, o); v.a1 = nbObjetCouleur(a, o, c[0]); v.b1 = nbObjetCouleur(b, o, c[1]);
+        return { icon:o.icon, question:phrase('{nom} a {a1} et {b1}. Combien de {obj} {at} en tout ?', v), explain: a + ' + ' + b + ' = ' + sum + ' ' + o.plur + '.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
       },
       function(){
         var a=randInt(2,15), b=randInt(1,a-1), diff=a-b;
         return { icon:'📏', question:'Un crayon mesure ' + a + ' cm. Un autre mesure ' + b + ' cm. Quelle est la différence de longueur ?', explain: a + ' - ' + b + ' = ' + diff + ' cm.', correct:diff, pool:[diff-2,diff-1,diff+1,diff+2,diff+3] };
       },
       function(){
-        var p1=randInt(1,10), p2=randInt(1,10), sum=p1+p2;
-        return { icon:'💶', question:'Au marché, une pomme coûte ' + p1 + '€ et une poire coûte ' + p2 + '€. Combien coûtent les deux fruits ensemble ?', explain: p1 + '€ + ' + p2 + '€ = ' + sum + '€.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
+        var p1=randInt(1,10), p2=randInt(1,10), sum=p1+p2, f=deuxDifferents(OBJETS.filter(function(o){ return o.groupe==='fruit'; }));
+        return { icon:'💶', question:'Au marché, ' + unArticle(f[0]) + ' coûte ' + p1 + '€ et ' + unArticle(f[1]) + ' coûte ' + p2 + '€. Combien coûtent les deux fruits ensemble ?', explain: p1 + '€ + ' + p2 + '€ = ' + sum + '€.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
       },
       function(){
-        var total=randInt(10,20), done=randInt(1,total-1), remain=total-done;
-        return { icon:'🚶', question:'Sur le chemin de l\'école, il y a ' + total + ' arbres. Léo en a déjà compté ' + done + '. Combien lui en reste-t-il à compter ?', explain: total + ' - ' + done + ' = ' + remain + '.', correct:remain, pool:[remain-2,remain-1,remain+1,remain+2,remain+3] };
+        var total=randInt(10,20), done=randInt(1,total-1), remain=total-done, w=prenomAuHasard();
+        return { icon:'🚶', question:phrase('Sur le chemin de l\'école, il y a {total} arbres. {nom} en a déjà compté {done}. Combien lui en reste-t-il à compter ?', {nom:w.nom, total:total, done:done}), explain: total + ' - ' + done + ' = ' + remain + '.', correct:remain, pool:[remain-2,remain-1,remain+1,remain+2,remain+3] };
       },
       function(){
-        var boxes=randInt(2,6), perBox=randInt(2,5), total2=boxes*perBox;
-        return { icon:'🍪', question:'Il y a ' + boxes + ' boîtes de gâteaux. Chaque boîte contient ' + perBox + ' gâteaux. Combien de gâteaux y a-t-il en tout ?', explain: boxes + ' × ' + perBox + ' = ' + total2 + ' gâteaux.', correct:total2, pool:[total2-4,total2-2,total2+2,total2+4,total2+6] };
+        var boxes=randInt(2,6), perBox=randInt(2,5), total2=boxes*perBox, o=objetAuHasard('gourmand');
+        return { icon:o.icon, question:'Il y a ' + boxes + ' boîtes de ' + o.plur + '. Chaque boîte contient ' + perBox + ' ' + o.plur + '. Combien de ' + o.plur + ' y a-t-il en tout ?', explain: boxes + ' × ' + perBox + ' = ' + total2 + ' ' + o.plur + '.', correct:total2, pool:[total2-4,total2-2,total2+2,total2+4,total2+6] };
       },
       function(){
-        var paid=randInt(10,20), cost=randInt(1,paid-1), change=paid-cost;
-        return { icon:'💰', question:'Tom paie avec un billet de ' + paid + '€ un jouet qui coûte ' + cost + '€. Combien de monnaie va-t-on lui rendre ?', explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
+        var paid=randInt(10,20), cost=randInt(1,paid-1), change=paid-cost, w=prenomAuHasard(), x=articleAuHasard();
+        return { icon:'💰', question:phrase('{nom} paie avec un billet de {paid}€ {x} qui coûte {cost}€. Combien de monnaie va-t-on lui rendre ?', {nom:w.nom, paid:paid, x:unArticle(x), cost:cost}), explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
       }
     ];
     var t = pickFresh('vie', templates)();
