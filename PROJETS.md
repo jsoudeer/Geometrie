@@ -82,4 +82,4 @@ moins pertinent.
 
 
 ## Éditeur d'activités pour adulte
-Voir `AUDIT_ACTIVITES.md` (§9 modèle, §10 feuille de route P1–P7, §11 questions ouvertes).
+Voir `AUDIT_ACTIVITES.md` (§9 modèle et paquets modulaires, §10 feuille de route P1–P8, §11 décisions). En pause volontaire : on teste d'abord la version actuelle en conditions réelles.
