@@ -246,3 +246,6 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 ## 44. Révélation d'un nouveau personnage dans le style de la cérémonie d'évolution (03/10/2026)
 - `showReveal` (boutique.js) garde ses deux temps (ombre qui tourne → balayage de couleurs) et reçoit, à l'impact (`burst`), la mise en scène de `admiration.js` : rayons tournants (`.rv-rays`), ondes de choc (`.eo-ring`), éclats (`fxBurst`), particules en continu à deux plans (`fxAmbient`, arrêtées à la fermeture ou au personnage suivant), `playRevealBoom`. Intensité `lv0/1/2` selon la rareté (commun / rare / épique et légendaire) ; au plus fort : 3 ondes, secousse, accord final, nom doré.
 - Ancien éclat d'émojis (`.rv-spark`, `rvSpark`) supprimé.
+
+## 45. Mode débogage protégé par un code (03/10/2026)
+- « Tout débloquer » et « +50 ⭐ » ne sont plus visibles : le bouton « 🔧 Mode débogage » (Réglages) ouvre un champ de code (`#debug-code`, masqué). Le bon code débloque les outils (`debugActive`, variable en mémoire seulement : à ressaisir à chaque session, rechargement compris) ; un mauvais code vide le champ et affiche une alerte. Le bouton « +50 ⭐ » de la Boutique est supprimé (déplacé dans les outils de débogage). `plus50_check.js` remplacé par `debug_check.js`.

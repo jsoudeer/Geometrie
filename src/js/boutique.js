@@ -821,12 +821,6 @@
     panel.onclick = function(){ showAdmire(sprite); };
     panel.onkeydown = function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); showAdmire(sprite); } };
   }
-  // Bouton d'entraînement : +50 étoiles d'un clic pour essayer les déblocages.
-  document.getElementById('shop-plus50').addEventListener('click', function(){
-    addStar(50);
-    playSound('good');
-    renderShop();
-  });
   function renderShop(){
     syncShopThemeToAppTheme();
     renderShopMascot();
@@ -931,7 +925,40 @@
     renderShop();
     renderBtSetup();
   }
+  /* ---- Mode débogage (Réglages) : « Tout débloquer » et « +50 étoiles », derrière un code saisi à chaque
+     session (variable seulement : ni localStorage, ni rechargement). ---- */
+  var DEBUG_CODE = '0303', debugActive = false;
+  function debugRender(){
+    var open = document.getElementById('debug-open-btn');
+    document.getElementById('debug-form').hidden = debugActive;
+    document.getElementById('debug-tools').hidden = !debugActive;
+    document.getElementById('debug-error').hidden = true;
+    document.getElementById('debug-code').value = '';
+    open.setAttribute('aria-expanded', document.getElementById('debug-panel').hidden ? 'false' : 'true');
+  }
+  document.getElementById('debug-open-btn').addEventListener('click', function(){
+    var panel = document.getElementById('debug-panel');
+    panel.hidden = !panel.hidden;
+    debugRender();
+    if(!panel.hidden && !debugActive) document.getElementById('debug-code').focus();
+  });
+  document.getElementById('debug-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    if(document.getElementById('debug-code').value === DEBUG_CODE){ debugActive = true; debugRender(); return; }
+    document.getElementById('debug-code').value = '';
+    document.getElementById('debug-error').hidden = false;
+  });
   document.getElementById('unlock-all-btn').addEventListener('click', unlockAllSprites);
+  document.getElementById('debug-plus50-btn').addEventListener('click', function(){
+    addStar(50);
+    playSound('good');
+    renderShop();
+  });
+  document.getElementById('debug-off-btn').addEventListener('click', function(){
+    debugActive = false;
+    document.getElementById('debug-panel').hidden = true;
+    debugRender();
+  });
 
   /* ---- Effacer la progression (réglages) : étoiles, personnages
      débloqués, mascotte, équipes de bataille et série en cours. Les
