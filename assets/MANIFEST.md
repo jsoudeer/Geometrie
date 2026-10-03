@@ -122,3 +122,9 @@ détouré `<id>_full.png`) : cat01–12, br01–07, br21, br22 (cat06–12 et br
 `wip/`. Les images sont aussi embarquées en base64 dans `index.html` (bloc
 `IMG_DATA_START … IMG_DATA_END`) pour que l'aperçu publié (fichier unique) les
 affiche. Les autres personnages gardent leur dessin procédural en attendant.
+
+## Bannière
+
+`assets/branding/banniere.png` (1920×640) : 3 chats kawaii (cat03, cat02, cat01) à gauche, 3 brainrots (br05, br22, br02) à droite,
+titre « KAWAII VS BRAINROT » et bandeau « Le jeu de maths du CE1 » au centre. Générée à partir des images en pied existantes par
+`python3 tools/banniere.py` (les personnages se changent en tête du script, tableaux `cats` et `brains`).

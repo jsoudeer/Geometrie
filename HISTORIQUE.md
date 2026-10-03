@@ -255,3 +255,6 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - Écrans bas (< 680 px de haut) : pastilles masquées pour garder le bouton visible. Mouvement réduit : symboles figés.
 - `lib.js` : `withPage({ splash:true })` laisse l'accueil affiché. Test : `accueil_check.js` (nouveau).
 - Piste : l'image perso `assets/branding/splash.jpeg` ne fait que 128×72 px (floue une fois agrandie) ; une version 3× plus grande rendrait l'accueil plus net.
+
+## 47. Bannière Kawaii VS Brainrot (03/10/2026)
+- `tools/banniere.py` compose `assets/branding/banniere.png` (1920×640) avec les images en pied existantes : 3 chats à gauche (fond rose, étoiles), 3 brainrots à droite (fond sombre, éclairs et lignes « glitch »), diagonale lumineuse, « VS » doré, titre et bandeau « Le jeu de maths du CE1 ». Personnages en autocollants (contour clair, ombre au sol). Non utilisée dans le jeu pour l'instant.
