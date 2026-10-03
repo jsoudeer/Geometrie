@@ -24,7 +24,7 @@ src/
                         mascotte, registre des types de Quizz
     geometrie.js        Mesurer, Déformer + questions de Quizz de géométrie
     horloge.js          Lire l'heure, Régler l'heure + questions « Lire l'heure » et « Durées »
-    vocabulaire.js      bibliothèques PRENOMS / OBJETS / ARTICLES / COULEURS et accords (`phrase`, `accords`) : à utiliser pour tout problème à histoire
+    vocabulaire.js      bibliothèques PRENOMS / mascottes / OBJETS / ARTICLES / COULEURS et accords (`phrase`, `accords`) : à utiliser pour tout problème à histoire
     calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
     nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
@@ -177,3 +177,7 @@ node golden.js diff /tmp/avant.json /tmp/apres.json
 panneaux de réglages et les captures d'écran des deux thèmes. Pour une réorganisation
 sans changement de comportement, le résultat doit être « IDENTIQUE ». Une modification
 voulue (nouvelle question, texte changé) fait apparaître des différences : les relire.
+
+
+## Mise en page d'une épreuve (téléphone)
+L'écran de question doit tenir sans défilement à 360×640 : toute nouvelle activité met son illustration dans un `.shape-wrap`, `.deform-wrap` ou `.stage` (élastiques, voir base.css) et ses réponses/boutons dans la zone du bas ; ne pas fixer de hauteur à l'illustration. Vérifier avec `tools/tests/fit_check.js`.

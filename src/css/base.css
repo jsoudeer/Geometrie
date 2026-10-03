@@ -84,7 +84,7 @@
      activité, la zone de réponse (.q-bottom : réponses à choisir, retour,
      boutons) est poussée tout en bas ; le haut (question, consigne,
      illustration) garde la place restante. Si le contenu est plus grand que
-     l'écran, la page défile normalement (cas rare, à traiter à part). */
+     l'écran, c'est la carte qui défile (voir « Tout l'écran de question tient » plus bas). */
   #tabContent{ flex:1 1 auto; display:flex; flex-direction:column; }
   #tab-practice:not([hidden]){ flex:1 1 auto; display:flex; flex-direction:column; }
   #tab-practice > .card{ flex:1 1 auto; display:flex; flex-direction:column; margin-bottom:0; }
@@ -98,6 +98,44 @@
   /* le retour d'une question fermée prend la place des boutons, au même endroit */
   .q-bottom > .feedback{ margin-top:10px; }
   .q-bottom > .btn-row{ margin-top:12px; }
+
+  /* ----- Tout l'écran de question tient dans la hauteur du téléphone -----
+     L'illustration est la seule partie élastique : elle prend la place qui reste
+     (jamais moins de 92 px) ; les réponses et les boutons restent visibles sans
+     faire défiler la page. Si malgré tout le contenu est trop grand (activité
+     avec beaucoup de texte), c'est la carte qui défile, pas la page. */
+  .app:has(#tab-practice:not([hidden]) #practice-exercise:not([hidden])){ height:100dvh; min-height:0; }
+  .app:has(#tab-practice:not([hidden]) #practice-exercise:not([hidden])) #tabContent{ min-height:0; }
+  .app:has(#tab-practice:not([hidden]) #practice-exercise:not([hidden])) #tab-practice:not([hidden]){ min-height:0; }
+  .app:has(#tab-practice:not([hidden]) #practice-exercise:not([hidden])) #tab-practice > .card{ min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+  #practice-exercise .shape-wrap, #practice-exercise .deform-wrap{ flex:1 1 0; min-height:92px; position:relative; }
+  #practice-exercise .shape-wrap{ max-height:260px; }
+  #practice-exercise .deform-wrap{ max-height:300px; }
+  #practice-exercise .shape-wrap > svg, #practice-exercise .deform-wrap > svg{ position:absolute; left:0; top:0; width:100%; height:100%; max-width:none; }
+  #practice-exercise .stage{ flex:1 1 0; min-height:92px; max-height:260px; }
+  #practice-exercise .stage > svg{ position:absolute; left:0; top:0; width:100%; height:100%; }
+  .pill-marks, .pill-long{ display:none; }
+  @media (min-width:400px){ .pill-long{ display:inline; } }
+  @media (min-width:441px){ .pill-marks{ display:inline; } }
+  /* Téléphone (écran bas) : on resserre l'en-tête et les marges. */
+  @media (max-height:780px){
+    .app{ padding-top:6px; padding-bottom:calc(8px + env(safe-area-inset-bottom,0px)); }
+    .topbar{ padding:0 4px 8px; }
+    .card{ padding:10px 14px; margin-bottom:6px; }
+    #tab-practice .level-row{ margin-bottom:8px; gap:6px; }
+    #practice-mode .level-btn{ padding:6px 4px; font-size:11px; }
+    .q-tags .qtype-tag{ margin-bottom:6px; }
+    .coach-row{ margin-bottom:6px; }
+    .coach-bubble{ padding:7px 11px; font-size:15px; }
+    #practice-exercise .muted{ margin-bottom:6px; font-size:13px; line-height:1.4; }
+    .q-bottom{ padding-top:6px; }
+    .q-bottom > .btn-row{ margin-top:8px; }
+    .q-bottom > .feedback{ margin-top:6px; padding:8px 12px; }
+    #practice-exercise .choice-btn, #practice-exercise .qcm-choices .choice-btn{ padding-top:9px; padding-bottom:9px; }
+    .qcm-choices, .choices{ margin-top:8px; gap:6px; }
+    #practice-exercise .choice-btn.visual{ padding:2px; }
+    #practice-exercise .choice-btn.visual svg{ max-height:min(100px,11.5dvh); }
+  }
 
   h1,h2,h3{ font-family:var(--font-display); margin:0; text-wrap:balance; }
   .brand h1, .splash-title{ font-family:var(--font-title); }

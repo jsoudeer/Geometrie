@@ -89,7 +89,7 @@
      activité, la zone de réponse (.q-bottom : réponses à choisir, retour,
      boutons) est poussée tout en bas ; le haut (question, consigne,
      illustration) garde la place restante. Si le contenu est plus grand que
-     l'écran, la page défile normalement (cas rare, à traiter à part). */
+     l'écran, c'est la carte qui défile (voir « Tout l'écran de question tient » plus bas). */
   #tabContent{ flex:1 1 auto; display:flex; flex-direction:column; }
   #tab-practice:not([hidden]){ flex:1 1 auto; display:flex; flex-direction:column; }
   #tab-practice > .card{ flex:1 1 auto; display:flex; flex-direction:column; margin-bottom:0; }
@@ -103,6 +103,44 @@
   /* le retour d'une question fermée prend la place des boutons, au même endroit */
   .q-bottom > .feedback{ margin-top:10px; }
   .q-bottom > .btn-row{ margin-top:12px; }
+
+  /* ----- Tout l'écran de question tient dans la hauteur du téléphone -----
+     L'illustration est la seule partie élastique : elle prend la place qui reste
+     (jamais moins de 92 px) ; les réponses et les boutons restent visibles sans
+     faire défiler la page. Si malgré tout le contenu est trop grand (activité
+     avec beaucoup de texte), c'est la carte qui défile, pas la page. */
+  .app:has(#tab-practice:not([hidden]) #practice-exercise:not([hidden])){ height:100dvh; min-height:0; }
+  .app:has(#tab-practice:not([hidden]) #practice-exercise:not([hidden])) #tabContent{ min-height:0; }
+  .app:has(#tab-practice:not([hidden]) #practice-exercise:not([hidden])) #tab-practice:not([hidden]){ min-height:0; }
+  .app:has(#tab-practice:not([hidden]) #practice-exercise:not([hidden])) #tab-practice > .card{ min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+  #practice-exercise .shape-wrap, #practice-exercise .deform-wrap{ flex:1 1 0; min-height:92px; position:relative; }
+  #practice-exercise .shape-wrap{ max-height:260px; }
+  #practice-exercise .deform-wrap{ max-height:300px; }
+  #practice-exercise .shape-wrap > svg, #practice-exercise .deform-wrap > svg{ position:absolute; left:0; top:0; width:100%; height:100%; max-width:none; }
+  #practice-exercise .stage{ flex:1 1 0; min-height:92px; max-height:260px; }
+  #practice-exercise .stage > svg{ position:absolute; left:0; top:0; width:100%; height:100%; }
+  .pill-marks, .pill-long{ display:none; }
+  @media (min-width:400px){ .pill-long{ display:inline; } }
+  @media (min-width:441px){ .pill-marks{ display:inline; } }
+  /* Téléphone (écran bas) : on resserre l'en-tête et les marges. */
+  @media (max-height:780px){
+    .app{ padding-top:6px; padding-bottom:calc(8px + env(safe-area-inset-bottom,0px)); }
+    .topbar{ padding:0 4px 8px; }
+    .card{ padding:10px 14px; margin-bottom:6px; }
+    #tab-practice .level-row{ margin-bottom:8px; gap:6px; }
+    #practice-mode .level-btn{ padding:6px 4px; font-size:11px; }
+    .q-tags .qtype-tag{ margin-bottom:6px; }
+    .coach-row{ margin-bottom:6px; }
+    .coach-bubble{ padding:7px 11px; font-size:15px; }
+    #practice-exercise .muted{ margin-bottom:6px; font-size:13px; line-height:1.4; }
+    .q-bottom{ padding-top:6px; }
+    .q-bottom > .btn-row{ margin-top:8px; }
+    .q-bottom > .feedback{ margin-top:6px; padding:8px 12px; }
+    #practice-exercise .choice-btn, #practice-exercise .qcm-choices .choice-btn{ padding-top:9px; padding-bottom:9px; }
+    .qcm-choices, .choices{ margin-top:8px; gap:6px; }
+    #practice-exercise .choice-btn.visual{ padding:2px; }
+    #practice-exercise .choice-btn.visual svg{ max-height:min(100px,11.5dvh); }
+  }
 
   h1,h2,h3{ font-family:var(--font-display); margin:0; text-wrap:balance; }
   .brand h1, .splash-title{ font-family:var(--font-title); }
@@ -2603,7 +2641,7 @@
 // jamais à la main dans une phrase.
 // Chargé après noyau.js (pickFresh, shuffle, pick).
 
-// f:true = fille (accord : elle). Un prénom ne doit pas commencer par une voyelle
+// Prénoms d'enfants. f:true = fille (accord : elle). Un prénom ne doit pas commencer par une voyelle
 // seulement si une phrase élide devant lui (« d'Emma ») : aucune ne le fait aujourd'hui.
 var PRENOMS = [
   {nom:'Léa',f:true},   {nom:'Tom',f:false},  {nom:'Léo',f:false},   {nom:'Nina',f:true},
@@ -2644,7 +2682,19 @@ var COULEURS = [
   {m:'rouge',f:'rouge'}, {m:'bleu',f:'bleue'}, {m:'vert',f:'verte'}, {m:'jaune',f:'jaune'}
 ];
 
-function prenomAuHasard(){ return pickFresh('prenom', PRENOMS); }
+// Les mascottes du jeu jouent aussi dans les problèmes : les kawaii sont des filles, les brainrots des garçons.
+// (lues dans la boutique à l'appel : le catalogue est défini après ce fichier)
+function mascottes(){
+  var l = [];
+  CAT_SPRITES.forEach(function(sp){ l.push({nom:sp.name, f:true, mascotte:true}); });
+  BRAINROT_SPRITES.forEach(function(sp){ l.push({nom:sp.name, f:false, mascotte:true}); });
+  return l;
+}
+function toutesLesPersonnes(){ return PRENOMS.concat(mascottes()); }
+// Une fois sur deux un prénom d'enfant, une fois sur deux une mascotte (chaque liste sans remise).
+function prenomAuHasard(){
+  return Math.random() < 0.5 ? pickFresh('prenom', PRENOMS) : pickFresh('mascotte', mascottes());
+}
 function objetAuHasard(groupe){
   var l = OBJETS.filter(function(o){ return o.groupe===groupe; });
   return pickFresh('objet|' + groupe, l);
@@ -7956,7 +8006,13 @@ function phrase(tpl, vars){
     if(show){
       var goal = nextStreakGoal();
       var marks = STREAK_GOALS.map(function(g, i){ return g + (isChallengeDone(12 + i) || freeStreak >= g ? '✔' : ''); }).join(' · ');
-      pill.textContent = '🔥 Série sans faute : ' + freeStreak + (goal ? ' / ' + goal : '') + '  (' + marks + ')';
+      // Texte court (une ligne sur téléphone) ; les paliers « (20 · 25 · 30) » ne s'affichent que sur grand écran.
+      pill.textContent = '🔥 Série ';
+      var pl = document.createElement('span'); pl.className = 'pill-long'; pl.textContent = 'sans faute ';
+      pill.appendChild(pl);
+      pill.appendChild(document.createTextNode(': ' + freeStreak + (goal ? ' / ' + goal : '')));
+      var pm = document.createElement('span'); pm.className = 'pill-marks'; pm.textContent = '  (' + marks + ')';
+      pill.appendChild(pm);
       pill.setAttribute('aria-label', 'Série sans faute : ' + freeStreak + ' bonnes réponses' + (goal ? ', prochain palier ' + goal : '') + '. Paliers : ' + marks.replace(/✔/g, ' obtenu').replace(/ · /g, ', '));
     }
     if(typeof updateHeat === 'function') updateHeat();
