@@ -182,22 +182,30 @@ Trois activités interactives, sans chronomètre. On touche les cases ou les par
 ### Boutique
 Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : **un seul offert** (le premier : Lavandou / Baguetto Montone), 34 à obtenir (19 à acheter, 15 par défis). La boutique affiche le clan actif (bouton à gauche des ⭐).
 
-| Rareté | Prix |
-|---|---|
-| Commun | 6 ⭐ |
-| Rare | 12 ⭐ |
-| Épique | 24 ⭐ |
-| Légendaire | 40 ⭐ |
-| **Défi** | Ne s'achète pas : se débloque par un défi |
+| Rareté | Qui ? | Points de base | Prix |
+|---|---|---|---|
+| Commun | personnage **dessiné en SVG** (sans illustration) | 5 à 7 ❤️ | 25 ⭐ |
+| Rare | personnage **illustré à la main** (une image existe) | 9 à 11 ❤️ | 25 ⭐ |
+| **Défi** | Ne s'achète pas : se débloque par un défi | 8 à 17 ❤️ | — |
 
-Repères : une équipe de 5 communs (3 classiques, 1 soutien, 1 archer) coûte environ 24 ⭐ (1 à 2 jours de jeu : 1 ⭐ par bonne réponse, +3 ⭐ par victoire en bataille) ; tout acheter vaut environ 300 ⭐ par clan.
+La rareté se déduit de la présence d'une image : quand un personnage est illustré, il devient rare tout seul. Un commun a donc moins de points qu'un rare : c'est ce qui équilibre le jeu.
+
+Repères : une équipe de 5 personnages (1 offert + 4 achetés) coûte 100 ⭐ (1 ⭐ par bonne réponse, +3 ⭐ par victoire en bataille).
+
+### Compétences
+Chaque personnage a **une compétence** (attribuée une fois pour toutes, 7 personnages par compétence). Elle sert en Bataille : c'est une petite question de maths où **la bonne réponse donne de gros dégâts** et **l'erreur des dégâts normaux** (jamais de pénalité).
+- **Rare et Défi** : compétence dès le départ. **Commun** : il la **gagne au niveau Ultime** (en attendant, la carte indique « 🔒 Compétence au niveau Ultime »).
+- **Monter de niveau l'améliore** : *De base* dégâts ×2 tous les 3 tours ; *Évolué* dégâts ×2,5 ; *Ultime* dégâts ×2,5 et la compétence revient **tous les 2 tours**.
+- Les 10 compétences : 🎁 **Doubler ou fixe** (choisir entre ×2 et un nombre de dégâts fixes), 🧩 **Complément** (à 10, puis 20, puis 100), ✖️ **Table de multiplication** (2 et 10, puis 5, puis 3, 4, 5), 👯 **Doubles**, 🍰 **Moitiés**, 🔝 **Le plus grand** (de trois nombres), 🕐 **Dans quelques heures** (heures pile, puis demi-heures, puis 1 h 30 ou 2 h 30 plus tard), 💶 **Rendre la monnaie** (sur 10, 20, 50 €), 🤝 **Partage équitable** (billes, jetons… entre des amis), 🔢 **Suite de nombres**. Le niveau de la compétence (celui du personnage) règle la taille des nombres.
+- Dans la Boutique, la carte d'un personnage possédé affiche sa compétence ; dans le choix d'équipe de la Bataille, une icône à côté des points.
+
 
 ### Évolutions
 Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué / Ultime » sur sa carte, dans la Boutique) : niveau 0 *De base*, 1 *Évolué*, 2 *Ultime*.
 - **Cérémonie** : à chaque évolution, un écran spécial : le personnage se charge (il tremble, des lumières convergent, un son qui monte), puis **flash**, **ondes de choc** (3 au niveau Ultime, avec secousse de l'écran), explosion de particules, étoiles ★ qui apparaissent une à une avec leur « ding », et les points qui montent (❤️ 8 → 10). Un toucher passe directement à la fin. Le son change selon le clan, et la fanfare est plus grande au niveau Ultime.
 - **Admirer** : le bouton 🔍 d'une carte (ou un toucher sur la carte, ou sur la mascotte du clan en haut de la Boutique) ouvre le personnage en grand, en pied. On le **fait tourner du doigt** (effet de profondeur : fond, ombre au sol et particules bougent à des vitesses différentes), un toucher le fait sauter dans une pluie d'étincelles ; ◀ ▶ (ou les flèches du clavier) passent aux autres personnages possédés. Plus il a évolué, plus la scène est riche : particules, halo, rayons, et un anneau d'étoiles qui tourne autour du personnage Ultime.
-- **Prix** : le même que son achat (6 / 12 / 24 / 40 ⭐ selon la rareté ; 12 ⭐ pour un personnage de défi, qui est gratuit).
-- **Puissance** : chaque niveau ajoute **20 % des points de base** (au moins +1) : ×1,2 puis ×1,4. Le total des deux évolutions coûte donc deux fois le prix d'achat. Tout acheter et tout faire évoluer vaut ~900 ⭐ par clan (plusieurs semaines de jeu).
+- **Prix** : le même que son achat (25 ⭐ ; 12 ⭐ pour un personnage de défi, qui est gratuit).
+- **Puissance** : chaque niveau ajoute **20 % des points de base** (au moins +2) : environ ×1,2 puis ×1,4, et elle améliore la compétence (voir plus haut). Le total des deux évolutions coûte donc deux fois le prix d'achat : tout acheter et tout faire évoluer vaut environ 1 800 ⭐ par clan (475 ⭐ rien que pour les achats) (plusieurs semaines de jeu).
 - **Visuel** (sur toutes les cartes et images) : niveau 1 = cadre coloré lumineux + ★ + 4 particules qui montent + halo lumineux derrière le personnage ; niveau 2 = double cadre doré (chats) ou magenta/vert (brainrots) qui pulse, ★★, 7 particules, halo avec rayons qui tournent, personnage un peu plus grand (effet « glitch » chez les brainrots). Chats : rose puis or ; Brainrots : vert néon puis magenta.
 - Les adversaires ne sont jamais évolués (leur total de points suit celui de ton équipe, évolutions comprises).
 - « Effacer ma progression » efface aussi les évolutions.
@@ -210,7 +218,7 @@ Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué 
 ### Bataille
 Équipe de **jusqu'à 3 classiques + 1 Soutien + 1 Archer** du clan actif (on peut se passer du Soutien ou de l'Archer, à soi d'assumer ce choix ; il faut au moins 1 carte, et l'équipe adverse a la même composition). 3 cartes au hasard sur le terrain ; quand une carte est battue (0 point), une autre la remplace. Quand A attaque B : B perd autant de points que A en a, et A perd les points de B (sauf l'Archer). Victoire : **+3 ⭐**.
 
-**Boost** : au début de chaque **3e tour** du joueur (3, 6, 9…), un boost 🎁 apparaît sur l'une de ses 3 cartes du terrain et y reste jusqu'à ce qu'il soit utilisé (ou que la carte soit battue). En touchant cette carte, le joueur choisit : **✖️2** (dégâts doublés) ou **🎯 N dégâts fixes**, où N vaut tour à tour (dans un ordre mélangé, une fois chacun tous les 3 boosts) **autant que le double**, **30 % de moins** ou **30 % de plus** que le double des points de la carte : il faut calculer pour choisir. Un petit message dit ensuite si le choix était le meilleur. Le boost ne change que les dégâts infligés (pas ceux reçus) ; on peut aussi attaquer « sans boost » (il reste alors disponible). L'adversaire n'a pas de boost.
+**Compétences** : à partir du **3e tour** du joueur (3, 6, 9…, ou 2, 4, 6… si une carte au niveau Ultime a une compétence), une compétence 🎁 se déclenche sur l'une de ses cartes qui en ont une et y reste jusqu'à ce qu'elle soit utilisée (ou que la carte soit battue) ; un seul déclenchement à la fois. En touchant cette carte, le joueur voit la question de maths de la compétence avec 3 propositions : **bonne réponse = dégâts ×2** (×2,5 dès « Évolué »), erreur = dégâts normaux. Un message donne ensuite la bonne réponse et son explication. Avec **🎁 Doubler ou fixe**, il choisit à la place **✖️ ×2** ou **🎯 N dégâts fixes**, où N vaut tour à tour (une fois chacun tous les 3 déclenchements) **autant que le ×2**, **30 % de moins** ou **30 % de plus** : il faut calculer ; le message dit si le choix était le meilleur. La compétence ne change que les dégâts infligés ; on peut aussi attaquer « sans la compétence » (elle reste alors disponible). L'adversaire n'a pas de compétence.
 
 **Difficulté** (choisie avant le combat) : le total des points ❤️ de l'équipe adverse vaut celui de la tienne en **Normal**, **20 % de moins en Facile**, **20 % de plus en Difficile** (l'adversaire garde 3 classiques + 1 soutien + 1 archer, tirés au plus près de cette cible ; le total est affiché avant et pendant le combat). Le choix est mémorisé.
 
@@ -255,7 +263,7 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 
 ## Reveal d'un nouveau personnage
 **Mise en scène** (même style que la cérémonie d'évolution) : au moment où les couleurs apparaissent, **impact** (flash, ondes de choc, explosion de particules, rayons lumineux qui tournent, particules qui montent derrière et devant le personnage). L'intensité dépend de la rareté : commun = rayons discrets et petite explosion ; rare = plus de particules ; épique et légendaire = 3 ondes de choc, secousse de l'écran, accord final, nom doré brillant.
-À chaque déblocage (achat en boutique ou défi réussi), un écran plein écran révèle le personnage en deux temps. **1) L'ombre chinoise** : sa silhouette noire en pied grossit au milieu de l'écran en pivotant sur elle-même (deux tours) et s'arrête **de face, toujours en ombre**. **2) Le balayage** : un trait de lumière la traverse de gauche à droite et fait apparaître ses couleurs derrière lui, avec le son du clan (arpège de harpe et « miaou » pour les Chats kawaii, boum grave et bips « glitch » pour les Brainrots) ; puis éclat, étincelles, nom et rôle. Un toucher pendant l'animation passe directement à la fin ; « Super ! » ou Échap ferme. Les animations sont supprimées si l'appareil demande de réduire les animations.
+À chaque déblocage (achat en boutique ou défi réussi), un écran plein écran révèle le personnage en deux temps. **1) L'ombre chinoise** : sa silhouette noire en pied grossit au milieu de l'écran en pivotant sur elle-même (deux tours) et s'arrête **de face, toujours en ombre**. **À la moitié de cette animation, la couleur de sa rareté apparaît** (halo gris pour un commun, bleu pour un rare, rose pour un défi) avec une pastille « COMMUN / RARE / DÉFI » ; l'ombre reste noire. **2) Le balayage** : un trait de lumière la traverse de gauche à droite et fait apparaître ses couleurs derrière lui, avec le son du clan (arpège de harpe et « miaou » pour les Chats kawaii, boum grave et bips « glitch » pour les Brainrots) ; puis éclat, étincelles, nom et rôle. Un toucher pendant l'animation passe directement à la fin ; « Super ! » ou Échap ferme. Les animations sont supprimées si l'appareil demande de réduire les animations.
 
 **Mode débogage** (Réglages, tout en bas) : le bouton « 🔧 Mode débogage » demande un code (réservé aux parents/testeurs). Une fois le bon code saisi, « 🔓 Tout débloquer » et « ⭐ +50 étoiles » apparaissent, jusqu'à la fermeture de la page : le code est à ressaisir à chaque session (rien n'est mémorisé).
 
@@ -276,4 +284,4 @@ Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma p
 Au démarrage, l'image se coupe en deux : le côté Italian Brainrot et le côté Kawaii Cats se percutent avec éclair et étincelles. Un clic sur l'image rejoue le choc.
 
 ## Guides (tutoriels)
-Quatre guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 6 étoiles (le prix du moins cher) quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille, **Série sans faute** au premier 10 d'affilée. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.
+Quatre guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 25 étoiles (le prix d'un personnage) quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille, **Série sans faute** au premier 10 d'affilée. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.

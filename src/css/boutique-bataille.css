@@ -204,6 +204,15 @@
   .reveal-overlay.shown .rv-scan{ display:none; }
   .reveal-overlay.shown .rv-glow{ animation:rvGlow 1.4s ease-out forwards; }
   @keyframes rvGlow{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; transform:scale(1.15); } 100%{ opacity:.55; transform:scale(1); } }
+  /* Lumière de la rareté : elle se lève à la moitié de l'animation (classe .tint), autour de l'ombre. */
+  .rv-aura{ position:absolute; inset:-6%; border-radius:50%; opacity:0; transform:scale(.7); pointer-events:none;
+    background:radial-gradient(circle, color-mix(in srgb, var(--rv-c) 70%, transparent), transparent 66%); transition:opacity .7s ease, transform .9s ease; }
+  .reveal-overlay.tint .rv-aura{ opacity:1; transform:scale(1); }
+  .reveal-overlay.tint:not(.shown) .rv-art.sil{ filter:brightness(0) drop-shadow(0 0 8px var(--rv-c)) drop-shadow(0 0 18px var(--rv-c)); }
+  .rv-rarity{ position:absolute; top:-2px; left:50%; transform:translate(-50%,-8px); margin:0; padding:3px 12px; border-radius:999px; z-index:3;
+    font-family:var(--font-display); font-weight:900; font-size:13px; letter-spacing:.8px; text-transform:uppercase; color:#fff; background:var(--rv-chip);
+    border:2px solid var(--rv-c); box-shadow:0 0 14px var(--rv-c); opacity:0; transition:opacity .5s ease .1s, transform .5s ease .1s; }
+  .reveal-overlay.tint .rv-rarity{ opacity:1; transform:translate(-50%,0); }
   .rv-flash{ position:absolute; inset:-30%; background:#fff; opacity:0; pointer-events:none; border-radius:50%; }
   .reveal-overlay.shown .rv-flash{ animation:rvFlash .6s ease-out; }
   @keyframes rvFlash{ 0%{ opacity:.95; transform:scale(.3); } 100%{ opacity:0; transform:scale(1.2); } }
@@ -213,7 +222,7 @@
   .rv-role{ margin:2px 0 10px; font-size:14px; opacity:.85; }
   @media (prefers-reduced-motion: reduce){
     .reveal-overlay, .reveal-overlay.spinning .rv-spinner, .reveal-overlay.shown .rv-glow, .reveal-overlay.shown .rv-flash{ animation:none; }
-    .rv-info{ transition:none; }
+    .rv-info, .rv-aura, .rv-rarity{ transition:none; }
   }
 
   /* Filet de sécurité (RGAA 13.8) : si l'appareil demande moins d'animations,
@@ -226,3 +235,5 @@
       transition-duration:.01ms !important; scroll-behavior:auto !important;
     }
   }
+
+  .sp-skill{ font-size:12px; font-weight:800; line-height:1.25; margin-top:2px; color:var(--text); }

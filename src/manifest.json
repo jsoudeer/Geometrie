@@ -24,6 +24,7 @@
     "js/atelier.js",
     "js/orchestrateur.js",
     "js/boutique.js",
+    "js/competences.js",
     "js/admiration.js",
     "js/bataille.js",
     "js/progression.js",

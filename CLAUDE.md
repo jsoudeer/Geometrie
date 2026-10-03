@@ -22,7 +22,7 @@ Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction c
 ## Test (Playwright, `tools/tests/`)
 - `cd tools/tests && node <nom>_check.js` (page de test `index_test.html`, `window.__t.__eval` donne accès aux variables).
 - Avant de valider : lancer les tests du sujet touché + `uniform_check`, `progress_check`, `avance_check`,
-  `fresh_check`, `atelier_check`, `atelier2_check`, `challenge_check`, `nav_check`, `audit_check` (47 types × 3 niveaux), `fit_check` (tout tient dans un écran de téléphone), `vocabulaire_check`. Les « ✘ » affichés sont souvent des
+  `fresh_check`, `atelier_check`, `atelier2_check`, `challenge_check`, `nav_check`, `audit_check` (47 types × 3 niveaux), `fit_check` (tout tient dans un écran de téléphone), `vocabulaire_check` (+ `skills_check`, `competences_check` pour la Bataille/compétences). Les « ✘ » affichés sont souvent des
   messages d'erreur voulus du jeu : se fier à « ÉCHEC »/« AssertionError »/« PAGE ERRORS ».
 - Un test instable est un défaut à corriger tout de suite (ex. attendre la fin des animations avant de mesurer).
 - `lib.js` marque les guides (tutoriels) comme déjà vus : sinon ils voileraient l'écran ; `withPage({guides:true})` pour les tester.

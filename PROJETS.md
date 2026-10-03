@@ -80,14 +80,20 @@ moins pertinent.
   (empaquetage Tauri / Capacitor).
 - [ ] Nettoyer `wip/` (11 Mo d'images brutes versionnées).
 
-- [ ] **Boutique en « gatcha »** (idée du 04/10/2026, à étudier après les tests réels) : remplacer l'achat direct
+- [ ] (**non retenu pour l'instant : risque addictif**) **Boutique en « gatcha »** (idée du 04/10/2026, à étudier après les tests réels) : remplacer l'achat direct
   d'une mascotte par un tirage au sort payé en étoiles (probabilités par rareté) ; **si on tire un doublon, le
   personnage monte de niveau** (réutilise les niveaux d'évolution existants : 0 → 1 → 2 → Ultime, voir `applyEvoLook`,
   `showEvolution`). À décider : prix d'un tirage, probabilités commun/rare/épique/légendaire, « pitié » (garantie
   après N tirages sans nouveauté), que devient un doublon au niveau maximum (étoiles rendues ?), les personnages
   « défi » (non achetables) restent hors tirage, migration des achats déjà faits, équilibrage de la Bataille.
 
-## Raretés, compétences de personnage et gatcha (idées du 04/10/2026 — à valider après les tests réels)
+## Raretés, compétences de personnage et gatcha (idées du 04/10/2026)
+
+**État (§53)** : FAIT sans gatcha — raretés commun/rare/défi déduites de l'image, communs à 5–7 points et rares à 9–11, achat direct à
+25 ⭐, 10 compétences (`competences.js`), niveau = compétence plus forte, commun = compétence au niveau Ultime, teinte de rareté au reveal.
+Pas de migration de sauvegarde. **Le gatcha reste NON retenu** (crainte de l'effet addictif) : ne le reprendre qu'après discussion avec
+l'utilisateur. Les compétences à base de figure/mesure (Miroir, Arrêt du temps, Mesure juste) restent à faire.
+Le texte ci-dessous est l'idée d'origine.
 
 **Règle de rareté à court terme** : un personnage **dessiné en SVG par Claude = commun** ; un personnage **illustré à la main
 (image) = rare**. Les raretés épique / légendaire / défi seront redéfinies plus tard (elles ne s'obtiendraient pas par simple

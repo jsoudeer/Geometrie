@@ -4,12 +4,12 @@
      éléments réels, les explications restent justes quand l'interface change
      (aucune capture d'écran à refaire).
        accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
-       boutique : dès 6 étoiles (le moins cher des personnages) quand on n'a jamais rien acheté ;
+       boutique : dès 25 étoiles (le prix d'un personnage) quand on n'a jamais rien acheté ;
        bataille : la première fois qu'on ouvre la Bataille ;
        serie    : à la première série de 10 bonnes réponses d'affilée.
      Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
      dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
-  var GUIDE_SHOP_STARS = 6;        // seuil d'étoiles du guide Boutique (= le prix du moins cher des personnages)
+  var GUIDE_SHOP_STARS = BUY_COST;   // seuil d'étoiles du guide Boutique (= le prix d'un personnage)
   var GUIDE_SERIE_START = 10;      // série sans faute qui lance le guide Série
     var guideSeen = {};
   try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
@@ -55,7 +55,7 @@
         { sel:'#stars-btn', enter:function(){ showTab(lastPracticeTab); },
           text:'Les étoiles ⭐ que tu gagnes servent à acheter de nouveaux personnages. Je t\'emmène à la boutique.' },
         { sel:'#shop-grid .sprite-card, #shop-grid > *', enter:function(){ showTab('shop'); },
-          text:'Voici les personnages. Un seul est offert, chacun des autres a un prix en étoiles. Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Plus tard, tu pourras aussi le faire évoluer.' },
+          text:'Voici les personnages. Un seul est offert, chacun des autres coûte 25 étoiles. Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Les rares et les personnages « Défi » ont une compétence pour la Bataille ; les communs la gagnent en évoluant jusqu\'au niveau Ultime.' },
         { sel:'#shop-grid .sp-buy:not(:disabled)',
           text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent en relevant un défi (série sans faute ou course contre la montre).' },
         { sel:'#shop-mascot-panel',
@@ -79,7 +79,7 @@
         { sel:'#tab-battle .panel-head', enter:function(){ showTab('battle'); },
           text:'Bienvenue dans la Bataille ! Tes personnages combattent ceux de l\'autre clan. Chacun a des points ❤️, à la fois sa force et son énergie.' },
         { sel:'#bt-grid-classic',
-          text:'Compose ton équipe : jusqu\'à 3 classiques, 1 soutien 💖 et 1 archer 🏹. Tu n\'es pas obligé d\'avoir un soutien ou un archer, mais ils aident beaucoup : à toi de choisir !' },
+          text:'Compose ton équipe : jusqu\'à 3 classiques, 1 soutien 💖 et 1 archer 🏹. Tu n\'es pas obligé d\'avoir un soutien ou un archer, mais ils aident beaucoup : à toi de choisir ! Une petite icône à côté des points indique la compétence du personnage : en combat, une bonne réponse à sa question de maths double les dégâts.' },
         { sel:'.bt-auto-row',
           text:'Pas envie de choisir ? « Équipe complète » prend les plus forts, « Au hasard » tire au sort.' },
         { sel:'#bt-diff-row', text:'Choisis la difficulté : une équipe adverse plus faible, égale ou plus forte que la tienne.' },
