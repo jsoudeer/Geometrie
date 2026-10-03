@@ -541,7 +541,13 @@
     if(show){
       var goal = nextStreakGoal();
       var marks = STREAK_GOALS.map(function(g, i){ return g + (isChallengeDone(12 + i) || freeStreak >= g ? '✔' : ''); }).join(' · ');
-      pill.textContent = '🔥 Série sans faute : ' + freeStreak + (goal ? ' / ' + goal : '') + '  (' + marks + ')';
+      // Texte court (une ligne sur téléphone) ; les paliers « (20 · 25 · 30) » ne s'affichent que sur grand écran.
+      pill.textContent = '🔥 Série ';
+      var pl = document.createElement('span'); pl.className = 'pill-long'; pl.textContent = 'sans faute ';
+      pill.appendChild(pl);
+      pill.appendChild(document.createTextNode(': ' + freeStreak + (goal ? ' / ' + goal : '')));
+      var pm = document.createElement('span'); pm.className = 'pill-marks'; pm.textContent = '  (' + marks + ')';
+      pill.appendChild(pm);
       pill.setAttribute('aria-label', 'Série sans faute : ' + freeStreak + ' bonnes réponses' + (goal ? ', prochain palier ' + goal : '') + '. Paliers : ' + marks.replace(/✔/g, ' obtenu').replace(/ · /g, ', '));
     }
     if(typeof updateHeat === 'function') updateHeat();

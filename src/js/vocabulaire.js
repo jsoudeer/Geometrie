@@ -5,7 +5,7 @@
 // jamais à la main dans une phrase.
 // Chargé après noyau.js (pickFresh, shuffle, pick).
 
-// f:true = fille (accord : elle). Un prénom ne doit pas commencer par une voyelle
+// Prénoms d'enfants. f:true = fille (accord : elle). Un prénom ne doit pas commencer par une voyelle
 // seulement si une phrase élide devant lui (« d'Emma ») : aucune ne le fait aujourd'hui.
 var PRENOMS = [
   {nom:'Léa',f:true},   {nom:'Tom',f:false},  {nom:'Léo',f:false},   {nom:'Nina',f:true},
@@ -46,7 +46,19 @@ var COULEURS = [
   {m:'rouge',f:'rouge'}, {m:'bleu',f:'bleue'}, {m:'vert',f:'verte'}, {m:'jaune',f:'jaune'}
 ];
 
-function prenomAuHasard(){ return pickFresh('prenom', PRENOMS); }
+// Les mascottes du jeu jouent aussi dans les problèmes : les kawaii sont des filles, les brainrots des garçons.
+// (lues dans la boutique à l'appel : le catalogue est défini après ce fichier)
+function mascottes(){
+  var l = [];
+  CAT_SPRITES.forEach(function(sp){ l.push({nom:sp.name, f:true, mascotte:true}); });
+  BRAINROT_SPRITES.forEach(function(sp){ l.push({nom:sp.name, f:false, mascotte:true}); });
+  return l;
+}
+function toutesLesPersonnes(){ return PRENOMS.concat(mascottes()); }
+// Une fois sur deux un prénom d'enfant, une fois sur deux une mascotte (chaque liste sans remise).
+function prenomAuHasard(){
+  return Math.random() < 0.5 ? pickFresh('prenom', PRENOMS) : pickFresh('mascotte', mascottes());
+}
 function objetAuHasard(groupe){
   var l = OBJETS.filter(function(o){ return o.groupe===groupe; });
   return pickFresh('objet|' + groupe, l);
