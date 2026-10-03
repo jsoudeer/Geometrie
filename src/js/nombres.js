@@ -38,7 +38,7 @@
       };
       return q;
     }
-    var pool = [n+10, n-10, c ? c*100 + u*10 + d : u*10 + d, n+1, n-1, n+100, n-100].filter(function(v){ return v>9 && v!==n; });
+    var pool = [n+10, n-10, c ? c*100 + u*10 + d : u*10 + d, n+1, n-1, n+100, n-100].filter(function(v){ return v>9 && v<1000 && v!==n; });   // < 1000 : nombreEnLettres ne sait pas écrire « dix cent »
     var seen = {}; seen[w] = true; var wrong = [];
     shuffle(pool).forEach(function(v){ var t = nombreEnLettres(v); if(!seen[t] && wrong.length<3){ seen[t] = true; wrong.push(t); } });
     return {
@@ -80,7 +80,7 @@
     var hi = level===0 ? 99 : 999;
     var n;
     do { n = randInt(base===100 ? 101 : 11, hi); }
-    while(n%base===0 || (base===10 && n%10===5) || (base===100 && Math.floor(n/10)%10===5));
+    while(n%base===0 || n%10===5 || (base===100 && Math.floor(n/10)%10===5));   // jamais un 5 en dernier chiffre : « arrondis 605 à la dizaine » serait ambigu (milieu exact)
     var lo = Math.floor(n/base)*base, up = lo + base;
     var arrondi = level>0 && Math.random()<0.5;
     if(level===2 && arrondi && Math.random()<0.4){ base = 10; lo = Math.floor(n/10)*10; up = lo + 10; }
