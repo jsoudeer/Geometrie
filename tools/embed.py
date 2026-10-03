@@ -47,7 +47,9 @@ for cid, side in ids_with_pair():
     total += len(fa) + len(fu)
     parts.append('"%s":{f:"%s",u:"%s"}' % (cid, fa, fu))
 
-block = '/*IMG_DATA_START*/var CUSTOM_IMG={' + ',\n'.join(parts) + '};/*IMG_DATA_END*/'
+splash = b64(Image.open(os.path.join(ROOT, 'assets', 'branding', 'splash.png')).convert('RGB'), quality=80, method=6)
+total += len(splash)
+block = ('/*IMG_DATA_START*/var CUSTOM_IMG={' + ',\n'.join(parts) + '};\n  var SPLASH_IMG="' + splash + '";/*IMG_DATA_END*/')
 header = ("  // Images générées (visage 'f' et plein pied détouré 'u'), embarquées en base64\n"
           "  // pour que l'aperçu publié (fichier unique) les affiche aussi.\n"
           "  // FICHIER GÉNÉRÉ par tools/embed.py à partir de assets/ : ne pas modifier à la main.\n")

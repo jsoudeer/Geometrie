@@ -13,6 +13,7 @@
     "css/chaleur.css"
   ],
   "js": [
+    "js/images-data.js",
     "js/noyau.js",
     "js/geometrie.js",
     "js/horloge.js",
@@ -21,7 +22,6 @@
     "js/patron3d.js",
     "js/atelier.js",
     "js/orchestrateur.js",
-    "js/images-data.js",
     "js/boutique.js",
     "js/admiration.js",
     "js/bataille.js",
