@@ -80,6 +80,12 @@ moins pertinent.
   (empaquetage Tauri / Capacitor).
 - [ ] Nettoyer `wip/` (11 Mo d'images brutes versionnées).
 
+- [ ] **Boutique en « gatcha »** (idée du 04/10/2026, à étudier après les tests réels) : remplacer l'achat direct
+  d'une mascotte par un tirage au sort payé en étoiles (probabilités par rareté) ; **si on tire un doublon, le
+  personnage monte de niveau** (réutilise les niveaux d'évolution existants : 0 → 1 → 2 → Ultime, voir `applyEvoLook`,
+  `showEvolution`). À décider : prix d'un tirage, probabilités commun/rare/épique/légendaire, « pitié » (garantie
+  après N tirages sans nouveauté), que devient un doublon au niveau maximum (étoiles rendues ?), les personnages
+  « défi » (non achetables) restent hors tirage, migration des achats déjà faits, équilibrage de la Bataille.
 
 ## Éditeur d'activités pour adulte
 Voir `AUDIT_ACTIVITES.md` (§9 modèle et paquets modulaires, §10 feuille de route P1–P8, §11 décisions). En pause volontaire : on teste d'abord la version actuelle en conditions réelles.
