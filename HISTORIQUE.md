@@ -249,3 +249,9 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 
 ## 45. Mode débogage protégé par un code (03/10/2026)
 - « Tout débloquer » et « +50 ⭐ » ne sont plus visibles : le bouton « 🔧 Mode débogage » (Réglages) ouvre un champ de code (`#debug-code`, masqué). Le bon code débloque les outils (`debugActive`, variable en mémoire seulement : à ressaisir à chaque session, rechargement compris) ; un mauvais code vide le champ et affiche une alerte. Le bouton « +50 ⭐ » de la Boutique est supprimé (déplacé dans les outils de débogage). `plus50_check.js` remplacé par `debug_check.js`.
+
+## 46. Écran d'accueil : le jeu de maths (03/10/2026)
+- Le texte ne parle plus de « géométrie » : badge « Maths · CE1 », accroche « Le grand jeu de maths du CE1 », phrase d'accroche (nombres, calcul, formes, mesures, heure…), les 9 thèmes en pastilles (construites depuis `DOMAINS`, `buildSplashDecor` dans noyau.js, donc toujours à jour), symboles de maths flottants en fond (`#splash-bg`), titre plus grand, bouton dégradé avec reflet qui passe. L'animation du choc chat/brainrot et le chargement de l'image perso (`sp-wait`, `sp-go`, `sp-shake`) sont inchangés ; les nouveaux éléments entrent à la suite (pastilles en cascade).
+- Écrans bas (< 680 px de haut) : pastilles masquées pour garder le bouton visible. Mouvement réduit : symboles figés.
+- `lib.js` : `withPage({ splash:true })` laisse l'accueil affiché. Test : `accueil_check.js` (nouveau).
+- Piste : l'image perso `assets/branding/splash.jpeg` ne fait que 128×72 px (floue une fois agrandie) ; une version 3× plus grande rendrait l'accueil plus net.

@@ -45,7 +45,7 @@ async function withPage(opts, fn) {
   await page.goto(`http://localhost:${port}/${opts.page || 'index.html'}`);
   await page.waitForTimeout(250);
   const startBtn = await page.$('#splash-start-btn');
-  if (startBtn) { await startBtn.click(); await page.waitForTimeout(250); }
+  if (startBtn && !opts.splash) { await startBtn.click(); await page.waitForTimeout(250); }
   try { await fn(page, port); } finally {
     await browser.close(); srv.close();
   }
