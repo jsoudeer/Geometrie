@@ -398,3 +398,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - Léger changement d'image : la règle 📏 des unités est dessinée par la scène `emoji` (un peu plus petite).
 - Test `formes_check.js` étendu : motif prolongé, mesures et périmètres recalculés depuis l'énoncé ou le dessin, intrus relu sur le dessin, sortes de questions par niveau.
 - Reste en QCM (15) : align, milieu, coord, angle, image, coordFind, codage, chasse, decodage, symVrai, symVisuel, enigme, duree, solideNom, solideCompte.
+
+## 69. Symétrie, énigmes et durées en fiches (04/10/2026)
+- Scènes `symAxe` (figure + droite en pointillés), `symLeft` (moitié de figure sur grille + ligne miroir) et `symHalf` (une proposition de moitié droite, utilisée par `figures`) dans `geometrie.js` ; la fiche `duree` (dans `horloge.js`) s'appuie sur la scène `emoji`, des banques `DUREE_ICON/START/WHAT/N` et des fonctions `dureeT`, `dureeFmt`, `dureeWrong`, `dureeRetenue`, `minList`. Les paramètres de niveau (heures de départ, minutes, durées) sont des données de la fiche.
+- `symVrai`, `symVisuel`, `enigme`, `duree` sont des fiches ; anciens `genSymVraiQuestion`, `genSymVisuelQuestion`, `genEnigmeQuestion`, `genDureeQuestion`, `labelChoices` supprimés (la banque `ENIGME_POOL` des 44 énigmes reste la donnée). **36 types sur 47 en fiches.**
+- Test `formes_check.js` étendu : durées recalculées depuis l'énoncé, explication symétrique = bonne réponse, bonne figure = miroir de la moitié gauche (relu sur le dessin), 44 énigmes toutes atteignables.
+- Reste en QCM (11) : align, milieu, coord, angle, image, coordFind, codage, chasse, decodage, solideNom, solideCompte.
