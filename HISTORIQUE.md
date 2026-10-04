@@ -385,3 +385,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - **Migrées en fiches** (`fiches-nombres.js`) : numération, ordre, plus/moins, encadrer, lettres, suite de nombres, monnaie, problèmes de la vie, problèmes à 2 étapes. `calcul.js` supprimé, `nombres.js` allégé. Les fiches du temps (heure, horloge, calendrier) vivent dans `horloge.js` (le fichier `fiches-temps.js` est supprimé : il cassait le retrait du thème Horloge, vu par `theme_removal_check`). **25 types sur 47 reposent sur une fiche.**
 - Tests : `nombres_check.js` (réponse recalculée depuis l'énoncé pour chaque activité migrée) ; `seed_check`, `theme_removal_check`, `pack_check`, `patron_check`, `a11y_audit` adaptés.
 - Reste (22 types QCM de géométrie, durées, solides + écrans propres) : voir `AUDIT_ACTIVITES.md`.
+
+## 67. Formes : côtés, sommets et nom en fiches (04/10/2026)
+- Moteur : le thème Géométrie ajoute sa propre scène `shape` (`SCENES.shape`, déclarée dans `geometrie.js`, tire la forme à la génération, dessine sans rien tirer) et des fonctions de fiche `shapeSides`, `shapeVertices`, `shapeLabel`, `shapeNote`, `shapeSub`, `shapeNames`, `shapeList`. Le moteur reste indépendant du thème.
+- `sides`, `vertices`, `name` sont des fiches (formes du niveau = paramètre `shapes`) ; anciens `genSidesVerticesQuestion`, `genNameQuestion`, `drawShapeGeneric`, `drawPolygon` supprimés. Notes de réglage générées. **28 types sur 47 en fiches.**
+- Test `formes_check.js` : la réponse est relue sur le dessin (nombre de points du polygone ; carré / rectangle / losange par longueurs et angles), formes limitées au niveau, 4 réponses différentes, redessiner = même image.
+- Reste en QCM : align, milieu, coord, angle, image, coordFind, codage, chasse, decodage, symVrai, enigme, suiteFormes, mesures, perimetre, intrus, symVisuel, duree, solideNom, solideCompte (plusieurs variantes chacun, dessins propres).
