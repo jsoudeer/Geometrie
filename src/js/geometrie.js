@@ -769,28 +769,6 @@
     } }
   };
   var NAME_POOL = ['triangle','carré','rectangle','pentagone','hexagone','cercle','losange'];
-  function drawPolygon(pts){
-    var svg = document.getElementById('m4Svg');
-    svg.setAttribute('viewBox','0 0 200 200');
-    svg.innerHTML = "";
-    svg.appendChild(el('polygon', {
-      points: pts.map(function(p){return p[0]+','+p[1];}).join(' '),
-      fill:'var(--accent2)', 'fill-opacity':'0.5', stroke:'var(--accent)', 'stroke-width':4, 'stroke-linejoin':'round'
-    }));
-  }
-
-  // geom = meta.gen() est tiré à la génération de la question (et non au dessin) : redessiner = même image.
-  function drawShapeGeneric(meta, geom){
-    if(meta.isCircle){
-      var svg = document.getElementById('m4Svg');
-      svg.setAttribute('viewBox','0 0 200 200');
-      svg.innerHTML = "";
-      svg.appendChild(el('circle',{cx:100,cy:100,r:geom.r, fill:'var(--accent2)','fill-opacity':'0.5',stroke:'var(--accent)','stroke-width':4}));
-    } else {
-      drawPolygon(geom);
-    }
-  }
-
   function drawAngle(angleDeg){
     var svg = document.getElementById('m4Svg');
     svg.setAttribute('viewBox','0 0 200 200');
@@ -1846,37 +1824,6 @@
   ];
 
   // ---- Questions de Quizz déplacées depuis l'ancien moteur (mêmes textes, même tirage) ----
-  function genSidesVerticesQuestion(type, level){
-    var shapeKey = pick(GEO_LEVELS[level].shapes);
-    var meta = SHAPE_META[shapeKey], geom = meta.gen();
-    var correct = (type==='sides') ? meta.sides : meta.vertices;
-    var choices = numChoiceSet(correct, [0,1,2,3,4,5,6,7,8]);
-    return {
-      tag: type==='sides' ? 'Côtés' : 'Sommets',
-      question: type==='sides' ? 'Combien de côtés a cette forme ?' : 'Combien de sommets (angles) a cette forme ?',
-      sub: meta.isCircle ? 'Regarde bien : cette forme est-elle vraiment pointue quelque part ?' : 'Observe bien la forme, puis choisis la bonne réponse.',
-      explain: 'Un ' + meta.label + ' a ' + meta.sides + ' côtés et ' + meta.vertices + ' sommets. ' + meta.note,
-      draw: function(){ drawShapeGeneric(meta, geom); },
-      cols3: false,
-      choices: choices.map(function(v){ return { label:String(v), ok: v===correct }; })
-    };
-  }
-
-  function genNameQuestion(level){
-    var shapeKey2 = pick(GEO_LEVELS[level].shapes);
-    var meta2 = SHAPE_META[shapeKey2], geom2 = meta2.gen();
-    var pool = shuffle(NAME_POOL.filter(function(n){return n!==meta2.label;})).slice(0,3);
-    var labels = shuffle([meta2.label].concat(pool));
-    return {
-      tag: 'Nom de la forme',
-      question: 'Quel est le nom de cette forme ?',
-      sub: 'Observe bien la forme, puis choisis son nom.',
-      explain: 'C\'est un ' + meta2.label + '. ' + meta2.note,
-      draw: function(){ drawShapeGeneric(meta2, geom2); },
-      cols3: false,
-      choices: labels.map(function(l){ return { label:l, ok: l===meta2.label }; })
-    };
-  }
 
   // Angles : trois variantes.
   //  - « classer » : droit, aigu ou obtus (une seule valeur, l'écart à 90° se resserre avec le niveau) ;
@@ -2007,15 +1954,40 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Géométrie ----
-  registerQuizType({ id:'sides', domain:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2],
-    randomNote:'La forme est tirée au hasard parmi celles autorisées à ce niveau ; son nombre de côtés en découle de façon fixe (ce n\'est pas lui qui est tiré, seule la forme l\'est).',
-    generate:function(level){ return genSidesVerticesQuestion('sides', level); } });
-  registerQuizType({ id:'vertices', domain:'formes', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2],
-    randomNote:'Même principe que "Côtés" : la forme est tirée au hasard, son nombre de sommets en découle de façon fixe.',
-    generate:function(level){ return genSidesVerticesQuestion('vertices', level); } });
-  registerQuizType({ id:'name', domain:'formes', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2],
-    randomNote:'La forme est tirée au hasard parmi celles du niveau ; son nom est fixe une fois la forme choisie.',
-    generate:genNameQuestion });
+  // ---- Formes (côtés, sommets, nom) : trois fiches sur une même scène « forme » ----
+  // La scène tire la géométrie une fois (make) et la dessine sans rien tirer (draw).
+  SCENES.shape = { exprs:['kind'], texts:[],
+    make:function(a){ var meta = SHAPE_META[a.kind]; return { meta:meta, geom:meta.gen() }; },
+    draw:function(svg, d){
+      if(d.meta.isCircle) svg.appendChild(el('circle',{cx:100,cy:100,r:d.geom.r, fill:'var(--accent2)','fill-opacity':'0.5',stroke:'var(--accent)','stroke-width':4}));
+      else svg.appendChild(el('polygon', {
+        points: d.geom.map(function(p){return p[0]+','+p[1];}).join(' '),
+        fill:'var(--accent2)', 'fill-opacity':'0.5', stroke:'var(--accent)', 'stroke-width':4, 'stroke-linejoin':'round' }));
+    } };
+  TEMPLATE_FNS.shapeSides = function(k){ return SHAPE_META[k].sides; };
+  TEMPLATE_FNS.shapeVertices = function(k){ return SHAPE_META[k].vertices; };
+  TEMPLATE_FNS.shapeLabel = function(k){ return SHAPE_META[k].label; };
+  TEMPLATE_FNS.shapeNote = function(k){ return SHAPE_META[k].note; };
+  TEMPLATE_FNS.shapeSub = function(k){ return SHAPE_META[k].isCircle ? 'Regarde bien : cette forme est-elle vraiment pointue quelque part ?' : 'Observe bien la forme, puis choisis la bonne réponse.'; };
+  TEMPLATE_FNS.shapeNames = function(k){ return shuffle(NAME_POOL.filter(function(n){ return n !== SHAPE_META[k].label; })).slice(0, 3); };
+  TEMPLATE_FNS.shapeList = function(keys){ return keys.map(function(k){ return SHAPE_META[k].label; }).join(', '); };
+  var SHAPE_LEVELS = GEO_LEVELS.map(function(l){ return { shapes:l.shapes }; });
+  var SHAPE_NOTE = 'La forme est tirée au hasard. Facile : {shapeList(shapes0)}. Moyen : {shapeList(shapes1)}. Difficile : {shapeList(shapes2)}. ';
+  registerTemplateType({ id:'sides', domain:'formes', label:'Côtés', longLabel:'Compter les côtés', defaultLevels:[0,1,2], tag:'Côtés', levels:SHAPE_LEVELS,
+    forms:[ { vars:{ k:{pick:'shapes'}, n:'shapeSides(k)' }, answer:'n', wrong:'others([0,1,2,3,4,5,6,7,8], n, 3)',
+      question:'Combien de côtés a cette forme ?', sub:'{shapeSub(k)}',
+      explain:'Un {shapeLabel(k)} a {n} côtés et {shapeVertices(k)} sommets. {shapeNote(k)}', scene:{ type:'shape', kind:'k' } } ],
+    note: SHAPE_NOTE + 'Son nombre de côtés en découle de façon fixe (seule la forme est tirée).' });
+  registerTemplateType({ id:'vertices', domain:'formes', label:'Sommets', longLabel:'Compter les sommets', defaultLevels:[0,1,2], tag:'Sommets', levels:SHAPE_LEVELS,
+    forms:[ { vars:{ k:{pick:'shapes'}, n:'shapeVertices(k)' }, answer:'n', wrong:'others([0,1,2,3,4,5,6,7,8], n, 3)',
+      question:'Combien de sommets (angles) a cette forme ?', sub:'{shapeSub(k)}',
+      explain:'Un {shapeLabel(k)} a {shapeSides(k)} côtés et {n} sommets. {shapeNote(k)}', scene:{ type:'shape', kind:'k' } } ],
+    note: SHAPE_NOTE + 'Même principe que « Côtés » : son nombre de sommets en découle de façon fixe.' });
+  registerTemplateType({ id:'name', domain:'formes', label:'Nom', longLabel:'Nom de la forme', defaultLevels:[0,1,2], tag:'Nom de la forme', levels:SHAPE_LEVELS,
+    forms:[ { vars:{ k:{pick:'shapes'}, nom:'shapeLabel(k)' }, answer:'nom', wrong:'shapeNames(k)',
+      question:'Quel est le nom de cette forme ?', sub:'Observe bien la forme, puis choisis son nom.',
+      explain:"C'est un {nom}. {shapeNote(k)}", scene:{ type:'shape', kind:'k' } } ],
+    note: SHAPE_NOTE + 'Son nom est fixe une fois la forme choisie.' });
   registerQuizType({ id:'align', domain:'formes', label:'Alignement', longLabel:'Alignement', defaultLevels:[0,1,2],
     randomNote:'Facile : 3 points, alignés ou non, en ligne ou en colonne. Moyen : + diagonales, points espacés, « presque alignés », et deux nouvelles variantes (parmi 4 points, lesquels sont alignés ; quel point numéroté est aligné avec A et B). Difficile : + droites penchées (2 colonnes pour 1 ligne). Les points sont tirés au hasard ; les bonnes réponses sont vérifiées par le calcul (une seule possible).',
     generate:genAlignQuestion });
