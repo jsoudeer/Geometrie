@@ -40,6 +40,23 @@ const FAMS = ['measure', 'estimate', 'deform', 'net', 'qcm', 'clock-lire', 'cloc
       await run('patron plié');
       await page.click('#menu-btn'); await run('menu ouvert'); await page.keyboard.press('Escape');
       await page.click('#settings-btn'); await run('réglages');
+      // outils adultes : paquets et éditeur d'activités (liste, choix du modèle, les 4 formulaires, aperçu)
+      await ev(`editeurSave(editeurBuildAct('table', { label:'', domain:'calcul', niveaux:[0,1,2], p:[7,5,8,10] }, 'table-de-7').act)`);
+      await page.evaluate(() => { document.getElementById('debug-panel').hidden = false; document.getElementById('debug-tools').hidden = false; });
+      await run('réglages : outils adultes (paquets, liste d\'activités)');
+      await page.click('#edit-new-btn'); await run('éditeur : choix du modèle'); 
+      for (const m of ['table', 'plusmoins', 'fiche', 'libre']) {
+        if (m !== 'table') await page.click('#edit-new-btn');
+        await page.click('.ed-modele-' + m); await run('éditeur : ' + m);
+        if (m === 'libre') {
+          await page.fill('#ed-label', 'Les couleurs'); await page.fill('.ed-question input.q', 'Quelle couleur a le ciel ?');
+          await page.fill('.ed-question input.bonne', 'bleu'); await page.fill('.ed-question input.fausse0', 'rouge');
+          await page.click('#ed-add-q'); await page.click('#ed-test'); await run('éditeur : message d\'erreur et aperçu');
+        } else { await page.click('#ed-test'); await run('éditeur : aperçu ' + m); }
+        await page.click('#ed-cancel');
+      }
+      await ev(`editeurRemove('table-de-7')`);
+      await page.evaluate(() => { document.getElementById('debug-panel').hidden = true; document.getElementById('debug-tools').hidden = true; });
       await page.click('#open-progress-btn'); await run('progression');
       await page.click('#progress-close');
       await page.click('#settings-btn'); await page.click('#open-guides-btn'); await run('guides (réglages)');

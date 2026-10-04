@@ -366,3 +366,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - Léger changement d'image : le calendrier et la pizza des fractions sont dessinés par la scène `emoji` (un peu plus petits, plus hauts).
 - Tests : `gabarits_check.js` étendu (calendrier recalculé depuis l'énoncé, aiguilles dessinées = réponse, 4 horloges différentes, figure juste = fraction demandée, les deux sortes de fractions à chaque niveau, aucun guillemet parasite) ; `pack_check.js` (un paquet utilise banque, texte, horloge, figures ; scène non numérique refusée).
 - Reste hors fiches (dessin propre à chaque activité) : énigmes, mesures, solides, géométrie, durées, monnaie.
+
+## 64. Audit P6 (fin) : « à ma façon » et accessibilité de l'éditeur (04/10/2026)
+- Quatrième modèle de l'éditeur : **« Une activité du jeu, à ma façon »** : on part de Calcul, Soustraction, Doubles et moitiés ou Comparer et on change la taille des nombres à chaque niveau (bornes et planchers vérifiés avec des messages clairs, ex. « En Moyen : un nombre de 10 à 100 »). L'activité du jeu n'est jamais modifiée : l'éditeur en enregistre une copie dans « Mes activités ». Changer d'activité de départ recharge ses réglages d'origine.
+- **Accessibilité** : `a11y_audit.js` (axe-core, WCAG 2.2 AA, deux clans) couvre maintenant la liste « Mes activités », le choix du modèle, les 4 formulaires, l'aperçu et les messages d'erreur : 0 défaut. Clavier : le curseur arrive sur le titre à l'ouverture d'un formulaire, l'ordre de tabulation suit l'écran, et il revient sur « Créer une activité » après Enregistrer ou Annuler (`editeur_check.js`).
+- Le choix du vocabulaire des énoncés n'est pas proposé : les énoncés restent ceux de l'activité (le vocabulaire commun vit dans `vocabulaire.js`, vérifié par `vocabulaire_check`). Les questions écrites à la main sont libres.
+- P6 est terminé. Suite possible : P7 (fournisseurs lien / cloud, à cadrer avec le RGPD) ou P8 (éditeur de patrons).

@@ -7974,7 +7974,7 @@ function phrase(tpl, vars){
      Crée des activités sans écrire de fichier : on choisit un modèle, on règle, on teste 20 questions, on enregistre.
      Les activités créées vivent dans UN paquet personnel (« perso.moi », « Mes activités ») : il passe par la même
      validation et le même branchement que n'importe quel paquet (paquets.js), donc il est aussi exportable.
-     Trois modèles : une table de multiplication, ajouter / retirer un nombre fixe (gabarits), des questions écrites
+     Quatre modèles : une table de multiplication, ajouter / retirer un nombre fixe, une activité du jeu reprise avec d'autres plages (gabarits), des questions écrites
      à la main (type « fixe »). Chaque activité garde ses réglages d'origine (`meta`) pour pouvoir être rouverte.
      La logique (editeurBuildAct, editeurApercu, editeurSave, editeurRemove) est séparée de l'écran (editeurUI). */
 
@@ -7982,8 +7982,18 @@ function phrase(tpl, vars){
   var EDIT_MODELES = [
     { id:'table',     label:'Une table de multiplication' },
     { id:'plusmoins', label:'Ajouter ou retirer un nombre' },
+    { id:'fiche',     label:'Une activité du jeu, à ma façon' },
     { id:'libre',     label:'Mes propres questions' }
   ];
+  // Activités du jeu qu'on peut reprendre en changeant la taille des nombres à chaque niveau.
+  // param = réglage de niveau modifié ; lo/hi = bornes permises ; min(niveau) = plancher qui dépend des autres réglages du niveau.
+  var EDIT_BASES = [
+    { id:'calc',         param:'max', lo:3, hi:100 },
+    { id:'soustraction', param:'aHi', lo:5, hi:100, min:function(l){ return l.aLo + 2; } },
+    { id:'doubleMoitie', param:'hi',  lo:2, hi:100 },
+    { id:'compare',      param:'hi',  lo:10, hi:999, min:function(l){ return l.lo + 5; } }
+  ];
+  var NIVEAU_NOMS = ['Facile', 'Moyen', 'Difficile'];
 
   function editeurInt(v, lo, hi){ var n = Number(v); return (typeof v !== 'object' && String(v).trim() !== '' && Number.isInteger(n) && n >= lo && n <= hi) ? n : null; }
   function editeurSlug(label){
@@ -8030,6 +8040,19 @@ function phrase(tpl, vars){
           question:'Combien font {n} ' + sign + ' ' + K + ' ?', sub:plus ? 'Ajoute ' + K + '.' : 'Retire ' + K + '.',
           explain:'{n} ' + sign + ' ' + K + ' = {r}.', eq:'{n} ' + sign + ' ' + K + ' = ?' }],
         note:(plus ? 'On ajoute ' : 'On retire ') + K + ' à un nombre. Facile : nombres jusqu\'à {hi0} ; Moyen : jusqu\'à {hi1} ; Difficile : jusqu\'à {hi2}.' };
+    } else if(modele === 'fiche'){
+      var bi = editeurInt(p[0], 0, EDIT_BASES.length - 1);
+      if(bi === null) return { erreur:'Choisis l\'activité de départ.' };
+      var B = EDIT_BASES[bi], F = TEMPLATE_FICHES[B.id], vv = [editeurInt(p[1], 1, 999), editeurInt(p[2], 1, 999), editeurInt(p[3], 1, 999)];
+      if(vv.indexOf(null) !== -1) return { erreur:'Écris un nombre pour chaque niveau.' };
+      for(var li = 0; li < 3; li++){
+        var plancher = Math.max(B.lo, B.min ? B.min(F.levels[li]) : 0);
+        if(vv[li] < plancher || vv[li] > B.hi) return { erreur:'En ' + NIVEAU_NOMS[li] + ' : un nombre de ' + plancher + ' à ' + B.hi + '.' };
+      }
+      if(!(vv[0] <= vv[1] && vv[1] <= vv[2])) return { erreur:'Les nombres doivent grandir de Facile à Difficile.' };
+      var fiche = JSON.parse(JSON.stringify({ tag:F.tag, levels:F.levels, forms:F.forms, note:F.note }));
+      fiche.levels.forEach(function(l, i){ l[B.param] = vv[i]; });
+      act.type = 'gabarit'; act.label = act.label || F.label + ' à ma façon'; act.fiche = fiche; act.meta = { modele:modele, p:[bi].concat(vv) };
     } else if(modele === 'libre'){
       if(!act.label) return { erreur:'Donne un titre à ton activité.' };
       var qs = [];
@@ -8151,6 +8174,16 @@ function phrase(tpl, vars){
         p = p || [7, 5, 8, 10];
         box.appendChild(num('ed-p0', 'Table de', p[0], 2, 12));
         ['Facile', 'Moyen', 'Difficile'].forEach(function(nm, k){ box.appendChild(num('ed-p' + (k + 1), 'Jusqu\'à × … en ' + nm, p[k + 1], 2, 20)); });
+      } else if(modele === 'fiche'){
+        var bases = EDIT_BASES.map(function(b){ return TEMPLATE_FICHES[b.id]; });
+        p = p || [0].concat(bases[0].levels.map(function(l){ return l[EDIT_BASES[0].param]; }));
+        var sb = el('select', {}); bases.forEach(function(f, i){ sb.appendChild(el('option', { value:String(i), text:f.label })); }); sb.value = String(p[0]);
+        box.appendChild(field('ed-p0', 'Activité de départ', sb));
+        [1, 2, 3].forEach(function(j){ box.appendChild(num('ed-p' + j, 'Nombres jusqu\'à … en ' + NIVEAU_NOMS[j - 1], p[j], 1, 999)); });
+        sb.addEventListener('change', function(){      // on repart des réglages d'origine de l'activité choisie
+          var bb = EDIT_BASES[+sb.value], ff = TEMPLATE_FICHES[bb.id];
+          [1, 2, 3].forEach(function(j){ document.getElementById('ed-p' + j).value = ff.levels[j - 1][bb.param]; });
+        });
       } else if(modele === 'plusmoins'){
         p = p || [0, 5, 10, 20, 50];
         var s = el('select', {}); s.appendChild(el('option', { value:'0', text:'Ajouter' })); s.appendChild(el('option', { value:'1', text:'Retirer' })); s.value = String(p[0]);
@@ -8182,7 +8215,7 @@ function phrase(tpl, vars){
       formEl.appendChild(el('ol', { id:'ed-preview', cls:'ed-preview' }));
       t.focus();
     }
-    function close(){ formEl.hidden = true; formEl.innerHTML = ''; cur = null; }
+    function close(){ formEl.hidden = true; formEl.innerHTML = ''; cur = null; newBtn.focus(); }   // le clavier reprend là où il était
     function say2(m){ var x = document.getElementById('ed-msg2'); if(x) x.textContent = m; }
 
     function read(){

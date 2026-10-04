@@ -44,6 +44,27 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     ['inconnu', { ...base }, /inconnu/]];
   for (const [m, v, re] of refus) { const x = await build(m, v); chk(x.erreur && re.test(x.erreur), 'refus (' + m + ') : ' + x.erreur); }
 
+
+  // 2b. « une activité du jeu, à ma façon » : plages changées, mêmes oracles que l'activité d'origine
+  const bases = [['calc', 'max', [4, 8, 30]], ['soustraction', 'aHi', [6, 12, 40]], ['doubleMoitie', 'hi', [5, 8, 30]], ['compare', 'hi', [12, 15, 60]]];
+  for (let bi = 0; bi < bases.length; bi++) {
+    const [id, , vals] = bases[bi];
+    const b = await build('fiche', { ...base, p: [bi, ...vals] });
+    chk(b.act && b.act.type === 'gabarit' && /à ma façon/.test(b.act.label) && b.act.meta.p[0] === bi, 'à ma façon (' + id + ') : activité construite, titre par défaut');
+    for (const lv of [0, 1, 2]) {
+      const a = await J(`JSON.stringify(editeurApercu(${JSON.stringify(b.act)}, ${lv}))`);
+      const nums = (a.questions || []).flatMap(q => (q.q.match(/\d+/g) || []).map(Number));
+      const bad = !a.questions || a.questions.length !== 20 || a.questions.some(q => !q.bonne || q.autres.includes(q.bonne));
+      const mx = Math.max(...nums);
+      chk(!bad && (id === 'doubleMoitie' ? mx <= vals[lv] * 2 : mx <= vals[lv]), 'à ma façon (' + id + ') niveau ' + (lv + 1) + ' : 20 questions valides, nombres ≤ ' + vals[lv] + ' (max vu ' + mx + ')');
+    }
+    // l'activité d'origine du jeu n'est pas modifiée
+    chk((await ev(`TEMPLATE_FICHES['${id}'].levels[2]['${bases[bi][1]}']`)) !== vals[2], 'à ma façon (' + id + ') : l\'activité du jeu reste intacte');
+  }
+  const refus2 = [[{ ...base, p: [9, 5, 8, 10] }, /départ/], [{ ...base, p: [0, 5, 8, ''] }, /pour chaque niveau/], [{ ...base, p: [0, 5, 8, 500] }, /En Difficile : un nombre de 3 à 100/],
+    [{ ...base, p: [1, 5, 8, 40] }, /En Moyen : un nombre de 10 à 100/], [{ ...base, p: [0, 20, 10, 30] }, /grandir/], [{ ...base, p: [3, 9, 15, 60] }, /En Facile : un nombre de 10 à 999/]];
+  for (const [v, re] of refus2) { const x = await build('fiche', v); chk(x.erreur && re.test(x.erreur), 'à ma façon : refus (' + x.erreur + ')'); }
+
   // 3. questions à soi : aperçu, une fois chacune
   const libre = { ...base, label: 'Les animaux', domain: 'logique', icone: '🐶', questions: [
     { q: 'Qui aboie ?', bonne: 'le chien', fausses: ['le chat', 'la vache'], explication: 'Le chien aboie.' },
@@ -103,7 +124,34 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk((await ev(`editeurActs().length`)) === 2 && (await page.locator('#edit-list .pack-item').count()) === 2, 'écran : la nouvelle activité apparaît dans la liste');
   // la liste des paquets montre aussi le paquet personnel
   chk(/Mes activités/.test(await page.textContent('#packs-list')), 'le paquet personnel apparaît dans la liste des paquets (exportable)');
-  // XSS : du HTML dans un titre reste du texte
+
+  // écran « à ma façon »
+  await page.click('#edit-new-btn'); await page.click('.ed-modele-fiche');
+  chk((await page.inputValue('#ed-p1')) === '10' && (await page.inputValue('#ed-p3')) === '20', 'écran : les réglages d\'origine de l\'activité de départ sont proposés');
+  await page.selectOption('#ed-p0', '2');
+  chk((await page.inputValue('#ed-p1')) === '10' && (await page.inputValue('#ed-p3')) === '50', 'écran : changer d\'activité de départ recharge ses réglages (doubles : 10 / 20 / 50)');
+  await page.fill('#ed-p3', '40'); await page.click('#ed-test');
+  chk((await page.locator('#ed-preview li').count()) === 20, 'écran : « à ma façon » : 20 questions d\'essai');
+  await page.click('#ed-save');
+  const mine = await J(`JSON.stringify(editeurActs().filter(function(a){ return a.meta && a.meta.modele === 'fiche'; }).map(function(a){ return a.meta.p; }))`);
+  chk(JSON.stringify(mine) === '[[2,10,20,40]]', 'écran : enregistré avec les nouvelles plages (' + JSON.stringify(mine) + ')');
+  await page.locator('#edit-list .ed-modify').last().click();
+  chk((await page.inputValue('#ed-p0')) === '2' && (await page.inputValue('#ed-p3')) === '40', 'écran : « Modifier » rouvre l\'activité du jeu reprise');
+  await page.click('#ed-cancel');
+  
+  // clavier seul : ouvrir, choisir un modèle, régler, tester, enregistrer, annuler
+  await page.focus('#edit-new-btn'); await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab'); await page.keyboard.press('Enter');          // 1er modèle (table)
+  chk((await page.evaluate(() => document.activeElement.id)) === 'ed-label', 'clavier : choisir un modèle place le curseur sur le titre');
+  const order = [];
+  for (let i = 0; i < 16; i++) { await page.keyboard.press('Tab'); order.push(await page.evaluate(() => document.activeElement.id || document.activeElement.textContent.slice(0, 12))); }
+  const want = ['ed-domain', 'ed-niv0', 'ed-niv1', 'ed-niv2', 'ed-p0', 'ed-p1', 'ed-p2', 'ed-p3', 'ed-test-level', 'ed-test', 'ed-save', 'ed-cancel'];
+  chk(want.every((id, i) => order[i] === id), 'clavier : l\'ordre de tabulation suit l\'écran (' + order.slice(0, 12).join(' › ') + ')');
+  await page.focus('#ed-p0'); await page.keyboard.type('4'); await page.focus('#ed-test'); await page.keyboard.press('Enter');
+  chk((await page.locator('#ed-preview li').count()) === 20, 'clavier : « Tester 20 questions » se déclenche au clavier');
+  await page.focus('#ed-cancel'); await page.keyboard.press('Enter');
+  chk((await page.evaluate(() => document.activeElement.id)) === 'edit-new-btn', 'clavier : après « Annuler », le curseur revient sur « Créer une activité »');
+    // XSS : du HTML dans un titre reste du texte
   await page.click('#edit-new-btn'); await page.click('.ed-modele-libre');
   await page.fill('#ed-label', '<img src=x onerror=window.__pwn=1>');
   await page.fill('.ed-question input.q', 'q'); await page.fill('.ed-question input.bonne', 'a'); await page.fill('.ed-question input.fausse0', 'b');
