@@ -404,3 +404,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - `symVrai`, `symVisuel`, `enigme`, `duree` sont des fiches ; anciens `genSymVraiQuestion`, `genSymVisuelQuestion`, `genEnigmeQuestion`, `genDureeQuestion`, `labelChoices` supprimés (la banque `ENIGME_POOL` des 44 énigmes reste la donnée). **36 types sur 47 en fiches.**
 - Test `formes_check.js` étendu : durées recalculées depuis l'énoncé, explication symétrique = bonne réponse, bonne figure = miroir de la moitié gauche (relu sur le dessin), 44 énigmes toutes atteignables.
 - Reste en QCM (11) : align, milieu, coord, angle, image, coordFind, codage, chasse, decodage, solideNom, solideCompte.
+
+## 70. Décision : arrêt de la migration vers les fiches (04/10/2026)
+- **Bilan : 36 types sur 47 reposent sur une fiche** (gabarit + variables) ; le but « la majorité des activités » est atteint.
+- **Analyse des 11 restants** (align, milieu, coord, angle, image, coordFind, codage, chasse, decodage, solideNom, solideCompte) : leur travail est de la géométrie procédurale (placer des points sur un quadrillage sans collision, vérifier un alignement, tirer des angles écartés d'un minimum, composer un solide) et un dessin propre. Une fiche ne saurait pas l'écrire : il faudrait mettre le même code dans des fonctions nommées, sans réduire le code ni rendre les niveaux plus lisibles. **Pas de gain, on s'arrête.**
+- **Variantes à mutualiser** : aucune qui le justifie. Les variantes d'`align` (3 formes), `milieu` (formes ou repère) et `angle` (comparer, classer, droits) sont déjà des sous-fonctions d'un même type ; `coord` / `coordFind` / `codage` / `decodage` partagent déjà le quadrillage du repère. Les ateliers et écrans propres (Mesurer, Estimer, Déformer, horloge réglable, patrons) restent des familles.
+- À reprendre seulement si une nouvelle activité arithmétique ou à texte (banque + variables) est demandée : on écrit une fiche (voir `src/README.md`).
