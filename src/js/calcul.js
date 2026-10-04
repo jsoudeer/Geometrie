@@ -145,7 +145,7 @@
   // -- Doubles et moitiés --
   function genDoubleMoitieQuestion(level){
     var hi = level===0 ? 10 : level===1 ? 20 : 50;
-    var isDouble = Math.random() < 0.5;
+    var isDouble = rnd() < 0.5;
     if(isDouble){
       var n = randInt(1, hi), r = n*2;
       return eqQuestion('Calcul', 'Quel est le double de ' + n + ' ?', 'Le double, c\'est le nombre plus lui-même.',
@@ -171,7 +171,7 @@
     var tables = level===0 ? [2,10] : level===1 ? [2,5,10] : [2,3,4,5,10];
     var t = pick(tables), n = randInt(1,10), r = t*n;
     var hint = t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
-    if(level===2 && Math.random()<0.4){
+    if(level===2 && rnd()<0.4){
       return eqQuestion('Calcul', t + ' × ? = ' + r, 'Cherche par combien il faut multiplier ' + t + '.',
         t + ' × ' + n + ' = ' + r + '. ' + hint, t + ' × ? = ' + r, n, [n+t, n-t, n*2]);
     }
@@ -182,17 +182,17 @@
   // -- Comparer (<, >, =) --
   function genCompareQuestion(level){
     var lo = level===0 ? 0 : 5, hi = level===0 ? 20 : level===1 ? 30 : 99;
-    var expr = level>=1 && Math.random()<0.6;
+    var expr = level>=1 && rnd()<0.6;
     var left, right, lv, rv;
     if(expr){
       var a=randInt(1,15), b=randInt(1,15), c, d;
       lv = a+b;
       // une fois sur trois, les deux côtés sont égaux (ex. 8 + 5 et 9 + 4)
-      if(Math.random()<0.34){ var tries=0; do { c=randInt(Math.max(1,lv-15), Math.min(15,lv-1)); d=lv-c; tries++; } while((c===a || c===b) && tries<10); }
+      if(rnd()<0.34){ var tries=0; do { c=randInt(Math.max(1,lv-15), Math.min(15,lv-1)); d=lv-c; tries++; } while((c===a || c===b) && tries<10); }
       else { c=randInt(1,15); d=randInt(1,15); }
       rv = c+d; left = a+' + '+b; right = c+' + '+d;
     } else {
-      lv = randInt(lo,hi); rv = Math.random()<0.2 ? lv : randInt(lo,hi);
+      lv = randInt(lo,hi); rv = rnd()<0.2 ? lv : randInt(lo,hi);
       left = String(lv); right = String(rv);
     }
     var sign = lv<rv ? '<' : lv>rv ? '>' : '=';
@@ -216,7 +216,7 @@
   var SUITE_NB_STEPS = [[1,2,5,10],[2,3,5,10],[3,4,6,7,9,11,20,25]];
   function genSuiteNombresQuestion(level){
     var step = pick(SUITE_NB_STEPS[level]);
-    var desc = level>=1 && Math.random()<0.4;
+    var desc = level>=1 && rnd()<0.4;
     var n = 5, first;
     if(desc) first = step*(n-1) + randInt(0, level===2 ? 30 : 10);
     else first = randInt(0, level===0 ? 10 : level===1 ? 20 : 40);
@@ -276,7 +276,7 @@
     var kinds = level===0 ? ['suivant','precedent','grand','petit'] : ['suivant','precedent','entre','grand','petit','pair'];
     var kind = pick(kinds);
     var n = randInt(3, hi-2);
-    if(level>0 && Math.random()<0.4) n = Math.round(n/10)*10 + pick([-1,0,9]);   // frontières de dizaines
+    if(level>0 && rnd()<0.4) n = Math.round(n/10)*10 + pick([-1,0,9]);   // frontières de dizaines
     n = Math.max(3, Math.min(hi-2, n));
     if(kind==='suivant') return bigNumQuestion('Nombres','Quel nombre vient juste après ' + n + ' ?','Ajoute 1.',(n+1) + ' vient juste après ' + n + ' : ' + n + ' + 1 = ' + (n+1) + '.', n + ' → ?', n+1, [n+2, n-1, n+10, n]);
     if(kind==='precedent') return bigNumQuestion('Nombres','Quel nombre vient juste avant ' + n + ' ?','Retire 1.',(n-1) + ' vient juste avant ' + n + ' : ' + n + ' - 1 = ' + (n-1) + '.', '? → ' + n, n-1, [n-2, n+1, n-10, n]);
@@ -331,14 +331,14 @@
   function genFractionQuestion(level){
     var kind = pick(['pie','bar']);
     var dens = level===0 ? [2,4] : level===1 ? [2,3,4] : [3,4,5,6,8];
-    if(Math.random() < (level===0 ? 0.5 : 0.4)){
+    if(rnd() < (level===0 ? 0.5 : 0.4)){
       // -- Choisir le DESSIN qui a la bonne fraction coloriée --
       var TARGETS = level===0 ? [[1,2,'la moitié'],[1,4,'le quart']] : [[1,2,'la moitié'],[1,4,'le quart'],[3,4,'les trois quarts'],[1,3,'le tiers']];
       var tg = pick(TARGETS);
       var val = tg[0]/tg[1];
       var options = [];   // { n, k, kind }
       var used = {}; used[val] = true;
-      var okN = level===2 && tg[1]%2===0 && Math.random()<0.6 ? tg[1]*2 : tg[1];
+      var okN = level===2 && tg[1]%2===0 && rnd()<0.6 ? tg[1]*2 : tg[1];
       options.push({ n:okN, k:tg[0]*okN/tg[1], ok:true });
       var guard = 0;
       while(options.length<4 && guard++<200){
@@ -385,12 +385,13 @@
       var n = randInt(3,12), icon = pick(COUNT_ICONS);
       var cells = []; for(var i=0;i<16;i++) cells.push(i);
       var chosen = shuffle(cells).slice(0,n);
+      var jit = chosen.map(function(){ return [randInt(-6,6), randInt(-4,4)]; });   // décalages tirés une fois : redessiner = même image
       return {
         tag:'Dénombrement', question:'Combien y a-t-il d\'objets ?', sub:'Compte-les un par un, sans en oublier ni en compter deux fois.',
         explain:'Il y a ' + n + ' objets.',
         draw:function(){
           var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-          chosen.forEach(function(c){ var x = 28 + (c%4)*48 + randInt(-6,6), y = 52 + Math.floor(c/4)*44 + randInt(-4,4); svg.appendChild(svgText(x,y,30,icon)); });
+          chosen.forEach(function(c, i){ var x = 28 + (c%4)*48 + jit[i][0], y = 52 + Math.floor(c/4)*44 + jit[i][1]; svg.appendChild(svgText(x,y,30,icon)); });
         },
         cols3:false, choices: numChoices(n, [n+1,n-1,n+2,n-2])
       };

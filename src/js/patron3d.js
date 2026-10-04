@@ -570,7 +570,7 @@
 
   function pickNetForLevel(idx){
     var pool = M3_LEVELS[idx].pool;
-    return pool[Math.floor(Math.random()*pool.length)];
+    return pool[Math.floor(rnd()*pool.length)];
   }
 
   function netExplain(net){
@@ -796,10 +796,10 @@
   // aussi vu sous un angle différent. Marche pour tous les solides sans
   // toucher à chaque fonction de dessin : on dessine dans un <g> qu'on
   // retourne éventuellement, plutôt que directement dans le <svg>.
-  function drawSolidVaried(svg, meta){
+  function drawSolidVaried(svg, meta, flip){
     svg.innerHTML = "";
     var g = document.createElementNS(svgNS,'g');
-    if(Math.random()<0.5) g.setAttribute('transform','translate(200,0) scale(-1,1)');
+    if(flip) g.setAttribute('transform','translate(200,0) scale(-1,1)');
     svg.appendChild(g);
     meta.draw(g);
   }
@@ -860,7 +860,7 @@
   function genSolideNomQuestion(level){
     var keys = SOLIDE_NOM_LEVELS[level];
     var key = pick(keys);
-    var meta = SOLID_META[key];
+    var meta = SOLID_META[key], flip = rnd() < 0.5;
     var poolLabels = shuffle(keys.map(function(k){ return SOLID_META[k].label; }).filter(function(l){return l!==meta.label;})).slice(0,3);
     var labels = shuffle([meta.label].concat(poolLabels));
     return {
@@ -868,7 +868,7 @@
       question:'Quel est le nom de ce solide ?',
       sub:'Observe bien sa forme en 3D.',
       explain:'C\'est un(e) ' + meta.label + ' : ' + (SOLID_FACTS[meta.label] || 'observe bien ses faces.'),
-      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta, flip); },
       cols3:false,
       choices: labels.map(function(l){ return { label:l, ok:l===meta.label }; })
     };
@@ -881,7 +881,7 @@
   var SOLIDE_COMPTE_LEVELS = [['cube','pave','pyramide'], ['cube','pave','pyramide','tetraedre'], SOLID_COMPTE_KEYS];
   function genSolideCompteQuestion(level){
     var key = pick(SOLIDE_COMPTE_LEVELS[level]);
-    var meta = SOLID_META[key];
+    var meta = SOLID_META[key], flip = rnd() < 0.5;
     var attr = pick(['faces','sommets','aretes']);
     var correct = meta[attr];
     var attrLabel = attr==='faces'?'faces' : attr==='sommets'?'sommets' : 'arêtes';
@@ -890,7 +890,7 @@
       question:'Combien de ' + attrLabel + ' a ce solide (' + meta.label + ') ?',
       sub:'Essaie de bien visualiser toutes les faces, même celles qu\'on ne voit pas directement.',
       explain: COUNT_DEFS[attr] + ' ' + countTip(key, attr) + ' (Un ' + meta.label + ' a ' + meta.faces + ' faces, ' + meta.aretes + ' arêtes et ' + meta.sommets + ' sommets.)',
-      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta, flip); },
       cols3:false,
       // Les distracteurs sont pris AUTOUR de la vraie valeur (plutôt qu'un
       // pool fixe 2-12) : nécessaire depuis l'ajout des prismes, dont le

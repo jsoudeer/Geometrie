@@ -25,7 +25,7 @@
     if(level===2 && n%100===0) n += randInt(1,99);
     var w = nombreEnLettres(n);
     var c = Math.floor(n/100), d = Math.floor(n/10)%10, u = n%10;
-    if(Math.random()<0.5){
+    if(rnd()<0.5){
       var swap = c ? c*100 + u*10 + d : u*10 + d;
       var extra = [n+10, n-10, swap, n+1, n-1];
       if(n%100>=70) extra.push(n-10, n-20);        // soixante-dix, quatre-vingt-dix… : pièges 60+, 80+
@@ -52,7 +52,7 @@
   // ---- Ajouter / enlever 10, 100 (et 1 aux frontières) ----
   function genPlusMoinsQuestion(level){
     var step, n, sign;
-    if(level===0){ step = 10; sign = pick([1,-1]); n = sign>0 ? randInt(1,8)*10 + (Math.random()<0.5 ? 0 : randInt(1,9)) : randInt(2,9)*10 + (Math.random()<0.5 ? 0 : randInt(1,9)); }
+    if(level===0){ step = 10; sign = pick([1,-1]); n = sign>0 ? randInt(1,8)*10 + (rnd()<0.5 ? 0 : randInt(1,9)) : randInt(2,9)*10 + (rnd()<0.5 ? 0 : randInt(1,9)); }
     else if(level===1){
       step = pick([10,10,100]); sign = pick([1,-1]);
       if(step===100) n = sign>0 ? randInt(100,899) : randInt(200,999);
@@ -61,7 +61,7 @@
     else {
       step = pick([1,10,100,20,30,200]); sign = pick([1,-1]);
       if(step===1){ n = sign>0 ? pick([99,199,299,399,499,599,699,799,899,109,119,129,139]) : pick([100,200,300,400,500,600,700,800,900,110,120,130,140]); }
-      else if(step===10 || step===20 || step===30){ n = sign>0 ? randInt(100,970-step) : randInt(110+step, 999); if(Math.random()<0.6) n = Math.floor(n/100)*100 + (sign>0 ? randInt(10,99-step+10) : randInt(0,step)); }
+      else if(step===10 || step===20 || step===30){ n = sign>0 ? randInt(100,970-step) : randInt(110+step, 999); if(rnd()<0.6) n = Math.floor(n/100)*100 + (sign>0 ? randInt(10,99-step+10) : randInt(0,step)); }
       else { n = sign>0 ? randInt(100,999-step) : randInt(100+step,999); }
     }
     var res = n + sign*step;
@@ -82,8 +82,8 @@
     do { n = randInt(base===100 ? 101 : 11, hi); }
     while(n%base===0 || n%10===5 || (base===100 && Math.floor(n/10)%10===5));   // jamais un 5 en dernier chiffre : « arrondis 605 à la dizaine » serait ambigu (milieu exact)
     var lo = Math.floor(n/base)*base, up = lo + base;
-    var arrondi = level>0 && Math.random()<0.5;
-    if(level===2 && arrondi && Math.random()<0.4){ base = 10; lo = Math.floor(n/10)*10; up = lo + 10; }
+    var arrondi = level>0 && rnd()<0.5;
+    if(level===2 && arrondi && rnd()<0.4){ base = 10; lo = Math.floor(n/10)*10; up = lo + 10; }
     if(arrondi){
       var near = (n-lo) < (up-n) ? lo : up;
       var unit = base===100 ? 'la centaine' : 'la dizaine';
@@ -161,11 +161,11 @@
   function genAdditionQuestion(level){
     var a, b, guard = 0;
     do {
-      if(level===0){ a = randInt(11,89); b = Math.random()<0.5 ? randInt(1,9) : randInt(1,8)*10; }
+      if(level===0){ a = randInt(11,89); b = rnd()<0.5 ? randInt(1,9) : randInt(1,8)*10; }
       else if(level===1){ a = randInt(15,89); b = randInt(11,60); }
-      else { a = randInt(120,899); b = Math.random()<0.5 ? randInt(11,99) : randInt(110,500); }
+      else { a = randInt(120,899); b = rnd()<0.5 ? randInt(11,99) : randInt(110,500); }
       guard++;
-    } while(guard<200 && ((level===0 && (hasCarry(a,b) || a+b>99)) || (level===1 && (a+b>99 || (guard<100 && !hasCarry(a,b) && Math.random()<0.6))) || (level===2 && (a+b>999 || (guard<100 && !hasCarry(a,b) && Math.random()<0.5)))));
+    } while(guard<200 && ((level===0 && (hasCarry(a,b) || a+b>99)) || (level===1 && (a+b>99 || (guard<100 && !hasCarry(a,b) && rnd()<0.6))) || (level===2 && (a+b>999 || (guard<100 && !hasCarry(a,b) && rnd()<0.5)))));
     var s = a + b;
     var q = bigNumQuestion('Calcul','Calcule ' + a + ' + ' + b + '.','Additionne en colonnes : unités, puis dizaines' + (level===2 ? ', puis centaines' : '') + ' (n\'oublie pas la retenue).',
       addExplain(a,b), a + ' + ' + b, s, [s-10, s+10, s+1, s-1, hasCarry(a,b) ? s-10 : s+10, level===2 ? s+100 : s+20]);
@@ -174,11 +174,11 @@
   function genSoustractionPoseeQuestion(level){
     var a, b, guard = 0;
     do {
-      if(level===0){ a = randInt(21,99); b = Math.random()<0.5 ? randInt(1,9) : randInt(1,Math.floor(a/10)-1)*10; }
+      if(level===0){ a = randInt(21,99); b = rnd()<0.5 ? randInt(1,9) : randInt(1,Math.floor(a/10)-1)*10; }
       else if(level===1){ a = randInt(31,99); b = randInt(11,a-5); }
-      else { a = randInt(121,999); b = Math.random()<0.5 ? randInt(11,99) : randInt(101,a-10); }
+      else { a = randInt(121,999); b = rnd()<0.5 ? randInt(11,99) : randInt(101,a-10); }
       guard++;
-    } while(guard<200 && (a<=b || (level===0 && hasBorrow(a,b)) || (level>0 && guard<100 && !hasBorrow(a,b) && Math.random()<0.6)));
+    } while(guard<200 && (a<=b || (level===0 && hasBorrow(a,b)) || (level>0 && guard<100 && !hasBorrow(a,b) && rnd()<0.6)));
     var r = a - b;
     return bigNumQuestion('Calcul','Calcule ' + a + ' - ' + b + '.','Soustrais en colonnes : unités, puis dizaines' + (level===2 ? ', puis centaines' : '') + ' (emprunte 1 si le chiffre du haut est trop petit).',
       subExplain(a,b), a + ' - ' + b, r, [r+10, r-10, r+1, r-1, level===2 ? r+100 : r+20, level>0 ? Math.abs((Math.floor(a/10)%10 - Math.floor(b/10)%10))*10 + Math.abs(a%10 - b%10) : r+2]);

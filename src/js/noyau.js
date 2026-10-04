@@ -434,9 +434,30 @@
     playSound('good');
   });
 
+  // Hasard des QUESTIONS : tout passe par rnd() (jamais Math.random() directement), pour pouvoir
+  // le rendre reproductible. withSeed(graine, fn) exécute fn avec un générateur à graine
+  // (mulberry32) et des sacs « sans remise » vierges, puis remet tout comme avant : deux
+  // appels avec la même graine donnent la même question. Les effets visuels (confettis…)
+  // gardent Math.random().
+  var RNG = null;
+  function rnd(){ return RNG ? RNG() : Math.random(); }
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function withSeed(seed, fn){
+    var savedRng = RNG, savedBags = FRESH_BAGS;
+    RNG = mulberry32(seed); FRESH_BAGS = {};
+    try { return fn(); } finally { RNG = savedRng; FRESH_BAGS = savedBags; }
+  }
+
   function shuffle(arr){
     for(var i=arr.length-1;i>0;i--){
-      var j = Math.floor(Math.random()*(i+1));
+      var j = Math.floor(rnd()*(i+1));
       var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
     }
     return arr;
@@ -453,7 +474,7 @@
       for(var i=0;i<arr.length;i++) idx.push(i);
       shuffle(idx);
       if(idx.length>1 && idx[idx.length-1]===b.last){   // le prochain sorti = idx.pop()
-        var j = Math.floor(Math.random()*(idx.length-1));
+        var j = Math.floor(rnd()*(idx.length-1));
         var t = idx[idx.length-1]; idx[idx.length-1] = idx[j]; idx[j] = t;
       }
       b.bag = idx;
@@ -784,8 +805,8 @@
 
 
   // ---- Outils partagés par tous les thèmes ----
-  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function rand(a,b){ return a+Math.random()*(b-a); }
+  function pick(arr){ return arr[Math.floor(rnd()*arr.length)]; }
+  function rand(a,b){ return a+rnd()*(b-a); }
 
   function randInt(a,b){ return Math.floor(rand(a, b+1)); }
 

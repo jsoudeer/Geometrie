@@ -159,7 +159,7 @@
     m5Target.level = lvl;
     if(lvl===0){
       m5Target.hour = 1+randInt(0,11);
-      m5Target.minute = Math.random()<0.5 ? 30 : 0;
+      m5Target.minute = rnd()<0.5 ? 30 : 0;
       label = m5Target.hour + ' h' + (m5Target.minute ? ' 30' : '');
     } else if(lvl===1){
       m5Target.hour = 1+randInt(0,11);
@@ -323,7 +323,7 @@
     if(level >= 2) return genHeure24Question(svgId);
     var step = level===0 ? 30 : 15;
     var hour = 1+randInt(0,11);
-    var minuteVal = level===0 ? (Math.random()<0.5?0:30) : pick((function(){
+    var minuteVal = level===0 ? (rnd()<0.5?0:30) : pick((function(){
       var opts=[]; for(var m=0;m<60;m+=step) opts.push(m); return opts;
     })());
     var hourAngleDeg = ((hour%12) + minuteVal/60) * 30 - 90;
@@ -473,7 +473,7 @@
       sub = 'Compte les jours qui passent, un par un.';
     }
     else { // decalage : dans N jours / il y a N jours
-      var n = randInt(2,6), fwd = Math.random()<0.6;
+      var n = randInt(2,6), fwd = rnd()<0.6;
       correct = JOURS[((i + (fwd ? n : -n)) % 7 + 7) % 7]; pool = JOURS;
       q = 'Aujourd\'hui, c\'est ' + JOURS[i] + '. Quel jour ' + (fwd ? 'sera-t-on dans ' + n + ' jours ?' : 'était-on il y a ' + n + ' jours ?');
       explain = 'À partir de ' + JOURS[i] + ', on ' + (fwd ? 'avance' : 'recule') + ' de ' + n + ' jours : on arrive à ' + correct + '.';

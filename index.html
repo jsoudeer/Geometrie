@@ -2126,9 +2126,30 @@
     playSound('good');
   });
 
+  // Hasard des QUESTIONS : tout passe par rnd() (jamais Math.random() directement), pour pouvoir
+  // le rendre reproductible. withSeed(graine, fn) exécute fn avec un générateur à graine
+  // (mulberry32) et des sacs « sans remise » vierges, puis remet tout comme avant : deux
+  // appels avec la même graine donnent la même question. Les effets visuels (confettis…)
+  // gardent Math.random().
+  var RNG = null;
+  function rnd(){ return RNG ? RNG() : Math.random(); }
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function withSeed(seed, fn){
+    var savedRng = RNG, savedBags = FRESH_BAGS;
+    RNG = mulberry32(seed); FRESH_BAGS = {};
+    try { return fn(); } finally { RNG = savedRng; FRESH_BAGS = savedBags; }
+  }
+
   function shuffle(arr){
     for(var i=arr.length-1;i>0;i--){
-      var j = Math.floor(Math.random()*(i+1));
+      var j = Math.floor(rnd()*(i+1));
       var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
     }
     return arr;
@@ -2145,7 +2166,7 @@
       for(var i=0;i<arr.length;i++) idx.push(i);
       shuffle(idx);
       if(idx.length>1 && idx[idx.length-1]===b.last){   // le prochain sorti = idx.pop()
-        var j = Math.floor(Math.random()*(idx.length-1));
+        var j = Math.floor(rnd()*(idx.length-1));
         var t = idx[idx.length-1]; idx[idx.length-1] = idx[j]; idx[j] = t;
       }
       b.bag = idx;
@@ -2476,8 +2497,8 @@
 
 
   // ---- Outils partagés par tous les thèmes ----
-  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function rand(a,b){ return a+Math.random()*(b-a); }
+  function pick(arr){ return arr[Math.floor(rnd()*arr.length)]; }
+  function rand(a,b){ return a+rnd()*(b-a); }
 
   function randInt(a,b){ return Math.floor(rand(a, b+1)); }
 
@@ -2722,7 +2743,7 @@ function mascottes(){
 function toutesLesPersonnes(){ return PRENOMS.concat(mascottes()); }
 // Une fois sur deux un prénom d'enfant, une fois sur deux une mascotte (chaque liste sans remise).
 function prenomAuHasard(){
-  return Math.random() < 0.5 ? pickFresh('prenom', PRENOMS) : pickFresh('mascotte', mascottes());
+  return rnd() < 0.5 ? pickFresh('prenom', PRENOMS) : pickFresh('mascotte', mascottes());
 }
 function objetAuHasard(groupe){
   var l = OBJETS.filter(function(o){ return o.groupe===groupe; });
@@ -2840,9 +2861,9 @@ function phrase(tpl, vars){
     var span = (lv.lenMax - lv.lenMin);
     if(lv.half){
       var steps = span*2;
-      currentLen = lv.lenMin + Math.floor(Math.random()*(steps+1))/2;
+      currentLen = lv.lenMin + Math.floor(rnd()*(steps+1))/2;
     } else {
-      currentLen = lv.lenMin + Math.floor(Math.random()*(span+1));
+      currentLen = lv.lenMin + Math.floor(rnd()*(span+1));
     }
     m1RulerStart = randInt(lv.startMin, lv.startMax);
     var offset = lv.offsetMax>0 ? randInt(0, lv.offsetMax) : 0;
@@ -2863,7 +2884,7 @@ function phrase(tpl, vars){
     var picks = pool.slice(0, Math.min(3, pool.length));
     while(picks.length<3){
       // filet de sécurité si la plage est très étroite : complète avec des valeurs proches
-      var extra = Math.round((currentLen + (Math.random()<0.5?-1:1)*stepUnit*(picks.length+1))*2)/2;
+      var extra = Math.round((currentLen + (rnd()<0.5?-1:1)*stepUnit*(picks.length+1))*2)/2;
       extra = Math.max(lv.lenMin, Math.min(lv.lenMax, extra));
       if(picks.indexOf(extra)===-1 && extra!==currentLen) picks.push(extra);
       else break; // évite toute boucle infinie, quitte à avoir moins de 4 choix
@@ -3519,12 +3540,12 @@ function phrase(tpl, vars){
     // rotation proche de 45° ferait ressembler un carré à un losange à
     // l'oeil, ce qui entretiendrait exactement la confusion qu'on veut lever.
     carre:     { sides:4, vertices:4, label:'carré',     note:'Le carré a 4 côtés ÉGAUX et 4 angles droits. C\'est ce qui le différencie du losange (angles pas droits) et du rectangle (côtés pas tous égaux).', gen:function(){ return rectPoly(112,112, rand(-0.18,0.18)); } },
-    rectangle: { sides:4, vertices:4, label:'rectangle', note:'Le rectangle a 4 angles droits comme le carré, mais ses côtés ne sont pas tous égaux : 2 côtés longs et 2 côtés courts.', gen:function(){ var w=95+Math.random()*35; return rectPoly(w, w*0.55, rand(-0.18,0.18)); } },
+    rectangle: { sides:4, vertices:4, label:'rectangle', note:'Le rectangle a 4 angles droits comme le carré, mais ses côtés ne sont pas tous égaux : 2 côtés longs et 2 côtés courts.', gen:function(){ var w=95+rnd()*35; return rectPoly(w, w*0.55, rand(-0.18,0.18)); } },
     pentagone: { sides:5, vertices:5, label:'pentagone', note:'Le pentagone a 5 côtés et 5 sommets.', gen:function(){ return regularPoly(5, rand(0,2*Math.PI)); } },
     hexagone:  { sides:6, vertices:6, label:'hexagone',  note:'L\'hexagone a 6 côtés et 6 sommets.', gen:function(){ return regularPoly(6, rand(0,2*Math.PI)); } },
-    cercle:    { sides:0, vertices:0, label:'cercle', isCircle:true, note:'Le cercle est tout rond : contrairement aux autres formes, il n\'a ni côté droit, ni sommet.', gen:function(){ return { r: 55+Math.random()*20 }; } },
+    cercle:    { sides:0, vertices:0, label:'cercle', isCircle:true, note:'Le cercle est tout rond : contrairement aux autres formes, il n\'a ni côté droit, ni sommet.', gen:function(){ return { r: 55+rnd()*20 }; } },
     losange:   { sides:4, vertices:4, label:'losange',   note:'Le losange a 4 côtés ÉGAUX, comme le carré, mais ses angles ne sont pas droits : il a l\'air "penché".', gen:function(){
-      var rx=38+Math.random()*16, ry=58+Math.random()*16, rot=rand(0,Math.PI/2);
+      var rx=38+rnd()*16, ry=58+rnd()*16, rot=rand(0,Math.PI/2);
       var base=[[0,-ry],[rx,0],[0,ry],[-rx,0]];
       return base.map(function(p){
         var x=p[0]*Math.cos(rot)-p[1]*Math.sin(rot);
@@ -3544,15 +3565,15 @@ function phrase(tpl, vars){
     }));
   }
 
-  function drawShapeGeneric(meta){
+  // geom = meta.gen() est tiré à la génération de la question (et non au dessin) : redessiner = même image.
+  function drawShapeGeneric(meta, geom){
     if(meta.isCircle){
       var svg = document.getElementById('m4Svg');
       svg.setAttribute('viewBox','0 0 200 200');
       svg.innerHTML = "";
-      var g = meta.gen();
-      svg.appendChild(el('circle',{cx:100,cy:100,r:g.r, fill:'var(--accent2)','fill-opacity':'0.5',stroke:'var(--accent)','stroke-width':4}));
+      svg.appendChild(el('circle',{cx:100,cy:100,r:geom.r, fill:'var(--accent2)','fill-opacity':'0.5',stroke:'var(--accent)','stroke-width':4}));
     } else {
-      drawPolygon(meta.gen());
+      drawPolygon(geom);
     }
   }
 
@@ -3590,7 +3611,7 @@ function phrase(tpl, vars){
   }
 
   function genHouseQuestion(){
-    var withWindow = Math.random()<0.5;
+    var withWindow = rnd()<0.5;
     var correct = withWindow ? 12 : 8;
     return {
       tag: 'Photo / illustration',
@@ -3623,7 +3644,7 @@ function phrase(tpl, vars){
   }
 
   function genFenceQuestion(){
-    var count = 3 + Math.floor(Math.random()*4); // 3 à 6
+    var count = 3 + Math.floor(rnd()*4); // 3 à 6
     return {
       tag: 'Photo / illustration',
       question: 'Combien de planches (rectangles) compte cette clôture ?',
@@ -3651,7 +3672,7 @@ function phrase(tpl, vars){
   }
 
   function genCastleQuestion(){
-    var towers = Math.random()<0.5 ? 2 : 3;
+    var towers = rnd()<0.5 ? 2 : 3;
     return {
       tag: 'Photo / illustration',
       question: 'Combien de fanions triangulaires vois-tu sur ce château ?',
@@ -3683,7 +3704,7 @@ function phrase(tpl, vars){
   }
 
   function genRobotQuestion(){
-    var arms = Math.random()<0.5 ? 2 : 4;
+    var arms = rnd()<0.5 ? 2 : 4;
     var correct = 2 /*tête+corps*/ + 2 /*jambes*/ + arms;
     return {
       tag: 'Photo / illustration',
@@ -3713,7 +3734,7 @@ function phrase(tpl, vars){
     }
   }
   function genTrainQuestion(){
-    var wagons = 2+Math.floor(Math.random()*3); // 2 à 4
+    var wagons = 2+Math.floor(rnd()*3); // 2 à 4
     var correct = wagons;
     return {
       tag: 'Photo / illustration',
@@ -3806,9 +3827,9 @@ function phrase(tpl, vars){
   // Variante 1 : 3 points, alignés ou non. Au niveau Moyen/Difficile, les « non alignés »
   // sont souvent des presque-alignés (un point décalé d'une case).
   function genAlignOui(level){
-    var aligned = Math.random()<0.5, pts;
+    var aligned = rnd()<0.5, pts;
     if(aligned) pts = alignedTriple(alignModes(level));
-    else if(level>0 && Math.random()<0.6){
+    else if(level>0 && rnd()<0.6){
       pts = alignedTriple(alignModes(level));
       var k = pick([0,1,2]), tries = 0, cand;
       do { cand = {col:pts[k].col + pick([-1,0,1]), row:pts[k].row + pick([-1,0,1])}; tries++; }
@@ -3918,18 +3939,18 @@ function phrase(tpl, vars){
   function genMilieuQuestion(level){
     level = level || 0;
     if(level===0) return genMilieuFormes(0);
-    if(level===2 && Math.random()<0.5) return genMilieuCoord();
+    if(level===2 && rnd()<0.5) return genMilieuCoord();
     return genMilieuFormes(level);
   }
   function genMilieuFormes(level){
-    var horizontal = Math.random()<0.5;
+    var horizontal = rnd()<0.5;
     var fixedIdx = randInt(0,4);
     var span = 2, s0 = 0, e0 = 2, noneAnswer = false;
     if(level===0){ span = 2; s0 = 1; e0 = 3; }
     else {
       span = pick([2,4,4]);
       s0 = span===4 ? 0 : randInt(0,2); e0 = s0 + span;
-      noneAnswer = Math.random()<0.4;
+      noneAnswer = rnd()<0.4;
     }
     var mid = (s0+e0)/2;
     var positions = [];
@@ -4080,7 +4101,7 @@ function phrase(tpl, vars){
     var startCol, startRow, moves, endCol, endRow;
     for(var attempt=0; attempt<50; attempt++){
       var sc=randInt(0,4), sr=randInt(0,4);
-      var steps = 2+Math.floor(Math.random()*2);
+      var steps = 2+Math.floor(rnd()*2);
       var mv=[], c=sc, r=sr, ok=true;
       for(var i=0;i<steps;i++){
         var dir=pick(['up','down','left','right']);
@@ -4206,7 +4227,7 @@ function phrase(tpl, vars){
     var target=pick(pool);
     var assignments, tries=0;
     do{
-      assignments = CHASSE_SLOTS.map(function(){ return Math.random()<0.85 ? pick(pool) : null; });
+      assignments = CHASSE_SLOTS.map(function(){ return rnd()<0.85 ? pick(pool) : null; });
       tries++;
     } while(tries<20 && assignments.filter(function(t){return t===target;}).length===0);
     if(assignments.filter(function(t){return t===target;}).length===0) assignments[0]=target;
@@ -4251,19 +4272,19 @@ function phrase(tpl, vars){
   // par le centre de symétrie.
   function genSymVraiQuestion(){
     var fig = pickFresh('symvrai-fig', ['rect','carre','tri','cercle']);
-    var isAxis = Math.random()<0.5, line, shape, expTrue, expFalse;
+    var isAxis = rnd()<0.5, line, shape, expTrue, expFalse;
     if(fig==='rect'){
       var w = 70+randInt(0,60), h; do{ h = 40+randInt(0,50); }while(Math.abs(w-h)<20);
-      var rx = 100-w/2, ry = 100-h/2, vertical = Math.random()<0.5, pct = isAxis ? 50 : pick(SYM_VRAI_OFFSETS);
+      var rx = 100-w/2, ry = 100-h/2, vertical = rnd()<0.5, pct = isAxis ? 50 : pick(SYM_VRAI_OFFSETS);
       line = vertical ? {x1:rx+w*(pct/100), y1:ry-15, x2:rx+w*(pct/100), y2:ry+h+15} : {x1:rx-15, y1:ry+h*(pct/100), x2:rx+w+15, y2:ry+h*(pct/100)};
       shape = function(svg){ svg.appendChild(el('rect',{x:rx,y:ry,width:w,height:h, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4})); };
       expTrue = 'Oui : cette droite passe exactement au milieu, donc en pliant le long d\'elle, les deux moitiés du rectangle se superposent.';
       expFalse = 'Non : cette droite ne passe pas exactement au milieu (elle est décalée), donc les deux parties n\'ont pas la même taille — ce n\'est pas un axe de symétrie.';
     } else if(fig==='carre'){
       var c = 70+randInt(0,40), x0 = 100-c/2, y0 = 100-c/2, kind = isAxis ? pick(['mid','diag']) : pick(['off','off','offd']);
-      if(kind==='mid') line = Math.random()<0.5 ? {x1:100, y1:y0-15, x2:100, y2:y0+c+15} : {x1:x0-15, y1:100, x2:x0+c+15, y2:100};
-      else if(kind==='diag') line = Math.random()<0.5 ? {x1:x0-12, y1:y0-12, x2:x0+c+12, y2:y0+c+12} : {x1:x0-12, y1:y0+c+12, x2:x0+c+12, y2:y0-12};
-      else { var pc = pick([15,25,35,65,75,85])/100; line = Math.random()<0.5 ? {x1:x0+c*pc, y1:y0-15, x2:x0+c*pc, y2:y0+c+15} : {x1:x0-15, y1:y0+c*pc, x2:x0+c+15, y2:y0+c*pc}; }
+      if(kind==='mid') line = rnd()<0.5 ? {x1:100, y1:y0-15, x2:100, y2:y0+c+15} : {x1:x0-15, y1:100, x2:x0+c+15, y2:100};
+      else if(kind==='diag') line = rnd()<0.5 ? {x1:x0-12, y1:y0-12, x2:x0+c+12, y2:y0+c+12} : {x1:x0-12, y1:y0+c+12, x2:x0+c+12, y2:y0-12};
+      else { var pc = pick([15,25,35,65,75,85])/100; line = rnd()<0.5 ? {x1:x0+c*pc, y1:y0-15, x2:x0+c*pc, y2:y0+c+15} : {x1:x0-15, y1:y0+c*pc, x2:x0+c+15, y2:y0+c*pc}; }
       shape = function(svg){ svg.appendChild(el('rect',{x:x0,y:y0,width:c,height:c, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4})); };
       expTrue = kind==='diag' ? 'Oui : dans un carré, les diagonales sont aussi des axes de symétrie. En pliant le long de la diagonale, les deux triangles se superposent.' : 'Oui : cette droite passe exactement par le milieu des côtés, donc les deux moitiés du carré se superposent.';
       expFalse = 'Non : cette droite est décalée, elle ne passe pas par le centre du carré : les deux parties ne se superposent pas.';
@@ -4408,7 +4429,7 @@ function phrase(tpl, vars){
         svg.appendChild(el('rect',{x:x0,y:y0,width:w*c,height:h*c,fill:'none',stroke:'var(--text)','stroke-width':3}));
       };
     } else if(level===1){
-      var sq = Math.random()<0.4;
+      var sq = rnd()<0.4;
       w = randInt(3,12); h = sq ? w : randInt(2,10); if(!sq && w===h) h = h+1;
       ans = 2*(w+h);
       question = sq ? 'Un carré a des côtés de ' + w + ' cm. Quel est son périmètre ?' : 'Un rectangle mesure ' + w + ' cm de long et ' + h + ' cm de large. Quel est son périmètre ?';
@@ -4445,12 +4466,13 @@ function phrase(tpl, vars){
     var maj, mino, rotFixed = false, kind;
     if(level===0){ var t = shuffle([3,4,0]); maj = t[0]; mino = t[1]; }
     else if(level===1){ var t2 = shuffle([3,4,5,6]); maj = t2[0]; mino = t2[1]; }
-    else if(Math.random()<0.5){ kind = 'carreRect'; rotFixed = true; }
+    else if(rnd()<0.5){ kind = 'carreRect'; rotFixed = true; }
     else { var t3 = shuffle([5,6,8]); maj = t3[0]; mino = t3[1]; }
     var pos = randInt(0,3), letters = ['A','B','C','D'], colors = ['var(--accent)','var(--accent2)','var(--accent3)'];
+    // couleur, taille et rotation de chaque forme : tirées une fois, à la génération
+    var look = [0,1,2,3].map(function(){ return { fill:colors[randInt(0,2)], r:randInt(24,32), rot: rotFixed ? -90 : randInt(0,359) }; });
     function drawOne(svg, k, isIntrus, cx, cy){
-      var fill = colors[randInt(0,2)], r = randInt(24,32);
-      var rot = rotFixed ? -90 : randInt(0,359);
+      var fill = look[k].fill, r = look[k].r, rot = look[k].rot;
       var node;
       if(kind==='carreRect'){
         if(isIntrus) node = el('rect',{x:cx-r*1.15,y:cy-r*0.62,width:r*2.3,height:r*1.24});
@@ -4612,7 +4634,7 @@ function phrase(tpl, vars){
   // ---- Questions de Quizz déplacées depuis l'ancien moteur (mêmes textes, même tirage) ----
   function genSidesVerticesQuestion(type, level){
     var shapeKey = pick(GEO_LEVELS[level].shapes);
-    var meta = SHAPE_META[shapeKey];
+    var meta = SHAPE_META[shapeKey], geom = meta.gen();
     var correct = (type==='sides') ? meta.sides : meta.vertices;
     var choices = numChoiceSet(correct, [0,1,2,3,4,5,6,7,8]);
     return {
@@ -4620,7 +4642,7 @@ function phrase(tpl, vars){
       question: type==='sides' ? 'Combien de côtés a cette forme ?' : 'Combien de sommets (angles) a cette forme ?',
       sub: meta.isCircle ? 'Regarde bien : cette forme est-elle vraiment pointue quelque part ?' : 'Observe bien la forme, puis choisis la bonne réponse.',
       explain: 'Un ' + meta.label + ' a ' + meta.sides + ' côtés et ' + meta.vertices + ' sommets. ' + meta.note,
-      draw: function(){ drawShapeGeneric(meta); },
+      draw: function(){ drawShapeGeneric(meta, geom); },
       cols3: false,
       choices: choices.map(function(v){ return { label:String(v), ok: v===correct }; })
     };
@@ -4628,7 +4650,7 @@ function phrase(tpl, vars){
 
   function genNameQuestion(level){
     var shapeKey2 = pick(GEO_LEVELS[level].shapes);
-    var meta2 = SHAPE_META[shapeKey2];
+    var meta2 = SHAPE_META[shapeKey2], geom2 = meta2.gen();
     var pool = shuffle(NAME_POOL.filter(function(n){return n!==meta2.label;})).slice(0,3);
     var labels = shuffle([meta2.label].concat(pool));
     return {
@@ -4636,7 +4658,7 @@ function phrase(tpl, vars){
       question: 'Quel est le nom de cette forme ?',
       sub: 'Observe bien la forme, puis choisis son nom.',
       explain: 'C\'est un ' + meta2.label + '. ' + meta2.note,
-      draw: function(){ drawShapeGeneric(meta2); },
+      draw: function(){ drawShapeGeneric(meta2, geom2); },
       cols3: false,
       choices: labels.map(function(l){ return { label:l, ok: l===meta2.label }; })
     };
@@ -4678,9 +4700,9 @@ function phrase(tpl, vars){
   }
   // Un angle dessiné autour d'un centre, tourné au hasard ; les branches ont des longueurs différentes
   // pour que « le plus long » ne soit jamais un indice.
-  function drawAngleAt(svg, cx, cy, deg, len, rot, color1, color2, letter){
+  function drawAngleAt(svg, cx, cy, deg, len, rot, color1, color2, letter, lf){
     var r1 = rot*Math.PI/180, r2 = (rot+deg)*Math.PI/180;
-    var l1 = len*rand(0.8,1), l2 = len*rand(0.8,1);
+    var l1 = len*lf[0], l2 = len*lf[1];   // lf : facteurs de longueur tirés à la génération
     var ax = cx + l1*Math.cos(r1), ay = cy - l1*Math.sin(r1), bx = cx + l2*Math.cos(r2), by = cy - l2*Math.sin(r2);
     var rr = 20, sx = cx + rr*Math.cos(r1), sy = cy - rr*Math.sin(r1), ex = cx + rr*Math.cos(r2), ey = cy - rr*Math.sin(r2);
     svg.appendChild(el('path',{d:'M '+cx+' '+cy+' L '+sx+' '+sy+' A '+rr+' '+rr+' 0 0 0 '+ex+' '+ey+' Z', fill:'var(--accent3)','fill-opacity':0.55, stroke:'none'}));
@@ -4694,7 +4716,7 @@ function phrase(tpl, vars){
   function genAngleComparer(level){
     var k = level===2 ? pick([2,3]) : (level===1 ? pick([2,3]) : 2);
     var minGap = level===0 ? 40 : level===1 ? 20 : 10;
-    var equalCase = level===2 && k===2 && Math.random()<0.3;
+    var equalCase = level===2 && k===2 && rnd()<0.3;
     var degs, tries = 0;
     do {
       degs = []; for(var i=0;i<k;i++) degs.push(Math.round(rand(25, 160)));
@@ -4708,6 +4730,7 @@ function phrase(tpl, vars){
     var answer = equalCase ? 'Ils sont égaux' : letters[bigIdx];
     var centers = k===2 ? [[50,100],[150,100]] : [[50,50],[150,50],[100,150]];
     var rots = degs.map(function(d){ return rand(0, 360 - d); });
+    var lfs = degs.map(function(){ return [rand(0.8,1), rand(0.8,1)]; });
     var cols = [['var(--accent)','var(--accent2)'],['var(--accent2)','var(--accent)'],['var(--accent)','var(--accent3)']];
     var choices = letters.map(function(l){ return { label:l, ok:l===answer }; });
     if(level===2 && k===2) choices.push({ label:'Ils sont égaux', ok:equalCase });
@@ -4719,7 +4742,7 @@ function phrase(tpl, vars){
         : 'L\'angle ' + answer + ' est le plus ouvert : c\'est le plus grand. La longueur des branches ne compte pas, seul compte l\'écart entre elles.',
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        degs.forEach(function(d,i){ drawAngleAt(svg, centers[i][0], centers[i][1], d, k===2 ? 48 : 46, rots[i], cols[i][0], cols[i][1], letters[i]); });
+        degs.forEach(function(d,i){ drawAngleAt(svg, centers[i][0], centers[i][1], d, k===2 ? 48 : 46, rots[i], cols[i][0], cols[i][1], letters[i], lfs[i]); });
       },
       cols3: choices.length===3,
       choices: choices
@@ -4751,8 +4774,8 @@ function phrase(tpl, vars){
   function genAngleDroits(level){
     var pool = level===0 ? ['rect','carre','triGen','triRect'] : level===1 ? ['rect','carre','triGen','triRect','trapRect','maison'] : ['rect','carre','triRect','trapRect','maison','losange','parallelo','triGen'];
     var key = pickFresh('angle-fig-' + level, pool), f = ANGLE_FIGS[key], P = f.pts();
-    var rot = (level===2 && f.rights>0 && Math.random()<0.7) ? rand(-0.5,0.5) : (key==='maison' || key==='trapRect' ? rand(-0.15,0.15) : rand(-0.12,0.12));
-    var flip = Math.random()<0.5 ? -1 : 1;
+    var rot = (level===2 && f.rights>0 && rnd()<0.7) ? rand(-0.5,0.5) : (key==='maison' || key==='trapRect' ? rand(-0.15,0.15) : rand(-0.12,0.12));
+    var flip = rnd()<0.5 ? -1 : 1;
     var pts2 = P.map(function(q){ var x = q[0]*flip, y = q[1]; return [100 + x*Math.cos(rot) - y*Math.sin(rot), 100 + x*Math.sin(rot) + y*Math.cos(rot)]; });
     var vals = numChoiceSet(f.rights, [0,1,2,3,4,5]);
     return {
@@ -4988,7 +5011,7 @@ function phrase(tpl, vars){
     m5Target.level = lvl;
     if(lvl===0){
       m5Target.hour = 1+randInt(0,11);
-      m5Target.minute = Math.random()<0.5 ? 30 : 0;
+      m5Target.minute = rnd()<0.5 ? 30 : 0;
       label = m5Target.hour + ' h' + (m5Target.minute ? ' 30' : '');
     } else if(lvl===1){
       m5Target.hour = 1+randInt(0,11);
@@ -5152,7 +5175,7 @@ function phrase(tpl, vars){
     if(level >= 2) return genHeure24Question(svgId);
     var step = level===0 ? 30 : 15;
     var hour = 1+randInt(0,11);
-    var minuteVal = level===0 ? (Math.random()<0.5?0:30) : pick((function(){
+    var minuteVal = level===0 ? (rnd()<0.5?0:30) : pick((function(){
       var opts=[]; for(var m=0;m<60;m+=step) opts.push(m); return opts;
     })());
     var hourAngleDeg = ((hour%12) + minuteVal/60) * 30 - 90;
@@ -5302,7 +5325,7 @@ function phrase(tpl, vars){
       sub = 'Compte les jours qui passent, un par un.';
     }
     else { // decalage : dans N jours / il y a N jours
-      var n = randInt(2,6), fwd = Math.random()<0.6;
+      var n = randInt(2,6), fwd = rnd()<0.6;
       correct = JOURS[((i + (fwd ? n : -n)) % 7 + 7) % 7]; pool = JOURS;
       q = 'Aujourd\'hui, c\'est ' + JOURS[i] + '. Quel jour ' + (fwd ? 'sera-t-on dans ' + n + ' jours ?' : 'était-on il y a ' + n + ' jours ?');
       explain = 'À partir de ' + JOURS[i] + ', on ' + (fwd ? 'avance' : 'recule') + ' de ' + n + ' jours : on arrive à ' + correct + '.';
@@ -5513,7 +5536,7 @@ function phrase(tpl, vars){
   // -- Doubles et moitiés --
   function genDoubleMoitieQuestion(level){
     var hi = level===0 ? 10 : level===1 ? 20 : 50;
-    var isDouble = Math.random() < 0.5;
+    var isDouble = rnd() < 0.5;
     if(isDouble){
       var n = randInt(1, hi), r = n*2;
       return eqQuestion('Calcul', 'Quel est le double de ' + n + ' ?', 'Le double, c\'est le nombre plus lui-même.',
@@ -5539,7 +5562,7 @@ function phrase(tpl, vars){
     var tables = level===0 ? [2,10] : level===1 ? [2,5,10] : [2,3,4,5,10];
     var t = pick(tables), n = randInt(1,10), r = t*n;
     var hint = t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
-    if(level===2 && Math.random()<0.4){
+    if(level===2 && rnd()<0.4){
       return eqQuestion('Calcul', t + ' × ? = ' + r, 'Cherche par combien il faut multiplier ' + t + '.',
         t + ' × ' + n + ' = ' + r + '. ' + hint, t + ' × ? = ' + r, n, [n+t, n-t, n*2]);
     }
@@ -5550,17 +5573,17 @@ function phrase(tpl, vars){
   // -- Comparer (<, >, =) --
   function genCompareQuestion(level){
     var lo = level===0 ? 0 : 5, hi = level===0 ? 20 : level===1 ? 30 : 99;
-    var expr = level>=1 && Math.random()<0.6;
+    var expr = level>=1 && rnd()<0.6;
     var left, right, lv, rv;
     if(expr){
       var a=randInt(1,15), b=randInt(1,15), c, d;
       lv = a+b;
       // une fois sur trois, les deux côtés sont égaux (ex. 8 + 5 et 9 + 4)
-      if(Math.random()<0.34){ var tries=0; do { c=randInt(Math.max(1,lv-15), Math.min(15,lv-1)); d=lv-c; tries++; } while((c===a || c===b) && tries<10); }
+      if(rnd()<0.34){ var tries=0; do { c=randInt(Math.max(1,lv-15), Math.min(15,lv-1)); d=lv-c; tries++; } while((c===a || c===b) && tries<10); }
       else { c=randInt(1,15); d=randInt(1,15); }
       rv = c+d; left = a+' + '+b; right = c+' + '+d;
     } else {
-      lv = randInt(lo,hi); rv = Math.random()<0.2 ? lv : randInt(lo,hi);
+      lv = randInt(lo,hi); rv = rnd()<0.2 ? lv : randInt(lo,hi);
       left = String(lv); right = String(rv);
     }
     var sign = lv<rv ? '<' : lv>rv ? '>' : '=';
@@ -5584,7 +5607,7 @@ function phrase(tpl, vars){
   var SUITE_NB_STEPS = [[1,2,5,10],[2,3,5,10],[3,4,6,7,9,11,20,25]];
   function genSuiteNombresQuestion(level){
     var step = pick(SUITE_NB_STEPS[level]);
-    var desc = level>=1 && Math.random()<0.4;
+    var desc = level>=1 && rnd()<0.4;
     var n = 5, first;
     if(desc) first = step*(n-1) + randInt(0, level===2 ? 30 : 10);
     else first = randInt(0, level===0 ? 10 : level===1 ? 20 : 40);
@@ -5644,7 +5667,7 @@ function phrase(tpl, vars){
     var kinds = level===0 ? ['suivant','precedent','grand','petit'] : ['suivant','precedent','entre','grand','petit','pair'];
     var kind = pick(kinds);
     var n = randInt(3, hi-2);
-    if(level>0 && Math.random()<0.4) n = Math.round(n/10)*10 + pick([-1,0,9]);   // frontières de dizaines
+    if(level>0 && rnd()<0.4) n = Math.round(n/10)*10 + pick([-1,0,9]);   // frontières de dizaines
     n = Math.max(3, Math.min(hi-2, n));
     if(kind==='suivant') return bigNumQuestion('Nombres','Quel nombre vient juste après ' + n + ' ?','Ajoute 1.',(n+1) + ' vient juste après ' + n + ' : ' + n + ' + 1 = ' + (n+1) + '.', n + ' → ?', n+1, [n+2, n-1, n+10, n]);
     if(kind==='precedent') return bigNumQuestion('Nombres','Quel nombre vient juste avant ' + n + ' ?','Retire 1.',(n-1) + ' vient juste avant ' + n + ' : ' + n + ' - 1 = ' + (n-1) + '.', '? → ' + n, n-1, [n-2, n+1, n-10, n]);
@@ -5699,14 +5722,14 @@ function phrase(tpl, vars){
   function genFractionQuestion(level){
     var kind = pick(['pie','bar']);
     var dens = level===0 ? [2,4] : level===1 ? [2,3,4] : [3,4,5,6,8];
-    if(Math.random() < (level===0 ? 0.5 : 0.4)){
+    if(rnd() < (level===0 ? 0.5 : 0.4)){
       // -- Choisir le DESSIN qui a la bonne fraction coloriée --
       var TARGETS = level===0 ? [[1,2,'la moitié'],[1,4,'le quart']] : [[1,2,'la moitié'],[1,4,'le quart'],[3,4,'les trois quarts'],[1,3,'le tiers']];
       var tg = pick(TARGETS);
       var val = tg[0]/tg[1];
       var options = [];   // { n, k, kind }
       var used = {}; used[val] = true;
-      var okN = level===2 && tg[1]%2===0 && Math.random()<0.6 ? tg[1]*2 : tg[1];
+      var okN = level===2 && tg[1]%2===0 && rnd()<0.6 ? tg[1]*2 : tg[1];
       options.push({ n:okN, k:tg[0]*okN/tg[1], ok:true });
       var guard = 0;
       while(options.length<4 && guard++<200){
@@ -5753,12 +5776,13 @@ function phrase(tpl, vars){
       var n = randInt(3,12), icon = pick(COUNT_ICONS);
       var cells = []; for(var i=0;i<16;i++) cells.push(i);
       var chosen = shuffle(cells).slice(0,n);
+      var jit = chosen.map(function(){ return [randInt(-6,6), randInt(-4,4)]; });   // décalages tirés une fois : redessiner = même image
       return {
         tag:'Dénombrement', question:'Combien y a-t-il d\'objets ?', sub:'Compte-les un par un, sans en oublier ni en compter deux fois.',
         explain:'Il y a ' + n + ' objets.',
         draw:function(){
           var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-          chosen.forEach(function(c){ var x = 28 + (c%4)*48 + randInt(-6,6), y = 52 + Math.floor(c/4)*44 + randInt(-4,4); svg.appendChild(svgText(x,y,30,icon)); });
+          chosen.forEach(function(c, i){ var x = 28 + (c%4)*48 + jit[i][0], y = 52 + Math.floor(c/4)*44 + jit[i][1]; svg.appendChild(svgText(x,y,30,icon)); });
         },
         cols3:false, choices: numChoices(n, [n+1,n-1,n+2,n-2])
       };
@@ -5864,7 +5888,7 @@ function phrase(tpl, vars){
     if(level===2 && n%100===0) n += randInt(1,99);
     var w = nombreEnLettres(n);
     var c = Math.floor(n/100), d = Math.floor(n/10)%10, u = n%10;
-    if(Math.random()<0.5){
+    if(rnd()<0.5){
       var swap = c ? c*100 + u*10 + d : u*10 + d;
       var extra = [n+10, n-10, swap, n+1, n-1];
       if(n%100>=70) extra.push(n-10, n-20);        // soixante-dix, quatre-vingt-dix… : pièges 60+, 80+
@@ -5891,7 +5915,7 @@ function phrase(tpl, vars){
   // ---- Ajouter / enlever 10, 100 (et 1 aux frontières) ----
   function genPlusMoinsQuestion(level){
     var step, n, sign;
-    if(level===0){ step = 10; sign = pick([1,-1]); n = sign>0 ? randInt(1,8)*10 + (Math.random()<0.5 ? 0 : randInt(1,9)) : randInt(2,9)*10 + (Math.random()<0.5 ? 0 : randInt(1,9)); }
+    if(level===0){ step = 10; sign = pick([1,-1]); n = sign>0 ? randInt(1,8)*10 + (rnd()<0.5 ? 0 : randInt(1,9)) : randInt(2,9)*10 + (rnd()<0.5 ? 0 : randInt(1,9)); }
     else if(level===1){
       step = pick([10,10,100]); sign = pick([1,-1]);
       if(step===100) n = sign>0 ? randInt(100,899) : randInt(200,999);
@@ -5900,7 +5924,7 @@ function phrase(tpl, vars){
     else {
       step = pick([1,10,100,20,30,200]); sign = pick([1,-1]);
       if(step===1){ n = sign>0 ? pick([99,199,299,399,499,599,699,799,899,109,119,129,139]) : pick([100,200,300,400,500,600,700,800,900,110,120,130,140]); }
-      else if(step===10 || step===20 || step===30){ n = sign>0 ? randInt(100,970-step) : randInt(110+step, 999); if(Math.random()<0.6) n = Math.floor(n/100)*100 + (sign>0 ? randInt(10,99-step+10) : randInt(0,step)); }
+      else if(step===10 || step===20 || step===30){ n = sign>0 ? randInt(100,970-step) : randInt(110+step, 999); if(rnd()<0.6) n = Math.floor(n/100)*100 + (sign>0 ? randInt(10,99-step+10) : randInt(0,step)); }
       else { n = sign>0 ? randInt(100,999-step) : randInt(100+step,999); }
     }
     var res = n + sign*step;
@@ -5921,8 +5945,8 @@ function phrase(tpl, vars){
     do { n = randInt(base===100 ? 101 : 11, hi); }
     while(n%base===0 || n%10===5 || (base===100 && Math.floor(n/10)%10===5));   // jamais un 5 en dernier chiffre : « arrondis 605 à la dizaine » serait ambigu (milieu exact)
     var lo = Math.floor(n/base)*base, up = lo + base;
-    var arrondi = level>0 && Math.random()<0.5;
-    if(level===2 && arrondi && Math.random()<0.4){ base = 10; lo = Math.floor(n/10)*10; up = lo + 10; }
+    var arrondi = level>0 && rnd()<0.5;
+    if(level===2 && arrondi && rnd()<0.4){ base = 10; lo = Math.floor(n/10)*10; up = lo + 10; }
     if(arrondi){
       var near = (n-lo) < (up-n) ? lo : up;
       var unit = base===100 ? 'la centaine' : 'la dizaine';
@@ -6000,11 +6024,11 @@ function phrase(tpl, vars){
   function genAdditionQuestion(level){
     var a, b, guard = 0;
     do {
-      if(level===0){ a = randInt(11,89); b = Math.random()<0.5 ? randInt(1,9) : randInt(1,8)*10; }
+      if(level===0){ a = randInt(11,89); b = rnd()<0.5 ? randInt(1,9) : randInt(1,8)*10; }
       else if(level===1){ a = randInt(15,89); b = randInt(11,60); }
-      else { a = randInt(120,899); b = Math.random()<0.5 ? randInt(11,99) : randInt(110,500); }
+      else { a = randInt(120,899); b = rnd()<0.5 ? randInt(11,99) : randInt(110,500); }
       guard++;
-    } while(guard<200 && ((level===0 && (hasCarry(a,b) || a+b>99)) || (level===1 && (a+b>99 || (guard<100 && !hasCarry(a,b) && Math.random()<0.6))) || (level===2 && (a+b>999 || (guard<100 && !hasCarry(a,b) && Math.random()<0.5)))));
+    } while(guard<200 && ((level===0 && (hasCarry(a,b) || a+b>99)) || (level===1 && (a+b>99 || (guard<100 && !hasCarry(a,b) && rnd()<0.6))) || (level===2 && (a+b>999 || (guard<100 && !hasCarry(a,b) && rnd()<0.5)))));
     var s = a + b;
     var q = bigNumQuestion('Calcul','Calcule ' + a + ' + ' + b + '.','Additionne en colonnes : unités, puis dizaines' + (level===2 ? ', puis centaines' : '') + ' (n\'oublie pas la retenue).',
       addExplain(a,b), a + ' + ' + b, s, [s-10, s+10, s+1, s-1, hasCarry(a,b) ? s-10 : s+10, level===2 ? s+100 : s+20]);
@@ -6013,11 +6037,11 @@ function phrase(tpl, vars){
   function genSoustractionPoseeQuestion(level){
     var a, b, guard = 0;
     do {
-      if(level===0){ a = randInt(21,99); b = Math.random()<0.5 ? randInt(1,9) : randInt(1,Math.floor(a/10)-1)*10; }
+      if(level===0){ a = randInt(21,99); b = rnd()<0.5 ? randInt(1,9) : randInt(1,Math.floor(a/10)-1)*10; }
       else if(level===1){ a = randInt(31,99); b = randInt(11,a-5); }
-      else { a = randInt(121,999); b = Math.random()<0.5 ? randInt(11,99) : randInt(101,a-10); }
+      else { a = randInt(121,999); b = rnd()<0.5 ? randInt(11,99) : randInt(101,a-10); }
       guard++;
-    } while(guard<200 && (a<=b || (level===0 && hasBorrow(a,b)) || (level>0 && guard<100 && !hasBorrow(a,b) && Math.random()<0.6)));
+    } while(guard<200 && (a<=b || (level===0 && hasBorrow(a,b)) || (level>0 && guard<100 && !hasBorrow(a,b) && rnd()<0.6)));
     var r = a - b;
     return bigNumQuestion('Calcul','Calcule ' + a + ' - ' + b + '.','Soustrais en colonnes : unités, puis dizaines' + (level===2 ? ', puis centaines' : '') + ' (emprunte 1 si le chiffre du haut est trop petit).',
       subExplain(a,b), a + ' - ' + b, r, [r+10, r-10, r+1, r-1, level===2 ? r+100 : r+20, level>0 ? Math.abs((Math.floor(a/10)%10 - Math.floor(b/10)%10))*10 + Math.abs(a%10 - b%10) : r+2]);
@@ -6729,7 +6753,7 @@ function phrase(tpl, vars){
 
   function pickNetForLevel(idx){
     var pool = M3_LEVELS[idx].pool;
-    return pool[Math.floor(Math.random()*pool.length)];
+    return pool[Math.floor(rnd()*pool.length)];
   }
 
   function netExplain(net){
@@ -6955,10 +6979,10 @@ function phrase(tpl, vars){
   // aussi vu sous un angle différent. Marche pour tous les solides sans
   // toucher à chaque fonction de dessin : on dessine dans un <g> qu'on
   // retourne éventuellement, plutôt que directement dans le <svg>.
-  function drawSolidVaried(svg, meta){
+  function drawSolidVaried(svg, meta, flip){
     svg.innerHTML = "";
     var g = document.createElementNS(svgNS,'g');
-    if(Math.random()<0.5) g.setAttribute('transform','translate(200,0) scale(-1,1)');
+    if(flip) g.setAttribute('transform','translate(200,0) scale(-1,1)');
     svg.appendChild(g);
     meta.draw(g);
   }
@@ -7019,7 +7043,7 @@ function phrase(tpl, vars){
   function genSolideNomQuestion(level){
     var keys = SOLIDE_NOM_LEVELS[level];
     var key = pick(keys);
-    var meta = SOLID_META[key];
+    var meta = SOLID_META[key], flip = rnd() < 0.5;
     var poolLabels = shuffle(keys.map(function(k){ return SOLID_META[k].label; }).filter(function(l){return l!==meta.label;})).slice(0,3);
     var labels = shuffle([meta.label].concat(poolLabels));
     return {
@@ -7027,7 +7051,7 @@ function phrase(tpl, vars){
       question:'Quel est le nom de ce solide ?',
       sub:'Observe bien sa forme en 3D.',
       explain:'C\'est un(e) ' + meta.label + ' : ' + (SOLID_FACTS[meta.label] || 'observe bien ses faces.'),
-      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta, flip); },
       cols3:false,
       choices: labels.map(function(l){ return { label:l, ok:l===meta.label }; })
     };
@@ -7040,7 +7064,7 @@ function phrase(tpl, vars){
   var SOLIDE_COMPTE_LEVELS = [['cube','pave','pyramide'], ['cube','pave','pyramide','tetraedre'], SOLID_COMPTE_KEYS];
   function genSolideCompteQuestion(level){
     var key = pick(SOLIDE_COMPTE_LEVELS[level]);
-    var meta = SOLID_META[key];
+    var meta = SOLID_META[key], flip = rnd() < 0.5;
     var attr = pick(['faces','sommets','aretes']);
     var correct = meta[attr];
     var attrLabel = attr==='faces'?'faces' : attr==='sommets'?'sommets' : 'arêtes';
@@ -7049,7 +7073,7 @@ function phrase(tpl, vars){
       question:'Combien de ' + attrLabel + ' a ce solide (' + meta.label + ') ?',
       sub:'Essaie de bien visualiser toutes les faces, même celles qu\'on ne voit pas directement.',
       explain: COUNT_DEFS[attr] + ' ' + countTip(key, attr) + ' (Un ' + meta.label + ' a ' + meta.faces + ' faces, ' + meta.aretes + ' arêtes et ' + meta.sommets + ' sommets.)',
-      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta); },
+      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); drawSolidVaried(svg, meta, flip); },
       cols3:false,
       // Les distracteurs sont pris AUTOUR de la vraie valeur (plutôt qu'un
       // pool fixe 2-12) : nécessaire depuis l'ajout des prismes, dont le
@@ -7134,7 +7158,7 @@ function phrase(tpl, vars){
   function atSymGenerate(level){
     // L0 : 3 colonnes × 4 lignes par côté, 4 cases ; L1 : 3×5, 6 cases ; L2 : axe vertical OU horizontal, 4×5, 9 cases
     var C = level===0 ? 3 : level===1 ? 3 : 4, R = level===0 ? 4 : 5, count = level===0 ? 4 : level===1 ? 6 : 9;
-    var horizontal = level===2 && Math.random()<0.5;
+    var horizontal = level===2 && rnd()<0.5;
     // « demi » = dimensions d'un côté : en vertical C colonnes × R lignes ; en horizontal on tourne.
     var hc = horizontal ? R : C, hr = horizontal ? C : R;
     var given = [], r, c;
@@ -7224,7 +7248,7 @@ function phrase(tpl, vars){
     var k = tg[0]*n/tg[1];
     // difficile : parfois la fraction écrite (5/8) plutôt qu'un mot
     var label = tg[2];
-    if(level===2 && Math.random()<0.4){ n = 8; k = randInt(1,7); label = k + '/8'; }
+    if(level===2 && rnd()<0.4){ n = 8; k = randInt(1,7); label = k + '/8'; }
     atFrac.n = n; atFrac.k = k; atFrac.kind = pick(['pie','bar']); atFrac.label = label;
     atFrac.on = []; for(var i=0;i<n;i++) atFrac.on.push(false);
     atFrac.ui.reset('Colorie ' + label + ' de la figure.', 'Touche les parts pour les colorier, puis vérifie.', 'Figure partagée en ' + n + ' parts égales : touche les parts à colorier');
@@ -7339,7 +7363,7 @@ function phrase(tpl, vars){
     copy = model.map(function(row){ return row.slice(); });
     // cases modifiées : au moins une « en trop » et une « manquante » dès que plusieurs erreurs
     var diff = [], wantExtra = [];
-    for(var k=0;k<nDiff;k++) wantExtra.push(k % 2 === 0 ? Math.random()<0.5 : !wantExtra[k-1]);
+    for(var k=0;k<nDiff;k++) wantExtra.push(k % 2 === 0 ? rnd()<0.5 : !wantExtra[k-1]);
     wantExtra.forEach(function(extra){
       var tries = 0, rr, cc;
       do { rr = randInt(0,n-1); cc = randInt(0,n-1); tries++; }
@@ -9385,7 +9409,7 @@ function phrase(tpl, vars){
         var h = randInt(1,12), text, c, label = function(hh, half){ return hh + ' h' + (half ? ' 30' : ''); }, k, half = false, ans;
         if(lvl === 0){ k = randInt(1,3); text = 'Il est ' + label(h) + '. Quelle heure sera-t-il dans ' + k + ' h ?'; ans = [skHour(h + k), false]; }
         else if(lvl === 1){ k = randInt(1,3); text = 'Il est ' + label(h, true) + '. Quelle heure sera-t-il dans ' + k + ' h ?'; ans = [skHour(h + k), true]; }
-        else if(Math.random() < 0.5){ text = 'Il est ' + label(h, true) + '. Quelle heure sera-t-il dans 1 h 30 ?'; ans = [skHour(h + 2), false]; }
+        else if(rnd() < 0.5){ text = 'Il est ' + label(h, true) + '. Quelle heure sera-t-il dans 1 h 30 ?'; ans = [skHour(h + 2), false]; }
         else { text = 'Il est ' + label(h) + '. Quelle heure sera-t-il dans 2 h 30 ?'; ans = [skHour(h + 2), true]; }
         var right = label(ans[0], ans[1]), wrong = [label(skHour(ans[0] + 1), ans[1]), label(skHour(ans[0] - 1), ans[1]), label(ans[0], !ans[1])];
         var opts = shuffle([{ label:right, ok:true }].concat(shuffle(wrong).slice(0,2).map(function(w){ return { label:w, ok:false }; })));
@@ -9407,7 +9431,7 @@ function phrase(tpl, vars){
       desc:'Trouve le nombre suivant d\'une suite : de 2 en 2, de 5 en 5, de 10 en 10, puis des pas plus grands.',
       ask:function(lvl){
         var s = pick([[2,5,10],[3,4,5,10,20],[6,7,8,9,25,50]][lvl]), d = randInt(1,4) * s, a = d, c = a + 3 * s;
-        if(lvl === 2 && Math.random() < 0.5){ a = d + 3 * s; c = a - 3 * s; s = -s; }
+        if(lvl === 2 && rnd() < 0.5){ a = d + 3 * s; c = a - 3 * s; s = -s; }
         var seq = [a, a + s, a + 2 * s];
         return { text:'Continue la suite : ' + seq.join(', ') + ', … ?', options:skOptions(c, [c + Math.abs(s), c - Math.abs(s), c + 1]), explain:'On avance de ' + Math.abs(s) + (s < 0 ? ' en reculant' : '') + ' à chaque fois : ' + seq.join(', ') + ', ' + c + '.' };
       } }

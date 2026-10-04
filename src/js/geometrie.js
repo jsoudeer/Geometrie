@@ -75,9 +75,9 @@
     var span = (lv.lenMax - lv.lenMin);
     if(lv.half){
       var steps = span*2;
-      currentLen = lv.lenMin + Math.floor(Math.random()*(steps+1))/2;
+      currentLen = lv.lenMin + Math.floor(rnd()*(steps+1))/2;
     } else {
-      currentLen = lv.lenMin + Math.floor(Math.random()*(span+1));
+      currentLen = lv.lenMin + Math.floor(rnd()*(span+1));
     }
     m1RulerStart = randInt(lv.startMin, lv.startMax);
     var offset = lv.offsetMax>0 ? randInt(0, lv.offsetMax) : 0;
@@ -98,7 +98,7 @@
     var picks = pool.slice(0, Math.min(3, pool.length));
     while(picks.length<3){
       // filet de sécurité si la plage est très étroite : complète avec des valeurs proches
-      var extra = Math.round((currentLen + (Math.random()<0.5?-1:1)*stepUnit*(picks.length+1))*2)/2;
+      var extra = Math.round((currentLen + (rnd()<0.5?-1:1)*stepUnit*(picks.length+1))*2)/2;
       extra = Math.max(lv.lenMin, Math.min(lv.lenMax, extra));
       if(picks.indexOf(extra)===-1 && extra!==currentLen) picks.push(extra);
       else break; // évite toute boucle infinie, quitte à avoir moins de 4 choix
@@ -754,12 +754,12 @@
     // rotation proche de 45° ferait ressembler un carré à un losange à
     // l'oeil, ce qui entretiendrait exactement la confusion qu'on veut lever.
     carre:     { sides:4, vertices:4, label:'carré',     note:'Le carré a 4 côtés ÉGAUX et 4 angles droits. C\'est ce qui le différencie du losange (angles pas droits) et du rectangle (côtés pas tous égaux).', gen:function(){ return rectPoly(112,112, rand(-0.18,0.18)); } },
-    rectangle: { sides:4, vertices:4, label:'rectangle', note:'Le rectangle a 4 angles droits comme le carré, mais ses côtés ne sont pas tous égaux : 2 côtés longs et 2 côtés courts.', gen:function(){ var w=95+Math.random()*35; return rectPoly(w, w*0.55, rand(-0.18,0.18)); } },
+    rectangle: { sides:4, vertices:4, label:'rectangle', note:'Le rectangle a 4 angles droits comme le carré, mais ses côtés ne sont pas tous égaux : 2 côtés longs et 2 côtés courts.', gen:function(){ var w=95+rnd()*35; return rectPoly(w, w*0.55, rand(-0.18,0.18)); } },
     pentagone: { sides:5, vertices:5, label:'pentagone', note:'Le pentagone a 5 côtés et 5 sommets.', gen:function(){ return regularPoly(5, rand(0,2*Math.PI)); } },
     hexagone:  { sides:6, vertices:6, label:'hexagone',  note:'L\'hexagone a 6 côtés et 6 sommets.', gen:function(){ return regularPoly(6, rand(0,2*Math.PI)); } },
-    cercle:    { sides:0, vertices:0, label:'cercle', isCircle:true, note:'Le cercle est tout rond : contrairement aux autres formes, il n\'a ni côté droit, ni sommet.', gen:function(){ return { r: 55+Math.random()*20 }; } },
+    cercle:    { sides:0, vertices:0, label:'cercle', isCircle:true, note:'Le cercle est tout rond : contrairement aux autres formes, il n\'a ni côté droit, ni sommet.', gen:function(){ return { r: 55+rnd()*20 }; } },
     losange:   { sides:4, vertices:4, label:'losange',   note:'Le losange a 4 côtés ÉGAUX, comme le carré, mais ses angles ne sont pas droits : il a l\'air "penché".', gen:function(){
-      var rx=38+Math.random()*16, ry=58+Math.random()*16, rot=rand(0,Math.PI/2);
+      var rx=38+rnd()*16, ry=58+rnd()*16, rot=rand(0,Math.PI/2);
       var base=[[0,-ry],[rx,0],[0,ry],[-rx,0]];
       return base.map(function(p){
         var x=p[0]*Math.cos(rot)-p[1]*Math.sin(rot);
@@ -779,15 +779,15 @@
     }));
   }
 
-  function drawShapeGeneric(meta){
+  // geom = meta.gen() est tiré à la génération de la question (et non au dessin) : redessiner = même image.
+  function drawShapeGeneric(meta, geom){
     if(meta.isCircle){
       var svg = document.getElementById('m4Svg');
       svg.setAttribute('viewBox','0 0 200 200');
       svg.innerHTML = "";
-      var g = meta.gen();
-      svg.appendChild(el('circle',{cx:100,cy:100,r:g.r, fill:'var(--accent2)','fill-opacity':'0.5',stroke:'var(--accent)','stroke-width':4}));
+      svg.appendChild(el('circle',{cx:100,cy:100,r:geom.r, fill:'var(--accent2)','fill-opacity':'0.5',stroke:'var(--accent)','stroke-width':4}));
     } else {
-      drawPolygon(meta.gen());
+      drawPolygon(geom);
     }
   }
 
@@ -825,7 +825,7 @@
   }
 
   function genHouseQuestion(){
-    var withWindow = Math.random()<0.5;
+    var withWindow = rnd()<0.5;
     var correct = withWindow ? 12 : 8;
     return {
       tag: 'Photo / illustration',
@@ -858,7 +858,7 @@
   }
 
   function genFenceQuestion(){
-    var count = 3 + Math.floor(Math.random()*4); // 3 à 6
+    var count = 3 + Math.floor(rnd()*4); // 3 à 6
     return {
       tag: 'Photo / illustration',
       question: 'Combien de planches (rectangles) compte cette clôture ?',
@@ -886,7 +886,7 @@
   }
 
   function genCastleQuestion(){
-    var towers = Math.random()<0.5 ? 2 : 3;
+    var towers = rnd()<0.5 ? 2 : 3;
     return {
       tag: 'Photo / illustration',
       question: 'Combien de fanions triangulaires vois-tu sur ce château ?',
@@ -918,7 +918,7 @@
   }
 
   function genRobotQuestion(){
-    var arms = Math.random()<0.5 ? 2 : 4;
+    var arms = rnd()<0.5 ? 2 : 4;
     var correct = 2 /*tête+corps*/ + 2 /*jambes*/ + arms;
     return {
       tag: 'Photo / illustration',
@@ -948,7 +948,7 @@
     }
   }
   function genTrainQuestion(){
-    var wagons = 2+Math.floor(Math.random()*3); // 2 à 4
+    var wagons = 2+Math.floor(rnd()*3); // 2 à 4
     var correct = wagons;
     return {
       tag: 'Photo / illustration',
@@ -1041,9 +1041,9 @@
   // Variante 1 : 3 points, alignés ou non. Au niveau Moyen/Difficile, les « non alignés »
   // sont souvent des presque-alignés (un point décalé d'une case).
   function genAlignOui(level){
-    var aligned = Math.random()<0.5, pts;
+    var aligned = rnd()<0.5, pts;
     if(aligned) pts = alignedTriple(alignModes(level));
-    else if(level>0 && Math.random()<0.6){
+    else if(level>0 && rnd()<0.6){
       pts = alignedTriple(alignModes(level));
       var k = pick([0,1,2]), tries = 0, cand;
       do { cand = {col:pts[k].col + pick([-1,0,1]), row:pts[k].row + pick([-1,0,1])}; tries++; }
@@ -1153,18 +1153,18 @@
   function genMilieuQuestion(level){
     level = level || 0;
     if(level===0) return genMilieuFormes(0);
-    if(level===2 && Math.random()<0.5) return genMilieuCoord();
+    if(level===2 && rnd()<0.5) return genMilieuCoord();
     return genMilieuFormes(level);
   }
   function genMilieuFormes(level){
-    var horizontal = Math.random()<0.5;
+    var horizontal = rnd()<0.5;
     var fixedIdx = randInt(0,4);
     var span = 2, s0 = 0, e0 = 2, noneAnswer = false;
     if(level===0){ span = 2; s0 = 1; e0 = 3; }
     else {
       span = pick([2,4,4]);
       s0 = span===4 ? 0 : randInt(0,2); e0 = s0 + span;
-      noneAnswer = Math.random()<0.4;
+      noneAnswer = rnd()<0.4;
     }
     var mid = (s0+e0)/2;
     var positions = [];
@@ -1315,7 +1315,7 @@
     var startCol, startRow, moves, endCol, endRow;
     for(var attempt=0; attempt<50; attempt++){
       var sc=randInt(0,4), sr=randInt(0,4);
-      var steps = 2+Math.floor(Math.random()*2);
+      var steps = 2+Math.floor(rnd()*2);
       var mv=[], c=sc, r=sr, ok=true;
       for(var i=0;i<steps;i++){
         var dir=pick(['up','down','left','right']);
@@ -1441,7 +1441,7 @@
     var target=pick(pool);
     var assignments, tries=0;
     do{
-      assignments = CHASSE_SLOTS.map(function(){ return Math.random()<0.85 ? pick(pool) : null; });
+      assignments = CHASSE_SLOTS.map(function(){ return rnd()<0.85 ? pick(pool) : null; });
       tries++;
     } while(tries<20 && assignments.filter(function(t){return t===target;}).length===0);
     if(assignments.filter(function(t){return t===target;}).length===0) assignments[0]=target;
@@ -1486,19 +1486,19 @@
   // par le centre de symétrie.
   function genSymVraiQuestion(){
     var fig = pickFresh('symvrai-fig', ['rect','carre','tri','cercle']);
-    var isAxis = Math.random()<0.5, line, shape, expTrue, expFalse;
+    var isAxis = rnd()<0.5, line, shape, expTrue, expFalse;
     if(fig==='rect'){
       var w = 70+randInt(0,60), h; do{ h = 40+randInt(0,50); }while(Math.abs(w-h)<20);
-      var rx = 100-w/2, ry = 100-h/2, vertical = Math.random()<0.5, pct = isAxis ? 50 : pick(SYM_VRAI_OFFSETS);
+      var rx = 100-w/2, ry = 100-h/2, vertical = rnd()<0.5, pct = isAxis ? 50 : pick(SYM_VRAI_OFFSETS);
       line = vertical ? {x1:rx+w*(pct/100), y1:ry-15, x2:rx+w*(pct/100), y2:ry+h+15} : {x1:rx-15, y1:ry+h*(pct/100), x2:rx+w+15, y2:ry+h*(pct/100)};
       shape = function(svg){ svg.appendChild(el('rect',{x:rx,y:ry,width:w,height:h, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4})); };
       expTrue = 'Oui : cette droite passe exactement au milieu, donc en pliant le long d\'elle, les deux moitiés du rectangle se superposent.';
       expFalse = 'Non : cette droite ne passe pas exactement au milieu (elle est décalée), donc les deux parties n\'ont pas la même taille — ce n\'est pas un axe de symétrie.';
     } else if(fig==='carre'){
       var c = 70+randInt(0,40), x0 = 100-c/2, y0 = 100-c/2, kind = isAxis ? pick(['mid','diag']) : pick(['off','off','offd']);
-      if(kind==='mid') line = Math.random()<0.5 ? {x1:100, y1:y0-15, x2:100, y2:y0+c+15} : {x1:x0-15, y1:100, x2:x0+c+15, y2:100};
-      else if(kind==='diag') line = Math.random()<0.5 ? {x1:x0-12, y1:y0-12, x2:x0+c+12, y2:y0+c+12} : {x1:x0-12, y1:y0+c+12, x2:x0+c+12, y2:y0-12};
-      else { var pc = pick([15,25,35,65,75,85])/100; line = Math.random()<0.5 ? {x1:x0+c*pc, y1:y0-15, x2:x0+c*pc, y2:y0+c+15} : {x1:x0-15, y1:y0+c*pc, x2:x0+c+15, y2:y0+c*pc}; }
+      if(kind==='mid') line = rnd()<0.5 ? {x1:100, y1:y0-15, x2:100, y2:y0+c+15} : {x1:x0-15, y1:100, x2:x0+c+15, y2:100};
+      else if(kind==='diag') line = rnd()<0.5 ? {x1:x0-12, y1:y0-12, x2:x0+c+12, y2:y0+c+12} : {x1:x0-12, y1:y0+c+12, x2:x0+c+12, y2:y0-12};
+      else { var pc = pick([15,25,35,65,75,85])/100; line = rnd()<0.5 ? {x1:x0+c*pc, y1:y0-15, x2:x0+c*pc, y2:y0+c+15} : {x1:x0-15, y1:y0+c*pc, x2:x0+c+15, y2:y0+c*pc}; }
       shape = function(svg){ svg.appendChild(el('rect',{x:x0,y:y0,width:c,height:c, fill:'var(--accent2)','fill-opacity':0.5, stroke:'var(--accent)','stroke-width':4})); };
       expTrue = kind==='diag' ? 'Oui : dans un carré, les diagonales sont aussi des axes de symétrie. En pliant le long de la diagonale, les deux triangles se superposent.' : 'Oui : cette droite passe exactement par le milieu des côtés, donc les deux moitiés du carré se superposent.';
       expFalse = 'Non : cette droite est décalée, elle ne passe pas par le centre du carré : les deux parties ne se superposent pas.';
@@ -1643,7 +1643,7 @@
         svg.appendChild(el('rect',{x:x0,y:y0,width:w*c,height:h*c,fill:'none',stroke:'var(--text)','stroke-width':3}));
       };
     } else if(level===1){
-      var sq = Math.random()<0.4;
+      var sq = rnd()<0.4;
       w = randInt(3,12); h = sq ? w : randInt(2,10); if(!sq && w===h) h = h+1;
       ans = 2*(w+h);
       question = sq ? 'Un carré a des côtés de ' + w + ' cm. Quel est son périmètre ?' : 'Un rectangle mesure ' + w + ' cm de long et ' + h + ' cm de large. Quel est son périmètre ?';
@@ -1680,12 +1680,13 @@
     var maj, mino, rotFixed = false, kind;
     if(level===0){ var t = shuffle([3,4,0]); maj = t[0]; mino = t[1]; }
     else if(level===1){ var t2 = shuffle([3,4,5,6]); maj = t2[0]; mino = t2[1]; }
-    else if(Math.random()<0.5){ kind = 'carreRect'; rotFixed = true; }
+    else if(rnd()<0.5){ kind = 'carreRect'; rotFixed = true; }
     else { var t3 = shuffle([5,6,8]); maj = t3[0]; mino = t3[1]; }
     var pos = randInt(0,3), letters = ['A','B','C','D'], colors = ['var(--accent)','var(--accent2)','var(--accent3)'];
+    // couleur, taille et rotation de chaque forme : tirées une fois, à la génération
+    var look = [0,1,2,3].map(function(){ return { fill:colors[randInt(0,2)], r:randInt(24,32), rot: rotFixed ? -90 : randInt(0,359) }; });
     function drawOne(svg, k, isIntrus, cx, cy){
-      var fill = colors[randInt(0,2)], r = randInt(24,32);
-      var rot = rotFixed ? -90 : randInt(0,359);
+      var fill = look[k].fill, r = look[k].r, rot = look[k].rot;
       var node;
       if(kind==='carreRect'){
         if(isIntrus) node = el('rect',{x:cx-r*1.15,y:cy-r*0.62,width:r*2.3,height:r*1.24});
@@ -1847,7 +1848,7 @@
   // ---- Questions de Quizz déplacées depuis l'ancien moteur (mêmes textes, même tirage) ----
   function genSidesVerticesQuestion(type, level){
     var shapeKey = pick(GEO_LEVELS[level].shapes);
-    var meta = SHAPE_META[shapeKey];
+    var meta = SHAPE_META[shapeKey], geom = meta.gen();
     var correct = (type==='sides') ? meta.sides : meta.vertices;
     var choices = numChoiceSet(correct, [0,1,2,3,4,5,6,7,8]);
     return {
@@ -1855,7 +1856,7 @@
       question: type==='sides' ? 'Combien de côtés a cette forme ?' : 'Combien de sommets (angles) a cette forme ?',
       sub: meta.isCircle ? 'Regarde bien : cette forme est-elle vraiment pointue quelque part ?' : 'Observe bien la forme, puis choisis la bonne réponse.',
       explain: 'Un ' + meta.label + ' a ' + meta.sides + ' côtés et ' + meta.vertices + ' sommets. ' + meta.note,
-      draw: function(){ drawShapeGeneric(meta); },
+      draw: function(){ drawShapeGeneric(meta, geom); },
       cols3: false,
       choices: choices.map(function(v){ return { label:String(v), ok: v===correct }; })
     };
@@ -1863,7 +1864,7 @@
 
   function genNameQuestion(level){
     var shapeKey2 = pick(GEO_LEVELS[level].shapes);
-    var meta2 = SHAPE_META[shapeKey2];
+    var meta2 = SHAPE_META[shapeKey2], geom2 = meta2.gen();
     var pool = shuffle(NAME_POOL.filter(function(n){return n!==meta2.label;})).slice(0,3);
     var labels = shuffle([meta2.label].concat(pool));
     return {
@@ -1871,7 +1872,7 @@
       question: 'Quel est le nom de cette forme ?',
       sub: 'Observe bien la forme, puis choisis son nom.',
       explain: 'C\'est un ' + meta2.label + '. ' + meta2.note,
-      draw: function(){ drawShapeGeneric(meta2); },
+      draw: function(){ drawShapeGeneric(meta2, geom2); },
       cols3: false,
       choices: labels.map(function(l){ return { label:l, ok: l===meta2.label }; })
     };
@@ -1913,9 +1914,9 @@
   }
   // Un angle dessiné autour d'un centre, tourné au hasard ; les branches ont des longueurs différentes
   // pour que « le plus long » ne soit jamais un indice.
-  function drawAngleAt(svg, cx, cy, deg, len, rot, color1, color2, letter){
+  function drawAngleAt(svg, cx, cy, deg, len, rot, color1, color2, letter, lf){
     var r1 = rot*Math.PI/180, r2 = (rot+deg)*Math.PI/180;
-    var l1 = len*rand(0.8,1), l2 = len*rand(0.8,1);
+    var l1 = len*lf[0], l2 = len*lf[1];   // lf : facteurs de longueur tirés à la génération
     var ax = cx + l1*Math.cos(r1), ay = cy - l1*Math.sin(r1), bx = cx + l2*Math.cos(r2), by = cy - l2*Math.sin(r2);
     var rr = 20, sx = cx + rr*Math.cos(r1), sy = cy - rr*Math.sin(r1), ex = cx + rr*Math.cos(r2), ey = cy - rr*Math.sin(r2);
     svg.appendChild(el('path',{d:'M '+cx+' '+cy+' L '+sx+' '+sy+' A '+rr+' '+rr+' 0 0 0 '+ex+' '+ey+' Z', fill:'var(--accent3)','fill-opacity':0.55, stroke:'none'}));
@@ -1929,7 +1930,7 @@
   function genAngleComparer(level){
     var k = level===2 ? pick([2,3]) : (level===1 ? pick([2,3]) : 2);
     var minGap = level===0 ? 40 : level===1 ? 20 : 10;
-    var equalCase = level===2 && k===2 && Math.random()<0.3;
+    var equalCase = level===2 && k===2 && rnd()<0.3;
     var degs, tries = 0;
     do {
       degs = []; for(var i=0;i<k;i++) degs.push(Math.round(rand(25, 160)));
@@ -1943,6 +1944,7 @@
     var answer = equalCase ? 'Ils sont égaux' : letters[bigIdx];
     var centers = k===2 ? [[50,100],[150,100]] : [[50,50],[150,50],[100,150]];
     var rots = degs.map(function(d){ return rand(0, 360 - d); });
+    var lfs = degs.map(function(){ return [rand(0.8,1), rand(0.8,1)]; });
     var cols = [['var(--accent)','var(--accent2)'],['var(--accent2)','var(--accent)'],['var(--accent)','var(--accent3)']];
     var choices = letters.map(function(l){ return { label:l, ok:l===answer }; });
     if(level===2 && k===2) choices.push({ label:'Ils sont égaux', ok:equalCase });
@@ -1954,7 +1956,7 @@
         : 'L\'angle ' + answer + ' est le plus ouvert : c\'est le plus grand. La longueur des branches ne compte pas, seul compte l\'écart entre elles.',
       draw:function(){
         var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        degs.forEach(function(d,i){ drawAngleAt(svg, centers[i][0], centers[i][1], d, k===2 ? 48 : 46, rots[i], cols[i][0], cols[i][1], letters[i]); });
+        degs.forEach(function(d,i){ drawAngleAt(svg, centers[i][0], centers[i][1], d, k===2 ? 48 : 46, rots[i], cols[i][0], cols[i][1], letters[i], lfs[i]); });
       },
       cols3: choices.length===3,
       choices: choices
@@ -1986,8 +1988,8 @@
   function genAngleDroits(level){
     var pool = level===0 ? ['rect','carre','triGen','triRect'] : level===1 ? ['rect','carre','triGen','triRect','trapRect','maison'] : ['rect','carre','triRect','trapRect','maison','losange','parallelo','triGen'];
     var key = pickFresh('angle-fig-' + level, pool), f = ANGLE_FIGS[key], P = f.pts();
-    var rot = (level===2 && f.rights>0 && Math.random()<0.7) ? rand(-0.5,0.5) : (key==='maison' || key==='trapRect' ? rand(-0.15,0.15) : rand(-0.12,0.12));
-    var flip = Math.random()<0.5 ? -1 : 1;
+    var rot = (level===2 && f.rights>0 && rnd()<0.7) ? rand(-0.5,0.5) : (key==='maison' || key==='trapRect' ? rand(-0.15,0.15) : rand(-0.12,0.12));
+    var flip = rnd()<0.5 ? -1 : 1;
     var pts2 = P.map(function(q){ var x = q[0]*flip, y = q[1]; return [100 + x*Math.cos(rot) - y*Math.sin(rot), 100 + x*Math.sin(rot) + y*Math.cos(rot)]; });
     var vals = numChoiceSet(f.rights, [0,1,2,3,4,5]);
     return {
