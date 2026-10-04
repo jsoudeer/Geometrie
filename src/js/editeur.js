@@ -11,8 +11,10 @@
     { id:'table',     label:'Une table de multiplication' },
     { id:'plusmoins', label:'Ajouter ou retirer un nombre' },
     { id:'fiche',     label:'Une activité du jeu, à ma façon' },
+    { id:'patron',    label:'Un patron de cube à dessiner' },
     { id:'libre',     label:'Mes propres questions' }
   ];
+  var EDIT_GRID_ROWS = 5, EDIT_GRID_COLS = 6;
   // Activités du jeu qu'on peut reprendre en changeant la taille des nombres à chaque niveau.
   // param = réglage de niveau modifié ; lo/hi = bornes permises ; min(niveau) = plancher qui dépend des autres réglages du niveau.
   var EDIT_BASES = [
@@ -81,6 +83,10 @@
       var fiche = JSON.parse(JSON.stringify({ tag:F.tag, levels:F.levels, forms:F.forms, note:F.note }));
       fiche.levels.forEach(function(l, i){ l[B.param] = vv[i]; });
       act.type = 'gabarit'; act.label = act.label || F.label + ' à ma façon'; act.fiche = fiche; act.meta = { modele:modele, p:[bi].concat(vv) };
+    } else if(modele === 'patron'){
+      var gerr = packGridCheck(v.grille);
+      if(gerr) return { erreur:'Patron : ' + gerr };
+      act.type = 'patron'; act.domain = 'solides'; act.label = act.label || 'Mon patron'; act.grille = v.grille; act.meta = { modele:modele, p:[] };
     } else if(modele === 'libre'){
       if(!act.label) return { erreur:'Donne un titre à ton activité.' };
       var qs = [];
@@ -103,6 +109,11 @@
   function editeurApercu(act, lv){
     var r = packValidate({ format:'kvb-pack', formatVersion:1, id:'perso.apercu', version:1, titre:'Aperçu', activites:[act] });
     if(!r.pack) return { erreurs:r.erreurs };
+    if(act.type === 'patron'){      // pas de questions : le moteur 3D dit si le patron se referme
+      var net = r.defs[0].obj;
+      return { patron:{ solide:M3_ANSWER_LABELS[net.answer], ferme:net.answer !== 'aucun', explication:netExplain(net),
+        faces:net.faces.map(function(f){ return f.pts; }) } };
+    }
     var def = r.defs[0], n = act.type === 'fixe' ? Math.min(20, act.questions.length) : 20;
     var out = withSeed(2024, function(){
       var l = [];
@@ -165,6 +176,11 @@
     var msgEl = document.getElementById('edit-msg');
     function say(m){ if(msgEl) msgEl.textContent = m; }
 
+    function setCell(b, on){
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.setAttribute('aria-label', 'Ligne ' + (+b.getAttribute('data-r') + 1) + ', colonne ' + (+b.getAttribute('data-c') + 1) + ' : ' + (on ? 'case du patron' : 'vide'));
+      b.classList.toggle('on', on);
+    }
     function questionBlock(q, i){
       var box = el('fieldset', { cls:'ed-question' });
       box.appendChild(el('legend', { text:'Question ' + (i + 1) }));
@@ -190,7 +206,7 @@
       formEl.appendChild(field('ed-label', 'Titre' + (modele === 'libre' ? '' : ' (facultatif)'), t));
       var dom = el('select', {}); DOMAINS.forEach(function(d){ var o = el('option', { value:d.id, text:d.icon + ' ' + d.label }); dom.appendChild(o); });
       dom.value = act ? act.domain : (modele === 'libre' ? 'logique' : 'calcul');
-      formEl.appendChild(field('ed-domain', 'Thème', dom));
+      if(modele !== 'patron') formEl.appendChild(field('ed-domain', 'Thème', dom));     // un patron est toujours dans le thème « Solides »
       var lv = el('fieldset', { cls:'ed-levels' }); lv.appendChild(el('legend', { text:'Niveaux où l\'activité apparaît' }));
       ['Facile', 'Moyen', 'Difficile'].forEach(function(nm, k){
         var c = el('input', { type:'checkbox', id:'ed-niv' + k }); c.checked = act ? act.niveaux.indexOf(k) !== -1 : true;
@@ -202,6 +218,20 @@
         p = p || [7, 5, 8, 10];
         box.appendChild(num('ed-p0', 'Table de', p[0], 2, 12));
         ['Facile', 'Moyen', 'Difficile'].forEach(function(nm, k){ box.appendChild(num('ed-p' + (k + 1), 'Jusqu\'à × … en ' + nm, p[k + 1], 2, 20)); });
+      } else if(modele === 'patron'){
+        box.appendChild(el('p', { cls:'muted settings-hint', text:'Touche les cases pour dessiner le patron (6 colonnes sur 5 lignes). Le jeu vérifie lui-même s\'il se plie en cube.' }));
+        var rows = (act ? act.grille : '.X../XXXX/.X..').split('/'), grid = el('div', { id:'ed-grid', cls:'ed-grid', role:'group', 'aria-label':'Grille du patron' });
+        for(var gr = 0; gr < EDIT_GRID_ROWS; gr++) for(var gc = 0; gc < EDIT_GRID_COLS; gc++){
+          var cell = el('button', { type:'button', cls:'ed-cell', 'data-r':String(gr), 'data-c':String(gc) });
+          setCell(cell, (rows[gr] || '')[gc] === 'X');
+          cell.addEventListener('click', function(){ setCell(this, this.getAttribute('aria-pressed') !== 'true'); });
+          cell.addEventListener('keydown', function(e){        // flèches : on se déplace dans la grille
+            var d = { ArrowRight:[0,1], ArrowLeft:[0,-1], ArrowDown:[1,0], ArrowUp:[-1,0] }[e.key]; if(!d) return;
+            var t = grid.querySelector('[data-r="' + (+this.dataset.r + d[0]) + '"][data-c="' + (+this.dataset.c + d[1]) + '"]');
+            if(t){ t.focus(); e.preventDefault(); } });
+          grid.appendChild(cell);
+        }
+        box.appendChild(grid);
       } else if(modele === 'fiche'){
         var bases = EDIT_BASES.map(function(b){ return TEMPLATE_FICHES[b.id]; });
         p = p || [0].concat(bases[0].levels.map(function(l){ return l[EDIT_BASES[0].param]; }));
@@ -234,10 +264,10 @@
       formEl.appendChild(box);
       var sel = el('select', {}); ['Facile', 'Moyen', 'Difficile'].forEach(function(nm, k){ sel.appendChild(el('option', { value:String(k), text:nm })); });
       var tr = el('div', { cls:'btn-row' });
-      tr.appendChild(btn('ed-test', '🔍 Tester 20 questions', test));
+      tr.appendChild(btn('ed-test', modele === 'patron' ? '🔍 Tester le patron' : '🔍 Tester 20 questions', test));
       tr.appendChild(btn('ed-save', '💾 Enregistrer', save, 'primary'));
       tr.appendChild(btn('ed-cancel', 'Annuler', close));
-      formEl.appendChild(field('ed-test-level', 'Tester au niveau', sel));
+      if(modele !== 'patron') formEl.appendChild(field('ed-test-level', 'Tester au niveau', sel));
       formEl.appendChild(tr);
       formEl.appendChild(el('p', { id:'ed-msg2', cls:'muted settings-hint', role:'alert' }));
       formEl.appendChild(el('ol', { id:'ed-preview', cls:'ed-preview' }));
@@ -249,6 +279,18 @@
     function read(){
       var v = { label:val('ed-label'), domain:val('ed-domain'), niveaux:[0, 1, 2].filter(function(k){ return document.getElementById('ed-niv' + k).checked; }), p:[], questions:[] };
       for(var i = 0; document.getElementById('ed-p' + i); i++) v.p.push(val('ed-p' + i));
+      if(cur.modele === 'patron'){
+        var rowsOut = [];
+        for(var gr = 0; gr < EDIT_GRID_ROWS; gr++){
+          var line = '';
+          for(var gc = 0; gc < EDIT_GRID_COLS; gc++) line += formEl.querySelector('[data-r="' + gr + '"][data-c="' + gc + '"]').getAttribute('aria-pressed') === 'true' ? 'X' : '.';
+          rowsOut.push(line);
+        }
+        while(rowsOut.length && !/X/.test(rowsOut[rowsOut.length - 1])) rowsOut.pop();       // lignes vides en bas
+        while(rowsOut.length && !/X/.test(rowsOut[0])) rowsOut.shift();                         // et en haut
+        var left = Math.min.apply(null, rowsOut.map(function(l){ return l.indexOf('X') === -1 ? 99 : l.indexOf('X'); }));
+        v.grille = rowsOut.map(function(l){ return l.slice(left).replace(/\.+$/, '') || '.'; }).join('/');
+      }
       if(cur.modele === 'libre'){
         v.icone = val('ed-icone');
         formEl.querySelectorAll('.ed-question').forEach(function(b){
@@ -263,10 +305,21 @@
     function test(){
       var b = build(), pv = document.getElementById('ed-preview'); pv.innerHTML = ''; say2('');
       if(b.erreur){ say2(b.erreur); return; }
-      var lv = Number(val('ed-test-level'));
+      var lv = Number(val('ed-test-level') || 0);
       if(b.act.niveaux.indexOf(lv) === -1) lv = b.act.niveaux[0];
       var r = editeurApercu(b.act, lv);
       if(r.erreurs){ say2('Cette activité n\'est pas valide : ' + r.erreurs.join(' — ')); return; }
+      if(r.patron){
+        say2((r.patron.ferme ? '✔ Ce patron se plie : c\'est un ' + r.patron.solide.toLowerCase() + '. ' : '✘ Ce n\'est pas un patron de cube. ') + r.patron.explication);
+        var all = [].concat.apply([], r.patron.faces), xs = all.map(function(p){ return p[0]; }), ys = all.map(function(p){ return p[1]; });
+        var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), w = Math.max.apply(null, xs) - x0, h = Math.max.apply(null, ys) - y0, NS = 'http://www.w3.org/2000/svg';
+        var svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', (x0 - 0.2) + ' ' + (y0 - 0.2) + ' ' + (w + 0.4) + ' ' + (h + 0.4)); svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', 'Le patron dessiné : ' + r.patron.faces.length + ' faces'); svg.setAttribute('class', 'ed-net-preview');
+        r.patron.faces.forEach(function(f){ var pg = document.createElementNS(NS, 'polygon'); pg.setAttribute('points', f.map(function(p){ return p.join(','); }).join(' '));
+          pg.setAttribute('fill', r.patron.ferme ? 'var(--accent)' : 'var(--surface)'); pg.setAttribute('stroke', 'var(--text)'); pg.setAttribute('stroke-width', '0.05'); svg.appendChild(pg); });
+        var li0 = el('li', { cls:'ed-prev-item' }); li0.appendChild(svg); pv.appendChild(li0);
+        return;
+      }
       say2(r.questions.length + ' question' + (r.questions.length > 1 ? 's' : '') + ' d\'essai (niveau ' + ['Facile', 'Moyen', 'Difficile'][lv] + ') : vérifie les réponses avant d\'enregistrer.');
       r.questions.forEach(function(q){
         var li = el('li', { cls:'ed-prev-item' });

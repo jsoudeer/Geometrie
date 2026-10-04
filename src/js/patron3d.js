@@ -274,7 +274,7 @@
   ];
   var M3_GROUPS = [
     { id:'cube', label:'🧊 Cubes' }, { id:'pave', label:'📦 Pavés droits' }, { id:'pyramide', label:'🔺 Pyramides' },
-    { id:'prisme', label:'⛺ Prismes' }, { id:'piege', label:'🪤 Pièges (aucun solide)' }
+    { id:'prisme', label:'⛺ Prismes' }, { id:'piege', label:'🪤 Pièges (aucun solide)' }, { id:'perso', label:'📐 Mes patrons' }
   ];
   NET_DEFS.forEach(function(d){ d.randomNote = netNote(d.obj); });
   function netNote(net){
