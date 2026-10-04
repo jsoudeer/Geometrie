@@ -312,3 +312,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - `monnaie` : Facile 2 pièces (1, 2, 5 €), Moyen 2-3 (≤ 10 €), Difficile 3-4 (≤ 20 €) (`MONNAIE_LEVELS`) ; le dessin à 4 pièces sert enfin.
 - Notes de réglage corrigées (solides, énigmes : 44 après retrait de 2 doublons) ; `QCM_DISPLAY_ORDER` supprimé (ordre = ordre d'enregistrement) ; commentaire des formes cibles de Déformer.
 - Test : `niveaux_check.js`. Reste de P2 (objet `params`, `randomNote` générée) rattaché à P4.
+
+## 56. Audit P3 : hasard à graine, dessins reproductibles (04/10/2026)
+- `noyau.js` : `rnd()` (hasard des questions), `mulberry32`, `withSeed(graine, fn)` (générateur à graine + sacs « sans remise » vierges, puis tout est remis comme avant). `pick`, `rand`, `randInt`, `shuffle`, `pickFresh` passent par `rnd()` ; les 8 fichiers de questions n'utilisent plus `Math.random()` (les effets visuels, si).
+- Le dessin ne tire plus rien : formes (Côtés/Sommets/Nom), orientation des solides, décalages des objets de Dénombrement, couleurs/tailles/rotations de l'Intrus, longueurs des branches d'Angles sont tirés dans `generate` ; redessiner = même image.
+- Test : `seed_check.js` (47 types × 3 niveaux × 6 graines : même graine = même question et même image ; graines différentes = questions différentes ; garde-fou contre `Math.random()` dans les fichiers de questions).
+- Ouvre la voie aux questions « fixes » et aux aperçus de l'éditeur (P6) : « tester 20 questions » = 20 graines.

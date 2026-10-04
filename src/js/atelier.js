@@ -65,7 +65,7 @@
   function atSymGenerate(level){
     // L0 : 3 colonnes × 4 lignes par côté, 4 cases ; L1 : 3×5, 6 cases ; L2 : axe vertical OU horizontal, 4×5, 9 cases
     var C = level===0 ? 3 : level===1 ? 3 : 4, R = level===0 ? 4 : 5, count = level===0 ? 4 : level===1 ? 6 : 9;
-    var horizontal = level===2 && Math.random()<0.5;
+    var horizontal = level===2 && rnd()<0.5;
     // « demi » = dimensions d'un côté : en vertical C colonnes × R lignes ; en horizontal on tourne.
     var hc = horizontal ? R : C, hr = horizontal ? C : R;
     var given = [], r, c;
@@ -155,7 +155,7 @@
     var k = tg[0]*n/tg[1];
     // difficile : parfois la fraction écrite (5/8) plutôt qu'un mot
     var label = tg[2];
-    if(level===2 && Math.random()<0.4){ n = 8; k = randInt(1,7); label = k + '/8'; }
+    if(level===2 && rnd()<0.4){ n = 8; k = randInt(1,7); label = k + '/8'; }
     atFrac.n = n; atFrac.k = k; atFrac.kind = pick(['pie','bar']); atFrac.label = label;
     atFrac.on = []; for(var i=0;i<n;i++) atFrac.on.push(false);
     atFrac.ui.reset('Colorie ' + label + ' de la figure.', 'Touche les parts pour les colorier, puis vérifie.', 'Figure partagée en ' + n + ' parts égales : touche les parts à colorier');
@@ -270,7 +270,7 @@
     copy = model.map(function(row){ return row.slice(); });
     // cases modifiées : au moins une « en trop » et une « manquante » dès que plusieurs erreurs
     var diff = [], wantExtra = [];
-    for(var k=0;k<nDiff;k++) wantExtra.push(k % 2 === 0 ? Math.random()<0.5 : !wantExtra[k-1]);
+    for(var k=0;k<nDiff;k++) wantExtra.push(k % 2 === 0 ? rnd()<0.5 : !wantExtra[k-1]);
     wantExtra.forEach(function(extra){
       var tries = 0, rr, cc;
       do { rr = randInt(0,n-1); cc = randInt(0,n-1); tries++; }

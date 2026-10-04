@@ -66,7 +66,7 @@
         var h = randInt(1,12), text, c, label = function(hh, half){ return hh + ' h' + (half ? ' 30' : ''); }, k, half = false, ans;
         if(lvl === 0){ k = randInt(1,3); text = 'Il est ' + label(h) + '. Quelle heure sera-t-il dans ' + k + ' h ?'; ans = [skHour(h + k), false]; }
         else if(lvl === 1){ k = randInt(1,3); text = 'Il est ' + label(h, true) + '. Quelle heure sera-t-il dans ' + k + ' h ?'; ans = [skHour(h + k), true]; }
-        else if(Math.random() < 0.5){ text = 'Il est ' + label(h, true) + '. Quelle heure sera-t-il dans 1 h 30 ?'; ans = [skHour(h + 2), false]; }
+        else if(rnd() < 0.5){ text = 'Il est ' + label(h, true) + '. Quelle heure sera-t-il dans 1 h 30 ?'; ans = [skHour(h + 2), false]; }
         else { text = 'Il est ' + label(h) + '. Quelle heure sera-t-il dans 2 h 30 ?'; ans = [skHour(h + 2), true]; }
         var right = label(ans[0], ans[1]), wrong = [label(skHour(ans[0] + 1), ans[1]), label(skHour(ans[0] - 1), ans[1]), label(ans[0], !ans[1])];
         var opts = shuffle([{ label:right, ok:true }].concat(shuffle(wrong).slice(0,2).map(function(w){ return { label:w, ok:false }; })));
@@ -88,7 +88,7 @@
       desc:'Trouve le nombre suivant d\'une suite : de 2 en 2, de 5 en 5, de 10 en 10, puis des pas plus grands.',
       ask:function(lvl){
         var s = pick([[2,5,10],[3,4,5,10,20],[6,7,8,9,25,50]][lvl]), d = randInt(1,4) * s, a = d, c = a + 3 * s;
-        if(lvl === 2 && Math.random() < 0.5){ a = d + 3 * s; c = a - 3 * s; s = -s; }
+        if(lvl === 2 && rnd() < 0.5){ a = d + 3 * s; c = a - 3 * s; s = -s; }
         var seq = [a, a + s, a + 2 * s];
         return { text:'Continue la suite : ' + seq.join(', ') + ', … ?', options:skOptions(c, [c + Math.abs(s), c - Math.abs(s), c + 1]), explain:'On avance de ' + Math.abs(s) + (s < 0 ? ' en reculant' : '') + ' à chaque fois : ' + seq.join(', ') + ', ' + c + '.' };
       } }

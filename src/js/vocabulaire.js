@@ -57,7 +57,7 @@ function mascottes(){
 function toutesLesPersonnes(){ return PRENOMS.concat(mascottes()); }
 // Une fois sur deux un prénom d'enfant, une fois sur deux une mascotte (chaque liste sans remise).
 function prenomAuHasard(){
-  return Math.random() < 0.5 ? pickFresh('prenom', PRENOMS) : pickFresh('mascotte', mascottes());
+  return rnd() < 0.5 ? pickFresh('prenom', PRENOMS) : pickFresh('mascotte', mascottes());
 }
 function objetAuHasard(groupe){
   var l = OBJETS.filter(function(o){ return o.groupe===groupe; });
