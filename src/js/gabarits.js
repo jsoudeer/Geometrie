@@ -135,13 +135,14 @@
   // ---- SCÈNES : ce qui est dessiné. make(args) tire tout ce qui est aléatoire (une seule fois, à la génération) ;
   // draw(svg, données) dessine, sans rien tirer : redessiner = même image. exprs = paramètres lus comme
   // expressions, texts = paramètres lus comme textes à {trous}.
+  function clampInt(v, lo, hi){ v = Math.floor(+v); return isNaN(v) ? lo : Math.max(lo, Math.min(hi, v)); }
   var SCENES = {
     equation: { exprs:[], texts:['text'],
       make:function(a){ return a; },
       draw:function(svg, d){ svg.appendChild(svgText(100,112,d.text.length>11 ? 24 : 34,d.text)); } },
     // plaques (100), barres (10), cubes (1) : « quel nombre est représenté ? »
     blocks: { exprs:['hu','te','un'], texts:[],
-      make:function(a){ return a; },
+      make:function(a){ return { hu:clampInt(a.hu, 0, 20), te:clampInt(a.te, 0, 12), un:clampInt(a.un, 0, 30) }; },
       draw:function(svg, d){
         var hu = d.hu, te = d.te, un = d.un, i, j, s = 30, g = 3;
         for(i=0;i<hu;i++){
@@ -164,13 +165,13 @@
     scatter: { exprs:['n','icon'], texts:[],
       make:function(a){
         var cells = []; for(var i=0;i<16;i++) cells.push(i);
-        var chosen = shuffle(cells).slice(0, a.n);
+        var chosen = shuffle(cells).slice(0, clampInt(a.n, 0, 16));
         return { icon:a.icon, items: chosen.map(function(c){ return { c:c, dx:randInt(-6,6), dy:randInt(-4,4) }; }) };
       },
       draw:function(svg, d){ d.items.forEach(function(it){ svg.appendChild(svgText(28 + (it.c%4)*48 + it.dx, 52 + Math.floor(it.c/4)*44 + it.dy, 30, d.icon)); }); } },
     // droite graduée : nb graduations de pas `step` depuis `start`, une flèche « ? » à la graduation k
     numberline: { exprs:['start','step','nb','labelEvery','k'], texts:[],
-      make:function(a){ return a; },
+      make:function(a){ var nb = clampInt(a.nb, 2, 20); return { start:a.start, step:a.step, nb:nb, labelEvery:clampInt(a.labelEvery, 1, nb), k:clampInt(a.k, 0, nb) }; },
       draw:function(svg, d){
         var x0 = 16, w = 168, y = 120, i;
         svg.appendChild(el('line',{x1:x0-6,y1:y,x2:x0+w+6,y2:y,stroke:'var(--text)','stroke-width':3,'stroke-linecap':'round'}));
@@ -185,7 +186,7 @@
       } },
     // rows × cols points
     grid: { exprs:['rows','cols'], texts:[],
-      make:function(a){ return a; },
+      make:function(a){ return { rows:clampInt(a.rows, 1, 12), cols:clampInt(a.cols, 1, 12) }; },
       draw:function(svg, d){
         var r = d.rows, c = d.cols, gap = Math.min(30, 170/c, 170/r), x0 = 100 - (c-1)*gap/2, y0 = 100 - (r-1)*gap/2, i, j;
         for(i=0;i<r;i++) for(j=0;j<c;j++) svg.appendChild(el('circle',{cx:x0+j*gap,cy:y0+i*gap,r:Math.min(10,gap*0.36),fill:i%2 ? 'var(--accent2)' : 'var(--accent)',stroke:'var(--text)','stroke-width':1.8}));
@@ -274,9 +275,14 @@
     };
   }
 
-  function registerTemplateType(f){
+  // Définition d'un type de Quizz à partir d'une fiche (validée) — sans l'enregistrer.
+  function makeTemplateDef(f){
     validateFiche(f);
+    return { id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
+      randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } };
+  }
+  function registerTemplateType(f){
+    var def = makeTemplateDef(f);
     TEMPLATE_FICHES[f.id] = f;
-    registerQuizType({ id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
-      randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } });
+    registerQuizType(def);
   }

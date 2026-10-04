@@ -191,6 +191,11 @@
     try{ f.config.overrides = JSON.parse(localStorage.getItem(f.config.storageKey) || '{}'); }catch(e){}
     f.config.rebuild(f.config.overrides);
   });
+  // Après l'ajout ou le retrait d'activités à l'exécution (paquets) : on reconstruit les tirages et la liste de réglages.
+  function refreshQuizTypes(){
+    FAMILIES.forEach(function(f){ if(f.config) f.config.rebuild(f.config.overrides); });
+    renderActivityConfig(currentAconfFamily);
+  }
   var ACTIVITY_CONFIG_FAMILIES = MANUAL_FAMILY_LIST;
   var currentAconfFamily = 'qcm';
   var aconfOpenCats = {};

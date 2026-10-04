@@ -24,6 +24,7 @@
     "js/fiches-calcul.js",
     "js/patron3d.js",
     "js/atelier.js",
+    "js/paquets.js",
     "js/orchestrateur.js",
     "js/boutique.js",
     "js/competences.js",

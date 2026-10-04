@@ -29,6 +29,7 @@ src/
     nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
     gabarits.js         moteur de FICHES d'activités arithmétiques : évaluateur d'expressions sûr (pas d'eval), variables, contraintes, fausses réponses, textes, note de réglage générée ; `registerTemplateType(fiche)`
     fiches-calcul.js    les fiches des 12 activités migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions et Soustractions posées, Dénombrement visuel, Compter jusqu'à 1000, Multiplier/partager, Droite graduée, Comparer
+    paquets.js          paquets d'activités (`kvb-pack`) : validation complète, fournisseur `appareil` (localStorage), installation / activation / mise à jour / retrait, import-export de fichier (Réglages) ; chargé juste avant orchestrateur.js
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
@@ -124,6 +125,10 @@ registerTemplateType({ id:'soustraction', domain:'calcul', label:'Soustraction',
 Scène (ce qui est dessiné) : `eq:'texte'` (équation écrite) ou `scene:{type:'blocks'|'scatter'|'grid'|'emoji'|'numberline'|'equation', …}` ; réponses non numériques : `options:['<','=','>']` avec `answer` = l'une d'elles (chaînes entre apostrophes dans les expressions) (paramètres = expressions ou textes à {trous}, voir `SCENES` dans `gabarits.js` ; le tirage se fait dans `make`, le dessin dans `draw`, qui ne tire rien).
 
 Variables : une expression, `{int:[lo,hi], step?}`, `{pick:[…]}` (ou nom d'un réglage), `{any:[spec,…]}` ; `where` = contraintes (rejet borné, `tries` = n° d'essai) ; `w` = poids de la forme ; `levels:[…]` = niveaux où la forme existe. Expressions : `+ - * / %`, comparaisons, `&& || !`, `?:`, `min max abs floor round rand liste`, plus les fonctions déclarées dans `TEMPLATE_FNS` (`carry`, `explainAdd`, `tableHint`). La fiche est validée à l'enregistrement (`validateFiche`) : un nom inconnu ou une faute de syntaxe lève une erreur claire. Test : `gabarits_check.js`.
+
+## Paquets d'activités (sans code)
+
+Un adulte ajoute des activités par un fichier `.kvb.json` (modèle : `exemples/paquet-exemple.kvb.json`). Deux sortes : `fixe` (liste de questions `{q, bonnes:[1], fausses:[1 à 3], explication}`) et `gabarit` (une `fiche`, voir plus haut). Format, limites et messages d'erreur : `paquets.js` (`packValidate`). Les identifiants sont `custom:<paquet>/<activité>`. Un autre fournisseur que `appareil` (lien, cloud) se branche en remplaçant `packSourceAppareil`. Test : `pack_check.js`.
 
 ## Ajouter une activité à écran propre
 

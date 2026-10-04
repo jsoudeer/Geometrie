@@ -102,6 +102,13 @@
         </form>
         <div id="debug-tools" hidden>
           <p class="muted settings-hint" role="status">Mode débogage actif jusqu'à la fermeture de la page.</p>
+          <div id="packs-panel">
+            <p class="muted settings-hint"><strong>📦 Paquets d'activités</strong> : des fichiers <code>.kvb.json</code> qui ajoutent des activités (réservé aux adultes).</p>
+            <input type="file" id="packs-file" accept=".json,application/json" hidden>
+            <button class="btn ghost" id="packs-import-btn" type="button" style="width:100%;margin-bottom:8px;">📥 Importer un paquet…</button>
+            <p class="muted settings-hint" id="packs-msg" role="status" aria-live="polite"></p>
+            <ul id="packs-list" class="packs-list"></ul>
+          </div>
           <button class="btn ghost" id="unlock-all-btn" type="button" style="width:100%;margin-bottom:8px;">🔓 Tout débloquer</button>
           <button class="btn ghost" id="debug-plus50-btn" type="button" style="width:100%;margin-bottom:8px;">⭐ +50 étoiles</button>
           <button class="btn ghost" id="debug-off-btn" type="button" style="width:100%;">🔒 Quitter le mode débogage</button>

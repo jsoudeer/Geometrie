@@ -1,0 +1,47 @@
+{
+  "format": "kvb-pack",
+  "formatVersion": 1,
+  "id": "exemple.ce1.demo",
+  "version": 1,
+  "titre": "Paquet d'exemple — CE1",
+  "auteur": "Équipe du jeu",
+  "activites": [
+    {
+      "id": "table-de-7",
+      "type": "gabarit",
+      "label": "Table de 7",
+      "domain": "calcul",
+      "niveaux": [1, 2],
+      "fiche": {
+        "levels": [ { "maxN": 5 }, { "maxN": 8 }, { "maxN": 10 } ],
+        "forms": [
+          {
+            "vars": { "n": { "int": [1, "maxN"] }, "r": "7*n" },
+            "answer": "r",
+            "extras": ["r+7", "r-7", "r+10", "r-10"],
+            "question": "Combien font 7 × {n} ?",
+            "sub": "Utilise la table de 7.",
+            "explain": "7 × {n} = {r}.",
+            "eq": "7 × {n} = ?"
+          }
+        ],
+        "note": "La table de 7 jusqu'à 7 × {maxN0} en Facile, 7 × {maxN1} en Moyen, 7 × {maxN2} en Difficile."
+      }
+    },
+    {
+      "id": "calendrier-classe",
+      "type": "fixe",
+      "label": "Les mois de l'année",
+      "domain": "temps",
+      "icone": "📅",
+      "tirage": "sans remise",
+      "niveaux": [0, 1, 2],
+      "questions": [
+        { "q": "Quel est le premier mois de l'année ?", "bonnes": ["janvier"], "fausses": ["février", "décembre"], "explication": "L'année commence en janvier et finit en décembre." },
+        { "q": "Quel mois vient après mars ?", "bonnes": ["avril"], "fausses": ["février", "mai", "juin"], "explication": "L'ordre est : mars, avril, mai." },
+        { "q": "En quel mois est Noël ?", "bonnes": ["décembre"], "fausses": ["novembre", "janvier"], "explication": "Noël est le 25 décembre." },
+        { "q": "Combien y a-t-il de mois dans une année ?", "bonnes": ["12"], "fausses": ["10", "11", "13"], "explication": "Il y a 12 mois : de janvier à décembre." }
+      ]
+    }
+  ]
+}

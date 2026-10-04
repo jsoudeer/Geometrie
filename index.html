@@ -754,6 +754,13 @@
   /* Retour d'une réponse (voir makeQuestionFlow) : titre ✔/✘, puis détail, puis explication. */
   .feedback .fb-title{ font-weight:800; }
   .feedback > div:not(.fb-title):not(.explain-line){ font-weight:700; }
+
+/* Paquets d'activités (Réglages, derrière le code adulte) */
+.packs-list{ list-style:none; margin:0 0 10px; padding:0; }
+.pack-item{ border:2px solid var(--text); border-radius:12px; padding:8px 10px; margin-bottom:8px; background:var(--surface); }
+.pack-title{ font-weight:700; margin-bottom:6px; overflow-wrap:anywhere; }
+.pack-item .btn-row{ gap:6px; flex-wrap:wrap; }
+.pack-item .btn{ flex:1 1 auto; min-height:44px; }
   /* ============ MODULE 6 : BOUTIQUE + BATAILLE ============ */
   .arena-star-note{
     display:flex; align-items:center; gap:8px; background:var(--surface2);
@@ -1403,6 +1410,13 @@
         </form>
         <div id="debug-tools" hidden>
           <p class="muted settings-hint" role="status">Mode débogage actif jusqu'à la fermeture de la page.</p>
+          <div id="packs-panel">
+            <p class="muted settings-hint"><strong>📦 Paquets d'activités</strong> : des fichiers <code>.kvb.json</code> qui ajoutent des activités (réservé aux adultes).</p>
+            <input type="file" id="packs-file" accept=".json,application/json" hidden>
+            <button class="btn ghost" id="packs-import-btn" type="button" style="width:100%;margin-bottom:8px;">📥 Importer un paquet…</button>
+            <p class="muted settings-hint" id="packs-msg" role="status" aria-live="polite"></p>
+            <ul id="packs-list" class="packs-list"></ul>
+          </div>
           <button class="btn ghost" id="unlock-all-btn" type="button" style="width:100%;margin-bottom:8px;">🔓 Tout débloquer</button>
           <button class="btn ghost" id="debug-plus50-btn" type="button" style="width:100%;margin-bottom:8px;">⭐ +50 étoiles</button>
           <button class="btn ghost" id="debug-off-btn" type="button" style="width:100%;">🔒 Quitter le mode débogage</button>
@@ -5965,13 +5979,14 @@ function phrase(tpl, vars){
   // ---- SCÈNES : ce qui est dessiné. make(args) tire tout ce qui est aléatoire (une seule fois, à la génération) ;
   // draw(svg, données) dessine, sans rien tirer : redessiner = même image. exprs = paramètres lus comme
   // expressions, texts = paramètres lus comme textes à {trous}.
+  function clampInt(v, lo, hi){ v = Math.floor(+v); return isNaN(v) ? lo : Math.max(lo, Math.min(hi, v)); }
   var SCENES = {
     equation: { exprs:[], texts:['text'],
       make:function(a){ return a; },
       draw:function(svg, d){ svg.appendChild(svgText(100,112,d.text.length>11 ? 24 : 34,d.text)); } },
     // plaques (100), barres (10), cubes (1) : « quel nombre est représenté ? »
     blocks: { exprs:['hu','te','un'], texts:[],
-      make:function(a){ return a; },
+      make:function(a){ return { hu:clampInt(a.hu, 0, 20), te:clampInt(a.te, 0, 12), un:clampInt(a.un, 0, 30) }; },
       draw:function(svg, d){
         var hu = d.hu, te = d.te, un = d.un, i, j, s = 30, g = 3;
         for(i=0;i<hu;i++){
@@ -5994,13 +6009,13 @@ function phrase(tpl, vars){
     scatter: { exprs:['n','icon'], texts:[],
       make:function(a){
         var cells = []; for(var i=0;i<16;i++) cells.push(i);
-        var chosen = shuffle(cells).slice(0, a.n);
+        var chosen = shuffle(cells).slice(0, clampInt(a.n, 0, 16));
         return { icon:a.icon, items: chosen.map(function(c){ return { c:c, dx:randInt(-6,6), dy:randInt(-4,4) }; }) };
       },
       draw:function(svg, d){ d.items.forEach(function(it){ svg.appendChild(svgText(28 + (it.c%4)*48 + it.dx, 52 + Math.floor(it.c/4)*44 + it.dy, 30, d.icon)); }); } },
     // droite graduée : nb graduations de pas `step` depuis `start`, une flèche « ? » à la graduation k
     numberline: { exprs:['start','step','nb','labelEvery','k'], texts:[],
-      make:function(a){ return a; },
+      make:function(a){ var nb = clampInt(a.nb, 2, 20); return { start:a.start, step:a.step, nb:nb, labelEvery:clampInt(a.labelEvery, 1, nb), k:clampInt(a.k, 0, nb) }; },
       draw:function(svg, d){
         var x0 = 16, w = 168, y = 120, i;
         svg.appendChild(el('line',{x1:x0-6,y1:y,x2:x0+w+6,y2:y,stroke:'var(--text)','stroke-width':3,'stroke-linecap':'round'}));
@@ -6015,7 +6030,7 @@ function phrase(tpl, vars){
       } },
     // rows × cols points
     grid: { exprs:['rows','cols'], texts:[],
-      make:function(a){ return a; },
+      make:function(a){ return { rows:clampInt(a.rows, 1, 12), cols:clampInt(a.cols, 1, 12) }; },
       draw:function(svg, d){
         var r = d.rows, c = d.cols, gap = Math.min(30, 170/c, 170/r), x0 = 100 - (c-1)*gap/2, y0 = 100 - (r-1)*gap/2, i, j;
         for(i=0;i<r;i++) for(j=0;j<c;j++) svg.appendChild(el('circle',{cx:x0+j*gap,cy:y0+i*gap,r:Math.min(10,gap*0.36),fill:i%2 ? 'var(--accent2)' : 'var(--accent)',stroke:'var(--text)','stroke-width':1.8}));
@@ -6104,11 +6119,16 @@ function phrase(tpl, vars){
     };
   }
 
-  function registerTemplateType(f){
+  // Définition d'un type de Quizz à partir d'une fiche (validée) — sans l'enregistrer.
+  function makeTemplateDef(f){
     validateFiche(f);
+    return { id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
+      randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } };
+  }
+  function registerTemplateType(f){
+    var def = makeTemplateDef(f);
     TEMPLATE_FICHES[f.id] = f;
-    registerQuizType({ id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
-      randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } });
+    registerQuizType(def);
   }
   /* ===================== FICHES D'ACTIVITÉS : calcul =====================
      12 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
@@ -6120,7 +6140,7 @@ function phrase(tpl, vars){
   TEMPLATE_FNS.explainAdd = addExplain;
   TEMPLATE_FNS.borrow = hasBorrow;
   TEMPLATE_FNS.explainSub = subExplain;
-  TEMPLATE_FNS.somme = function(c, r){ return Array(r+1).join(c + ' + ').slice(0,-3); };   // somme(5,3) -> « 5 + 5 + 5 »
+  TEMPLATE_FNS.somme = function(c, r){ r = Math.max(1, Math.min(50, Math.floor(r))); return Array(r+1).join(c + ' + ').slice(0,-3); };   // somme(5,3) -> « 5 + 5 + 5 »
   TEMPLATE_FNS.blocsExplain = function(hu, te, un){
     return (hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + (hu*100 + te*10 + un) + '.';
   };
@@ -7652,6 +7672,295 @@ function phrase(tpl, vars){
     generate:atAxeGenerate,
     signature:function(){ return atAxe.n + JSON.stringify(atAxe.fig); }
   });
+  /* ===================== PAQUETS D'ACTIVITÉS =====================
+     Un paquet est un fichier JSON autonome (« kvb-pack ») qui apporte des activités au jeu sans toucher
+     au code : des gabarits (une fiche, voir gabarits.js) et des questions fixes (écrites à la main).
+     Un paquet ne contient JAMAIS de code : uniquement des données et des expressions arithmétiques évaluées
+     par notre évaluateur ; les textes sont posés avec textContent. Il est validé en entier à l'installation
+     (structure, bornes, 200 tirages d'essai par niveau : une seule bonne réponse, propositions distinctes…) ;
+     s'il est refusé, le message dit pourquoi, en français.
+
+     Fournisseur (PackSource) : { list(), save(entrée), remove(id) }. Aujourd'hui « appareil » = localStorage
+     (pas d'images dans les paquets pour l'instant, donc la place suffit) ; « fichier » = import / export d'un
+     .kvb.json depuis l'écran Réglages. Le jeu ne connaît que PackSource : un autre fournisseur (lien, cloud, IndexedDB)
+     se branche sans rien changer d'autre.
+
+     Identifiants : une activité de paquet s'appelle `custom:<paquet>/<activité>` (jamais en collision avec les
+     types intégrés ; l'historique de progression est rangé par cet identifiant). */
+
+  var PACK_LIMITS = { octets:300000, activites:40, questions:300, texte:400, expr:300, essais:200 };
+  var PACK_STORAGE_KEY = 'geo_packs';
+  var PACKS = [];            // paquets installés : { pack, actif, defs, erreur }
+
+  // ---- fournisseur « appareil » ----
+  var packSourceAppareil = {
+    read:function(){ try { return JSON.parse(localStorage.getItem(PACK_STORAGE_KEY) || '{}') || {}; } catch(e){ return {}; } },
+    list:function(){ var o = this.read(); return Object.keys(o).map(function(k){ return o[k]; }); },
+    save:function(entry){
+      var o = this.read(); o[entry.pack.id] = { pack:entry.pack, actif:entry.actif };
+      try { localStorage.setItem(PACK_STORAGE_KEY, JSON.stringify(o)); return true; } catch(e){ return false; }
+    },
+    remove:function(id){ var o = this.read(); delete o[id]; try { localStorage.setItem(PACK_STORAGE_KEY, JSON.stringify(o)); } catch(e){} }
+  };
+
+  // ---- validation ----
+  function packIsStr(v, min, max){ return typeof v === 'string' && v.length >= min && v.length <= max; }
+  function packIsObj(v){ return v && typeof v === 'object' && !Array.isArray(v); }
+  var PACK_ID_RE = /^[a-z0-9][a-z0-9._-]{1,59}$/, ACT_ID_RE = /^[a-z0-9][a-z0-9-]{0,39}$/, PARAM_RE = /^[A-Za-z_]\w{0,19}$/;
+  var PACK_RESERVED = { level:1, tries:1, __fns:1, __proto__:1, constructor:1, prototype:1 };
+
+  // Forme d'une fiche de gabarit venue d'un paquet (le sens — noms, syntaxe, scènes — est ensuite vérifié par validateFiche).
+  function packCheckFiche(f, err){
+    if(!packIsObj(f.levels) && !Array.isArray(f.levels)){ err('« levels » : 3 réglages de niveau attendus'); return; }
+    if(f.levels.length !== 3) err('« levels » : 3 niveaux attendus (Facile, Moyen, Difficile)');
+    f.levels.forEach(function(p, i){
+      if(!packIsObj(p)){ err('niveau ' + i + ' : un objet de réglages est attendu'); return; }
+      Object.keys(p).forEach(function(k){
+        var v = p[k];
+        if(!PARAM_RE.test(k) || PACK_RESERVED[k]) err('niveau ' + i + ' : nom de réglage « ' + k + ' » interdit');
+        var okV = function(x){ return typeof x === 'number' && isFinite(x) || packIsStr(x, 0, PACK_LIMITS.texte); };
+        if(!(okV(v) || Array.isArray(v) && v.length <= 60 && v.every(okV))) err('niveau ' + i + ' : réglage « ' + k + ' » invalide');
+      });
+    });
+    if(!Array.isArray(f.forms) || f.forms.length < 1 || f.forms.length > 20) err('« forms » : de 1 à 20 formes de question');
+    (f.forms || []).forEach(function(form, fi){
+      if(!packIsObj(form)){ err('forme ' + fi + ' invalide'); return; }
+      var strs = [form.w, form.answer, form.question, form.sub, form.explain, form.eq].concat(form.where || [], form.extras || [], form.options || []);
+      if(strs.some(function(x){ return x !== undefined && (typeof x !== 'string' && typeof x !== 'number' || String(x).length > PACK_LIMITS.expr * 2); })) err('forme ' + fi + ' : texte ou expression trop long');
+      if(JSON.stringify(form).length > 6000) err('forme ' + fi + ' : trop longue');
+      if(form.vars !== undefined && (!packIsObj(form.vars) || Object.keys(form.vars).length > 14 || Object.keys(form.vars).some(function(k){ return !PARAM_RE.test(k) || PACK_RESERVED[k]; }))) err('forme ' + fi + ' : variables invalides');
+      if(form.where !== undefined && (!Array.isArray(form.where) || form.where.length > 8)) err('forme ' + fi + ' : « where » invalide');
+      if(form.extras !== undefined && (!Array.isArray(form.extras) || form.extras.length > 10)) err('forme ' + fi + ' : « extras » invalide');
+      if(form.options !== undefined && (!Array.isArray(form.options) || form.options.length < 2 || form.options.length > 4 || form.options.some(function(o){ return !packIsStr(o, 1, 30); }))) err('forme ' + fi + ' : « options » : de 2 à 4 réponses courtes');
+    });
+    if(f.note !== undefined && !packIsStr(f.note, 0, 600)) err('« note » trop longue');
+  }
+
+  // Questions d'essai : un tirage est refusé s'il n'est pas jouable.
+  function packCheckQuestion(q, where){
+    if(!q || typeof q !== 'object') return where + ' : pas de question';
+    if(!packIsStr(q.question, 1, 400) || /undefined|NaN|\[object/.test(q.question + q.explain + q.sub)) return where + ' : texte vide ou invalide (« ' + String(q.question).slice(0, 40) + ' »)';
+    if(!Array.isArray(q.choices) || q.choices.length < 2 || q.choices.length > 4) return where + ' : il faut de 2 à 4 propositions';
+    var labels = q.choices.map(function(c){ return c.label; });
+    if(labels.some(function(l){ return !packIsStr(l, 1, 60); })) return where + ' : proposition vide ou trop longue';
+    if(new Set(labels).size !== labels.length) return where + ' : deux propositions identiques (' + String(q.question).slice(0, 40) + ')';
+    if(q.choices.filter(function(c){ return c.ok; }).length !== 1) return where + ' : il n\'y a pas exactement une bonne réponse (' + String(q.question).slice(0, 40) + ')';
+    if(typeof q.draw !== 'function') return where + ' : pas de dessin';
+    return null;
+  }
+
+  // Construit les définitions de types de Quizz d'un paquet ; renvoie { defs, erreurs }.
+  function packBuild(pack){
+    var errs = [], defs = [];
+    pack.activites.forEach(function(act){
+      var id = 'custom:' + pack.id + '/' + act.id, where = '« ' + act.label + ' »';
+      var def;
+      try {
+        if(act.type === 'fixe'){
+          def = packFixeDef(id, act, pack);
+        } else {
+          var fiche = JSON.parse(JSON.stringify(act.fiche));
+          fiche.id = id; fiche.domain = act.domain; fiche.label = act.label; fiche.longLabel = act.label;
+          fiche.defaultLevels = act.niveaux; fiche.note = fiche.note || 'Activité du paquet « ' + pack.titre + ' ».';
+          def = makeTemplateDef(fiche);
+          if(/undefined|NaN/.test(def.randomNote)) throw new Error('la note de réglage cite un réglage inexistant');
+          def.__fiche = fiche;
+        }
+      } catch(e){ errs.push(where + ' : ' + e.message); return; }
+      // essais : pour chaque niveau activé, tirages à graine (reproductibles) ; un seul défaut suffit à refuser
+      for(var k = 0; k < act.niveaux.length && !errs.length; k++){
+        var lv = act.niveaux[k];
+        for(var i = 0; i < PACK_LIMITS.essais; i++){
+          var msg = null;
+          try { msg = packCheckQuestion(withSeed(1000 + i * 7919 + lv, function(){ return def.generate(lv); }), where + ' (niveau ' + (lv + 1) + ')'); }
+          catch(e){ msg = where + ' (niveau ' + (lv + 1) + ') : ' + e.message; }
+          if(msg){ errs.push(msg); break; }
+        }
+      }
+      def.pack = pack.id; def.packTitre = pack.titre;
+      defs.push(def);
+    });
+    return { defs:defs, erreurs:errs };
+  }
+
+  // Activité « questions fixes » : liste écrite à la main, tirage sans remise, réponses mélangées par le jeu.
+  function packFixeDef(id, act, pack){
+    var qs = act.questions;
+    return { id:id, domain:act.domain, label:act.label, longLabel:act.label, defaultLevels:act.niveaux,
+      randomNote:'Questions écrites à la main (' + qs.length + '), tirées sans répétition tant qu\'on ne les a pas toutes vues. Paquet « ' + pack.titre + ' ».',
+      generate:function(){
+        var q = pickFresh(id, qs);
+        var bonne = q.bonnes[0], opts = shuffle([bonne].concat(q.fausses));
+        return { tag:act.label, question:q.q, sub:'Choisis la bonne réponse.',
+          explain:q.explication || ('La bonne réponse est : ' + bonne + '.'),
+          draw:function(){
+            var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
+            svg.appendChild(svgText(100,125,72,q.icone || act.icone || '❓'));
+          },
+          cols3:false, choices:opts.map(function(l){ return { label:l, ok:l === bonne }; }) };
+      } };
+  }
+
+  // Valide et nettoie un paquet lu depuis du JSON ; renvoie { erreurs:[…], pack:nettoyé|null, defs }.
+  function packValidate(raw){
+    var errs = [];
+    function err(m){ errs.push(m); }
+    if(!packIsObj(raw)) return { erreurs:['Ce fichier n\'est pas un paquet d\'activités.'], pack:null };
+    if(raw.format !== 'kvb-pack') return { erreurs:['Ce fichier n\'est pas un paquet d\'activités (format « kvb-pack » attendu).'], pack:null };
+    if(raw.formatVersion !== 1) return { erreurs:['Version de format non prise en charge : ' + raw.formatVersion + ' (ce jeu lit la version 1).'], pack:null };
+    if(!PACK_ID_RE.test(raw.id || '')) err('« id » du paquet : lettres minuscules, chiffres, point, tiret (2 à 60 caractères).');
+    if(!(Number.isInteger(raw.version) && raw.version >= 1 && raw.version < 100000)) err('« version » : un entier à partir de 1.');
+    if(!packIsStr(raw.titre, 1, 80)) err('« titre » : de 1 à 80 caractères.');
+    if(raw.auteur !== undefined && !packIsStr(raw.auteur, 0, 60)) err('« auteur » : 60 caractères au plus.');
+    if(!Array.isArray(raw.activites) || raw.activites.length < 1 || raw.activites.length > PACK_LIMITS.activites) err('« activites » : de 1 à ' + PACK_LIMITS.activites + ' activités.');
+    var pack = { format:'kvb-pack', formatVersion:1, id:raw.id, version:raw.version, titre:raw.titre, auteur:raw.auteur || '', activites:[] };
+    var seen = {}, domains = DOMAINS.map(function(d){ return d.id; });
+    (Array.isArray(raw.activites) ? raw.activites : []).forEach(function(a, ai){
+      var w = 'Activité ' + (ai + 1) + (a && a.label ? ' (« ' + String(a.label).slice(0, 30) + ' »)' : '');
+      function e2(m){ err(w + ' : ' + m); }
+      if(!packIsObj(a)){ e2('objet attendu.'); return; }
+      if(!ACT_ID_RE.test(a.id || '')) e2('« id » : minuscules, chiffres, tiret (1 à 40 caractères).');
+      else if(seen[a.id]) e2('« id » en double : ' + a.id);
+      seen[a.id] = 1;
+      if(a.type !== 'gabarit' && a.type !== 'fixe') e2('« type » doit être « gabarit » ou « fixe ».');
+      if(!packIsStr(a.label, 1, 60)) e2('« label » : de 1 à 60 caractères.');
+      if(domains.indexOf(a.domain) === -1) e2('« domain » inconnu (' + domains.join(', ') + ').');
+      var niveaux = a.niveaux === undefined ? [0,1,2] : a.niveaux;
+      if(!Array.isArray(niveaux) || !niveaux.length || niveaux.some(function(n){ return n !== 0 && n !== 1 && n !== 2; }) || new Set(niveaux).size !== niveaux.length) { e2('« niveaux » : une liste non vide parmi 0, 1, 2.'); niveaux = [0,1,2]; }
+      var out = { id:a.id, type:a.type, label:a.label, domain:a.domain, niveaux:niveaux.slice().sort() };
+      if(a.type === 'fixe'){
+        if(a.tirage !== undefined && a.tirage !== 'sans remise') e2('« tirage » : seul « sans remise » est connu.');
+        if(a.icone !== undefined) { if(packIsStr(a.icone, 1, 4)) out.icone = a.icone; else e2('« icone » : un emoji.'); }
+        var qs = Array.isArray(a.questions) ? a.questions : [];
+        if(qs.length < 1 || qs.length > PACK_LIMITS.questions) e2('« questions » : de 1 à ' + PACK_LIMITS.questions + ' questions.');
+        out.questions = [];
+        qs.forEach(function(q, qi){
+          var qw = 'question ' + (qi + 1);
+          if(!packIsObj(q)){ e2(qw + ' : objet attendu.'); return; }
+          if(!packIsStr(q.q, 1, 300)) e2(qw + ' : « q » (l\'énoncé) de 1 à 300 caractères.');
+          if(!Array.isArray(q.bonnes) || q.bonnes.length !== 1 || !packIsStr(q.bonnes[0], 1, 60)) e2(qw + ' : « bonnes » doit contenir exactement une réponse (1 à 60 caractères).');
+          if(!Array.isArray(q.fausses) || q.fausses.length < 1 || q.fausses.length > 3 || q.fausses.some(function(f){ return !packIsStr(f, 1, 60); })) e2(qw + ' : « fausses » : de 1 à 3 réponses fausses.');
+          else if(Array.isArray(q.bonnes) && new Set([].concat(q.bonnes, q.fausses)).size !== q.bonnes.length + q.fausses.length) e2(qw + ' : deux réponses identiques.');
+          if(q.explication !== undefined && !packIsStr(q.explication, 0, 400)) e2(qw + ' : « explication » trop longue.');
+          if(q.dessin !== undefined && q.dessin !== null) e2(qw + ' : les images ne sont pas encore prises en charge (« dessin » doit être null).');
+          if(q.icone !== undefined && !packIsStr(q.icone, 1, 4)) e2(qw + ' : « icone » : un emoji.');
+          out.questions.push({ q:q.q, bonnes:(q.bonnes || []).slice(), fausses:(q.fausses || []).slice(), explication:q.explication || '', icone:q.icone });
+        });
+      } else if(a.type === 'gabarit'){
+        var fiche = a.fiche;
+        if(!packIsObj(fiche)){ e2('« fiche » attendue (voir src/README.md).'); }
+        else {
+          var before = errs.length;
+          packCheckFiche(fiche, function(m){ err(w + ' : ' + m); });
+          if(errs.length === before){ out.fiche = { tag:fiche.tag, levels:fiche.levels, forms:fiche.forms, note:fiche.note }; }
+        }
+      }
+      pack.activites.push(out);
+    });
+    if(JSON.stringify(pack).length > PACK_LIMITS.octets) err('Paquet trop volumineux (' + Math.round(JSON.stringify(pack).length / 1000) + ' Ko ; maximum ' + Math.round(PACK_LIMITS.octets / 1000) + ' Ko).');
+    if(errs.length) return { erreurs:errs.slice(0, 8), pack:null };
+    var built = packBuild(pack);
+    if(built.erreurs.length) return { erreurs:built.erreurs.slice(0, 8), pack:null };
+    return { erreurs:[], pack:pack, defs:built.defs };
+  }
+
+  // ---- registre : installer, activer, mettre à jour, retirer ----
+  function packFind(id){ for(var i = 0; i < PACKS.length; i++) if(PACKS[i].pack.id === id) return PACKS[i]; return null; }
+  function packPlug(entry){        // branche les activités d'un paquet actif dans le jeu
+    entry.defs.forEach(function(d){
+      if(QCM_TYPE_DEFS.indexOf(d) === -1){
+        var gen = d.generate;
+        d.generate = function(level){
+          try { return gen(level); }
+          catch(e){ packUnplug(entry, [d]); entry.erreur = 'Activité écartée : ' + e.message; return quizTypeById('calc').generate(level); }   // une activité qui échoue est écartée, le jeu continue
+        };
+        registerQuizType(d);
+      }
+    });
+  }
+  function packUnplug(entry, only){
+    (only || entry.defs).forEach(function(d){ var i = QCM_TYPE_DEFS.indexOf(d); if(i !== -1) QCM_TYPE_DEFS.splice(i, 1); });
+    if(typeof refreshQuizTypes === 'function') refreshQuizTypes();
+  }
+  // Installe un paquet (objet JSON déjà lu). Renvoie { ok, message }.
+  function packInstall(raw){
+    var r = packValidate(raw);
+    if(!r.pack) return { ok:false, message:'Paquet refusé : ' + r.erreurs.join(' — ') };
+    var old = packFind(r.pack.id);
+    if(old && r.pack.version < old.pack.version) return { ok:false, message:'Paquet refusé : une version plus récente (' + old.pack.version + ') est déjà installée.' };
+    if(old && r.pack.version === old.pack.version && JSON.stringify(r.pack) === JSON.stringify(old.pack)) return { ok:false, message:'Ce paquet est déjà installé (version ' + old.pack.version + ').' };
+    var entry = { pack:r.pack, actif:true, defs:r.defs, erreur:'' };
+    if(!packSourceAppareil.save(entry)) return { ok:false, message:'Paquet refusé : pas assez de place sur cet appareil.' };
+    if(old){ packUnplug(old); PACKS.splice(PACKS.indexOf(old), 1); }
+    PACKS.push(entry);
+    packPlug(entry);
+    if(typeof refreshQuizTypes === 'function') refreshQuizTypes();
+    return { ok:true, message:(old ? 'Paquet mis à jour' : 'Paquet installé') + ' : « ' + r.pack.titre + ' » (version ' + r.pack.version + ', ' + r.pack.activites.length + ' activité' + (r.pack.activites.length > 1 ? 's' : '') + ').' };
+  }
+  function packSetActive(id, on){
+    var e = packFind(id); if(!e) return;
+    e.actif = !!on; packSourceAppareil.save(e);
+    if(e.actif) packPlug(e); else packUnplug(e);
+    if(typeof refreshQuizTypes === 'function') refreshQuizTypes();
+  }
+  function packRemove(id){
+    var e = packFind(id); if(!e) return;
+    packUnplug(e); PACKS.splice(PACKS.indexOf(e), 1); packSourceAppareil.remove(id);
+  }
+  function packExportText(id){ var e = packFind(id); return e ? JSON.stringify(e.pack, null, 2) : ''; }
+  function packInstallText(text){
+    var raw;
+    try { raw = JSON.parse(text); } catch(e){ return { ok:false, message:'Paquet refusé : ce fichier n\'est pas du JSON valide.' }; }
+    return packInstall(raw);
+  }
+
+  // Au démarrage : on relit les paquets de l'appareil (chacun est re-validé ; un paquet devenu invalide est ignoré).
+  packSourceAppareil.list().forEach(function(rec){
+    var r = packValidate(rec.pack);
+    if(!r.pack) return;
+    var entry = { pack:r.pack, actif:rec.actif !== false, defs:r.defs, erreur:'' };
+    PACKS.push(entry);
+    if(entry.actif) packPlug(entry);
+  });
+
+  // ---- écran Réglages : importer, activer, exporter, retirer (réservé aux adultes : derrière le code) ----
+  (function packsUI(){
+    var list = document.getElementById('packs-list'), msg = document.getElementById('packs-msg'),
+        file = document.getElementById('packs-file'), btn = document.getElementById('packs-import-btn');
+    if(!list || !btn) return;
+    function say(m){ msg.textContent = m; }
+    function render(){
+      list.innerHTML = '';
+      PACKS.forEach(function(e){
+        var li = document.createElement('li'); li.className = 'pack-item';
+        var t = document.createElement('div'); t.className = 'pack-title';
+        t.textContent = e.pack.titre + ' — v' + e.pack.version + ' · ' + e.pack.activites.length + ' activité' + (e.pack.activites.length > 1 ? 's' : '') + (e.pack.auteur ? ' · ' + e.pack.auteur : '');
+        li.appendChild(t);
+        if(e.erreur){ var er = document.createElement('div'); er.className = 'muted settings-hint'; er.textContent = e.erreur; li.appendChild(er); }
+        var row = document.createElement('div'); row.className = 'btn-row';
+        [['pack-toggle', e.actif ? '⏸ Désactiver' : '▶ Activer', function(){ packSetActive(e.pack.id, !e.actif); render(); }],
+         ['pack-export', '📤 Exporter', function(){
+            var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([packExportText(e.pack.id)], { type:'application/json' }));
+            a.download = e.pack.id + '.kvb.json'; document.body.appendChild(a); a.click(); a.remove(); }],
+         ['pack-remove', '🗑 Retirer', function(){ packRemove(e.pack.id); say('Paquet retiré : « ' + e.pack.titre + ' ».'); render(); }]
+        ].forEach(function(b){
+          var x = document.createElement('button'); x.type = 'button'; x.className = 'btn ghost ' + b[0]; x.textContent = b[1];
+          x.addEventListener('click', b[2]); row.appendChild(x);
+        });
+        li.appendChild(row); list.appendChild(li);
+      });
+    }
+    btn.addEventListener('click', function(){ file.click(); });
+    file.addEventListener('change', function(){
+      var f = file.files && file.files[0]; if(!f) return;
+      if(f.size > PACK_LIMITS.octets * 2){ say('Paquet refusé : fichier trop volumineux.'); file.value = ''; return; }
+      var rd = new FileReader();
+      rd.onload = function(){ var r = packInstallText(String(rd.result)); say(r.message); render(); file.value = ''; };
+      rd.onerror = function(){ say('Impossible de lire ce fichier.'); };
+      rd.readAsText(f);
+    });
+    render();
+  })();
   /* ===================== QUIZZ (moteur) + ORCHESTRATEUR + CONFIGURATION DES ACTIVITÉS =====================
      Moteur du Quizz : registre des types, niveaux, tirage, affichage, correction.
      Puis l'orchestrateur (niveaux, chrono, séries) et le panneau de configuration.
@@ -7845,6 +8154,11 @@ function phrase(tpl, vars){
     try{ f.config.overrides = JSON.parse(localStorage.getItem(f.config.storageKey) || '{}'); }catch(e){}
     f.config.rebuild(f.config.overrides);
   });
+  // Après l'ajout ou le retrait d'activités à l'exécution (paquets) : on reconstruit les tirages et la liste de réglages.
+  function refreshQuizTypes(){
+    FAMILIES.forEach(function(f){ if(f.config) f.config.rebuild(f.config.overrides); });
+    renderActivityConfig(currentAconfFamily);
+  }
   var ACTIVITY_CONFIG_FAMILIES = MANUAL_FAMILY_LIST;
   var currentAconfFamily = 'qcm';
   var aconfOpenCats = {};
