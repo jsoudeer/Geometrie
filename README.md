@@ -161,3 +161,9 @@ comparaison « avant / après »).
 
 - Empaquetage en application Windows (Tauri) et Android (Capacitor), pour un
   usage 100% hors-ligne.
+
+## Installer le jeu comme une application
+Le dossier `docs/` contient le site complet (généré par `tools/build.py`) : hébergez-le tel quel
+(GitHub Pages : branche `main`, dossier `/docs`), puis, sur le téléphone ou la tablette, ouvrez l'adresse
+https et choisissez « Installer l'application » (Android / Chrome) ou Partager → « Sur l'écran d'accueil »
+(iPhone / iPad). Le jeu s'ouvre alors en plein écran et fonctionne sans réseau.
