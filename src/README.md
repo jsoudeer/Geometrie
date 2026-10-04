@@ -27,6 +27,8 @@ src/
     vocabulaire.js      bibliothèques PRENOMS / mascottes / OBJETS / ARTICLES / COULEURS et accords (`phrase`, `accords`) : à utiliser pour tout problème à histoire
     calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
     nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
+    gabarits.js         moteur de FICHES d'activités arithmétiques : évaluateur d'expressions sûr (pas d'eval), variables, contraintes, fausses réponses, textes, note de réglage générée ; `registerTemplateType(fiche)`
+    fiches-calcul.js    les fiches des 6 activités de calcul migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions posées
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
@@ -106,6 +108,20 @@ l'historique, et masque la rangée `.btn-row` qui suit le retour quand la questi
 « Nouvelle activité » est neutre avant tout essai, et compte comme une erreur après un raté.
 La question se met dans la bulle `.coach-bubble`, la consigne dans le `.muted` en dessous.
 `tools/tests/uniform_check.js` vérifie ces règles pour chaque activité.
+
+## Ajouter une activité arithmétique (par fiche)
+
+Une question « calcul » à une opération se déclare par une **fiche de données** dans `fiches-calcul.js`, sans écrire de code de tirage :
+
+```js
+registerTemplateType({ id:'soustraction', domain:'calcul', label:'Soustraction', longLabel:'Soustraction',
+  levels:[ { aLo:2, aHi:10, bLo:1 }, { aLo:8, aHi:20, bLo:1 }, { aLo:21, aHi:60, bLo:6 } ],   // réglages Facile / Moyen / Difficile
+  forms:[ { vars:{ a:{int:['aLo','aHi']}, b:{int:['bLo','a-1']}, d:'a-b' }, answer:'d', extras:['a+b','d-10'],
+            question:'Combien font {a} - {b} ?', sub:'…', explain:'{a} - {b} = {d}.', eq:'{a} - {b} = ?' } ],
+  note:'Facile : jusqu\'à {aHi0} ; Moyen : jusqu\'à {aHi1} ; Difficile : jusqu\'à {aHi2}.' });   // note GÉNÉRÉE : k0, k1, k2 = réglage k du niveau 0, 1, 2
+```
+
+Variables : une expression, `{int:[lo,hi], step?}`, `{pick:[…]}` (ou nom d'un réglage), `{any:[spec,…]}` ; `where` = contraintes (rejet borné, `tries` = n° d'essai) ; `w` = poids de la forme ; `levels:[…]` = niveaux où la forme existe. Expressions : `+ - * / %`, comparaisons, `&& || !`, `?:`, `min max abs floor round rand liste`, plus les fonctions déclarées dans `TEMPLATE_FNS` (`carry`, `explainAdd`, `tableHint`). La fiche est validée à l'enregistrement (`validateFiche`) : un nom inconnu ou une faute de syntaxe lève une erreur claire. Test : `gabarits_check.js`.
 
 ## Ajouter une activité à écran propre
 

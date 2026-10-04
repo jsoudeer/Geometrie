@@ -158,19 +158,6 @@
   }
   function hasCarry(a, b){ var A = String(a), B = String(b), i, c = 0; for(i=0;i<Math.max(A.length,B.length);i++){ var s = +(A.charAt(A.length-1-i)||0) + +(B.charAt(B.length-1-i)||0) + c; c = s>=10 ? 1 : 0; if(c) return true; } return false; }
   function hasBorrow(a, b){ var A = String(a), B = String(b), i, br = 0; for(i=0;i<A.length;i++){ var need = +(B.charAt(B.length-1-i)||0) + br; var da = +A.charAt(A.length-1-i); br = da<need ? 1 : 0; if(br) return true; } return false; }
-  function genAdditionQuestion(level){
-    var a, b, guard = 0;
-    do {
-      if(level===0){ a = randInt(11,89); b = rnd()<0.5 ? randInt(1,9) : randInt(1,8)*10; }
-      else if(level===1){ a = randInt(15,89); b = randInt(11,60); }
-      else { a = randInt(120,899); b = rnd()<0.5 ? randInt(11,99) : randInt(110,500); }
-      guard++;
-    } while(guard<200 && ((level===0 && (hasCarry(a,b) || a+b>99)) || (level===1 && (a+b>99 || (guard<100 && !hasCarry(a,b) && rnd()<0.6))) || (level===2 && (a+b>999 || (guard<100 && !hasCarry(a,b) && rnd()<0.5)))));
-    var s = a + b;
-    var q = bigNumQuestion('Calcul','Calcule ' + a + ' + ' + b + '.','Additionne en colonnes : unités, puis dizaines' + (level===2 ? ', puis centaines' : '') + ' (n\'oublie pas la retenue).',
-      addExplain(a,b), a + ' + ' + b, s, [s-10, s+10, s+1, s-1, hasCarry(a,b) ? s-10 : s+10, level===2 ? s+100 : s+20]);
-    return q;
-  }
   function genSoustractionPoseeQuestion(level){
     var a, b, guard = 0;
     do {
@@ -306,9 +293,6 @@
   registerQuizType({ id:'droite', domain:'nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
     randomNote:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de 1 en 1 (0 à 10) ; Moyen : de 10 en 10 ou de 20 en 20 ; Difficile : de 50 en 50, de 100 en 100 ou de 10 en 10 entre deux centaines.',
     generate:genDroiteQuestion });
-  registerQuizType({ id:'addition', domain:'calcul', label:'Additions posées', longLabel:'Additions en colonnes (retenue)', defaultLevels:[0,1,2],
-    randomNote:'Facile : sans retenue, jusqu\'à 99 ; Moyen : 2 nombres de 2 chiffres jusqu\'à 99, souvent avec retenue ; Difficile : jusqu\'à 999, souvent avec retenue. L\'explication détaille chaque colonne.',
-    generate:genAdditionQuestion });
   registerQuizType({ id:'soustractionPosee', domain:'calcul', label:'Soustractions posées', longLabel:'Soustractions en colonnes (emprunt)', defaultLevels:[0,1,2],
     randomNote:'Facile : sans emprunt, jusqu\'à 99 ; Moyen : jusqu\'à 99, souvent avec emprunt ; Difficile : jusqu\'à 999, souvent avec emprunt. L\'explication détaille chaque colonne.',
     generate:genSoustractionPoseeQuestion });

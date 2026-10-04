@@ -79,106 +79,7 @@
     };
   }
 
-  // ---- Paramètres par niveau (0 = Facile, 1 = Moyen, 2 = Difficile) ----
-  // modes : 'add' = a + b ; 'missing' = a + x = c (trouve x). max = plus grand total.
-  var CALC_LEVELS = [
-    { modes:['add'], max:10 },
-    { modes:['add'], max:20 },
-    { modes:['add','missing'], max:20 }
-  ];
-
-  function genCalcQuestion(level){
-    var mode = pick(CALC_LEVELS[level].modes || ['add']);
-    var maxV = CALC_LEVELS[level].max || 10;
-    if(mode==='missing'){
-      // a + x = c : l'enfant retrouve x
-      var a = randInt(0, maxV);
-      var x = randInt(0, maxV - a);
-      var c = a + x;
-      return {
-        tag: 'Calcul',
-        question: 'Trouve x : ' + a + ' + x = ' + c,
-        sub: 'Cherche le nombre qui manque pour que l\'égalité soit vraie.',
-        explain: 'x = ' + c + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + c + '.',
-        draw: function(){ drawEquation(a + ' + x = ' + c); },
-        cols3: false,
-        choices: numChoiceSet(x, [0,1,2,3,4,5,6,7,8,9,10,x+1,x+2,Math.max(0,x-1),Math.max(0,x-2)]).map(function(v){ return { label:String(v), ok: v===x }; })
-      };
-    }
-    // addition simple : a + b
-    var a2 = randInt(0, maxV);
-    var b2 = randInt(0, maxV - a2);
-    var sum = a2 + b2;
-    return {
-      tag: 'Calcul',
-      question: 'Combien font ' + a2 + ' + ' + b2 + ' ?',
-      sub: 'Calcule le résultat de cette addition.',
-      explain: a2 + ' + ' + b2 + ' = ' + sum + '.',
-      draw: function(){ drawEquation(a2 + ' + ' + b2 + ' = ?'); },
-      cols3: false,
-      choices: numChoiceSet(sum, [sum-2,sum-1,sum+1,sum+2,sum+3,Math.max(0,sum-3)].filter(function(v){return v>=0;})).map(function(v){ return { label:String(v), ok: v===sum }; })
-    };
-  }
-
   // ===================== Arithmétique élargie =====================
-  // Petit utilitaire : 4 boutons numériques, la bonne réponse + 3 valeurs voisines.
-  function eqQuestion(tag, question, sub, explain, eq, correct, extra){
-    return {
-      tag:tag, question:question, sub:sub, explain:explain,
-      draw:function(){ drawEquation(eq); },
-      cols3:false,
-      choices: numChoices(correct, extra)
-    };
-  }
-
-  // -- Soustraction --
-  function genSoustractionQuestion(level){
-    var a, b;
-    if(level===0){ a = randInt(2,10); b = randInt(1,a-1); }
-    else if(level===1){ a = randInt(8,20); b = randInt(1,a-1); }
-    else { a = randInt(21,60); b = randInt(6,a-1); }
-    var d = a - b;
-    return eqQuestion('Calcul', 'Combien font ' + a + ' - ' + b + ' ?', 'Calcule le résultat de cette soustraction.',
-      a + ' - ' + b + ' = ' + d + '. (Vérification : ' + d + ' + ' + b + ' = ' + a + '.)', a + ' - ' + b + ' = ?', d, [a+b, d+10, d-10]);
-  }
-
-  // -- Doubles et moitiés --
-  function genDoubleMoitieQuestion(level){
-    var hi = level===0 ? 10 : level===1 ? 20 : 50;
-    var isDouble = rnd() < 0.5;
-    if(isDouble){
-      var n = randInt(1, hi), r = n*2;
-      return eqQuestion('Calcul', 'Quel est le double de ' + n + ' ?', 'Le double, c\'est le nombre plus lui-même.',
-        'Le double de ' + n + ' : ' + n + ' + ' + n + ' = ' + r + '.', 'double de ' + n + ' = ?', r, [n, r+10, r-10, n*3]);
-    }
-    var h = randInt(1, hi), m = h*2;
-    return eqQuestion('Calcul', 'Quelle est la moitié de ' + m + ' ?', 'La moitié, c\'est partager en deux parts égales.',
-      'La moitié de ' + m + ' : ' + h + ' + ' + h + ' = ' + m + ', donc la moitié est ' + h + '.', 'moitié de ' + m + ' = ?', h, [m, h+10, h-10, m-1]);
-  }
-
-  // -- Compléments (à 10, à 20, à 100) --
-  function genComplementQuestion(level){
-    var target = level===0 ? 10 : level===1 ? 20 : 100;
-    var a = level<2 ? randInt(1, target-1) : randInt(1,19)*5;
-    var x = target - a;
-    return eqQuestion('Calcul', a + ' + ? = ' + target, 'Cherche le nombre à ajouter pour arriver à ' + target + '.',
-      target + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + target + '.', a + ' + ? = ' + target, x,
-      level===2 ? [x+5, x-5, x+10, x-10] : [x+1, x-1]);
-  }
-
-  // -- Tables de multiplication (2, 5, 10 ; puis 3 et 4 en Difficile) --
-  function genTableQuestion(level){
-    var tables = level===0 ? [2,10] : level===1 ? [2,5,10] : [2,3,4,5,10];
-    var t = pick(tables), n = randInt(1,10), r = t*n;
-    var hint = t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
-    if(level===2 && rnd()<0.4){
-      return eqQuestion('Calcul', t + ' × ? = ' + r, 'Cherche par combien il faut multiplier ' + t + '.',
-        t + ' × ' + n + ' = ' + r + '. ' + hint, t + ' × ? = ' + r, n, [n+t, n-t, n*2]);
-    }
-    return eqQuestion('Calcul', 'Combien font ' + t + ' × ' + n + ' ?', 'Utilise la table de ' + t + '.',
-      t + ' × ' + n + ' = ' + r + '. ' + hint, t + ' × ' + n + ' = ?', r, [r+t, r-t, r+10, r-10]);
-  }
-
   // -- Comparer (<, >, =) --
   function genCompareQuestion(level){
     var lo = level===0 ? 0 : 5, hi = level===0 ? 20 : level===1 ? 30 : 99;
@@ -431,27 +332,12 @@
   }
 
   // ---- Déclaration des types de Quizz du thème Calcul ----
-  registerQuizType({ id:'calc', domain:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
-    randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
-    generate:genCalcQuestion });
   registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard. Facile : 2 pièces ou billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu\'à 10 € ; Difficile : 3 ou 4, jusqu\'à 20 €.',
     generate:genMonnaieQuestion });
   registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
-  registerQuizType({ id:'soustraction', domain:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
-    randomNote:'a - b avec b plus petit que a. Facile : nombres jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 60 (avec retenues).',
-    generate:genSoustractionQuestion });
-  registerQuizType({ id:'doubleMoitie', domain:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
-    randomNote:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 50.',
-    generate:genDoubleMoitieQuestion });
-  registerQuizType({ id:'complement', domain:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
-    randomNote:'« a + ? = cible ». Facile : compléments à 10 ; Moyen : à 20 ; Difficile : à 100 (multiples de 5).',
-    generate:genComplementQuestion });
-  registerQuizType({ id:'tables', domain:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
-    randomNote:'Facile : tables de 2 et de 10 ; Moyen : 2, 5 et 10 ; Difficile : 2, 3, 4, 5, 10, avec parfois le facteur manquant (5 × ? = 35).',
-    generate:genTableQuestion });
   registerQuizType({ id:'compare', domain:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
     randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
     generate:genCompareQuestion });

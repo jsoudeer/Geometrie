@@ -5470,106 +5470,7 @@ function phrase(tpl, vars){
     };
   }
 
-  // ---- Paramètres par niveau (0 = Facile, 1 = Moyen, 2 = Difficile) ----
-  // modes : 'add' = a + b ; 'missing' = a + x = c (trouve x). max = plus grand total.
-  var CALC_LEVELS = [
-    { modes:['add'], max:10 },
-    { modes:['add'], max:20 },
-    { modes:['add','missing'], max:20 }
-  ];
-
-  function genCalcQuestion(level){
-    var mode = pick(CALC_LEVELS[level].modes || ['add']);
-    var maxV = CALC_LEVELS[level].max || 10;
-    if(mode==='missing'){
-      // a + x = c : l'enfant retrouve x
-      var a = randInt(0, maxV);
-      var x = randInt(0, maxV - a);
-      var c = a + x;
-      return {
-        tag: 'Calcul',
-        question: 'Trouve x : ' + a + ' + x = ' + c,
-        sub: 'Cherche le nombre qui manque pour que l\'égalité soit vraie.',
-        explain: 'x = ' + c + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + c + '.',
-        draw: function(){ drawEquation(a + ' + x = ' + c); },
-        cols3: false,
-        choices: numChoiceSet(x, [0,1,2,3,4,5,6,7,8,9,10,x+1,x+2,Math.max(0,x-1),Math.max(0,x-2)]).map(function(v){ return { label:String(v), ok: v===x }; })
-      };
-    }
-    // addition simple : a + b
-    var a2 = randInt(0, maxV);
-    var b2 = randInt(0, maxV - a2);
-    var sum = a2 + b2;
-    return {
-      tag: 'Calcul',
-      question: 'Combien font ' + a2 + ' + ' + b2 + ' ?',
-      sub: 'Calcule le résultat de cette addition.',
-      explain: a2 + ' + ' + b2 + ' = ' + sum + '.',
-      draw: function(){ drawEquation(a2 + ' + ' + b2 + ' = ?'); },
-      cols3: false,
-      choices: numChoiceSet(sum, [sum-2,sum-1,sum+1,sum+2,sum+3,Math.max(0,sum-3)].filter(function(v){return v>=0;})).map(function(v){ return { label:String(v), ok: v===sum }; })
-    };
-  }
-
   // ===================== Arithmétique élargie =====================
-  // Petit utilitaire : 4 boutons numériques, la bonne réponse + 3 valeurs voisines.
-  function eqQuestion(tag, question, sub, explain, eq, correct, extra){
-    return {
-      tag:tag, question:question, sub:sub, explain:explain,
-      draw:function(){ drawEquation(eq); },
-      cols3:false,
-      choices: numChoices(correct, extra)
-    };
-  }
-
-  // -- Soustraction --
-  function genSoustractionQuestion(level){
-    var a, b;
-    if(level===0){ a = randInt(2,10); b = randInt(1,a-1); }
-    else if(level===1){ a = randInt(8,20); b = randInt(1,a-1); }
-    else { a = randInt(21,60); b = randInt(6,a-1); }
-    var d = a - b;
-    return eqQuestion('Calcul', 'Combien font ' + a + ' - ' + b + ' ?', 'Calcule le résultat de cette soustraction.',
-      a + ' - ' + b + ' = ' + d + '. (Vérification : ' + d + ' + ' + b + ' = ' + a + '.)', a + ' - ' + b + ' = ?', d, [a+b, d+10, d-10]);
-  }
-
-  // -- Doubles et moitiés --
-  function genDoubleMoitieQuestion(level){
-    var hi = level===0 ? 10 : level===1 ? 20 : 50;
-    var isDouble = rnd() < 0.5;
-    if(isDouble){
-      var n = randInt(1, hi), r = n*2;
-      return eqQuestion('Calcul', 'Quel est le double de ' + n + ' ?', 'Le double, c\'est le nombre plus lui-même.',
-        'Le double de ' + n + ' : ' + n + ' + ' + n + ' = ' + r + '.', 'double de ' + n + ' = ?', r, [n, r+10, r-10, n*3]);
-    }
-    var h = randInt(1, hi), m = h*2;
-    return eqQuestion('Calcul', 'Quelle est la moitié de ' + m + ' ?', 'La moitié, c\'est partager en deux parts égales.',
-      'La moitié de ' + m + ' : ' + h + ' + ' + h + ' = ' + m + ', donc la moitié est ' + h + '.', 'moitié de ' + m + ' = ?', h, [m, h+10, h-10, m-1]);
-  }
-
-  // -- Compléments (à 10, à 20, à 100) --
-  function genComplementQuestion(level){
-    var target = level===0 ? 10 : level===1 ? 20 : 100;
-    var a = level<2 ? randInt(1, target-1) : randInt(1,19)*5;
-    var x = target - a;
-    return eqQuestion('Calcul', a + ' + ? = ' + target, 'Cherche le nombre à ajouter pour arriver à ' + target + '.',
-      target + ' - ' + a + ' = ' + x + ', car ' + a + ' + ' + x + ' = ' + target + '.', a + ' + ? = ' + target, x,
-      level===2 ? [x+5, x-5, x+10, x-10] : [x+1, x-1]);
-  }
-
-  // -- Tables de multiplication (2, 5, 10 ; puis 3 et 4 en Difficile) --
-  function genTableQuestion(level){
-    var tables = level===0 ? [2,10] : level===1 ? [2,5,10] : [2,3,4,5,10];
-    var t = pick(tables), n = randInt(1,10), r = t*n;
-    var hint = t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
-    if(level===2 && rnd()<0.4){
-      return eqQuestion('Calcul', t + ' × ? = ' + r, 'Cherche par combien il faut multiplier ' + t + '.',
-        t + ' × ' + n + ' = ' + r + '. ' + hint, t + ' × ? = ' + r, n, [n+t, n-t, n*2]);
-    }
-    return eqQuestion('Calcul', 'Combien font ' + t + ' × ' + n + ' ?', 'Utilise la table de ' + t + '.',
-      t + ' × ' + n + ' = ' + r + '. ' + hint, t + ' × ' + n + ' = ?', r, [r+t, r-t, r+10, r-10]);
-  }
-
   // -- Comparer (<, >, =) --
   function genCompareQuestion(level){
     var lo = level===0 ? 0 : 5, hi = level===0 ? 20 : level===1 ? 30 : 99;
@@ -5822,27 +5723,12 @@ function phrase(tpl, vars){
   }
 
   // ---- Déclaration des types de Quizz du thème Calcul ----
-  registerQuizType({ id:'calc', domain:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
-    randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
-    generate:genCalcQuestion });
   registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard. Facile : 2 pièces ou billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu\'à 10 € ; Difficile : 3 ou 4, jusqu\'à 20 €.',
     generate:genMonnaieQuestion });
   registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
-  registerQuizType({ id:'soustraction', domain:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
-    randomNote:'a - b avec b plus petit que a. Facile : nombres jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 60 (avec retenues).',
-    generate:genSoustractionQuestion });
-  registerQuizType({ id:'doubleMoitie', domain:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
-    randomNote:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à 10 ; Moyen : jusqu\'à 20 ; Difficile : jusqu\'à 50.',
-    generate:genDoubleMoitieQuestion });
-  registerQuizType({ id:'complement', domain:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
-    randomNote:'« a + ? = cible ». Facile : compléments à 10 ; Moyen : à 20 ; Difficile : à 100 (multiples de 5).',
-    generate:genComplementQuestion });
-  registerQuizType({ id:'tables', domain:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
-    randomNote:'Facile : tables de 2 et de 10 ; Moyen : 2, 5 et 10 ; Difficile : 2, 3, 4, 5, 10, avec parfois le facteur manquant (5 × ? = 35).',
-    generate:genTableQuestion });
   registerQuizType({ id:'compare', domain:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
     randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
     generate:genCompareQuestion });
@@ -6021,19 +5907,6 @@ function phrase(tpl, vars){
   }
   function hasCarry(a, b){ var A = String(a), B = String(b), i, c = 0; for(i=0;i<Math.max(A.length,B.length);i++){ var s = +(A.charAt(A.length-1-i)||0) + +(B.charAt(B.length-1-i)||0) + c; c = s>=10 ? 1 : 0; if(c) return true; } return false; }
   function hasBorrow(a, b){ var A = String(a), B = String(b), i, br = 0; for(i=0;i<A.length;i++){ var need = +(B.charAt(B.length-1-i)||0) + br; var da = +A.charAt(A.length-1-i); br = da<need ? 1 : 0; if(br) return true; } return false; }
-  function genAdditionQuestion(level){
-    var a, b, guard = 0;
-    do {
-      if(level===0){ a = randInt(11,89); b = rnd()<0.5 ? randInt(1,9) : randInt(1,8)*10; }
-      else if(level===1){ a = randInt(15,89); b = randInt(11,60); }
-      else { a = randInt(120,899); b = rnd()<0.5 ? randInt(11,99) : randInt(110,500); }
-      guard++;
-    } while(guard<200 && ((level===0 && (hasCarry(a,b) || a+b>99)) || (level===1 && (a+b>99 || (guard<100 && !hasCarry(a,b) && rnd()<0.6))) || (level===2 && (a+b>999 || (guard<100 && !hasCarry(a,b) && rnd()<0.5)))));
-    var s = a + b;
-    var q = bigNumQuestion('Calcul','Calcule ' + a + ' + ' + b + '.','Additionne en colonnes : unités, puis dizaines' + (level===2 ? ', puis centaines' : '') + ' (n\'oublie pas la retenue).',
-      addExplain(a,b), a + ' + ' + b, s, [s-10, s+10, s+1, s-1, hasCarry(a,b) ? s-10 : s+10, level===2 ? s+100 : s+20]);
-    return q;
-  }
   function genSoustractionPoseeQuestion(level){
     var a, b, guard = 0;
     do {
@@ -6169,9 +6042,6 @@ function phrase(tpl, vars){
   registerQuizType({ id:'droite', domain:'nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
     randomNote:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de 1 en 1 (0 à 10) ; Moyen : de 10 en 10 ou de 20 en 20 ; Difficile : de 50 en 50, de 100 en 100 ou de 10 en 10 entre deux centaines.',
     generate:genDroiteQuestion });
-  registerQuizType({ id:'addition', domain:'calcul', label:'Additions posées', longLabel:'Additions en colonnes (retenue)', defaultLevels:[0,1,2],
-    randomNote:'Facile : sans retenue, jusqu\'à 99 ; Moyen : 2 nombres de 2 chiffres jusqu\'à 99, souvent avec retenue ; Difficile : jusqu\'à 999, souvent avec retenue. L\'explication détaille chaque colonne.',
-    generate:genAdditionQuestion });
   registerQuizType({ id:'soustractionPosee', domain:'calcul', label:'Soustractions posées', longLabel:'Soustractions en colonnes (emprunt)', defaultLevels:[0,1,2],
     randomNote:'Facile : sans emprunt, jusqu\'à 99 ; Moyen : jusqu\'à 99, souvent avec emprunt ; Difficile : jusqu\'à 999, souvent avec emprunt. L\'explication détaille chaque colonne.',
     generate:genSoustractionPoseeQuestion });
@@ -6181,6 +6051,307 @@ function phrase(tpl, vars){
   registerQuizType({ id:'probleme2', domain:'calcul', label:'Problèmes à 2 étapes', longLabel:'Problèmes à deux étapes', defaultLevels:[1,2],
     randomNote:'Un énoncé qui demande deux calculs à la suite (perdre puis gagner, deux achats, boîtes de gâteaux…). Moyen : additions et soustractions, nombres jusqu\'à environ 30 ; Difficile : nombres jusqu\'à environ 100 et énoncés avec une multiplication. Les modèles sont tirés sans répétition.',
     generate:genProbleme2Question });
+  /* ===================== GABARITS D'ACTIVITÉS (moteur de fiches) =====================
+     Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
+     quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
+     les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
+     Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
+     jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
+
+     Fiche :
+       { id, domain, label, longLabel, defaultLevels, tag?, scene:'equation',
+         levels:[ {paramètres du niveau 0}, {…1}, {…2} ],      // nombres, textes ou listes : ils entrent dans l'environnement
+         forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain, eq,
+                   extras?:[expr,…] } ],
+         note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
+     spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
+     Dans les textes : {expr}. Dans note : k0, k1, k2 = paramètre k du niveau 0, 1, 2. */
+
+  // ---- évaluateur d'expressions (+ - * / % < <= > >= == != && || ! ?: appels de fonctions) ----
+  var EXPR_FNS = {
+    min:Math.min, max:Math.max, abs:Math.abs, floor:Math.floor, round:Math.round,
+    rand:function(){ return rnd(); },
+    // listes lisibles : [2,5,10] -> « 2, 5 et 10 »
+    liste:function(a){ return a.length < 2 ? a.join('') : a.slice(0,-1).join(', ') + ' et ' + a[a.length-1]; }
+  };
+  function own(o, k){ return Object.prototype.hasOwnProperty.call(o, k); }
+  var EXPR_CACHE = Object.create(null);   // sans prototype : « constructor » ne doit pas être pris pour une expression déjà compilée
+  function compileExpr(src){
+    src = String(src);
+    if(EXPR_CACHE[src]) return EXPR_CACHE[src];
+    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
+    while(pos < src.length){
+      re.lastIndex = pos; m = re.exec(src);
+      if(!m){ if(/^\s*$/.test(src.slice(pos))) break; throw new Error('expression illisible : ' + src); }
+      pos = re.lastIndex;
+      if(m[1] !== undefined) toks.push({ t:'n', v:parseFloat(m[1]) });
+      else if(m[2] !== undefined) toks.push({ t:'i', v:m[2] });
+      else toks.push({ t:'o', v:m[3] });
+    }
+    var k = 0, idents = {};
+    function peek(){ return toks[k]; }
+    function eat(v){ var t = toks[k]; if(!t || t.t !== 'o' || t.v !== v) throw new Error('« ' + v + ' » attendu dans : ' + src); k++; }
+    function isOp(v){ var t = toks[k]; return t && t.t === 'o' && t.v === v; }
+    function ternary(){
+      var c = orE();
+      if(isOp('?')){ k++; var a = ternary(); eat(':'); var b = ternary(); return function(e){ return c(e) ? a(e) : b(e); }; }
+      return c;
+    }
+    function bin(next, ops){
+      return function(){
+        var l = next();
+        while(toks[k] && toks[k].t === 'o' && ops.indexOf(toks[k].v) !== -1){
+          var op = toks[k++].v, r = next(), a = l;
+          l = (function(a, r, op){ return function(e){
+            var x = a(e), y = r(e);
+            switch(op){
+              case '||': return x || y; case '&&': return x && y;
+              case '==': return x === y; case '!=': return x !== y;
+              case '<': return x < y; case '<=': return x <= y; case '>': return x > y; case '>=': return x >= y;
+              case '+': return x + y; case '-': return x - y; case '*': return x * y; case '/': return x / y; default: return x % y;
+            } }; })(a, r, op);
+        }
+        return l;
+      };
+    }
+    var orE, andE, eqE, relE, addE, mulE;
+    mulE = bin(unary, ['*','/','%']); addE = bin(mulE, ['+','-']); relE = bin(addE, ['<','<=','>','>=']);
+    eqE = bin(relE, ['==','!=']); andE = bin(eqE, ['&&']); orE = bin(andE, ['||']);
+    function unary(){
+      if(isOp('-')){ k++; var u = unary(); return function(e){ return -u(e); }; }
+      if(isOp('!')){ k++; var v = unary(); return function(e){ return !v(e); }; }
+      return primary();
+    }
+    function primary(){
+      var t = toks[k++];
+      if(!t) throw new Error('expression incomplète : ' + src);
+      if(t.t === 'n') return function(){ return t.v; };
+      if(t.t === 'o' && t.v === '('){ var x = ternary(); eat(')'); return x; }
+      if(t.t === 'o' && t.v === '['){
+        var items = [];
+        if(!isOp(']')){ do { items.push(ternary()); if(!isOp(',')) break; k++; } while(true); }
+        eat(']'); return function(e){ return items.map(function(f){ return f(e); }); };
+      }
+      if(t.t !== 'i') throw new Error('« ' + t.v + ' » inattendu dans : ' + src);
+      if(isOp('(')){
+        k++; var args = [];
+        if(!isOp(')')){ do { args.push(ternary()); if(!isOp(',')) break; k++; } while(true); }
+        eat(')'); idents['()' + t.v] = 1;
+        return function(e){
+          var f = own(EXPR_FNS, t.v) ? EXPR_FNS[t.v] : own(e.__fns, t.v) ? e.__fns[t.v] : null;
+          if(!f) throw new Error('fonction inconnue : ' + t.v);
+          return f.apply(null, args.map(function(a){ return a(e); }));
+        };
+      }
+      idents[t.v] = 1;
+      return function(e){ return e[t.v]; };
+    }
+    var root = ternary();
+    if(k < toks.length) throw new Error('reste inattendu dans : ' + src);
+    root.idents = idents;
+    return (EXPR_CACHE[src] = root);
+  }
+  function evalExpr(src, env){ return compileExpr(src)(env); }
+
+  // ---- textes : « Combien font {a} + {b} ? » ----
+  function compileText(src){
+    var parts = String(src).split(/\{([^}]*)\}/), fs = [];
+    for(var i=0;i<parts.length;i++) fs.push(i%2 ? compileExpr(parts[i]) : parts[i]);
+    var fn = function(env){ return fs.map(function(f){ return typeof f === 'string' ? f : f(env); }).join(''); };
+    fn.idents = {};
+    fs.forEach(function(f){ if(typeof f !== 'string') for(var k in f.idents) fn.idents[k] = 1; });
+    return fn;
+  }
+
+  // ---- tirage d'une variable ----
+  function drawVar(spec, env){
+    if(typeof spec === 'number' || typeof spec === 'string') return evalExpr(spec, env);
+    if(spec.int){
+      var lo = evalExpr(spec.int[0], env), hi = evalExpr(spec.int[1], env);
+      return randInt(lo, hi) * (spec.step || 1);
+    }
+    if(spec.pick){ var list = typeof spec.pick === 'string' ? env[spec.pick] : spec.pick; return pick(list); }
+    if(spec.any) return drawVar(pick(spec.any), env);
+    throw new Error('variable inconnue : ' + JSON.stringify(spec));
+  }
+  function specIdents(spec, out){
+    if(typeof spec === 'number') return;
+    if(typeof spec === 'string'){ var c = compileExpr(spec); for(var k in c.idents) out[k] = 1; return; }
+    if(spec.int) spec.int.forEach(function(x){ specIdents(x, out); });
+    else if(spec.pick){ if(typeof spec.pick === 'string') out[spec.pick] = 1; }
+    else if(spec.any) spec.any.forEach(function(s){ specIdents(s, out); });
+    else throw new Error('variable inconnue : ' + JSON.stringify(spec));
+  }
+
+  var TEMPLATE_FICHES = {};
+  var TEMPLATE_FNS = {};   // fonctions nommées utilisables dans les fiches (carry, explainAdd…), déclarées par fiches-calcul.js
+
+  // Vérifie une fiche (erreur claire si elle est mal formée) : toutes les expressions se compilent,
+  // tous les noms utilisés existent. Appelée à l'enregistrement.
+  function validateFiche(f){
+    function bad(msg){ throw new Error('fiche « ' + f.id + ' » : ' + msg); }
+    ['id','domain','label','longLabel'].forEach(function(k){ if(!f[k]) bad('« ' + k + ' » manquant'); });
+    if((f.scene || 'equation') !== 'equation') bad('scène inconnue « ' + f.scene + ' »');
+    if(!f.levels || f.levels.length !== 3) bad('3 niveaux attendus (Facile, Moyen, Difficile)');
+    if(!f.forms || !f.forms.length) bad('aucune forme de question');
+    f.forms.forEach(function(form, fi){
+      var known = Object.create(null); known.level = 1; known.tries = 1;
+      f.levels.forEach(function(p){ for(var k in p) known[k] = 1; });
+      var vars = form.vars || {};
+      try {
+        for(var name in vars){ var need = {}; specIdents(vars[name], need); for(var n in need) if(!known[n] && !own(EXPR_FNS, n) && n.charAt(0) !== '(') bad('forme ' + fi + ' : « ' + n + ' » inconnu dans la variable ' + name); known[name] = 1; }
+        var all = [].concat(form.where || [], form.answer, form.extras || [], form.w === undefined ? [] : [form.w]).map(compileExpr)
+          .concat(['question','sub','explain','eq'].map(function(k){ if(typeof form[k] !== 'string') bad('forme ' + fi + ' : « ' + k + ' » manquant'); return compileText(form[k]); }));
+        all.forEach(function(c){ for(var n in c.idents){
+          var fn = n.charAt(0) === '(' ? n.slice(2) : null;
+          if(fn ? !(own(EXPR_FNS, fn) || own(TEMPLATE_FNS, fn)) : !known[n]) bad('forme ' + fi + ' : « ' + (fn || n) + ' » inconnu'); } });
+      } catch(err){ if(err.message.indexOf('fiche') === 0) throw err; bad(err.message); }
+    });
+    compileText(f.note || '');
+  }
+
+  // Note de réglage GÉNÉRÉE depuis les paramètres de niveau : elle ne peut plus contredire le code.
+  function templateNote(f){
+    var env = Object.create(null); env.__fns = TEMPLATE_FNS;
+    f.levels.forEach(function(p, i){ for(var k in p) env[k + i] = p[k]; });
+    return compileText(f.note)(env);
+  }
+
+  function genFromFiche(f, level){
+    var params = f.levels[level], base = Object.create(null), k;
+    base.level = level; base.__fns = TEMPLATE_FNS;
+    for(k in params) base[k] = params[k];
+    // forme tirée selon ses poids (expressions : « level==2 ? 0.4 : 0 »)
+    var cands = [], total = 0;
+    f.forms.forEach(function(form){
+      if(form.levels && form.levels.indexOf(level) === -1) return;
+      var w = form.w === undefined ? 1 : evalExpr(form.w, base);
+      if(w > 0){ cands.push([form, w]); total += w; }
+    });
+    var r = rnd() * total, form = cands[cands.length-1][0];
+    for(var i=0;i<cands.length;i++){ r -= cands[i][1]; if(r < 0){ form = cands[i][0]; break; } }
+    var env, tries = 0;
+    do {
+      tries++;
+      env = Object.create(base); env.tries = tries;
+      for(var name in form.vars) env[name] = drawVar(form.vars[name], env);
+    } while(tries < 200 && (form.where || []).some(function(c){ return !evalExpr(c, env); }));
+    var correct = evalExpr(form.answer, env);
+    var extras = (form.extras || []).map(function(x){ return evalExpr(x, env); });
+    var eq = compileText(form.eq)(env);
+    return {
+      tag: f.tag || 'Calcul',
+      question: compileText(form.question)(env),
+      sub: compileText(form.sub)(env),
+      explain: compileText(form.explain)(env),
+      draw: function(){ drawEquation(eq); },
+      cols3: false,
+      choices: numChoices(correct, extras)
+    };
+  }
+
+  function registerTemplateType(f){
+    validateFiche(f);
+    TEMPLATE_FICHES[f.id] = f;
+    registerQuizType({ id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
+      randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } });
+  }
+  /* ===================== FICHES D'ACTIVITÉS : calcul =====================
+     6 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
+     à registerTemplateType. Les `levels` sont les réglages Facile / Moyen / Difficile ; la note de réglage
+     (« note ») est générée à partir d'eux. */
+
+  // Fonctions nommées que les fiches peuvent appeler (carry(a,b), explainAdd(a,b), tableHint(t)).
+  TEMPLATE_FNS.carry = hasCarry;
+  TEMPLATE_FNS.explainAdd = addExplain;
+  TEMPLATE_FNS.tableHint = function(t){
+    return t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
+  };
+
+  // -- Calcul : a + b (et, en Difficile, « a + x = c ») --
+  registerTemplateType({ id:'calc', domain:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
+    levels:[ { max:10 }, { max:20 }, { max:20 } ],
+    forms:[
+      { vars:{ a:{int:[0,'max']}, b:{int:[0,'max-a']}, s:'a+b' }, answer:'s',
+        question:'Combien font {a} + {b} ?', sub:'Calcule le résultat de cette addition.', explain:'{a} + {b} = {s}.', eq:'{a} + {b} = ?' },
+      { w:'level==2 ? 1 : 0', vars:{ a:{int:[0,'max']}, x:{int:[0,'max-a']}, c:'a+x' }, answer:'x',
+        question:'Trouve x : {a} + x = {c}', sub:'Cherche le nombre qui manque pour que l\'égalité soit vraie.',
+        explain:'x = {c} - {a} = {x}, car {a} + {x} = {c}.', eq:'{a} + x = {c}' }
+    ],
+    note:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage : a + b jusqu\'à {max0} en Facile, {max1} en Moyen, {max2} en Difficile, où l\'on trouve aussi parfois x dans « a + x = c ».' });
+
+  // -- Soustraction --
+  registerTemplateType({ id:'soustraction', domain:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
+    levels:[ { aLo:2, aHi:10, bLo:1 }, { aLo:8, aHi:20, bLo:1 }, { aLo:21, aHi:60, bLo:6 } ],
+    forms:[
+      { vars:{ a:{int:['aLo','aHi']}, b:{int:['bLo','a-1']}, d:'a-b' }, answer:'d', extras:['a+b','d+10','d-10'],
+        question:'Combien font {a} - {b} ?', sub:'Calcule le résultat de cette soustraction.',
+        explain:'{a} - {b} = {d}. (Vérification : {d} + {b} = {a}.)', eq:'{a} - {b} = ?' }
+    ],
+    note:'a - b avec b plus petit que a. Facile : nombres jusqu\'à {aHi0} ; Moyen : jusqu\'à {aHi1} ; Difficile : jusqu\'à {aHi2} (avec retenues).' });
+
+  // -- Doubles et moitiés --
+  registerTemplateType({ id:'doubleMoitie', domain:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
+    levels:[ { hi:10 }, { hi:20 }, { hi:50 } ],
+    forms:[
+      { vars:{ n:{int:[1,'hi']}, r:'2*n' }, answer:'r', extras:['n','r+10','r-10','n*3'],
+        question:'Quel est le double de {n} ?', sub:'Le double, c\'est le nombre plus lui-même.',
+        explain:'Le double de {n} : {n} + {n} = {r}.', eq:'double de {n} = ?' },
+      { vars:{ h:{int:[1,'hi']}, m:'2*h' }, answer:'h', extras:['m','h+10','h-10','m-1'],
+        question:'Quelle est la moitié de {m} ?', sub:'La moitié, c\'est partager en deux parts égales.',
+        explain:'La moitié de {m} : {h} + {h} = {m}, donc la moitié est {h}.', eq:'moitié de {m} = ?' }
+    ],
+    note:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à {hi0} ; Moyen : jusqu\'à {hi1} ; Difficile : jusqu\'à {hi2}.' });
+
+  // -- Compléments (à 10, à 20, à 100) --
+  var COMPLEMENT_TEXT = {
+    question:'{a} + ? = {target}', sub:'Cherche le nombre à ajouter pour arriver à {target}.',
+    explain:'{target} - {a} = {x}, car {a} + {x} = {target}.', eq:'{a} + ? = {target}'
+  };
+  function complementForm(levels, aSpec, extras){
+    var f = { levels:levels, vars:{ a:aSpec, x:'target-a' }, answer:'x', extras:extras };
+    for(var k in COMPLEMENT_TEXT) f[k] = COMPLEMENT_TEXT[k];
+    return f;
+  }
+  registerTemplateType({ id:'complement', domain:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
+    levels:[ { target:10 }, { target:20 }, { target:100 } ],
+    forms:[
+      complementForm([0,1], {int:[1,'target-1']}, ['x+1','x-1']),
+      complementForm([2], {int:[1,19], step:5}, ['x+5','x-5','x+10','x-10'])
+    ],
+    note:'« a + ? = cible ». Facile : compléments à {target0} ; Moyen : à {target1} ; Difficile : à {target2} (multiples de 5).' });
+
+  // -- Tables de multiplication --
+  registerTemplateType({ id:'tables', domain:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
+    levels:[ { tables:[2,10] }, { tables:[2,5,10] }, { tables:[2,3,4,5,10] } ],
+    forms:[
+      { w:'level==2 ? 0.6 : 1', vars:{ t:{pick:'tables'}, n:{int:[1,10]}, r:'t*n' }, answer:'r', extras:['r+t','r-t','r+10','r-10'],
+        question:'Combien font {t} × {n} ?', sub:'Utilise la table de {t}.', explain:'{t} × {n} = {r}. {tableHint(t)}', eq:'{t} × {n} = ?' },
+      { w:'level==2 ? 0.4 : 0', vars:{ t:{pick:'tables'}, n:{int:[1,10]}, r:'t*n' }, answer:'n', extras:['n+t','n-t','n*2'],
+        question:'{t} × ? = {r}', sub:'Cherche par combien il faut multiplier {t}.', explain:'{t} × {n} = {r}. {tableHint(t)}', eq:'{t} × ? = {r}' }
+    ],
+    note:'Facile : tables de {liste(tables0)} ; Moyen : {liste(tables1)} ; Difficile : {liste(tables2)}, avec parfois le facteur manquant (5 × ? = 35).' });
+
+  // -- Additions posées (retenue) --
+  var ADDITION_TEXT = {
+    answer:'a+b', extras:['carry(a,b) ? s-10 : s+10', 'level==2 ? s+100 : s+20'],
+    question:'Calcule {a} + {b}.', sub:'Additionne en colonnes : unités, puis dizaines{hundreds} (n\'oublie pas la retenue).',
+    explain:'{explainAdd(a,b)}', eq:'{a} + {b}'
+  };
+  function additionForm(levels, vars, where){
+    var f = { levels:levels, vars:vars, where:where };
+    for(var k in ADDITION_TEXT) f[k] = ADDITION_TEXT[k];
+    f.answer = 's'; f.vars.s = 'a+b';
+    return f;
+  }
+  registerTemplateType({ id:'addition', domain:'calcul', label:'Additions posées', longLabel:'Additions en colonnes (retenue)', defaultLevels:[0,1,2],
+    levels:[ { max:99, hundreds:'' }, { max:99, hundreds:'' }, { max:999, hundreds:', puis centaines' } ],
+    forms:[
+      additionForm([0], { a:{int:[11,89]}, b:{any:[ {int:[1,9]}, {int:[1,8], step:10} ]} }, ['a+b<=max', '!carry(a,b)']),
+      additionForm([1], { a:{int:[15,89]}, b:{int:[11,60]} }, ['a+b<=max', 'carry(a,b) || tries>=100 || rand()>=0.6']),
+      additionForm([2], { a:{int:[120,899]}, b:{any:[ {int:[11,99]}, {int:[110,500]} ]} }, ['a+b<=max', 'carry(a,b) || tries>=100 || rand()>=0.5'])
+    ],
+    note:'Facile : sans retenue, jusqu\'à {max0} ; Moyen : 2 nombres de 2 chiffres jusqu\'à {max1}, souvent avec retenue ; Difficile : jusqu\'à {max2}, souvent avec retenue. L\'explication détaille chaque colonne.' });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */

@@ -14,7 +14,7 @@ Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction c
 
 ## Règles du dépôt
 - **Ne jamais modifier `index.html` à la main** : modifier `src/`, puis `python3 tools/build.py` ; `--check` doit passer.
-- Une activité = `registerQuizType` (QCM) ou `registerFamily` (écran propre, voir `atelier.js` ; elles passent par
+- Une activité arithmétique simple = une fiche (`registerTemplateType`, `fiches-calcul.js`, voir `src/README.md`). Sinon `registerQuizType` (QCM) ou `registerFamily` (écran propre, voir `atelier.js` ; elles passent par
   le déroulé commun `makeQuestionFlow` : 3 essais, solution montrée, série).
 - Les `var` d'un JS ne sont pas remontées : l'ordre dans `src/manifest.json` compte.
 - Aucun legacy : si une activité est remplacée, supprimer l'ancienne (code, tests, notes, listes).
@@ -22,7 +22,7 @@ Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction c
 ## Test (Playwright, `tools/tests/`)
 - `cd tools/tests && node <nom>_check.js` (page de test `index_test.html`, `window.__t.__eval` donne accès aux variables).
 - Avant de valider : lancer les tests du sujet touché + `uniform_check`, `progress_check`, `avance_check`,
-  `fresh_check`, `atelier_check`, `atelier2_check`, `challenge_check`, `nav_check`, `audit_check` (47 types × 3 niveaux), `fit_check` (tout tient dans un écran de téléphone), `vocabulaire_check` (+ `skills_check`, `competences_check` pour la Bataille/compétences, `niveaux_check` pour les niveaux Solides/Monnaie, `seed_check` pour le hasard). Les « ✘ » affichés sont souvent des
+  `fresh_check`, `atelier_check`, `atelier2_check`, `challenge_check`, `nav_check`, `audit_check` (47 types × 3 niveaux), `fit_check` (tout tient dans un écran de téléphone), `vocabulaire_check` (+ `skills_check`, `competences_check` pour la Bataille/compétences, `niveaux_check` pour les niveaux Solides/Monnaie, `seed_check` pour le hasard, `gabarits_check` pour les fiches d'activités de calcul). Les « ✘ » affichés sont souvent des
   messages d'erreur voulus du jeu : se fier à « ÉCHEC »/« AssertionError »/« PAGE ERRORS ».
 - Un test instable est un défaut à corriger tout de suite (ex. attendre la fin des animations avant de mesurer).
 - `lib.js` marque les guides (tutoriels) comme déjà vus : sinon ils voileraient l'écran ; `withPage({guides:true})` pour les tester.
