@@ -391,3 +391,10 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - `sides`, `vertices`, `name` sont des fiches (formes du niveau = paramètre `shapes`) ; anciens `genSidesVerticesQuestion`, `genNameQuestion`, `drawShapeGeneric`, `drawPolygon` supprimés. Notes de réglage générées. **28 types sur 47 en fiches.**
 - Test `formes_check.js` : la réponse est relue sur le dessin (nombre de points du polygone ; carré / rectangle / losange par longueurs et angles), formes limitées au niveau, 4 réponses différentes, redessiner = même image.
 - Reste en QCM : align, milieu, coord, angle, image, coordFind, codage, chasse, decodage, symVrai, enigme, suiteFormes, mesures, perimetre, intrus, symVisuel, duree, solideNom, solideCompte (plusieurs variantes chacun, dessins propres).
+
+## 68. Suite de formes, mesures, périmètre, intrus en fiches (04/10/2026)
+- `geometrie.js` déclare les scènes `suite` (cases avec « ? »), `ruler` (règle d'1 m), `perimGrid`, `perimRect`, `perimPoly` (le tour d'une figure) et `intrus` (quatre formes, une différente), plus des banques (`UNITE_TXT`, `UNITE_U`, `UNITE_N`) et des fonctions de fiche (`suiteSeq`, `mesLongs`, `mesFmt`, `perimNom`, `intrusPair`, `intrusExplain`, `cmList`…).
+- `suiteFormes`, `mesures`, `perimetre`, `intrus` sont des fiches ; anciens `genSuiteFormesQuestion`, `genMesuresQuestion`, `genPerimetreQuestion`, `genIntrusQuestion` supprimés. **32 types sur 47 en fiches.**
+- Léger changement d'image : la règle 📏 des unités est dessinée par la scène `emoji` (un peu plus petite).
+- Test `formes_check.js` étendu : motif prolongé, mesures et périmètres recalculés depuis l'énoncé ou le dessin, intrus relu sur le dessin, sortes de questions par niveau.
+- Reste en QCM (15) : align, milieu, coord, angle, image, coordFind, codage, chasse, decodage, symVrai, symVisuel, enigme, duree, solideNom, solideCompte.

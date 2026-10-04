@@ -4716,34 +4716,6 @@ function phrase(tpl, vars){
     ['AAB','ABB','ABC'],                 // Moyen
     ['ABC','AABB','ABAC','ABCD']         // Difficile
   ];
-  function genSuiteFormesQuestion(level){
-    var unit = pick(SUITE_UNITS[level] || SUITE_UNITS[1]);
-    var kinds = unique(unit.split(''));
-    var syms = shuffle(SUITE_SYMBOLS.slice()).slice(0, kinds.length);
-    var map = {}; kinds.forEach(function(k, i){ map[k] = syms[i]; });
-    var slots = 7, seq = [];
-    for(var i=0;i<slots;i++) seq.push(map[unit.charAt(i % unit.length)]);
-    var answer = seq[slots-1];
-    var others = shuffle(SUITE_SYMBOLS.filter(function(x){ return x!==answer; })).slice(0,3);
-    var motif = unit.split('').map(function(ch){ return map[ch]; }).join(' ');
-    return {
-      tag:'Suite logique',
-      question:'Quelle forme vient à la place du point d\'interrogation ?',
-      sub:'Trouve le motif qui se répète, puis continue la suite.',
-      explain:'Le motif qui se répète est : ' + motif + '. La suite continue avec ' + answer + '.',
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var w=26, gap=2, x0=(200-(slots*w+(slots-1)*gap))/2;
-        seq.forEach(function(sym, i){
-          var x = x0 + i*(w+gap);
-          svg.appendChild(el('rect',{x:x,y:88,width:w,height:w+8,rx:6,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
-          svg.appendChild(svgText(x+w/2,113,19, i===slots-1 ? '?' : sym));
-        });
-      },
-      cols3:false,
-      choices: shuffle([answer].concat(others)).map(function(l){ return { label:l, ok:l===answer }; })
-    };
-  }
   function unique(a){ return a.filter(function(v,i){ return a.indexOf(v)===i; }); }
 
   // ===================== Mesures : unités de longueur =====================
@@ -4754,144 +4726,8 @@ function phrase(tpl, vars){
     ['l\'épaisseur d\'une pièce de monnaie','mm'],['l\'épaisseur d\'une feuille de papier','mm'],['la longueur d\'une fourmi','mm']
   ];
   var UNITE_NOMS = { mm:'le millimètre (mm)', cm:'le centimètre (cm)', m:'le mètre (m)', km:'le kilomètre (km)' };
-  function genMesuresQuestion(level){
-    var kind = level===0 ? 'unite' : level===1 ? pick(['unite','plusLong']) : pick(['conv','conv','plusLong','conv2']);
-    if(kind==='unite'){
-      var sc = pick(UNITE_SCENES), u = sc[1];
-      return {
-        tag:'Mesures', question:'Avec quelle unité mesure-t-on ' + sc[0] + ' ?', sub:'Pense à la taille : petit, moyen ou très grand.',
-        explain:'Pour ' + sc[0] + ', on utilise ' + UNITE_NOMS[u] + '.',
-        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'📏')); },
-        cols3:false,
-        choices: shuffle(['mm','cm','m','km']).map(function(l){ return { label:l, ok:l===u }; })
-      };
-    }
-    if(kind==='plusLong'){
-      var cands = shuffle([20,30,40,50,60,70,80,90,100,120,150,200,250,300]), vals = cands.slice(0,4);
-      var max = Math.max.apply(null, vals);
-      function fmt(v){ return v>=100 && v%100===0 ? (v/100) + ' m' : v>=100 ? Math.floor(v/100) + ' m ' + (v%100) + ' cm' : v + ' cm'; }
-      return {
-        tag:'Mesures', question:'Quelle est la plus grande longueur ?', sub:'Attention aux unités : 1 m = 100 cm.',
-        explain:fmt(max) + ' est la plus grande : ' + vals.slice().sort(function(a,b){ return a-b; }).map(function(v){ return v + ' cm'; }).join(' < ') + '.',
-        draw:function(){
-          // une règle d'1 m graduée tous les 10 cm : le repère « 1 m = 100 cm » reste sous les yeux
-          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-          var x0=24, k=1.5, y=104;
-          svg.appendChild(el('rect',{x:x0,y:y,width:100*k,height:34,rx:4,fill:'var(--accent3)','fill-opacity':0.45,stroke:'var(--text)','stroke-width':2}));
-          for(var c=0;c<=100;c+=10){
-            svg.appendChild(el('line',{x1:x0+c*k,y1:y,x2:x0+c*k,y2:y+(c%50===0 ? 20 : 12),stroke:'var(--text)','stroke-width':c%50===0 ? 2.5 : 1.5}));
-            if(c%50===0){ var t=svgText(x0+c*k, y+52, 15, c===100 ? '100 cm' : (c===0 ? '0' : '50 cm')); t.setAttribute('font-weight','800'); svg.appendChild(t); }
-          }
-          svg.appendChild(el('path',{d:'M '+x0+' '+(y-10)+' v -8 h '+(100*k)+' v 8',fill:'none',stroke:'var(--accent)','stroke-width':3}));
-          var tm=svgText(x0+50*k, y-30, 24, '1 m = 100 cm'); tm.setAttribute('font-weight','800'); svg.appendChild(tm);
-        },
-        cols3:false,
-        choices: vals.map(function(v){ return { label:fmt(v), ok:v===max }; })
-      };
-    }
-    // conversions
-    var q, ans, extra;
-    if(kind==='conv'){ var mm = randInt(1,5); q = mm + ' m = ? cm'; ans = mm*100; extra = [mm*10, mm*1000, mm+100, mm*100+10]; }
-    else { var km = randInt(1,5); q = km + ' km = ? m'; ans = km*1000; extra = [km*100, km*10000, km*100+1000, km+1000]; }
-    return {
-      tag:'Mesures', question:'Convertis : ' + q, sub:'1 m = 100 cm et 1 km = 1 000 m.',
-      explain: q.replace('?', String(ans)) + '.',
-      draw:function(){ drawEquation(q); },
-      cols3:false,
-      choices: numChoiceSet(ans, extra).map(function(v){ return { label:String(v), ok:v===ans }; })
-    };
-  }
-
   // ===================== Périmètre =====================
-  function genPerimetreQuestion(level){
-    var w, h, ans, explain, question, drawFn;
-    if(level===0){
-      w = randInt(2,5); h = randInt(1,4); if(w===h) h = h===1 ? 2 : h-1;
-      ans = 2*(w+h);
-      question = 'Chaque carreau a un côté de 1 cm. Quel est le périmètre du rectangle (le tour) ?';
-      explain = 'Le tour : ' + w + ' + ' + h + ' + ' + w + ' + ' + h + ' = ' + ans + ' cm.';
-      drawFn = function(svg){
-        var c = 22, x0 = (200 - w*c)/2, y0 = (200 - h*c)/2;
-        for(var i=0;i<w;i++) for(var j=0;j<h;j++)
-          svg.appendChild(el('rect',{x:x0+i*c,y:y0+j*c,width:c,height:c,fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':1}));
-        svg.appendChild(el('rect',{x:x0,y:y0,width:w*c,height:h*c,fill:'none',stroke:'var(--text)','stroke-width':3}));
-      };
-    } else if(level===1){
-      var sq = rnd()<0.4;
-      w = randInt(3,12); h = sq ? w : randInt(2,10); if(!sq && w===h) h = h+1;
-      ans = 2*(w+h);
-      question = sq ? 'Un carré a des côtés de ' + w + ' cm. Quel est son périmètre ?' : 'Un rectangle mesure ' + w + ' cm de long et ' + h + ' cm de large. Quel est son périmètre ?';
-      explain = sq ? 'Le carré a 4 côtés égaux : 4 × ' + w + ' = ' + ans + ' cm.' : 'Le tour : ' + w + ' + ' + h + ' + ' + w + ' + ' + h + ' = ' + ans + ' cm.';
-      drawFn = function(svg){
-        var W = sq ? 90 : 120, H = sq ? 90 : Math.max(50, Math.min(100, 120*h/w));
-        var x0 = (200-W)/2, y0 = (200-H)/2;
-        svg.appendChild(el('rect',{x:x0,y:y0,width:W,height:H,fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':3}));
-        svg.appendChild(svgText(100,y0-8,16,w + ' cm'));
-        svg.appendChild(svgText(x0+W+24,100+5,16,h + ' cm'));
-      };
-    } else {
-      var n = pick([3,5,6]), side = randInt(2,9);
-      ans = n*side;
-      var nm = { 3:'un triangle équilatéral', 5:'un pentagone régulier', 6:'un hexagone régulier' }[n];
-      question = 'C\'est ' + nm + ' : tous ses côtés mesurent ' + side + ' cm. Quel est son périmètre ?';
-      explain = nm.charAt(0).toUpperCase() + nm.slice(1) + ' a ' + n + ' côtés égaux : ' + n + ' × ' + side + ' = ' + ans + ' cm.';
-      drawFn = function(svg){
-        var pts = ngonPoints(n, 100, 108, 62, 62, -90);
-        svg.appendChild(el('polygon',{points:isoPoly(pts),fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':3}));
-        svg.appendChild(svgText(100,24,16,side + ' cm'));
-      };
-    }
-    return {
-      tag:'Périmètre', question:question, sub:'Le périmètre, c\'est la longueur du tour de la figure.', explain:explain,
-      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; drawFn(svg); },
-      cols3:false,
-      choices: numChoiceSet(ans, [ans+2, ans-2, ans+4, ans-4, w*h, ans+1, ans-1].filter(function(v){ return v>0; })).map(function(v){ return { label:v + ' cm', ok:v===ans }; })
-    };
-  }
-
   // ===================== Trouve l'intrus =====================
-  function genIntrusQuestion(level){
-    var maj, mino, rotFixed = false, kind;
-    if(level===0){ var t = shuffle([3,4,0]); maj = t[0]; mino = t[1]; }
-    else if(level===1){ var t2 = shuffle([3,4,5,6]); maj = t2[0]; mino = t2[1]; }
-    else if(rnd()<0.5){ kind = 'carreRect'; rotFixed = true; }
-    else { var t3 = shuffle([5,6,8]); maj = t3[0]; mino = t3[1]; }
-    var pos = randInt(0,3), letters = ['A','B','C','D'], colors = ['var(--accent)','var(--accent2)','var(--accent3)'];
-    // couleur, taille et rotation de chaque forme : tirées une fois, à la génération
-    var look = [0,1,2,3].map(function(){ return { fill:colors[randInt(0,2)], r:randInt(24,32), rot: rotFixed ? -90 : randInt(0,359) }; });
-    function drawOne(svg, k, isIntrus, cx, cy){
-      var fill = look[k].fill, r = look[k].r, rot = look[k].rot;
-      var node;
-      if(kind==='carreRect'){
-        if(isIntrus) node = el('rect',{x:cx-r*1.15,y:cy-r*0.62,width:r*2.3,height:r*1.24});
-        else node = el('rect',{x:cx-r*0.8,y:cy-r*0.8,width:r*1.6,height:r*1.6});
-        node.setAttribute('fill',fill);
-      } else {
-        var n = isIntrus ? mino : maj;
-        if(n===0) node = el('circle',{cx:cx,cy:cy,r:r});
-        else node = el('polygon',{points:isoPoly(ngonPoints(n,cx,cy,r,r,rot))});
-        node.setAttribute('fill',fill);
-      }
-      node.setAttribute('fill-opacity','0.55'); node.setAttribute('stroke','var(--text)'); node.setAttribute('stroke-width','2.5');
-      svg.appendChild(node);
-      svg.appendChild(svgText(cx-40,cy-30,16,letters[k]));
-    }
-    var name = kind==='carreRect' ? 'le rectangle qui n\'est pas un carré' : 'la forme qui n\'a pas le même nombre de côtés que les autres';
-    var explain = kind==='carreRect' ? 'Les trois autres sont des carrés (4 côtés égaux). La forme ' + letters[pos] + ' est un rectangle : ses côtés ne sont pas tous égaux.'
-      : (maj===0 ? 'Trois formes sont des cercles (aucun côté)' : 'Trois formes ont ' + maj + ' côtés') + ', mais la forme ' + letters[pos] + ' ' + (mino===0 ? 'est un cercle (aucun côté)' : 'a ' + mino + ' côtés') + '.';
-    return {
-      tag:'Intrus', question:'Trouve l\'intrus : quelle forme est différente des trois autres ?', sub:'Compte les côtés et regarde bien chaque forme.',
-      explain:explain,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var centers = [[52,52],[148,52],[52,148],[148,148]];
-        for(var k=0;k<4;k++) drawOne(svg, k, k===pos, centers[k][0], centers[k][1]);
-      },
-      cols3:false,
-      choices: letters.map(function(l, k){ return { label:l, ok:k===pos }; })
-    };
-  }
-
   // ===================== Symétrie : choisir le dessin symétrique =====================
   // Grille 3 colonnes × 5 lignes à gauche de l'axe ; les 4 réponses sont des
   // moitiés droites : la bonne (miroir), la même sans miroir (translation),
@@ -5217,18 +5053,161 @@ function phrase(tpl, vars){
   registerQuizType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
     randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 44 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
-  registerQuizType({ id:'suiteFormes', domain:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
-    randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
-    generate:genSuiteFormesQuestion });
-  registerQuizType({ id:'mesures', domain:'mesures', label:'Unités de longueur', longLabel:'Mesures : unités et conversions', defaultLevels:[0,1,2],
-    randomNote:'Facile : choisir l\'unité (mm, cm, m, km). Moyen : + comparer des longueurs en cm et en m. Difficile : conversions (m → cm, km → m) et comparaisons.',
-    generate:genMesuresQuestion });
-  registerQuizType({ id:'perimetre', domain:'mesures', label:'Périmètre', longLabel:'Périmètre (le tour d\'une figure)', defaultLevels:[1,2],
-    randomNote:'Facile : rectangle sur quadrillage (on compte les carreaux du tour). Moyen : rectangle ou carré aux côtés donnés. Difficile : triangle équilatéral, pentagone ou hexagone régulier.',
-    generate:genPerimetreQuestion });
-  registerQuizType({ id:'intrus', domain:'logique', label:'Trouve l\'intrus', longLabel:'Trouve l\'intrus (formes)', defaultLevels:[0,1,2],
-    randomNote:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.',
-    generate:genIntrusQuestion });
+  // ---- Suite de formes, mesures, périmètre, intrus : fiches (scènes propres au thème) ----
+  function boxFrame(svg){ svg.setAttribute('viewBox','0 0 200 200'); }
+  SCENES.suite = { exprs:['items'], texts:[],
+    make:function(a){ return { items:a.items.slice() }; },
+    draw:function(svg, d){
+      var n = d.items.length, w = 26, gap = 2, x0 = (200 - (n*w + (n-1)*gap))/2;
+      d.items.forEach(function(sym, i){
+        var x = x0 + i*(w+gap);
+        svg.appendChild(el('rect',{x:x,y:88,width:w,height:w+8,rx:6,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
+        svg.appendChild(svgText(x+w/2,113,19,sym));
+      });
+    } };
+  // règle d'1 m graduée tous les 10 cm : le repère « 1 m = 100 cm » reste sous les yeux
+  SCENES.ruler = { exprs:[], texts:[],
+    make:function(a){ return {}; },
+    draw:function(svg){
+      var x0=24, k=1.5, y=104;
+      svg.appendChild(el('rect',{x:x0,y:y,width:100*k,height:34,rx:4,fill:'var(--accent3)','fill-opacity':0.45,stroke:'var(--text)','stroke-width':2}));
+      for(var c=0;c<=100;c+=10){
+        svg.appendChild(el('line',{x1:x0+c*k,y1:y,x2:x0+c*k,y2:y+(c%50===0 ? 20 : 12),stroke:'var(--text)','stroke-width':c%50===0 ? 2.5 : 1.5}));
+        if(c%50===0){ var t=svgText(x0+c*k, y+52, 15, c===100 ? '100 cm' : (c===0 ? '0' : '50 cm')); t.setAttribute('font-weight','800'); svg.appendChild(t); }
+      }
+      svg.appendChild(el('path',{d:'M '+x0+' '+(y-10)+' v -8 h '+(100*k)+' v 8',fill:'none',stroke:'var(--accent)','stroke-width':3}));
+      var tm=svgText(x0+50*k, y-30, 24, '1 m = 100 cm'); tm.setAttribute('font-weight','800'); svg.appendChild(tm);
+    } };
+  // rectangle sur quadrillage (1 carreau = 1 cm) : on compte le tour
+  SCENES.perimGrid = { exprs:['w','h'], texts:[],
+    make:function(a){ return { w:clampInt(a.w,1,8), h:clampInt(a.h,1,8) }; },
+    draw:function(svg, d){
+      var c = 22, x0 = (200 - d.w*c)/2, y0 = (200 - d.h*c)/2;
+      for(var i=0;i<d.w;i++) for(var j=0;j<d.h;j++)
+        svg.appendChild(el('rect',{x:x0+i*c,y:y0+j*c,width:c,height:c,fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':1}));
+      svg.appendChild(el('rect',{x:x0,y:y0,width:d.w*c,height:d.h*c,fill:'none',stroke:'var(--text)','stroke-width':3}));
+    } };
+  // rectangle (ou carré si sq) dont les côtés sont écrits
+  SCENES.perimRect = { exprs:['w','h','sq'], texts:[],
+    make:function(a){ return { w:a.w, h:a.h, sq:!!a.sq }; },
+    draw:function(svg, d){
+      var W = d.sq ? 90 : 120, H = d.sq ? 90 : Math.max(50, Math.min(100, 120*d.h/d.w)), x0 = (200-W)/2, y0 = (200-H)/2;
+      svg.appendChild(el('rect',{x:x0,y:y0,width:W,height:H,fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':3}));
+      svg.appendChild(svgText(100,y0-8,16,d.w + ' cm'));
+      svg.appendChild(svgText(x0+W+24,105,16,d.h + ' cm'));
+    } };
+  // polygone régulier de n côtés, un côté est écrit
+  SCENES.perimPoly = { exprs:['n','side'], texts:[],
+    make:function(a){ return { n:clampInt(a.n,3,8), side:a.side }; },
+    draw:function(svg, d){
+      var pts = ngonPoints(d.n, 100, 108, 62, 62, -90);
+      svg.appendChild(el('polygon',{points:isoPoly(pts),fill:'var(--accent3)','fill-opacity':0.35,stroke:'var(--text)','stroke-width':3}));
+      svg.appendChild(svgText(100,24,16,d.side + ' cm'));
+    } };
+  // quatre formes A à D dont une est différente. maj/mino = nombre de côtés (0 = cercle) ; maj < 0 : carrés contre un rectangle
+  SCENES.intrus = { exprs:['maj','mino','pos'], texts:[],
+    make:function(a){
+      var cols = ['var(--accent)','var(--accent2)','var(--accent3)'], rect = a.maj < 0, fixed = rect;
+      return { maj:a.maj, mino:a.mino, pos:clampInt(a.pos,0,3), rect:rect,
+        look:[0,1,2,3].map(function(){ return { fill:cols[randInt(0,2)], r:randInt(24,32), rot: fixed ? -90 : randInt(0,359) }; }) };
+    },
+    draw:function(svg, d){
+      var centers = [[52,52],[148,52],[52,148],[148,148]], letters = ['A','B','C','D'];
+      for(var k=0;k<4;k++){
+        var cx = centers[k][0], cy = centers[k][1], l = d.look[k], r = l.r, intr = k === d.pos, node;
+        if(d.rect){
+          node = intr ? el('rect',{x:cx-r*1.15,y:cy-r*0.62,width:r*2.3,height:r*1.24}) : el('rect',{x:cx-r*0.8,y:cy-r*0.8,width:r*1.6,height:r*1.6});
+        } else {
+          var n = intr ? d.mino : d.maj;
+          node = n===0 ? el('circle',{cx:cx,cy:cy,r:r}) : el('polygon',{points:isoPoly(ngonPoints(n,cx,cy,r,r,l.rot))});
+        }
+        node.setAttribute('fill', l.fill); node.setAttribute('fill-opacity','0.55'); node.setAttribute('stroke','var(--text)'); node.setAttribute('stroke-width','2.5');
+        svg.appendChild(node);
+        svg.appendChild(svgText(cx-40,cy-30,16,letters[k]));
+      }
+    } };
+  BANKS.UNITE_TXT = UNITE_SCENES.map(function(s){ return s[0]; });
+  BANKS.UNITE_U = UNITE_SCENES.map(function(s){ return s[1]; });
+  BANKS.UNITE_N = UNITE_SCENES.length;
+  TEMPLATE_FNS.suiteSeq = function(unit){
+    var kinds = unique(unit.split('')), syms = shuffle(SUITE_SYMBOLS.slice()).slice(0, kinds.length), map = {}, seq = [], i;
+    kinds.forEach(function(k, j){ map[k] = syms[j]; });
+    for(i=0;i<7;i++) seq.push(map[unit.charAt(i % unit.length)]);
+    return seq;
+  };
+  TEMPLATE_FNS.suiteSymbols = function(){ return SUITE_SYMBOLS.slice(); };
+  TEMPLATE_FNS.suiteMotif = function(unit, seq){ return seq.slice(0, unit.length).join(' '); };
+  TEMPLATE_FNS.uniteNom = function(u){ return UNITE_NOMS[u]; };
+  function mesFmt(v){ return v>=100 && v%100===0 ? (v/100) + ' m' : v>=100 ? Math.floor(v/100) + ' m ' + (v%100) + ' cm' : v + ' cm'; }
+  TEMPLATE_FNS.mesLongs = function(){ return shuffle([20,30,40,50,60,70,80,90,100,120,150,200,250,300]).slice(0,4); };
+  TEMPLATE_FNS.mesMax = function(v){ return Math.max.apply(null, v); };
+  TEMPLATE_FNS.mesFmt = mesFmt;
+  TEMPLATE_FNS.mesOthers = function(v){ var m = Math.max.apply(null, v); return v.filter(function(x){ return x !== m; }).map(mesFmt); };
+  TEMPLATE_FNS.mesSorted = function(v){ return v.slice().sort(function(a,b){ return a-b; }).map(function(x){ return x + ' cm'; }).join(' < '); };
+  TEMPLATE_FNS.cmList = function(a){ return a.map(function(v){ return v + ' cm'; }); };
+  TEMPLATE_FNS.perimNom = function(n){ return { 3:'un triangle équilatéral', 5:'un pentagone régulier', 6:'un hexagone régulier' }[n]; };
+  TEMPLATE_FNS.perimNomMaj = function(n){ var t = TEMPLATE_FNS.perimNom(n); return t.charAt(0).toUpperCase() + t.slice(1); };
+  TEMPLATE_FNS.intrusPair = function(level){
+    var t = level===0 ? shuffle([3,4,0]) : level===1 ? shuffle([3,4,5,6]) : shuffle([5,6,8]);
+    return [t[0], t[1]];
+  };
+  TEMPLATE_FNS.intrusExplain = function(maj, mino, L){
+    return (maj===0 ? 'Trois formes sont des cercles (aucun côté)' : 'Trois formes ont ' + maj + ' côtés') + ', mais la forme ' + L + ' ' + (mino===0 ? 'est un cercle (aucun côté)' : 'a ' + mino + ' côtés') + '.';
+  };
+  var ABCD = "['A','B','C','D']";
+
+  registerTemplateType({ id:'suiteFormes', domain:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2], tag:'Suite logique',
+    levels:[ { units:['AB'] }, { units:['AAB','ABB','ABC'] }, { units:['ABC','AABB','ABAC','ABCD'] } ],
+    forms:[ { vars:{ unit:{pick:'units'}, seq:'suiteSeq(unit)', ans:'at(seq,6)', motif:'suiteMotif(unit,seq)' }, answer:'ans', wrong:'others(suiteSymbols(), ans, 3)',
+      question:"Quelle forme vient à la place du point d'interrogation ?", sub:'Trouve le motif qui se répète, puis continue la suite.',
+      explain:'Le motif qui se répète est : {motif}. La suite continue avec {ans}.', scene:{ type:'suite', items:'masque(seq,6)' } } ],
+    note:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.' });
+
+  registerTemplateType({ id:'mesures', domain:'mesures', label:'Unités de longueur', longLabel:'Mesures : unités et conversions', defaultLevels:[0,1,2], tag:'Mesures',
+    levels:[ {}, {}, {} ],
+    forms:[
+      { levels:[0,1], vars:{ i:{int:[0,'UNITE_N-1']}, txt:'at(UNITE_TXT,i)', u:'at(UNITE_U,i)' }, answer:'u', wrong:"others(['mm','cm','m','km'], u, 3)",
+        question:'Avec quelle unité mesure-t-on {txt} ?', sub:'Pense à la taille : petit, moyen ou très grand.', explain:'Pour {txt}, on utilise {uniteNom(u)}.',
+        scene:{ type:'emoji', icon:"'📏'", caption:'' } },
+      { levels:[1,2], vars:{ v:'mesLongs()', m:'mesMax(v)' }, answer:'mesFmt(m)', wrong:'mesOthers(v)',
+        question:'Quelle est la plus grande longueur ?', sub:'Attention aux unités : 1 m = 100 cm.', explain:'{mesFmt(m)} est la plus grande : {mesSorted(v)}.', scene:{ type:'ruler' } },
+      { levels:[2], w:2, vars:{ n:{int:[1,5]}, r:'n*100' }, answer:'r', wrong:'others([n*10, n*1000, n+100, n*100+10], r, 3)',
+        question:'Convertis : {n} m = ? cm', sub:'1 m = 100 cm et 1 km = 1 000 m.', explain:'{n} m = {r} cm.', eq:'{n} m = ? cm' },
+      { levels:[2], vars:{ n:{int:[1,5]}, r:'n*1000' }, answer:'r', wrong:'others([n*100, n*10000, n*100+1000, n+1000], r, 3)',
+        question:'Convertis : {n} km = ? m', sub:'1 m = 100 cm et 1 km = 1 000 m.', explain:'{n} km = {r} m.', eq:'{n} km = ? m' }
+    ],
+    note:"Facile : choisir l'unité (mm, cm, m, km). Moyen : + comparer des longueurs en cm et en m. Difficile : conversions (m → cm, km → m) et comparaisons." });
+
+  registerTemplateType({ id:'perimetre', domain:'mesures', label:'Périmètre', longLabel:"Périmètre (le tour d'une figure)", defaultLevels:[1,2], tag:'Périmètre',
+    levels:[ {}, {}, {} ],
+    forms:[
+      { levels:[0], vars:{ w:{int:[2,5]}, h:{int:[1,4]}, ans:'2*(w+h)' }, where:['w!=h'], answer:"ans+' cm'", wrong:'cmList(others([ans+2,ans-2,ans+4,ans-4,w*h,ans+1,ans-1], ans, 3))',
+        question:'Chaque carreau a un côté de 1 cm. Quel est le périmètre du rectangle (le tour) ?', sub:"Le périmètre, c'est la longueur du tour de la figure.",
+        explain:'Le tour : {w} + {h} + {w} + {h} = {ans} cm.', scene:{ type:'perimGrid', w:'w', h:'h' } },
+      { levels:[1], w:0.4, vars:{ w:{int:[3,12]}, ans:'4*w' }, answer:"ans+' cm'", wrong:'cmList(others([ans+2,ans-2,ans+4,ans-4,w*w,ans+1,ans-1], ans, 3))',
+        question:'Un carré a des côtés de {w} cm. Quel est son périmètre ?', sub:"Le périmètre, c'est la longueur du tour de la figure.",
+        explain:'Le carré a 4 côtés égaux : 4 × {w} = {ans} cm.', scene:{ type:'perimRect', w:'w', h:'w', sq:'1' } },
+      { levels:[1], w:0.6, vars:{ w:{int:[3,12]}, h:{int:[2,10]}, ans:'2*(w+h)' }, where:['w!=h'], answer:"ans+' cm'", wrong:'cmList(others([ans+2,ans-2,ans+4,ans-4,w*h,ans+1,ans-1], ans, 3))',
+        question:'Un rectangle mesure {w} cm de long et {h} cm de large. Quel est son périmètre ?', sub:"Le périmètre, c'est la longueur du tour de la figure.",
+        explain:'Le tour : {w} + {h} + {w} + {h} = {ans} cm.', scene:{ type:'perimRect', w:'w', h:'h', sq:'0' } },
+      { levels:[2], vars:{ n:{pick:[3,5,6]}, side:{int:[2,9]}, ans:'n*side' }, answer:"ans+' cm'", wrong:'cmList(others([ans+2,ans-2,ans+4,ans-4,ans+1,ans-1,ans+side], ans, 3))',
+        question:"C'est {perimNom(n)} : tous ses côtés mesurent {side} cm. Quel est son périmètre ?", sub:"Le périmètre, c'est la longueur du tour de la figure.",
+        explain:'{perimNomMaj(n)} a {n} côtés égaux : {n} × {side} = {ans} cm.', scene:{ type:'perimPoly', n:'n', side:'side' } }
+    ],
+    note:'Facile : rectangle sur quadrillage (on compte les carreaux du tour). Moyen : rectangle ou carré aux côtés donnés. Difficile : triangle équilatéral, pentagone ou hexagone régulier.' });
+
+  registerTemplateType({ id:'intrus', domain:'logique', label:"Trouve l'intrus", longLabel:"Trouve l'intrus (formes)", defaultLevels:[0,1,2], tag:'Intrus',
+    levels:[ {}, {}, {} ],
+    forms:[
+      { vars:{ p:'intrusPair(level)', maj:'at(p,0)', mino:'at(p,1)', pos:{int:[0,3]}, L:'at(' + ABCD + ',pos)' }, answer:'L', options:['A','B','C','D'], cols3:false,
+        question:"Trouve l'intrus : quelle forme est différente des trois autres ?", sub:'Compte les côtés et regarde bien chaque forme.',
+        explain:'{intrusExplain(maj,mino,L)}', scene:{ type:'intrus', maj:'maj', mino:'mino', pos:'pos' } },
+      { levels:[2], vars:{ pos:{int:[0,3]}, L:'at(' + ABCD + ',pos)' }, answer:'L', options:['A','B','C','D'], cols3:false,
+        question:"Trouve l'intrus : quelle forme est différente des trois autres ?", sub:'Compte les côtés et regarde bien chaque forme.',
+        explain:'Les trois autres sont des carrés (4 côtés égaux). La forme {L} est un rectangle : ses côtés ne sont pas tous égaux.', scene:{ type:'intrus', maj:'0-1', mino:'0-1', pos:'pos' } }
+    ],
+    note:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.' });
+
   registerQuizType({ id:'symVisuel', domain:'symetrie', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
     randomNote:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).',
     generate:genSymVisuelQuestion });
