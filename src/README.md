@@ -30,6 +30,7 @@ src/
     gabarits.js         moteur de FICHES d'activités arithmétiques : évaluateur d'expressions sûr (pas d'eval), variables, contraintes, fausses réponses, textes, note de réglage générée ; `registerTemplateType(fiche)`
     fiches-calcul.js    les fiches des 12 activités migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions et Soustractions posées, Dénombrement visuel, Compter jusqu'à 1000, Multiplier/partager, Droite graduée, Comparer
     paquets.js          paquets d'activités (`kvb-pack`) : validation complète, fournisseur `appareil` (localStorage), installation / activation / mise à jour / retrait, import-export de fichier (Réglages) ; chargé juste avant orchestrateur.js
+    editeur.js          éditeur d'activités (Réglages, code adulte) : 3 modèles, « Tester 20 questions », enregistrement dans le paquet personnel `perso.moi` ; chargé juste après paquets.js
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
@@ -129,6 +130,7 @@ Variables : une expression, `{int:[lo,hi], step?}`, `{pick:[…]}` (ou nom d'un 
 ## Paquets d'activités (sans code)
 
 Un adulte ajoute des activités par un fichier `.kvb.json` (modèle : `exemples/paquet-exemple.kvb.json`). Deux sortes : `fixe` (liste de questions `{q, bonnes:[1], fausses:[1 à 3], explication}`) et `gabarit` (une `fiche`, voir plus haut). Format, limites et messages d'erreur : `paquets.js` (`packValidate`). Les identifiants sont `custom:<paquet>/<activité>`. Un autre fournisseur que `appareil` (lien, cloud) se branche en remplaçant `packSourceAppareil`. Test : `pack_check.js`.
+L'éditeur (`editeur.js`) fabrique ces activités depuis un écran : `editeurBuildAct(modele, réglages, id)` → activité, `editeurApercu`, `editeurSave`, `editeurRemove` ; elles sont rangées dans le paquet `perso.moi`, avec `meta` (modèle + nombres) pour pouvoir les rouvrir. Pour ajouter un modèle : un cas dans `editeurBuildAct`, un bloc de champs dans `open`, une entrée dans `EDIT_MODELES`. Test : `editeur_check.js`.
 
 ## Ajouter une activité à écran propre
 
