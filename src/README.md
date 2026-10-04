@@ -28,6 +28,7 @@ src/
     calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
     nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
     gabarits.js         moteur de FICHES d'activités arithmétiques : évaluateur d'expressions sûr (pas d'eval), variables, contraintes, fausses réponses, textes, note de réglage générée ; `registerTemplateType(fiche)`
+    fiches-temps.js     les fiches Lire l'heure, Choisir l'horloge, Calendrier (scène `clock`, banques JOURS / MOIS, réponses de texte, choix de figure) ; chargé après fiches-calcul.js
     fiches-calcul.js    les fiches des 12 activités migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions et Soustractions posées, Dénombrement visuel, Compter jusqu'à 1000, Multiplier/partager, Droite graduée, Comparer
     paquets.js          paquets d'activités (`kvb-pack`) : validation complète, fournisseur `appareil` (localStorage), installation / activation / mise à jour / retrait, import-export de fichier (Réglages) ; chargé juste avant orchestrateur.js
     editeur.js          éditeur d'activités (Réglages, code adulte) : 3 modèles, « Tester 20 questions », enregistrement dans le paquet personnel `perso.moi` ; chargé juste après paquets.js

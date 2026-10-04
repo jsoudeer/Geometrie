@@ -3,7 +3,7 @@
   */
 
   /* ===================== MODULE 5 : HORLOGE (à part entière) =====================
-     Deux modes : "Lire l'heure" (QCM, réutilise genHeureQuestion) et
+     Deux modes : "Lire l'heure" (QCM, réutilise la fiche « heure » (fiches-temps.js)) et
      "Régler l'heure" (l'enfant fait glisser les aiguilles au doigt). */
   function svgPointFromEvent(svg, evt){
     var rect = svg.getBoundingClientRect();
@@ -33,7 +33,7 @@
   });
   var m5Current = null;
   function newM5Lire(){
-    m5Current = genHeureQuestion('m5Svg', globalLevel);
+    m5Current = quizTypeById('heure').generate(globalLevel, 'm5Svg');
     document.getElementById('m5-question').textContent = m5Current.question;
     document.getElementById('m5-sub').textContent = m5Current.sub;
     m5Current.draw();
@@ -281,79 +281,6 @@
     var m = totalMin % 60;
     return m===0 ? (h+' h') : (h+' h '+(m<10?'0'+m:m));
   }
-  function genHeure24Question(svgId){
-    var hour = randInt(0,23);
-    var minuteVal = pick([0,5,10,15,20,25,30,35,40,45,50,55]);
-    var total = hour*60 + minuteVal;
-    var period = periodOfDay(hour);
-    var hourTip = angleToXY(((hour%12) + minuteVal/60) * 30 - 90, 42);
-    var minTip = angleToXY((minuteVal/60)*360 - 90, 62);
-    var correctLabel = minutesToLabel24(total);
-    // Fausses réponses : le piège classique (oublier d'ajouter ou de retirer 12 h)
-    // et des heures voisines à 5, 10 ou 15 minutes près.
-    var seen = {}; seen[correctLabel] = true;
-    var shifted = minutesToLabel24((total + 720) % 1440);
-    seen[shifted] = true;
-    var near = [];
-    [-3,-2,-1,1,2,3].forEach(function(k){
-      var label = minutesToLabel24(((total + k*5) % 1440 + 1440) % 1440);
-      if(!seen[label]){ seen[label] = true; near.push(label); }
-    });
-    var wrong = [shifted].concat(shuffle(near).slice(0,2));
-    var explain = clockExplain(hour, minuteVal, minutesToClockLabel(total) + ' sur l\'horloge');
-    if(hour===0) explain += ' Juste après minuit, l\'horloge montre 12 mais on dit 0 h : il est ' + correctLabel + '.';
-    else if(hour >= 13) explain += ' Comme c\'est ' + period.phrase + ', on ajoute 12 h : ' + (hour-12) + ' + 12 = ' + hour + '. Il est donc ' + correctLabel + '.';
-    else explain += ' Comme c\'est ' + period.phrase + ', l\'heure ne change pas : on garde ' + correctLabel + '.';
-    return {
-      tag:'Lire l\'heure',
-      question:'C\'est ' + period.phrase + ' ' + period.emoji + '. Quelle heure indique cette horloge ?',
-      sub:'Les heures vont de 0 h à 23 h (l\'après-midi : 13 h, 14 h, 15 h…). Regarde bien les deux aiguilles.',
-      explain: explain,
-      draw:function(){
-        var svg=document.getElementById(svgId); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        drawClockFace(svg, hourTip, minTip);
-      },
-      cols3:false,
-      choices: shuffle([correctLabel].concat(wrong)).map(function(l){ return { label:l, ok:l===correctLabel }; })
-    };
-  }
-  function genHeureQuestion(svgId, level){
-    svgId = svgId || 'm4Svg';
-    level = level || 0;
-    if(level >= 2) return genHeure24Question(svgId);
-    var step = level===0 ? 30 : 15;
-    var hour = 1+randInt(0,11);
-    var minuteVal = level===0 ? (rnd()<0.5?0:30) : pick((function(){
-      var opts=[]; for(var m=0;m<60;m+=step) opts.push(m); return opts;
-    })());
-    var hourAngleDeg = ((hour%12) + minuteVal/60) * 30 - 90;
-    var minuteAngleDeg = (minuteVal/60)*360 - 90;
-    var hourTip = angleToXY(hourAngleDeg, 42);
-    var minTip = angleToXY(minuteAngleDeg, 62);
-    var totalMinCorrect = (hour%12)*60 + minuteVal;
-    var correctLabel = minutesToClockLabel(totalMinCorrect);
-    var pool = [], seen = {}; seen[correctLabel]=true;
-    [-3,-2,-1,1,2,3].forEach(function(k){
-      var cand = ((totalMinCorrect + k*step) % 720 + 720) % 720;
-      var label = minutesToClockLabel(cand);
-      if(!seen[label]){ seen[label]=true; pool.push(label); }
-    });
-    var choiceLabels = shuffle([correctLabel].concat(shuffle(pool).slice(0,3)));
-    return {
-      tag:'Lire l\'heure',
-      question:'Quelle heure indique cette horloge ?',
-      sub:'Regarde bien la petite aiguille (les heures) et la grande (les minutes).',
-      explain: clockExplain(hour, minuteVal, correctLabel),
-      draw:function(){
-        var svg=document.getElementById(svgId); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        drawClockFace(svg, hourTip, minTip);
-      },
-      cols3:false,
-      choices: choiceLabels.map(function(l){ return { label:l, ok:l===correctLabel }; })
-    };
-  }
-
-
   // ---- Durées : calculer une heure de fin, une durée, une heure de début ----
   function fmtDuree(min){
     var h = Math.floor(min/60), m = min % 60;
@@ -448,92 +375,7 @@
     };
   }
 
-  // ---- Calendrier : jours de la semaine et mois ----
-  var JOURS = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
-  var MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-  function textChoices(correct, pool){
-    var others = shuffle(pool.filter(function(x){ return x!==correct; })).slice(0,3);
-    return shuffle([correct].concat(others)).map(function(l){ return { label:String(l), ok:l===correct }; });
-  }
-  function genCalendrierQuestion(level){
-    var kinds = level===0 ? ['jourApres','jourAvant','semaine'] : level===1 ? ['jourApres','jourAvant','moisApres','moisAvant','annee'] : ['decalage','decalage','moisApres','moisAvant','entreJours'];
-    var kind = pick(kinds), q, explain, correct, pool, sub = 'Réfléchis à l\'ordre des jours ou des mois.';
-    var i = randInt(0,6), m = randInt(0,11);
-    if(kind==='jourApres'){ correct = JOURS[(i+1)%7]; pool = JOURS; q = 'Quel jour vient juste après ' + JOURS[i] + ' ?'; explain = 'Après ' + JOURS[i] + ' vient ' + correct + '.'; }
-    else if(kind==='jourAvant'){ correct = JOURS[(i+6)%7]; pool = JOURS; q = 'Quel jour vient juste avant ' + JOURS[i] + ' ?'; explain = 'Avant ' + JOURS[i] + ' il y a ' + correct + '.'; }
-    else if(kind==='semaine'){ correct = '7 jours'; pool = ['5 jours','6 jours','7 jours','8 jours','10 jours']; q = 'Combien y a-t-il de jours dans une semaine ?'; explain = 'La semaine a 7 jours : lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche.'; }
-    else if(kind==='annee'){ correct = '12 mois'; pool = ['10 mois','11 mois','12 mois','13 mois','52 mois']; q = 'Combien y a-t-il de mois dans une année ?'; explain = 'L\'année a 12 mois, de janvier à décembre.'; }
-    else if(kind==='moisApres'){ correct = MOIS[(m+1)%12]; pool = MOIS; q = 'Quel mois vient juste après ' + MOIS[m] + ' ?'; explain = 'Après ' + MOIS[m] + ' vient ' + correct + '.'; }
-    else if(kind==='moisAvant'){ correct = MOIS[(m+11)%12]; pool = MOIS; q = 'Quel mois vient juste avant ' + MOIS[m] + ' ?'; explain = 'Avant ' + MOIS[m] + ' il y a ' + correct + '.'; }
-    else if(kind==='entreJours'){
-      var a = randInt(0,6), gap = randInt(2,5), b = (a+gap)%7;
-      correct = gap + ' jours'; pool = [2,3,4,5,6].map(function(k){ return k + ' jours'; });
-      q = 'Combien de jours passent de ' + JOURS[a] + ' à ' + JOURS[b] + ' ?';
-      explain = 'De ' + JOURS[a] + ' à ' + JOURS[b] + ', on avance de ' + gap + ' jours.';
-      sub = 'Compte les jours qui passent, un par un.';
-    }
-    else { // decalage : dans N jours / il y a N jours
-      var n = randInt(2,6), fwd = rnd()<0.6;
-      correct = JOURS[((i + (fwd ? n : -n)) % 7 + 7) % 7]; pool = JOURS;
-      q = 'Aujourd\'hui, c\'est ' + JOURS[i] + '. Quel jour ' + (fwd ? 'sera-t-on dans ' + n + ' jours ?' : 'était-on il y a ' + n + ' jours ?');
-      explain = 'À partir de ' + JOURS[i] + ', on ' + (fwd ? 'avance' : 'recule') + ' de ' + n + ' jours : on arrive à ' + correct + '.';
-      sub = 'Compte les jours un par un, en ' + (fwd ? 'avançant' : 'reculant') + '.';
-    }
-    return {
-      tag:'Calendrier', question:q, sub:sub, explain:explain,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(svgText(100,125,72,'📅'));
-      },
-      cols3:false, choices: textChoices(correct, pool)
-    };
-  }
-
-  // ---- Choisir la bonne horloge parmi 4 dessins ----
-  function genHorlogeChoixQuestion(level){
-    var steps = level===0 ? [0,30] : level===1 ? [0,15,30,45] : [0,5,10,15,20,25,30,35,40,45,50,55];
-    var h = randInt(1,12), m = pick(steps);
-    function key(hh, mm){ return ((hh%12)*60 + mm) + ''; }
-    var options = [{ h:h, m:m, ok:true }], used = {}; used[key(h,m)] = true;
-    function add(hh, mm){
-      hh = ((hh-1+12)%12)+1; mm = ((mm%60)+60)%60;
-      if(used[key(hh,mm)]) return false;
-      used[key(hh,mm)] = true; options.push({ h:hh, m:mm, ok:false }); return true;
-    }
-    // pièges classiques : aiguilles échangées, heure d'à côté, minutes d'à côté
-    var swapH = m===0 ? 12 : m/5;
-    if(m % 5 === 0) add(swapH, h*5 % 60);
-    add(h+1, m); add(h-1, m);
-    var tries = 0;
-    while(options.length<4 && tries++<50){ add(h, m + pick(level===0 ? [30] : [15,30,45,5,10])); if(options.length<4) add(h + pick([-2,2,3]), m); }
-    options = options.slice(0,4);
-    var label = m===0 ? (h + ' h') : (h + ' h ' + (m<10 ? '0'+m : m));
-    return {
-      tag:'Lire l\'heure', question:'Quelle horloge indique ' + label + ' ?', sub:'La petite aiguille montre l\'heure, la grande aiguille les minutes.',
-      explain:clockExplain(h, m, label + ' se lit : ' + minutesToClockLabel(h*60+m)),
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(svgText(100,120,54,label));
-      },
-      cols3:false,
-      choices: shuffle(options).map(function(o, i){
-        return { label:'Horloge ' + (i+1), ok:o.ok, viewBox:'0 0 200 200', draw:function(svg){
-          drawClockFace(svg, angleToXY(((o.h%12) + o.m/60) * 30 - 90, 42), angleToXY((o.m/60)*360 - 90, 62));
-        } };
-      })
-    };
-  }
-
-  // ---- Déclaration du type de Quizz « Lire l'heure » ----
-  registerQuizType({ id:'heure', domain:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
-    randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
-    generate:function(level){ return genHeureQuestion('m4Svg', level); } });
+  // ---- Déclaration du type de Quizz « Durées » (les autres types de l'heure sont des fiches : fiches-temps.js) ----
   registerQuizType({ id:'duree', domain:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
     randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
     generate:function(level){ return genDureeQuestion(level); } });
-  registerQuizType({ id:'calendrier', domain:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
-    randomNote:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.',
-    generate:genCalendrierQuestion });
-  registerQuizType({ id:'horlogeChoix', domain:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2],
-    randomNote:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.',
-    generate:genHorlogeChoixQuestion });

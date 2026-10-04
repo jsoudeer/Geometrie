@@ -4890,7 +4890,7 @@ function phrase(tpl, vars){
   */
 
   /* ===================== MODULE 5 : HORLOGE (à part entière) =====================
-     Deux modes : "Lire l'heure" (QCM, réutilise genHeureQuestion) et
+     Deux modes : "Lire l'heure" (QCM, réutilise la fiche « heure » (fiches-temps.js)) et
      "Régler l'heure" (l'enfant fait glisser les aiguilles au doigt). */
   function svgPointFromEvent(svg, evt){
     var rect = svg.getBoundingClientRect();
@@ -4920,7 +4920,7 @@ function phrase(tpl, vars){
   });
   var m5Current = null;
   function newM5Lire(){
-    m5Current = genHeureQuestion('m5Svg', globalLevel);
+    m5Current = quizTypeById('heure').generate(globalLevel, 'm5Svg');
     document.getElementById('m5-question').textContent = m5Current.question;
     document.getElementById('m5-sub').textContent = m5Current.sub;
     m5Current.draw();
@@ -5168,79 +5168,6 @@ function phrase(tpl, vars){
     var m = totalMin % 60;
     return m===0 ? (h+' h') : (h+' h '+(m<10?'0'+m:m));
   }
-  function genHeure24Question(svgId){
-    var hour = randInt(0,23);
-    var minuteVal = pick([0,5,10,15,20,25,30,35,40,45,50,55]);
-    var total = hour*60 + minuteVal;
-    var period = periodOfDay(hour);
-    var hourTip = angleToXY(((hour%12) + minuteVal/60) * 30 - 90, 42);
-    var minTip = angleToXY((minuteVal/60)*360 - 90, 62);
-    var correctLabel = minutesToLabel24(total);
-    // Fausses réponses : le piège classique (oublier d'ajouter ou de retirer 12 h)
-    // et des heures voisines à 5, 10 ou 15 minutes près.
-    var seen = {}; seen[correctLabel] = true;
-    var shifted = minutesToLabel24((total + 720) % 1440);
-    seen[shifted] = true;
-    var near = [];
-    [-3,-2,-1,1,2,3].forEach(function(k){
-      var label = minutesToLabel24(((total + k*5) % 1440 + 1440) % 1440);
-      if(!seen[label]){ seen[label] = true; near.push(label); }
-    });
-    var wrong = [shifted].concat(shuffle(near).slice(0,2));
-    var explain = clockExplain(hour, minuteVal, minutesToClockLabel(total) + ' sur l\'horloge');
-    if(hour===0) explain += ' Juste après minuit, l\'horloge montre 12 mais on dit 0 h : il est ' + correctLabel + '.';
-    else if(hour >= 13) explain += ' Comme c\'est ' + period.phrase + ', on ajoute 12 h : ' + (hour-12) + ' + 12 = ' + hour + '. Il est donc ' + correctLabel + '.';
-    else explain += ' Comme c\'est ' + period.phrase + ', l\'heure ne change pas : on garde ' + correctLabel + '.';
-    return {
-      tag:'Lire l\'heure',
-      question:'C\'est ' + period.phrase + ' ' + period.emoji + '. Quelle heure indique cette horloge ?',
-      sub:'Les heures vont de 0 h à 23 h (l\'après-midi : 13 h, 14 h, 15 h…). Regarde bien les deux aiguilles.',
-      explain: explain,
-      draw:function(){
-        var svg=document.getElementById(svgId); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        drawClockFace(svg, hourTip, minTip);
-      },
-      cols3:false,
-      choices: shuffle([correctLabel].concat(wrong)).map(function(l){ return { label:l, ok:l===correctLabel }; })
-    };
-  }
-  function genHeureQuestion(svgId, level){
-    svgId = svgId || 'm4Svg';
-    level = level || 0;
-    if(level >= 2) return genHeure24Question(svgId);
-    var step = level===0 ? 30 : 15;
-    var hour = 1+randInt(0,11);
-    var minuteVal = level===0 ? (rnd()<0.5?0:30) : pick((function(){
-      var opts=[]; for(var m=0;m<60;m+=step) opts.push(m); return opts;
-    })());
-    var hourAngleDeg = ((hour%12) + minuteVal/60) * 30 - 90;
-    var minuteAngleDeg = (minuteVal/60)*360 - 90;
-    var hourTip = angleToXY(hourAngleDeg, 42);
-    var minTip = angleToXY(minuteAngleDeg, 62);
-    var totalMinCorrect = (hour%12)*60 + minuteVal;
-    var correctLabel = minutesToClockLabel(totalMinCorrect);
-    var pool = [], seen = {}; seen[correctLabel]=true;
-    [-3,-2,-1,1,2,3].forEach(function(k){
-      var cand = ((totalMinCorrect + k*step) % 720 + 720) % 720;
-      var label = minutesToClockLabel(cand);
-      if(!seen[label]){ seen[label]=true; pool.push(label); }
-    });
-    var choiceLabels = shuffle([correctLabel].concat(shuffle(pool).slice(0,3)));
-    return {
-      tag:'Lire l\'heure',
-      question:'Quelle heure indique cette horloge ?',
-      sub:'Regarde bien la petite aiguille (les heures) et la grande (les minutes).',
-      explain: clockExplain(hour, minuteVal, correctLabel),
-      draw:function(){
-        var svg=document.getElementById(svgId); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        drawClockFace(svg, hourTip, minTip);
-      },
-      cols3:false,
-      choices: choiceLabels.map(function(l){ return { label:l, ok:l===correctLabel }; })
-    };
-  }
-
-
   // ---- Durées : calculer une heure de fin, une durée, une heure de début ----
   function fmtDuree(min){
     var h = Math.floor(min/60), m = min % 60;
@@ -5335,95 +5262,10 @@ function phrase(tpl, vars){
     };
   }
 
-  // ---- Calendrier : jours de la semaine et mois ----
-  var JOURS = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
-  var MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-  function textChoices(correct, pool){
-    var others = shuffle(pool.filter(function(x){ return x!==correct; })).slice(0,3);
-    return shuffle([correct].concat(others)).map(function(l){ return { label:String(l), ok:l===correct }; });
-  }
-  function genCalendrierQuestion(level){
-    var kinds = level===0 ? ['jourApres','jourAvant','semaine'] : level===1 ? ['jourApres','jourAvant','moisApres','moisAvant','annee'] : ['decalage','decalage','moisApres','moisAvant','entreJours'];
-    var kind = pick(kinds), q, explain, correct, pool, sub = 'Réfléchis à l\'ordre des jours ou des mois.';
-    var i = randInt(0,6), m = randInt(0,11);
-    if(kind==='jourApres'){ correct = JOURS[(i+1)%7]; pool = JOURS; q = 'Quel jour vient juste après ' + JOURS[i] + ' ?'; explain = 'Après ' + JOURS[i] + ' vient ' + correct + '.'; }
-    else if(kind==='jourAvant'){ correct = JOURS[(i+6)%7]; pool = JOURS; q = 'Quel jour vient juste avant ' + JOURS[i] + ' ?'; explain = 'Avant ' + JOURS[i] + ' il y a ' + correct + '.'; }
-    else if(kind==='semaine'){ correct = '7 jours'; pool = ['5 jours','6 jours','7 jours','8 jours','10 jours']; q = 'Combien y a-t-il de jours dans une semaine ?'; explain = 'La semaine a 7 jours : lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche.'; }
-    else if(kind==='annee'){ correct = '12 mois'; pool = ['10 mois','11 mois','12 mois','13 mois','52 mois']; q = 'Combien y a-t-il de mois dans une année ?'; explain = 'L\'année a 12 mois, de janvier à décembre.'; }
-    else if(kind==='moisApres'){ correct = MOIS[(m+1)%12]; pool = MOIS; q = 'Quel mois vient juste après ' + MOIS[m] + ' ?'; explain = 'Après ' + MOIS[m] + ' vient ' + correct + '.'; }
-    else if(kind==='moisAvant'){ correct = MOIS[(m+11)%12]; pool = MOIS; q = 'Quel mois vient juste avant ' + MOIS[m] + ' ?'; explain = 'Avant ' + MOIS[m] + ' il y a ' + correct + '.'; }
-    else if(kind==='entreJours'){
-      var a = randInt(0,6), gap = randInt(2,5), b = (a+gap)%7;
-      correct = gap + ' jours'; pool = [2,3,4,5,6].map(function(k){ return k + ' jours'; });
-      q = 'Combien de jours passent de ' + JOURS[a] + ' à ' + JOURS[b] + ' ?';
-      explain = 'De ' + JOURS[a] + ' à ' + JOURS[b] + ', on avance de ' + gap + ' jours.';
-      sub = 'Compte les jours qui passent, un par un.';
-    }
-    else { // decalage : dans N jours / il y a N jours
-      var n = randInt(2,6), fwd = rnd()<0.6;
-      correct = JOURS[((i + (fwd ? n : -n)) % 7 + 7) % 7]; pool = JOURS;
-      q = 'Aujourd\'hui, c\'est ' + JOURS[i] + '. Quel jour ' + (fwd ? 'sera-t-on dans ' + n + ' jours ?' : 'était-on il y a ' + n + ' jours ?');
-      explain = 'À partir de ' + JOURS[i] + ', on ' + (fwd ? 'avance' : 'recule') + ' de ' + n + ' jours : on arrive à ' + correct + '.';
-      sub = 'Compte les jours un par un, en ' + (fwd ? 'avançant' : 'reculant') + '.';
-    }
-    return {
-      tag:'Calendrier', question:q, sub:sub, explain:explain,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(svgText(100,125,72,'📅'));
-      },
-      cols3:false, choices: textChoices(correct, pool)
-    };
-  }
-
-  // ---- Choisir la bonne horloge parmi 4 dessins ----
-  function genHorlogeChoixQuestion(level){
-    var steps = level===0 ? [0,30] : level===1 ? [0,15,30,45] : [0,5,10,15,20,25,30,35,40,45,50,55];
-    var h = randInt(1,12), m = pick(steps);
-    function key(hh, mm){ return ((hh%12)*60 + mm) + ''; }
-    var options = [{ h:h, m:m, ok:true }], used = {}; used[key(h,m)] = true;
-    function add(hh, mm){
-      hh = ((hh-1+12)%12)+1; mm = ((mm%60)+60)%60;
-      if(used[key(hh,mm)]) return false;
-      used[key(hh,mm)] = true; options.push({ h:hh, m:mm, ok:false }); return true;
-    }
-    // pièges classiques : aiguilles échangées, heure d'à côté, minutes d'à côté
-    var swapH = m===0 ? 12 : m/5;
-    if(m % 5 === 0) add(swapH, h*5 % 60);
-    add(h+1, m); add(h-1, m);
-    var tries = 0;
-    while(options.length<4 && tries++<50){ add(h, m + pick(level===0 ? [30] : [15,30,45,5,10])); if(options.length<4) add(h + pick([-2,2,3]), m); }
-    options = options.slice(0,4);
-    var label = m===0 ? (h + ' h') : (h + ' h ' + (m<10 ? '0'+m : m));
-    return {
-      tag:'Lire l\'heure', question:'Quelle horloge indique ' + label + ' ?', sub:'La petite aiguille montre l\'heure, la grande aiguille les minutes.',
-      explain:clockExplain(h, m, label + ' se lit : ' + minutesToClockLabel(h*60+m)),
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(svgText(100,120,54,label));
-      },
-      cols3:false,
-      choices: shuffle(options).map(function(o, i){
-        return { label:'Horloge ' + (i+1), ok:o.ok, viewBox:'0 0 200 200', draw:function(svg){
-          drawClockFace(svg, angleToXY(((o.h%12) + o.m/60) * 30 - 90, 42), angleToXY((o.m/60)*360 - 90, 62));
-        } };
-      })
-    };
-  }
-
-  // ---- Déclaration du type de Quizz « Lire l'heure » ----
-  registerQuizType({ id:'heure', domain:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2],
-    randomNote:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).',
-    generate:function(level){ return genHeureQuestion('m4Svg', level); } });
+  // ---- Déclaration du type de Quizz « Durées » (les autres types de l'heure sont des fiches : fiches-temps.js) ----
   registerQuizType({ id:'duree', domain:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
     randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
     generate:function(level){ return genDureeQuestion(level); } });
-  registerQuizType({ id:'calendrier', domain:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2],
-    randomNote:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.',
-    generate:genCalendrierQuestion });
-  registerQuizType({ id:'horlogeChoix', domain:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2],
-    randomNote:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.',
-    generate:genHorlogeChoixQuestion });
   /* ===================== THÈME CALCUL =====================
      Questions de Quizz de calcul : opérations, monnaie, maths de la vie.
   */
@@ -5602,76 +5444,6 @@ function phrase(tpl, vars){
     };
   }
 
-  // ===================== Activités visuelles : fractions et dénombrement =====================
-  // Dessine une figure partagée en n parts égales dont k sont coloriées.
-  // kind : 'pie' (disque) ou 'bar' (bande) ; centre (cx,cy) et taille.
-  function drawFractionShape(svg, kind, n, k, cx, cy, size){
-    var fill = 'var(--accent)', off = 'var(--surface)', i;
-    if(kind==='pie'){
-      var r = size/2;
-      for(i=0;i<n;i++){
-        var a0 = -Math.PI/2 + i*2*Math.PI/n, a1 = -Math.PI/2 + (i+1)*2*Math.PI/n;
-        var d = 'M '+cx+' '+cy+' L '+(cx+r*Math.cos(a0))+' '+(cy+r*Math.sin(a0))+' A '+r+' '+r+' 0 0 1 '+(cx+r*Math.cos(a1))+' '+(cy+r*Math.sin(a1))+' Z';
-        svg.appendChild(el('path',{d:d, fill:i<k ? fill : off, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
-      }
-    } else {
-      var w = size, h = size*0.5, x0 = cx-w/2, y0 = cy-h/2;
-      for(i=0;i<n;i++){
-        svg.appendChild(el('rect',{x:x0+i*w/n, y:y0, width:w/n, height:h, fill:i<k ? fill : off, stroke:'var(--text)','stroke-width':2.5}));
-      }
-    }
-  }
-  function gcd2(a,b){ return b===0 ? a : gcd2(b, a % b); }
-  function genFractionQuestion(level){
-    var kind = pick(['pie','bar']);
-    var dens = level===0 ? [2,4] : level===1 ? [2,3,4] : [3,4,5,6,8];
-    if(rnd() < (level===0 ? 0.5 : 0.4)){
-      // -- Choisir le DESSIN qui a la bonne fraction coloriée --
-      var TARGETS = level===0 ? [[1,2,'la moitié'],[1,4,'le quart']] : [[1,2,'la moitié'],[1,4,'le quart'],[3,4,'les trois quarts'],[1,3,'le tiers']];
-      var tg = pick(TARGETS);
-      var val = tg[0]/tg[1];
-      var options = [];   // { n, k, kind }
-      var used = {}; used[val] = true;
-      var okN = level===2 && tg[1]%2===0 && rnd()<0.6 ? tg[1]*2 : tg[1];
-      options.push({ n:okN, k:tg[0]*okN/tg[1], ok:true });
-      var guard = 0;
-      while(options.length<4 && guard++<200){
-        var n2 = pick(level===0 ? [2,4] : [2,3,4,6,8]), k2 = randInt(1,n2-1), v2 = k2/n2;
-        if(used[v2]) continue;
-        used[v2] = true; options.push({ n:n2, k:k2, ok:false });
-      }
-      if(options.length<4) return genFractionQuestion(level);
-      var kinds = pick([['pie'],['bar'],['pie','bar']]);
-      return {
-        tag:'Fractions', question:'Quelle figure a ' + tg[2] + ' de sa surface coloriée ?', sub:'Regarde combien de parts sont coloriées sur le nombre total de parts.',
-        explain:'La bonne figure est partagée en ' + options[0].n + ' parts égales avec ' + options[0].k + ' coloriée' + (options[0].k>1?'s':'') + ' : ' + options[0].k + '/' + options[0].n + ' = ' + tg[0] + '/' + tg[1] + '.',
-        draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; svg.appendChild(svgText(100,125,72,'🍕')); },
-        cols3:false,
-        choices: shuffle(options).map(function(o, i){
-          var kd = kinds[i % kinds.length];
-          return { label:'Figure ' + (i+1), ok:o.ok, viewBox:'0 0 100 100', draw:function(svg){ drawFractionShape(svg, kd, o.n, o.k, 50, 50, 84); } };
-        })
-      };
-    }
-    // -- Lire la fraction coloriée --
-    var n = pick(dens), k = randInt(1,n-1);
-    var val2 = k/n, seen = {}; seen[val2] = true;
-    var wrong = [], cand = [[n-k,n],[k,n+1],[k+1,n],[Math.max(1,k-1),n],[1,n],[n,k],[k,n-1],[k,n+2]];
-    shuffle(cand).forEach(function(f){
-      var a = f[0], b = f[1];
-      if(a>=1 && b>a && b<=10 && !seen[a/b] && wrong.length<3){ seen[a/b] = true; wrong.push(a + '/' + b); }
-    });
-    var g = 0; while(wrong.length<3 && g++<100){ var b3 = randInt(3,9), a3 = randInt(1,b3-1); if(!seen[a3/b3]){ seen[a3/b3]=true; wrong.push(a3+'/'+b3); } }
-    var okStr = k + '/' + n;
-    return {
-      tag:'Fractions', question:'Quelle fraction de la figure est coloriée ?', sub:'En bas : le nombre total de parts égales. En haut : les parts coloriées.',
-      explain:'La figure est partagée en ' + n + ' parts égales et ' + k + ' sont coloriées : ' + okStr + '.',
-      draw:function(){ var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML=""; drawFractionShape(svg, kind, n, k, 100, 100, kind==='pie' ? 150 : 170); },
-      cols3:false,
-      choices: shuffle([okStr].concat(wrong)).map(function(l){ return { label:l, ok:l===okStr }; })
-    };
-  }
-
   // ---- Déclaration des types de Quizz du thème Calcul ----
   registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard. Facile : 2 pièces ou billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu\'à 10 € ; Difficile : 3 ou 4, jusqu\'à 20 €.',
@@ -5688,9 +5460,6 @@ function phrase(tpl, vars){
   registerQuizType({ id:'ordre', domain:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
     randomNote:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à 20 ; Moyen : jusqu\'à 100 ; Difficile : jusqu\'à 1000, souvent autour des changements de dizaine.',
     generate:genOrdreQuestion });
-  registerQuizType({ id:'fraction', domain:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2],
-    randomNote:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).',
-    generate:genFractionQuestion });
   /* ===================== NOMBRES JUSQU'À 1000 ET CALCUL ÉCRIT =====================
      Types de Quizz de numération (blocs, lettres, ±10/±100, droite graduée, encadrer)
      et de calcul (additions/soustractions posées, multiplier et partager).
@@ -5867,7 +5636,7 @@ function phrase(tpl, vars){
      Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
      quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
      les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
-     Les scènes (equation, blocks, scatter, grid, emoji, numberline) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
+     Les scènes (equation, blocks, scatter, grid, emoji, numberline, fraction, clock) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
      jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
 
      Fiche :
@@ -5875,7 +5644,10 @@ function phrase(tpl, vars){
          levels:[ {paramètres du niveau 0}, {…1}, {…2} ],      // nombres, textes ou listes : ils entrent dans l'environnement
          forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain,
                    eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …},
-                   extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles) } ],
+                   extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles)
+                   |  wrong:expr (réponses de texte : liste des fausses réponses, ex. others(JOURS, bonne, 3) ; `answer` est la bonne)
+                   |  figures:{scene, items:expr, label?} (« quelle figure ? » : items = liste de listes de paramètres de la scène, la 1re est la bonne) } ],
+         Banques de textes : JOURS, MOIS ; fonctions : at(liste,i) (en tournant), others(liste, sauf, n).
          note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
      spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
      Dans les textes : {expr}. Dans note : k0, k1, k2 = paramètre k du niveau 0, 1, 2. */
@@ -5885,7 +5657,16 @@ function phrase(tpl, vars){
     min:Math.min, max:Math.max, abs:Math.abs, floor:Math.floor, round:Math.round,
     rand:function(){ return rnd(); },
     // listes lisibles : [2,5,10] -> « 2, 5 et 10 »
-    liste:function(a){ return a.length < 2 ? a.join('') : a.slice(0,-1).join(', ') + ' et ' + a[a.length-1]; }
+    liste:function(a){ return a.length < 2 ? a.join('') : a.slice(0,-1).join(', ') + ' et ' + a[a.length-1]; },
+    // élément d'une liste, en tournant : at(JOURS, 7) = le même jour que at(JOURS, 0) ; at(JOURS, -1) = le dernier
+    at:function(a, i){ var n = a.length; return a[((Math.floor(i) % n) + n) % n]; },
+    // n éléments de la liste, au hasard et différents, sans `except` : les fausses réponses d'une question de texte
+    others:function(a, except, n){ return shuffle(a.filter(function(x, i){ return x !== except && a.indexOf(x) === i; })).slice(0, n); }
+  };
+  // Banques de textes : listes prêtes à l'emploi, lisibles par toutes les fiches (noms en majuscules).
+  var BANKS = {
+    JOURS:['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'],
+    MOIS:['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']
   };
   function own(o, k){ return Object.prototype.hasOwnProperty.call(o, k); }
   var EXPR_CACHE = Object.create(null);   // sans prototype : « constructor » ne doit pas être pris pour une expression déjà compilée
@@ -6056,6 +5837,27 @@ function phrase(tpl, vars){
         var r = d.rows, c = d.cols, gap = Math.min(30, 170/c, 170/r), x0 = 100 - (c-1)*gap/2, y0 = 100 - (r-1)*gap/2, i, j;
         for(i=0;i<r;i++) for(j=0;j<c;j++) svg.appendChild(el('circle',{cx:x0+j*gap,cy:y0+i*gap,r:Math.min(10,gap*0.36),fill:i%2 ? 'var(--accent2)' : 'var(--accent)',stroke:'var(--text)','stroke-width':1.8}));
       } },
+    // une figure partagée en n parts égales dont k sont coloriées : disque (pie) ou bande (bar)
+    fraction: { exprs:['n','k','shape'], texts:[],
+      make:function(a){ var n = clampInt(a.n, 1, 12); return { n:n, k:clampInt(a.k, 0, n), shape:a.shape === 'bar' ? 'bar' : 'pie' }; },
+      draw:function(svg, d){
+        var fill = 'var(--accent)', off = 'var(--surface)', i, n = d.n;
+        if(d.shape === 'pie'){
+          var r = 75;
+          for(i=0;i<n;i++){
+            var a0 = -Math.PI/2 + i*2*Math.PI/n, a1 = -Math.PI/2 + (i+1)*2*Math.PI/n;
+            var p = 'M 100 100 L '+(100+r*Math.cos(a0))+' '+(100+r*Math.sin(a0))+' A '+r+' '+r+' 0 0 1 '+(100+r*Math.cos(a1))+' '+(100+r*Math.sin(a1))+' Z';
+            svg.appendChild(el('path',{d:p, fill:i<d.k ? fill : off, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+          }
+        } else {
+          var w = 170, h = 85;
+          for(i=0;i<n;i++) svg.appendChild(el('rect',{x:15+i*w/n, y:57.5, width:w/n, height:h, fill:i<d.k ? fill : off, stroke:'var(--text)','stroke-width':2.5}));
+        }
+      } },
+    // une horloge à aiguilles : h (0 à 23, l'horloge ne montre que h mod 12) et m minutes
+    clock: { exprs:['h','m'], texts:[],
+      make:function(a){ return { h:clampInt(a.h, 0, 23), m:clampInt(a.m, 0, 59) }; },
+      draw:function(svg, d){ drawClockFace(svg, angleToXY(((d.h%12) + d.m/60) * 30 - 90, 42), angleToXY((d.m/60)*360 - 90, 62)); } },
     // un gros emoji et une ligne de légende
     emoji: { exprs:['icon'], texts:['caption'],
       make:function(a){ return a; },
@@ -6076,12 +5878,20 @@ function phrase(tpl, vars){
     if(!f.forms || !f.forms.length) bad('aucune forme de question');
     f.forms.forEach(function(form, fi){
       var known = Object.create(null); known.level = 1; known.tries = 1;
+      for(var bk in BANKS) known[bk] = 1;
       f.levels.forEach(function(p){ for(var k in p) known[k] = 1; });
       var vars = form.vars || {};
       try {
         for(var name in vars){ var need = {}; specIdents(vars[name], need); for(var n in need) if(!known[n] && !own(EXPR_FNS, n) && n.charAt(0) !== '(') bad('forme ' + fi + ' : « ' + n + ' » inconnu dans la variable ' + name); known[name] = 1; }
         var all = [].concat(form.where || [], form.answer, form.extras || [], form.w === undefined ? [] : [form.w]).map(compileExpr)
           .concat(['question','sub','explain'].map(function(k){ if(typeof form[k] !== 'string') bad('forme ' + fi + ' : « ' + k + ' » manquant'); return compileText(form[k]); }));
+        if(form.wrong !== undefined) all.push(compileExpr(form.wrong));
+        if(form.figures){
+          var fg = form.figures, fdef = own(SCENES, fg.scene) ? SCENES[fg.scene] : null;
+          if(!fdef || fdef.texts.length) bad('forme ' + fi + ' : « figures » : scène inconnue ou sans paramètres numériques « ' + fg.scene + ' »');
+          if(typeof fg.items !== 'string') bad('forme ' + fi + ' : « figures.items » manquant');
+          all.push(compileExpr(fg.items));
+        }
         var sc = formScene(form), def = own(SCENES, sc.type) ? SCENES[sc.type] : null;
         if(!def) bad('forme ' + fi + ' : scène inconnue « ' + sc.type + ' »');
         def.exprs.forEach(function(k){ if(sc[k] === undefined) bad('forme ' + fi + ' : scène « ' + sc.type + ' » : « ' + k + ' » manquant'); all.push(compileExpr(sc[k])); });
@@ -6101,9 +5911,10 @@ function phrase(tpl, vars){
     return compileText(f.note)(env);
   }
 
-  function genFromFiche(f, level){
+  function genFromFiche(f, level, svgId){
     var params = f.levels[level], base = Object.create(null), k;
     base.level = level; base.__fns = TEMPLATE_FNS;
+    for(k in BANKS) base[k] = BANKS[k];
     for(k in params) base[k] = params[k];
     // forme tirée selon ses poids (expressions : « level==2 ? 0.4 : 0 »)
     var cands = [], total = 0;
@@ -6125,18 +5936,34 @@ function phrase(tpl, vars){
     var sc = formScene(form), sdef = SCENES[sc.type], sargs = {};
     sdef.exprs.forEach(function(k){ sargs[k] = evalExpr(sc[k], env); });
     sdef.texts.forEach(function(k){ sargs[k] = compileText(sc[k])(env); });
-    var sdata = sdef.make(sargs);
+    var sdata = sdef.make(sargs), choices, cols3 = false;
+    if(form.figures){
+      // « Quelle figure… ? » : items = liste de listes de paramètres de la scène, la première est la bonne ; ordre mélangé ici
+      var fg = form.figures, fdef = SCENES[fg.scene], items = evalExpr(fg.items, env);
+      choices = shuffle(items.map(function(args, i){
+        var a = {}; fdef.exprs.forEach(function(k, j){ a[k] = args[j]; });
+        var data = fdef.make(a);
+        return { ok:i === 0, viewBox:'0 0 200 200', draw:function(svg){ fdef.draw(svg, data); } };
+      })).map(function(c, i){ c.label = (fg.label || 'Figure') + ' ' + (i + 1); return c; });
+    } else if(form.wrong){
+      // réponses de texte : la bonne + la liste calculée de fausses réponses, mélangées
+      var good = String(correct);
+      choices = shuffle([good].concat(evalExpr(form.wrong, env).map(String))).map(function(l){ return { label:l, ok:l === good }; });
+    } else if(form.options){
+      cols3 = form.cols3 !== false;
+      choices = form.options.map(function(l){ return { label:l, ok:l === correct }; });
+    } else choices = numChoices(correct, extras);
     return {
       tag: f.tag || 'Calcul',
       question: compileText(form.question)(env),
       sub: compileText(form.sub)(env),
       explain: compileText(form.explain)(env),
       draw: function(){
-        var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
+        var svg = document.getElementById(svgId || 'm4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
         sdef.draw(svg, sdata);
       },
-      cols3: !!form.options && form.cols3 !== false,
-      choices: form.options ? form.options.map(function(l){ return { label:l, ok:l === correct }; }) : numChoices(correct, extras)
+      cols3: cols3,
+      choices: choices
     };
   }
 
@@ -6144,7 +5971,7 @@ function phrase(tpl, vars){
   function makeTemplateDef(f){
     validateFiche(f);
     return { id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
-      randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } };
+      randomNote: templateNote(f), generate:function(level, svgId){ return genFromFiche(f, level, svgId); } };
   }
   function registerTemplateType(f){
     var def = makeTemplateDef(f);
@@ -6358,6 +6185,159 @@ function phrase(tpl, vars){
         explain:'{a} + {b} = {a+b} et {c} + {d} = {c+d}. {compareExplain(a+b, c+d)}', eq:'{a} + {b}  ?  {c} + {d}' }
     ],
     note:'Choisir le bon signe. Facile : deux nombres de {lo0} à {hi0} ; Moyen : de {lo1} à {hi1}, et {round(pExpr1*100)} % du temps deux additions à comparer ; Difficile : de {lo2} à {hi2}, {round(pExpr2*100)} % d\'additions. Parfois les deux côtés sont égaux.' });
+
+  // -- Fractions : lire la fraction coloriée, ou choisir LA figure qui montre une fraction (scène `fraction`) --
+  // trois fausses fractions plausibles (a/b) pour une figure partagée en n dont k sont coloriées
+  TEMPLATE_FNS.fractionWrong = function(k, n){
+    var seen = {}, wrong = [];
+    seen[k/n] = true;
+    shuffle([[n-k,n],[k,n+1],[k+1,n],[Math.max(1,k-1),n],[1,n],[n,k],[k,n-1],[k,n+2]]).forEach(function(f){
+      var a = f[0], b = f[1];
+      if(a >= 1 && b > a && b <= 10 && !seen[a/b] && wrong.length < 3){ seen[a/b] = true; wrong.push(a + '/' + b); }
+    });
+    var g = 0;
+    while(wrong.length < 3 && g++ < 100){ var b3 = randInt(3,9), a3 = randInt(1,b3-1); if(!seen[a3/b3]){ seen[a3/b3] = true; wrong.push(a3 + '/' + b3); } }
+    return wrong;
+  };
+  // 4 figures [n, k, forme] dont la première montre num/den ; les autres montrent d'autres fractions (en Facile, la figure toute coloriée en fait partie)
+  TEMPLATE_FNS.fractionOptions = function(num, den, level){
+    for(var attempt = 0; attempt < 30; attempt++){
+      var okN = level === 2 && den % 2 === 0 && rnd() < 0.6 ? den*2 : den, opts = [[okN, num*okN/den]], used = {}, guard = 0;
+      used[num/den] = true;
+      while(opts.length < 4 && guard++ < 200){
+        var n2 = pick(level === 0 ? [2,4] : [2,3,4,6,8]), k2 = randInt(1, level === 0 ? n2 : n2-1);
+        if(used[k2/n2]) continue;
+        used[k2/n2] = true; opts.push([n2, k2]);
+      }
+      if(opts.length === 4){
+        var kinds = pick([['pie'],['bar'],['pie','bar']]);
+        return opts.map(function(o, j){ return [o[0], o[1], kinds[j % kinds.length]]; });
+      }
+    }
+    throw new Error('fractions : pas assez de figures différentes');
+  };
+  registerTemplateType({ id:'fraction', domain:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2], tag:'Fractions',
+    levels:[
+      { dens:[2,4], tmax:1, tnum:[1,1], tden:[2,4], tnom:['la moitié','le quart'] },
+      { dens:[2,3,4], tmax:3, tnum:[1,1,3,1], tden:[2,4,4,3], tnom:['la moitié','le quart','les trois quarts','le tiers'] },
+      { dens:[3,4,5,6,8], tmax:3, tnum:[1,1,3,1], tden:[2,4,4,3], tnom:['la moitié','le quart','les trois quarts','le tiers'] }
+    ],
+    forms:[
+      { w:'level==0 ? 0.5 : 0.4', vars:{ t:{int:[0,'tmax']}, num:'at(tnum,t)', den:'at(tden,t)', nom:'at(tnom,t)', figs:'fractionOptions(num,den,level)', on:'at(at(figs,0),0)', ok:'at(at(figs,0),1)' },
+        answer:'0', question:'Quelle figure a {nom} de sa surface coloriée ?', sub:'Regarde combien de parts sont coloriées sur le nombre total de parts.',
+        explain:"La bonne figure est partagée en {on} parts égales avec {ok} coloriée{ok>1 ? 's' : ''} : {ok}/{on} = {num}/{den}.",
+        scene:{ type:'emoji', icon:"'🍕'", caption:'' }, figures:{ scene:'fraction', items:'figs', label:'Figure' } },
+      { w:'level==0 ? 0.5 : 0.6', vars:{ shape:{pick:['pie','bar']}, n:{pick:'dens'}, k:{int:[1,'n-1']} }, answer:"k+'/'+n", wrong:'fractionWrong(k,n)',
+        question:'Quelle fraction de la figure est coloriée ?', sub:'En bas : le nombre total de parts égales. En haut : les parts coloriées.',
+        explain:'La figure est partagée en {n} parts égales et {k} sont coloriées : {k}/{n}.', scene:{ type:'fraction', n:'n', k:'k', shape:'shape' } }
+    ],
+    note:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).' });
+  /* ===================== FICHES D'ACTIVITÉS : heure et calendrier =====================
+     Lire l'heure, Choisir l'horloge, Calendrier : décrits par des données (moteur : gabarits.js).
+     Scènes : `clock` (horloge à aiguilles) ; banques de textes JOURS / MOIS ; réponses de texte (`wrong`) ;
+     choix d'une figure (`figures`). Les fonctions ci-dessous sont les seuls calculs que les fiches ne savent pas écrire. */
+
+  TEMPLATE_FNS.clockLabel = minutesToClockLabel;                 // 90 -> « 1 h 30 » (cadran : 1 à 12)
+  TEMPLATE_FNS.clockLabel24 = minutesToLabel24;                   // 1050 -> « 17 h 30 » (0 h à 23 h)
+  TEMPLATE_FNS.clockExplain = clockExplain;                       // clockExplain(h, m, « 3 h 30 »)
+  TEMPLATE_FNS.periodPhrase = function(h){ return periodOfDay(h).phrase; };
+  TEMPLATE_FNS.periodEmoji = function(h){ return periodOfDay(h).emoji; };
+  // trois fausses heures voisines (au pas des minutes du niveau) pour un cadran de 12 h
+  TEMPLATE_FNS.heureWrong12 = function(total, step){
+    var seen = {}, pool = []; seen[minutesToClockLabel(total)] = true;
+    [-3,-2,-1,1,2,3].forEach(function(k){
+      var l = minutesToClockLabel(((total + k*step) % 720 + 720) % 720);
+      if(!seen[l]){ seen[l] = true; pool.push(l); }
+    });
+    return shuffle(pool).slice(0, 3);
+  };
+  // 24 h : le piège classique (oublier d'ajouter ou de retirer 12 h) et deux heures voisines à 5, 10 ou 15 minutes près
+  TEMPLATE_FNS.heureWrong24 = function(total){
+    var seen = {}, near = [], shifted = minutesToLabel24((total + 720) % 1440);
+    seen[minutesToLabel24(total)] = true; seen[shifted] = true;
+    [-3,-2,-1,1,2,3].forEach(function(k){
+      var l = minutesToLabel24(((total + k*5) % 1440 + 1440) % 1440);
+      if(!seen[l]){ seen[l] = true; near.push(l); }
+    });
+    return [shifted].concat(shuffle(near).slice(0, 2));
+  };
+  TEMPLATE_FNS.heure24Explain = function(hour, m){
+    var total = hour*60 + m, label = minutesToLabel24(total), period = periodOfDay(hour);
+    var ex = clockExplain(hour, m, minutesToClockLabel(total) + ' sur l\'horloge');
+    if(hour === 0) return ex + ' Juste après minuit, l\'horloge montre 12 mais on dit 0 h : il est ' + label + '.';
+    if(hour >= 13) return ex + ' Comme c\'est ' + period.phrase + ', on ajoute 12 h : ' + (hour-12) + ' + 12 = ' + hour + '. Il est donc ' + label + '.';
+    return ex + ' Comme c\'est ' + period.phrase + ', l\'heure ne change pas : on garde ' + label + '.';
+  };
+  // 4 horloges [h, m] dont la première est la bonne ; les autres sont des pièges : aiguilles échangées, heure ou minutes d'à côté
+  TEMPLATE_FNS.clockOptions = function(h, m, level){
+    var options = [[h, m]], used = {};
+    function key(hh, mm){ return ((hh%12)*60 + mm) + ''; }
+    used[key(h, m)] = true;
+    function add(hh, mm){
+      hh = ((hh-1+12)%12)+1; mm = ((mm%60)+60)%60;
+      if(used[key(hh, mm)]) return false;
+      used[key(hh, mm)] = true; options.push([hh, mm]); return true;
+    }
+    if(m % 5 === 0) add(m===0 ? 12 : m/5, h*5 % 60);
+    add(h+1, m); add(h-1, m);
+    var tries = 0;
+    while(options.length < 4 && tries++ < 50){ add(h, m + pick(level===0 ? [30] : [15,30,45,5,10])); if(options.length < 4) add(h + pick([-2,2,3]), m); }
+    if(options.length < 4) throw new Error('horloges : pas assez de pièges différents');
+    var good = options[0], rest = options.slice(1);
+    return [good].concat(rest.slice(0, 3));      // la bonne en tête ; le moteur mélange
+  };
+
+  // -- Lire l'heure (cadran de 12 h ; en Difficile, 0 h à 23 h avec le moment de la journée) --
+  registerTemplateType({ id:'heure', domain:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2], tag:'Lire l\'heure',
+    levels:[ { mins:[0,30], step:30 }, { mins:[0,15,30,45], step:15 }, {} ],
+    forms:[
+      { levels:[0,1], vars:{ hour:{int:[1,12]}, m:{pick:'mins'}, total:'(hour%12)*60+m', lab:'clockLabel(total)' }, answer:'lab', wrong:'heureWrong12(total,step)',
+        question:'Quelle heure indique cette horloge ?', sub:'Regarde bien la petite aiguille (les heures) et la grande (les minutes).',
+        explain:'{clockExplain(hour,m,lab)}', scene:{ type:'clock', h:'hour', m:'m' } },
+      { levels:[2], vars:{ hour:{int:[0,23]}, m:{pick:[0,5,10,15,20,25,30,35,40,45,50,55]}, total:'hour*60+m' }, answer:'clockLabel24(total)', wrong:'heureWrong24(total)',
+        question:'C\'est {periodPhrase(hour)} {periodEmoji(hour)}. Quelle heure indique cette horloge ?',
+        sub:'Les heures vont de 0 h à 23 h (l\'après-midi : 13 h, 14 h, 15 h…). Regarde bien les deux aiguilles.',
+        explain:'{heure24Explain(hour,m)}', scene:{ type:'clock', h:'hour', m:'m' } }
+    ],
+    note:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).' });
+
+  // -- Choisir la bonne horloge parmi 4 dessins --
+  registerTemplateType({ id:'horlogeChoix', domain:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2], tag:'Lire l\'heure',
+    levels:[ { steps:[0,30] }, { steps:[0,15,30,45] }, { steps:[0,5,10,15,20,25,30,35,40,45,50,55] } ],
+    forms:[
+      { vars:{ h:{int:[1,12]}, m:{pick:'steps'}, lab:'clockLabel(h*60+m)', opts:'clockOptions(h,m,level)' }, answer:'0',
+        question:'Quelle horloge indique {lab} ?', sub:'La petite aiguille montre l\'heure, la grande aiguille les minutes.',
+        explain:'{clockExplain(h,m,lab)}', eq:'{lab}', figures:{ scene:'clock', items:'opts', label:'Horloge' } }
+    ],
+    note:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.' });
+
+  // -- Calendrier : jours de la semaine et mois (banques JOURS et MOIS) --
+  var CAL_SUB = 'Réfléchis à l\'ordre des jours ou des mois.';
+  var CAL_SCENE = { type:'emoji', icon:"'📅'", caption:'' };
+  registerTemplateType({ id:'calendrier', domain:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2], tag:'Calendrier',
+    levels:[ {}, {}, {} ],
+    forms:[
+      { levels:[0,1], vars:{ i:{int:[0,6]} }, answer:'at(JOURS,i+1)', wrong:'others(JOURS,at(JOURS,i+1),3)',
+        question:'Quel jour vient juste après {at(JOURS,i)} ?', sub:CAL_SUB, explain:'Après {at(JOURS,i)} vient {at(JOURS,i+1)}.', scene:CAL_SCENE },
+      { levels:[0,1], vars:{ i:{int:[0,6]} }, answer:'at(JOURS,i-1)', wrong:'others(JOURS,at(JOURS,i-1),3)',
+        question:'Quel jour vient juste avant {at(JOURS,i)} ?', sub:CAL_SUB, explain:'Avant {at(JOURS,i)} il y a {at(JOURS,i-1)}.', scene:CAL_SCENE },
+      { levels:[0], vars:{}, answer:"'7 jours'", wrong:"others(['5 jours','6 jours','7 jours','8 jours','10 jours'],'7 jours',3)",
+        question:'Combien y a-t-il de jours dans une semaine ?', sub:CAL_SUB, explain:'La semaine a 7 jours : lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche.', scene:CAL_SCENE },
+      { levels:[1], vars:{}, answer:"'12 mois'", wrong:"others(['10 mois','11 mois','12 mois','13 mois','52 mois'],'12 mois',3)",
+        question:'Combien y a-t-il de mois dans une année ?', sub:CAL_SUB, explain:'L\'année a 12 mois, de janvier à décembre.', scene:CAL_SCENE },
+      { levels:[1,2], vars:{ m:{int:[0,11]} }, answer:'at(MOIS,m+1)', wrong:'others(MOIS,at(MOIS,m+1),3)',
+        question:'Quel mois vient juste après {at(MOIS,m)} ?', sub:CAL_SUB, explain:'Après {at(MOIS,m)} vient {at(MOIS,m+1)}.', scene:CAL_SCENE },
+      { levels:[1,2], vars:{ m:{int:[0,11]} }, answer:'at(MOIS,m-1)', wrong:'others(MOIS,at(MOIS,m-1),3)',
+        question:'Quel mois vient juste avant {at(MOIS,m)} ?', sub:CAL_SUB, explain:'Avant {at(MOIS,m)} il y a {at(MOIS,m-1)}.', scene:CAL_SCENE },
+      { levels:[2], vars:{ a:{int:[0,6]}, gap:{int:[2,5]} }, answer:"gap+' jours'", wrong:"others(['2 jours','3 jours','4 jours','5 jours','6 jours'],gap+' jours',3)",
+        question:'Combien de jours passent de {at(JOURS,a)} à {at(JOURS,a+gap)} ?', sub:'Compte les jours qui passent, un par un.',
+        explain:'De {at(JOURS,a)} à {at(JOURS,a+gap)}, on avance de {gap} jours.', scene:CAL_SCENE },
+      { levels:[2], w:2, vars:{ i:{int:[0,6]}, n:{int:[2,6]}, fwd:'rand()<0.6' }, answer:'at(JOURS,i+(fwd?n:-n))', wrong:'others(JOURS,at(JOURS,i+(fwd?n:-n)),3)',
+        question:"Aujourd'hui, c'est {at(JOURS,i)}. Quel jour {fwd ? 'sera-t-on dans '+n+' jours ?' : 'était-on il y a '+n+' jours ?'}",
+        sub:"Compte les jours un par un, en {fwd ? 'avançant' : 'reculant'}.",
+        explain:"À partir de {at(JOURS,i)}, on {fwd ? 'avance' : 'recule'} de {n} jours : on arrive à {at(JOURS,i+(fwd?n:-n))}.", scene:CAL_SCENE }
+    ],
+    note:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.' });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */
@@ -7746,10 +7726,11 @@ function phrase(tpl, vars){
     if(!Array.isArray(f.forms) || f.forms.length < 1 || f.forms.length > 20) err('« forms » : de 1 à 20 formes de question');
     (f.forms || []).forEach(function(form, fi){
       if(!packIsObj(form)){ err('forme ' + fi + ' invalide'); return; }
-      var strs = [form.w, form.answer, form.question, form.sub, form.explain, form.eq].concat(form.where || [], form.extras || [], form.options || []);
+      var strs = [form.w, form.answer, form.question, form.sub, form.explain, form.eq, form.wrong].concat(form.where || [], form.extras || [], form.options || []);
       if(strs.some(function(x){ return x !== undefined && (typeof x !== 'string' && typeof x !== 'number' || String(x).length > PACK_LIMITS.expr * 2); })) err('forme ' + fi + ' : texte ou expression trop long');
       if(JSON.stringify(form).length > 6000) err('forme ' + fi + ' : trop longue');
       if(form.vars !== undefined && (!packIsObj(form.vars) || Object.keys(form.vars).length > 14 || Object.keys(form.vars).some(function(k){ return !PARAM_RE.test(k) || PACK_RESERVED[k]; }))) err('forme ' + fi + ' : variables invalides');
+      if(form.figures !== undefined && (!packIsObj(form.figures) || !packIsStr(form.figures.scene, 1, 20) || !packIsStr(form.figures.items, 1, PACK_LIMITS.expr) || form.figures.label !== undefined && !packIsStr(form.figures.label, 0, 30))) err('forme ' + fi + ' : « figures » invalide');
       if(form.where !== undefined && (!Array.isArray(form.where) || form.where.length > 8)) err('forme ' + fi + ' : « where » invalide');
       if(form.extras !== undefined && (!Array.isArray(form.extras) || form.extras.length > 10)) err('forme ' + fi + ' : « extras » invalide');
       if(form.options !== undefined && (!Array.isArray(form.options) || form.options.length < 2 || form.options.length > 4 || form.options.some(function(o){ return !packIsStr(o, 1, 30); }))) err('forme ' + fi + ' : « options » : de 2 à 4 réponses courtes');

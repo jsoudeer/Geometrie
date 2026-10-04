@@ -14,7 +14,7 @@ Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction c
 
 ## Règles du dépôt
 - **Ne jamais modifier `index.html` à la main** : modifier `src/`, puis `python3 tools/build.py` ; `--check` doit passer.
-- Une activité arithmétique simple = une fiche (`registerTemplateType`, `fiches-calcul.js`, voir `src/README.md`). Sinon `registerQuizType` (QCM) ou `registerFamily` (écran propre, voir `atelier.js` ; elles passent par
+- Une activité arithmétique simple = une fiche (`registerTemplateType`, `fiches-calcul.js` / `fiches-temps.js`, voir `src/README.md`). Sinon `registerQuizType` (QCM) ou `registerFamily` (écran propre, voir `atelier.js` ; elles passent par
   le déroulé commun `makeQuestionFlow` : 3 essais, solution montrée, série).
 - Les `var` d'un JS ne sont pas remontées : l'ordre dans `src/manifest.json` compte.
 - Aucun legacy : si une activité est remplacée, supprimer l'ancienne (code, tests, notes, listes).

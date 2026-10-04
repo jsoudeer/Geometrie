@@ -116,6 +116,85 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(dc.badArrow === 0, 'droite graduée : la flèche est dessinée à la bonne graduation');
   chk(dc.sign.bad === 0 && dc.cols === 1800 && Object.keys(dc.labels).join() === '<=>' && dc.expl === 0, 'comparer : le signe est toujours juste (recalculé), 3 boutons < = >, explication cohérente');
   chk(dc.expr[0] === 0 && dc.expr[1] > 300 && dc.expr[1] < 420 && dc.expr[2] > 380 && dc.expr[2] < 520 && dc.eq[0] > 60, 'comparer : additions 0 / ~60 % / ~75 % (' + dc.expr + ') — la note ne ment plus sur la Difficile ; égalités vues ' + dc.eq);
+
+  // ---- P5 (fin) : calendrier, lire l'heure, choisir l'horloge, fractions ----
+  const tm = await J(String.raw`(function(){
+    function def(id){ return QCM_TYPE_DEFS.filter(function(d){return d.id===id;})[0]; }
+    function ok(q){ return q.choices.filter(function(c){return c.ok;}); }
+    var JO = BANKS.JOURS, MO = BANKS.MOIS, o = { reg:['calendrier','heure','horlogeChoix','fraction'].every(function(i){ return !!TEMPLATE_FICHES[i]; }), cal:{bad:0, kinds:[{},{},{}], dist:0, n4:0, expl:0}, h:{bad:0, mins:[{},{},{}], h24:0, lt12:0, dist:0}, hc:{bad:0, dist:0, labels:0, mins:[{},{},{}]}, fr:{figs:[0,0,0], read:[0,0,0], badF:0, badR:0, dist:0, oneOk:0} };
+    // décode une horloge dessinée : minutes et angle de la petite aiguille
+    function hands(svg){
+      var ls = svg.querySelectorAll('line'), hh = null, mm = null;
+      ls.forEach(function(l){ var w = l.getAttribute('stroke-width'); if(w === '5') hh = l; if(w === '3') mm = l; });
+      function ang(l){ var a = Math.atan2(+l.getAttribute('y2') - 100, +l.getAttribute('x2') - 100) * 180 / Math.PI + 90; return (a + 360) % 360; }
+      return { m:Math.round(ang(mm) / 6) % 60, ah:ang(hh) };
+    }
+    var tmp = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    function handsOf(drawFn){ tmp.innerHTML = ''; drawFn(tmp); return hands(tmp); }
+    function hm(label){ var m = /(\d+) h(?: (\d+))?/.exec(label); return { h:+m[1], m:m[2] ? +m[2] : 0 }; }
+    for(var lv = 0; lv < 3; lv++) for(var i = 0; i < 400; i++){
+      // --- calendrier : réponse recalculée depuis l'énoncé ---
+      var q = def('calendrier').generate(lv), want = null, m, e = q.question, kind;
+      if((m = /après (\S+) \?/.exec(e)) && /Quel jour/.test(e)) { want = JO[(JO.indexOf(m[1]) + 1) % 7]; kind = 'jourApres'; }
+      else if((m = /avant (\S+) \?/.exec(e)) && /Quel jour/.test(e)) { want = JO[(JO.indexOf(m[1]) + 6) % 7]; kind = 'jourAvant'; }
+      else if((m = /après (\S+) \?/.exec(e))) { want = MO[(MO.indexOf(m[1]) + 1) % 12]; kind = 'moisApres'; }
+      else if((m = /avant (\S+) \?/.exec(e))) { want = MO[(MO.indexOf(m[1]) + 11) % 12]; kind = 'moisAvant'; }
+      else if(/semaine/.test(e)) { want = '7 jours'; kind = 'semaine'; }
+      else if(/année/.test(e)) { want = '12 mois'; kind = 'annee'; }
+      else if((m = /de (\S+) à (\S+) \?/.exec(e))) { want = (((JO.indexOf(m[2]) - JO.indexOf(m[1])) % 7 + 7) % 7) + ' jours'; kind = 'entre'; }
+      else if((m = /c'est (\S+)\. Quel jour (sera-t-on dans|était-on il y a) (\d+) jours/.exec(e))) { var n = +m[3]; want = JO[((JO.indexOf(m[1]) + (m[2][0] === 's' ? n : -n)) % 7 + 7) % 7]; kind = 'decalage'; }
+      var g = ok(q); o.cal.kinds[lv][kind] = 1;
+      if(!want || g.length !== 1 || g[0].label !== want) o.cal.bad++;
+      if(new Set(q.choices.map(function(c){return c.label;})).size !== q.choices.length) o.cal.dist++;
+      if(q.choices.length === 4) o.cal.n4++;
+      if(q.explain.indexOf(want) === -1) o.cal.expl++;
+      // --- lire l'heure : la réponse correspond aux aiguilles dessinées ---
+      var svg = document.getElementById('m4Svg'), h = def('heure').generate(lv); h.draw();
+      var hd = hands(svg), a = hm(ok(h)[0].label), total12 = (a.h % 12) * 60 + a.m;
+      if(hd.m !== a.m || Math.abs(hd.ah - total12 / 2) > 0.5) o.h.bad++;
+      o.h.mins[lv][a.m] = 1; if(a.h > 12) o.h.h24++; if(lv === 2 && a.h <= 12) o.h.lt12++;
+      if(new Set(h.choices.map(function(c){return c.label;})).size !== 4 || ok(h).length !== 1) o.h.dist++;
+      // --- choisir l'horloge ---
+      var c = def('horlogeChoix').generate(lv), want2 = hm(/indique (.+) \?/.exec(c.question)[1]), good = null, seen = {};
+      c.choices.forEach(function(ch){ var hh = handsOf(ch.draw); var key = hh.m + ':' + Math.round(hh.ah * 2); seen[key] = 1;
+        if(ch.ok) good = hh; if(!/^Horloge \d$/.test(ch.label)) o.hc.labels++; });
+      if(c.choices.length !== 4 || Object.keys(seen).length !== 4 || ok(c).length !== 1) o.hc.dist++;
+      if(!good || good.m !== want2.m || Math.abs(good.ah - ((want2.h % 12) * 60 + want2.m) / 2) > 0.5) o.hc.bad++;
+      o.hc.mins[lv][want2.m] = 1;
+      // --- fractions ---
+      var f = def('fraction').generate(lv);
+      function share(svgEl){ var parts = svgEl.querySelectorAll('path, rect'), filled = 0; parts.forEach(function(p){ if(p.getAttribute('fill') === 'var(--accent)') filled++; }); return [filled, parts.length]; }
+      if(/Quelle figure/.test(f.question)){
+        o.fr.figs[lv]++;
+        var tg = { 'la moitié':[1,2], 'le quart':[1,4], 'les trois quarts':[3,4], 'le tiers':[1,3] }[/a (.+) de sa/.exec(f.question)[1]], vals = {};
+        f.choices.forEach(function(ch){ tmp.innerHTML = ''; ch.draw(tmp); var s = share(tmp), v = s[0] + '/' + s[1];
+          var red = s[0] / s[1]; vals[red] = 1; if(ch.ok && Math.abs(red - tg[0] / tg[1]) > 1e-9) o.fr.badF++; });
+        if(Object.keys(vals).length !== 4 || ok(f).length !== 1) o.fr.dist++;
+      } else {
+        o.fr.read[lv]++; f.draw(); var s2 = share(svg), lab = ok(f)[0].label.split('/');
+        if(s2[0] !== +lab[0] || s2[1] !== +lab[1]) o.fr.badR++;
+        if(new Set(f.choices.map(function(c){return c.label;})).size !== 4 || ok(f).length !== 1) o.fr.dist++;
+      }
+    }
+    o.capBad = 0; ['calendrier','fraction'].forEach(function(id){ for(var j=0;j<30;j++){ var qq = def(id).generate(j%3), sv = document.getElementById('m4Svg'); qq.draw(); if(/['"]/.test(sv.textContent)) o.capBad++; } });
+    // l'écran « Lire l'heure » (m5) reçoit son propre dessin
+    var m5 = document.getElementById('m5Svg'); m5.innerHTML = ''; def('heure').generate(1, 'm5Svg').draw(); o.m5 = m5.children.length;
+    o.cal.kinds = o.cal.kinds.map(function(k){ return Object.keys(k).sort().join(); });
+    o.h.mins = o.h.mins.map(function(k){ return Object.keys(k).map(Number).sort(function(a,b){return a-b;}).join(); });
+    o.hc.mins = o.hc.mins.map(function(k){ return Object.keys(k).map(Number).sort(function(a,b){return a-b;}).join(); });
+    return JSON.stringify(o); })()`);
+  chk(tm.reg, 'calendrier, heure, horlogeChoix et fraction sont des fiches');
+  chk(tm.cal.bad === 0 && tm.cal.dist === 0 && tm.cal.n4 === 1200 && tm.cal.expl === 0, 'calendrier : réponse recalculée depuis l\'énoncé, 4 propositions distinctes, explication cohérente');
+  chk(tm.cal.kinds.join('|') === 'jourApres,jourAvant,semaine|annee,jourApres,jourAvant,moisApres,moisAvant|decalage,entre,moisApres,moisAvant', 'calendrier : les sortes de questions par niveau (' + tm.cal.kinds.join(' | ') + ')');
+  chk(tm.h.bad === 0 && tm.h.dist === 0, 'lire l\'heure : la bonne réponse correspond exactement aux aiguilles dessinées (3 niveaux)');
+  chk(tm.h.mins.join('|') === '0,30|0,15,30,45|0,5,10,15,20,25,30,35,40,45,50,55' && tm.h.h24 > 40 && tm.h.lt12 > 0, 'lire l\'heure : précision par niveau, heures 13 à 23 en Difficile (' + tm.h.mins.join(' | ') + ')');
+  chk(tm.hc.bad === 0 && tm.hc.dist === 0 && tm.hc.labels === 0, 'choisir l\'horloge : la bonne figure montre l\'heure demandée, 4 horloges différentes');
+  chk(tm.hc.mins.join('|') === '0,30|0,15,30,45|0,5,10,15,20,25,30,35,40,45,50,55', 'choisir l\'horloge : minutes par niveau (' + tm.hc.mins.join(' | ') + ')');
+  chk(tm.fr.badF === 0 && tm.fr.badR === 0 && tm.fr.dist === 0, 'fractions : la figure juste montre la fraction demandée ; la fraction lue est celle du dessin');
+  chk(tm.fr.figs.every(n => n > 100) && tm.fr.read.every(n => n > 100), 'fractions : les deux sortes de questions apparaissent à chaque niveau, Facile compris (' + tm.fr.figs + ' / ' + tm.fr.read + ')');
+  chk(tm.capBad === 0, 'calendrier et fractions : aucun guillemet parasite dans le dessin');
+  chk(tm.m5 > 10, 'l\'écran « Lire l\'heure » dessine sur sa propre horloge (m5Svg)');
+
   console.log(bad ? 'ÉCHEC gabarits : ' + bad : 'gabarits OK');
   if (bad) process.exitCode = 1;
 });

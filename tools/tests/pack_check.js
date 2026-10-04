@@ -119,6 +119,22 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   await page.evaluate(() => window.__t.__eval(`quizTypeById('custom:xss.test/calendrier-classe').generate(0)`)); await page.waitForTimeout(100);
   chk(!(await page.evaluate(() => window.__pwn)) && (await page.evaluate(() => document.querySelectorAll('#packs-list img').length)) === 0, 'du HTML dans un paquet reste du texte (aucune balise injectée)');
   await ev(`packRemove('xss.test')`);
+
+  // 9. un paquet peut aussi utiliser la banque de jours, les réponses de texte, la scène horloge et le choix de figure
+  const rich = { format: 'kvb-pack', formatVersion: 1, id: 'riche.test', version: 1, titre: 'Riche', activites: [{ id: 'jour', type: 'gabarit', label: 'Jours', domain: 'temps', niveaux: [0],
+    fiche: { levels: [{}, {}, {}], forms: [
+      { vars: { i: { int: [0, 6] } }, answer: 'at(JOURS,i+2)', wrong: 'others(JOURS,at(JOURS,i+2),3)', question: 'Quel jour deux jours après {at(JOURS,i)} ?', sub: 'Compte.', explain: '{at(JOURS,i)} + 2 jours = {at(JOURS,i+2)}.', scene: { type: 'emoji', icon: "'📅'", caption: '' } }] } },
+    { id: 'horloges', type: 'gabarit', label: 'Horloges', domain: 'temps', niveaux: [0],
+    fiche: { levels: [{}, {}, {}], forms: [
+      { vars: { h: { int: [1, 12] }, opts: 'clockOptions(h,0,1)' }, answer: '0', question: 'Quelle horloge indique {h} h ?', sub: 'Regarde.', explain: "{clockExplain(h,0,'heure')}", eq: '{h} h', figures: { scene: 'clock', items: 'opts', label: 'Horloge' } }] } }] };
+  r = await install(rich);
+  chk(r.ok, 'paquet avec banque, réponses de texte, scène horloge et figures accepté : ' + r.message);
+  const rr = await J(`(function(){ var q = quizTypeById('custom:riche.test/jour').generate(0), ok = q.choices.filter(function(c){return c.ok;}).length; var h = quizTypeById('custom:riche.test/horloges').generate(0); return JSON.stringify({ n: q.choices.length, ok: ok, h: h.choices.length, hd: typeof h.choices[0].draw }); })()`);
+  chk(rr.n === 4 && rr.ok === 1 && rr.h === 4 && rr.hd === 'function', 'ces activités se jouent (4 propositions, une seule bonne ; 4 horloges dessinées)');
+  const badFig = JSON.parse(JSON.stringify(rich)); badFig.id = 'riche.bad'; badFig.activites[1].fiche.forms[0].figures = { scene: 'equation', items: 'opts' };
+  r = await install(badFig);
+  chk(!r.ok, 'figures : une scène qui n\'est pas numérique est refusée : ' + r.message);
+  await ev(`packRemove('riche.test')`);
   console.log(bad ? 'ÉCHEC pack : ' + bad : 'pack OK');
   if (bad) process.exitCode = 1;
 });

@@ -205,3 +205,50 @@
         explain:'{a} + {b} = {a+b} et {c} + {d} = {c+d}. {compareExplain(a+b, c+d)}', eq:'{a} + {b}  ?  {c} + {d}' }
     ],
     note:'Choisir le bon signe. Facile : deux nombres de {lo0} à {hi0} ; Moyen : de {lo1} à {hi1}, et {round(pExpr1*100)} % du temps deux additions à comparer ; Difficile : de {lo2} à {hi2}, {round(pExpr2*100)} % d\'additions. Parfois les deux côtés sont égaux.' });
+
+  // -- Fractions : lire la fraction coloriée, ou choisir LA figure qui montre une fraction (scène `fraction`) --
+  // trois fausses fractions plausibles (a/b) pour une figure partagée en n dont k sont coloriées
+  TEMPLATE_FNS.fractionWrong = function(k, n){
+    var seen = {}, wrong = [];
+    seen[k/n] = true;
+    shuffle([[n-k,n],[k,n+1],[k+1,n],[Math.max(1,k-1),n],[1,n],[n,k],[k,n-1],[k,n+2]]).forEach(function(f){
+      var a = f[0], b = f[1];
+      if(a >= 1 && b > a && b <= 10 && !seen[a/b] && wrong.length < 3){ seen[a/b] = true; wrong.push(a + '/' + b); }
+    });
+    var g = 0;
+    while(wrong.length < 3 && g++ < 100){ var b3 = randInt(3,9), a3 = randInt(1,b3-1); if(!seen[a3/b3]){ seen[a3/b3] = true; wrong.push(a3 + '/' + b3); } }
+    return wrong;
+  };
+  // 4 figures [n, k, forme] dont la première montre num/den ; les autres montrent d'autres fractions (en Facile, la figure toute coloriée en fait partie)
+  TEMPLATE_FNS.fractionOptions = function(num, den, level){
+    for(var attempt = 0; attempt < 30; attempt++){
+      var okN = level === 2 && den % 2 === 0 && rnd() < 0.6 ? den*2 : den, opts = [[okN, num*okN/den]], used = {}, guard = 0;
+      used[num/den] = true;
+      while(opts.length < 4 && guard++ < 200){
+        var n2 = pick(level === 0 ? [2,4] : [2,3,4,6,8]), k2 = randInt(1, level === 0 ? n2 : n2-1);
+        if(used[k2/n2]) continue;
+        used[k2/n2] = true; opts.push([n2, k2]);
+      }
+      if(opts.length === 4){
+        var kinds = pick([['pie'],['bar'],['pie','bar']]);
+        return opts.map(function(o, j){ return [o[0], o[1], kinds[j % kinds.length]]; });
+      }
+    }
+    throw new Error('fractions : pas assez de figures différentes');
+  };
+  registerTemplateType({ id:'fraction', domain:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2], tag:'Fractions',
+    levels:[
+      { dens:[2,4], tmax:1, tnum:[1,1], tden:[2,4], tnom:['la moitié','le quart'] },
+      { dens:[2,3,4], tmax:3, tnum:[1,1,3,1], tden:[2,4,4,3], tnom:['la moitié','le quart','les trois quarts','le tiers'] },
+      { dens:[3,4,5,6,8], tmax:3, tnum:[1,1,3,1], tden:[2,4,4,3], tnom:['la moitié','le quart','les trois quarts','le tiers'] }
+    ],
+    forms:[
+      { w:'level==0 ? 0.5 : 0.4', vars:{ t:{int:[0,'tmax']}, num:'at(tnum,t)', den:'at(tden,t)', nom:'at(tnom,t)', figs:'fractionOptions(num,den,level)', on:'at(at(figs,0),0)', ok:'at(at(figs,0),1)' },
+        answer:'0', question:'Quelle figure a {nom} de sa surface coloriée ?', sub:'Regarde combien de parts sont coloriées sur le nombre total de parts.',
+        explain:"La bonne figure est partagée en {on} parts égales avec {ok} coloriée{ok>1 ? 's' : ''} : {ok}/{on} = {num}/{den}.",
+        scene:{ type:'emoji', icon:"'🍕'", caption:'' }, figures:{ scene:'fraction', items:'figs', label:'Figure' } },
+      { w:'level==0 ? 0.5 : 0.6', vars:{ shape:{pick:['pie','bar']}, n:{pick:'dens'}, k:{int:[1,'n-1']} }, answer:"k+'/'+n", wrong:'fractionWrong(k,n)',
+        question:'Quelle fraction de la figure est coloriée ?', sub:'En bas : le nombre total de parts égales. En haut : les parts coloriées.',
+        explain:'La figure est partagée en {n} parts égales et {k} sont coloriées : {k}/{n}.', scene:{ type:'fraction', n:'n', k:'k', shape:'shape' } }
+    ],
+    note:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).' });
