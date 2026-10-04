@@ -1462,7 +1462,7 @@
   // isocèle (seule la médiane de la pointe est un axe) et cercle (toute droite passant par le
   // centre est un axe). Les droites fausses sont décalées ou obliques, la bonne passe exactement
   // par le centre de symétrie.
-  function genSymVraiQuestion(){
+  function symAxeGen(){
     var fig = pickFresh('symvrai-fig', ['rect','carre','tri','cercle']);
     var isAxis = rnd()<0.5, line, shape, expTrue, expFalse;
     if(fig==='rect'){
@@ -1497,20 +1497,7 @@
       expTrue = 'Oui : cette droite passe par le centre du cercle. Un cercle a une infinité d\'axes de symétrie : toutes les droites qui passent par son centre.';
       expFalse = 'Non : cette droite ne passe pas par le centre du cercle, elle le coupe en deux parties de tailles différentes.';
     }
-    var names = { rect:'du rectangle', carre:'du carré', tri:'du triangle', cercle:'du cercle' };
-    return {
-      tag:'Symétrie',
-      question:'Cette droite est-elle un axe de symétrie ' + names[fig] + ' ?',
-      sub:'Imagine que tu plies la figure le long de la droite : les deux côtés se superposent-ils exactement ?',
-      explain: isAxis ? expTrue : expFalse,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        shape(svg);
-        svg.appendChild(el('line',{x1:line.x1,y1:line.y1,x2:line.x2,y2:line.y2, stroke:'var(--text)','stroke-width':3,'stroke-dasharray':'6,5'}));
-      },
-      cols3:false,
-      choices: shuffle([{label:'Oui',ok:isAxis},{label:'Non',ok:!isAxis}])
-    };
+    return [fig, isAxis, isAxis ? expTrue : expFalse, { shape:shape, line:line }];
   }
 
   // ===================== Suites logiques de formes =====================
@@ -1541,7 +1528,7 @@
       svg.appendChild(el('rect',{x:x0+k*c,y:y0+r*c,width:c,height:c,fill:cells[r][k] ? color : 'var(--surface)',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.45}));
     }
   }
-  function genSymVisuelQuestion(level){
+  function symVisuelGen(level){
     var rows = level===0 ? 3 : 5, count = level===0 ? 4 : level===1 ? 5 : 7;
     var left, tries = 0, right, trans, flip, off;
     function empty(){ var g=[]; for(var r=0;r<5;r++){ g.push([false,false,false]); } return g; }
@@ -1563,28 +1550,8 @@
       var rr = randInt(0,rows-1), kk = randInt(0,2); off[rr][kk] = !off[rr][kk];
       tries++;
     } while(tries<100 && (new Set([key(right),key(trans),key(flip),key(off)])).size<4);
-    if(tries>=100) return genSymVisuelQuestion(level);
-    var opts = shuffle([{g:right,ok:true},{g:trans,ok:false},{g:flip,ok:false},{g:off,ok:false}]);
-    var C = 22;
-    return {
-      tag:'Symétrie', question:'Quel dessin complète la figure pour qu\'elle soit symétrique par rapport à la ligne rouge ?',
-      sub:'Imagine un miroir posé sur la ligne : ce qui est loin de la ligne à gauche est loin de la ligne à droite.',
-      explain:'Avec un miroir sur la ligne, chaque case coloriée à gauche a sa case « jumelle » à droite, à la même hauteur et à la même distance de la ligne : la colonne près de la ligne reste près de la ligne.',
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var x0 = 100 - 3*C, y0 = 100 - 2.5*C;
-        drawHalfGrid(svg, left, x0, y0, C, 'var(--accent2)');
-        for(var r2=0;r2<5;r2++) for(var k2=0;k2<3;k2++) svg.appendChild(el('rect',{x:100+k2*C,y:y0+r2*C,width:C,height:C,fill:'none',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.2,'stroke-dasharray':'3,3'}));
-        svg.appendChild(el('line',{x1:100,y1:y0-6,x2:100,y2:y0+5*C+6,stroke:'#d33','stroke-width':3}));
-      },
-      cols3:false,
-      choices: opts.map(function(o, i){
-        return { label:'Dessin ' + (i+1), ok:o.ok, viewBox:'0 0 100 100', draw:function(svg){
-          svg.appendChild(el('line',{x1:20,y1:4,x2:20,y2:96,stroke:'#d33','stroke-width':2.5}));
-          drawHalfGrid(svg, o.g, 20, 7.5, 17, 'var(--accent2)');
-        } };
-      })
-    };
+    if(tries>=100) return symVisuelGen(level);
+    return [left, right, trans, flip, off];
   }
 
   // ===================== Énigmes =====================
@@ -1634,23 +1601,11 @@
     { text:"Je n'ai aucune face plane : je suis rond de partout. Qui suis-je ?", answer:"boule", pool:["boule", "cylindre", "cône", "cube"] },
     { text:"Je suis un quadrilatère qui a 4 côtés égaux. Si on me pose sur une pointe, je ressemble à un diamant. Qui suis-je ?", answer:"losange", pool:["losange", "rectangle", "triangle", "pentagone"] }
   ];
-  function genEnigmeQuestion(){
-    var r = pickFresh('enigme', ENIGME_POOL);
-    var poolOthers = shuffle(r.pool.filter(function(p){return p!==r.answer;})).slice(0,3);
-    var labels = shuffle([r.answer].concat(poolOthers));
-    return {
-      tag:'Énigme',
-      question: r.text,
-      sub:'Lis bien l\'énigme et retrouve la bonne réponse.',
-      explain:'La réponse est « ' + r.answer + ' » : ' + ((typeof SOLID_FACTS!=='undefined' && SOLID_FACTS[r.answer]) || 'relis bien les indices de l\'énigme.'),
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(svgText(100,120,64,'?'));
-      },
-      cols3:false,
-      choices: labels.map(function(l){ return { label:l, ok:l===r.answer }; })
-    };
-  }
+  TEMPLATE_FNS.enigmeIdx = function(){ return ENIGME_POOL.indexOf(pickFresh('enigme', ENIGME_POOL)); };
+  TEMPLATE_FNS.enigmeText = function(i){ return ENIGME_POOL[i].text; };
+  TEMPLATE_FNS.enigmeAns = function(i){ return ENIGME_POOL[i].answer; };
+  TEMPLATE_FNS.enigmeOthers = function(i){ var r = ENIGME_POOL[i]; return shuffle(r.pool.filter(function(p){ return p !== r.answer; })).slice(0, 3); };
+  TEMPLATE_FNS.enigmeFact = function(i){ return (typeof SOLID_FACTS !== 'undefined' && SOLID_FACTS[ENIGME_POOL[i].answer]) || 'relis bien les indices de l\'énigme.'; };
 
   // ---- Paramètres par niveau (0 = Facile, 1 = Moyen, 2 = Difficile) ----
   var GEO_LEVELS = [
@@ -1851,12 +1806,55 @@
   registerQuizType({ id:'decodage', domain:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
     randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.',
     generate:genDecodageQuestion });
-  registerQuizType({ id:'symVrai', domain:'symetrie', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
-    randomNote:'4 figures tirées en alternance : rectangle (jamais carré), carré (ses diagonales sont de vrais axes), triangle isocèle, cercle (toute droite par le centre est un axe). La droite est soit un vrai axe, soit décalée ou oblique ; la figure et les mesures sont tirées au hasard.',
-    generate:genSymVraiQuestion });
-  registerQuizType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
-    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 44 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
-    generate:genEnigmeQuestion });
+  // ---- Symétrie (vrai axe ? / compléter), énigmes : fiches ----
+  SCENES.symAxe = { exprs:['g'], texts:[],
+    make:function(a){ return a.g[3]; },
+    draw:function(svg, d){
+      d.shape(svg);
+      svg.appendChild(el('line',{x1:d.line.x1,y1:d.line.y1,x2:d.line.x2,y2:d.line.y2, stroke:'var(--text)','stroke-width':3,'stroke-dasharray':'6,5'}));
+    } };
+  // moitié gauche d'une figure sur grille 3×5, ligne miroir rouge au milieu
+  SCENES.symLeft = { exprs:['g'], texts:[],
+    make:function(a){ return { g:a.g }; },
+    draw:function(svg, d){
+      var C = 22, x0 = 100 - 3*C, y0 = 100 - 2.5*C;
+      drawHalfGrid(svg, d.g, x0, y0, C, 'var(--accent2)');
+      for(var r=0;r<5;r++) for(var k=0;k<3;k++) svg.appendChild(el('rect',{x:100+k*C,y:y0+r*C,width:C,height:C,fill:'none',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.2,'stroke-dasharray':'3,3'}));
+      svg.appendChild(el('line',{x1:100,y1:y0-6,x2:100,y2:y0+5*C+6,stroke:'#d33','stroke-width':3}));
+    } };
+  // une proposition de moitié droite (choix de figure)
+  SCENES.symHalf = { exprs:['g'], texts:[],
+    make:function(a){ return { g:a.g }; },
+    draw:function(svg, d){
+      svg.setAttribute('viewBox','0 0 100 100');
+      svg.appendChild(el('line',{x1:20,y1:4,x2:20,y2:96,stroke:'#d33','stroke-width':2.5}));
+      drawHalfGrid(svg, d.g, 20, 7.5, 17, 'var(--accent2)');
+    } };
+  TEMPLATE_FNS.symAxeGen = symAxeGen;
+  TEMPLATE_FNS.symAxeNom = function(fig){ return { rect:'du rectangle', carre:'du carré', tri:'du triangle', cercle:'du cercle' }[fig]; };
+  TEMPLATE_FNS.symVisuelGen = symVisuelGen;
+  TEMPLATE_FNS.symFigs = function(s){ return [[s[1]], [s[2]], [s[3]], [s[4]]]; };
+
+  registerTemplateType({ id:'symVrai', domain:'symetrie', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2], tag:'Symétrie',
+    levels:[ {}, {}, {} ],
+    forms:[ { vars:{ g:'symAxeGen()', fig:'at(g,0)', isAxis:'at(g,1)', ex:'at(g,2)' }, answer:"isAxis ? 'Oui' : 'Non'", wrong:"[isAxis ? 'Non' : 'Oui']",
+      question:'Cette droite est-elle un axe de symétrie {symAxeNom(fig)} ?', sub:'Imagine que tu plies la figure le long de la droite : les deux côtés se superposent-ils exactement ?',
+      explain:'{ex}', scene:{ type:'symAxe', g:'g' } } ],
+    note:"Une droite en pointillés sur un rectangle, un carré, un triangle isocèle ou un cercle : est-ce un axe de symétrie ? Une fois sur deux c'est vrai (milieu, diagonale du carré, médiane du triangle, droite par le centre du cercle) ; sinon la droite est décalée ou oblique. Les figures sortent sans remise." });
+  registerTemplateType({ id:'symVisuel', domain:'symetrie', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2], tag:'Symétrie',
+    levels:[ {}, {}, {} ],
+    forms:[ { vars:{ s:'symVisuelGen(level)', figs:'symFigs(s)', left:'at(s,0)' }, answer:'0',
+      question:"Quel dessin complète la figure pour qu'elle soit symétrique par rapport à la ligne rouge ?",
+      sub:'Imagine un miroir posé sur la ligne : ce qui est loin de la ligne à gauche est loin de la ligne à droite.',
+      explain:'Avec un miroir sur la ligne, chaque case coloriée à gauche a sa case « jumelle » à droite, à la même hauteur et à la même distance de la ligne : la colonne près de la ligne reste près de la ligne.',
+      scene:{ type:'symLeft', g:'left' }, figures:{ scene:'symHalf', items:'figs', label:'Dessin' } } ],
+    note:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).' });
+  registerTemplateType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2], tag:'Énigme',
+    levels:[ {}, {}, {} ],
+    forms:[ { vars:{ i:'enigmeIdx()', ans:'enigmeAns(i)' }, answer:'ans', wrong:'enigmeOthers(i)',
+      question:'{enigmeText(i)}', sub:"Lis bien l'énigme et retrouve la bonne réponse.", explain:'La réponse est « {ans} » : {enigmeFact(i)}', eq:'?' } ],
+    note:"L'énigme est tirée au hasard dans une banque FIXE de 44 énigmes (tirées sans répétition tant qu'on n'a pas tout vu) (texte non généré : toujours les mêmes formulations)." });
+
   // ---- Suite de formes, mesures, périmètre, intrus : fiches (scènes propres au thème) ----
   function boxFrame(svg){ svg.setAttribute('viewBox','0 0 200 200'); }
   SCENES.suite = { exprs:['items'], texts:[],
@@ -2012,6 +2010,3 @@
     ],
     note:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.' });
 
-  registerQuizType({ id:'symVisuel', domain:'symetrie', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
-    randomNote:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).',
-    generate:genSymVisuelQuestion });

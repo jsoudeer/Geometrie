@@ -95,6 +95,60 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     I.kinds = I.kinds.map(function(k){ return Object.keys(k).sort().join(); }); R.int = I;
     // les cinq nouvelles sont bien des fiches
     R.reg2 = ['suiteFormes','mesures','perimetre','intrus'].every(function(i){ return !!TEMPLATE_FICHES[i]; });
+
+    // --- durées : recalculées depuis l'énoncé ---
+    function T(m){ var h = Math.floor(m/60) % 24, mm = m % 60; return mm === 0 ? h + ' h' : h + ' h ' + (mm < 10 ? '0' + mm : mm); }
+    function D(m){ var h = Math.floor(m/60), mm = m % 60; return h === 0 ? mm + ' min' : mm === 0 ? h + ' h' : h + ' h ' + (mm < 10 ? '0' + mm : mm); }
+    function pt(t){ var x = /(\d+) h(?: (\d+))?/.exec(t); return x ? +x[1]*60 + (+x[2] || 0) : null; }
+    function pd(t){ var x = /^(\d+) min$/.exec(t); return x ? +x[1] : pt(t); }
+    var U = { bad:0, dist:0, kinds:[{},{},{}], round:[0,0] };
+    for(lv=0; lv<3; lv++) for(i=0;i<500;i++){
+      q = def('duree').generate(lv); g = okOf(q); var qq = q.question, e2 = null, k3;
+      if((m = /^(.*) à (\d+ h(?: \d+)?) et cela dure (\d+ h(?: \d+)?|\d+ min)\. À quelle heure est-ce fini \?$/.exec(qq))){ k3 = 'fin'; e2 = T(pt(m[2]) + pd(m[3])); }
+      else if((m = /commence à (\d+ h(?: \d+)?) et finit à (\d+ h(?: \d+)?)\. Combien/.exec(qq))){ k3 = 'duree'; e2 = D(pt(m[2]) - pt(m[1])); }
+      else if((m = /dure (\d+ h(?: \d+)?|\d+ min) et finit à (\d+ h(?: \d+)?)\. À quelle heure cela a-t-il commencé/.exec(qq))){ k3 = 'debut'; e2 = T(pt(m[2]) - pd(m[1])); }
+      else if((m = /^(\d+) h (\d+) min, ça fait combien de minutes/.exec(qq))){ k3 = 'conv'; e2 = (m[1]*60 + +m[2]) + ' minutes'; }
+      if(e2 === null || g.length !== 1 || g[0].label !== e2) U.bad++;
+      if(new Set(q.choices.map(function(c){return c.label;})).size < 4) U.dist++;
+      U.kinds[lv][k3] = 1;
+    }
+    U.kinds = U.kinds.map(function(k){ return Object.keys(k).sort().join(); }); R.dur = U;
+    // --- symétrie : vrai axe ? (la phrase d'explication dit la même chose que la bonne réponse) ---
+    var Y = { bad:0, both:0, figs:{} };
+    for(i=0;i<400;i++){
+      q = def('symVrai').generate(2); g = okOf(q); q.draw();
+      if(g.length !== 1 || q.choices.length !== 2 || !svg.querySelector('line[stroke-dasharray]')) Y.bad++;
+      if(g[0].label !== (/^Oui/.test(q.explain) ? 'Oui' : 'Non')) Y.bad++;
+      Y.figs[/axe de symétrie (du \S+)/.exec(q.question)[1]] = 1; Y[g[0].label] = 1;
+    }
+    Y.figs = Object.keys(Y.figs).length; R.sym = Y;
+    // --- symétrie : compléter. La bonne figure est le miroir de la moitié gauche ---
+    function gridOf(sv, xmin, xmax, y0, c){   // lit les cases coloriées
+      var cells = Array.prototype.filter.call(sv.querySelectorAll('rect'), function(r){ return +r.getAttribute('x') >= xmin && +r.getAttribute('x') < xmax && r.getAttribute('fill') !== 'none'; });
+      var G = []; for(var r = 0; r < 5; r++){ G.push([0,0,0]); }
+      cells.forEach(function(r){ var col = Math.round((+r.getAttribute('x') - xmin)/c), row = Math.round((+r.getAttribute('y') - y0)/c); if(r.getAttribute('fill') !== 'var(--surface)') G[row][col] = 1; });
+      return JSON.stringify(G);
+    }
+    var V = { bad:0, dist:0 };
+    for(lv=1; lv<3; lv++) for(i=0;i<150;i++){
+      q = def('symVisuel').generate(lv); q.draw();
+      var left = JSON.parse(gridOf(svg, 100 - 66, 100, 100 - 55, 22)), want = left.map(function(r){ return r.slice().reverse(); });
+      g = okOf(q); var sv2 = document.createElementNS('http://www.w3.org/2000/svg','svg'), gl = [];
+      q.choices.forEach(function(ch){ var t = document.createElementNS('http://www.w3.org/2000/svg','svg'); ch.draw(t); gl.push(gridOf(t, 20, 100, 7.5, 17) ); });
+      var okIdx = q.choices.indexOf(g[0]);
+      if(g.length !== 1 || gl[okIdx] !== JSON.stringify(want)) V.bad++;
+      if(new Set(gl).size !== 4) V.dist++;
+    }
+    R.vis = V;
+    // --- énigmes ---
+    var E = { bad:0, seen:{} };
+    for(i=0;i<300;i++){
+      q = def('enigme').generate(2); g = okOf(q);
+      var en = ENIGME_POOL.filter(function(x){ return x.text === q.question; })[0];
+      if(!en || g.length !== 1 || g[0].label !== en.answer || q.choices.length !== 4) E.bad++; else E.seen[en.text] = 1;
+    }
+    E.n = Object.keys(E.seen).length; R.eni = E;
+    R.reg3 = ['duree','symVrai','symVisuel','enigme'].every(function(i){ return !!TEMPLATE_FICHES[i]; });
     // redessiner = même image
     var q2 = def('name').generate(2); q2.draw(); var a = svg.innerHTML; q2.draw(); R.same = a === svg.innerHTML;
     return JSON.stringify(R);
@@ -113,6 +167,12 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(o.per.kinds.join('|') === 'grille|carre,rect|poly3,poly5,poly6', 'périmètre : sortes par niveau ' + o.per.kinds.join('|'));
   chk(o.int.bad === 0, 'intrus : la lettre juste est la forme différente (' + o.int.bad + ' écarts)');
   chk(o.int.kinds.join('|') === 'poly|poly|poly,rect', 'intrus : sortes par niveau ' + o.int.kinds.join('|'));
+  chk(o.reg3, 'duree, symVrai, symVisuel, enigme sont des fiches');
+  chk(o.dur.bad === 0 && o.dur.dist === 0, 'durées : réponse recalculée (' + o.dur.bad + ' écarts)');
+  chk(o.dur.kinds.join('|') === 'duree,fin|debut,duree,fin|conv,debut,duree,fin', 'durées : sortes par niveau ' + o.dur.kinds.join('|'));
+  chk(o.sym.bad === 0 && o.sym.figs === 4 && o.sym.Oui && o.sym.Non, 'symétrie vrai/faux : explication = réponse, 4 figures, oui et non');
+  chk(o.vis.bad === 0 && o.vis.dist === 0, 'symétrie visuelle : la bonne figure est le miroir (' + o.vis.bad + ' écarts)');
+  chk(o.eni.bad === 0 && o.eni.n > 40, 'énigmes : bonne réponse, ' + o.eni.n + ' différentes en 300 tirages');
   chk(o.same, 'redessiner = même image');
   chk(o.notes.every(n => /triangle/.test(n) && /Facile/.test(n)), 'notes générées : ' + o.notes[0].slice(0, 90));
   console.log(bad ? 'ÉCHEC' : 'formes_check OK');

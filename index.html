@@ -4658,7 +4658,7 @@ function phrase(tpl, vars){
   // isocèle (seule la médiane de la pointe est un axe) et cercle (toute droite passant par le
   // centre est un axe). Les droites fausses sont décalées ou obliques, la bonne passe exactement
   // par le centre de symétrie.
-  function genSymVraiQuestion(){
+  function symAxeGen(){
     var fig = pickFresh('symvrai-fig', ['rect','carre','tri','cercle']);
     var isAxis = rnd()<0.5, line, shape, expTrue, expFalse;
     if(fig==='rect'){
@@ -4693,20 +4693,7 @@ function phrase(tpl, vars){
       expTrue = 'Oui : cette droite passe par le centre du cercle. Un cercle a une infinité d\'axes de symétrie : toutes les droites qui passent par son centre.';
       expFalse = 'Non : cette droite ne passe pas par le centre du cercle, elle le coupe en deux parties de tailles différentes.';
     }
-    var names = { rect:'du rectangle', carre:'du carré', tri:'du triangle', cercle:'du cercle' };
-    return {
-      tag:'Symétrie',
-      question:'Cette droite est-elle un axe de symétrie ' + names[fig] + ' ?',
-      sub:'Imagine que tu plies la figure le long de la droite : les deux côtés se superposent-ils exactement ?',
-      explain: isAxis ? expTrue : expFalse,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        shape(svg);
-        svg.appendChild(el('line',{x1:line.x1,y1:line.y1,x2:line.x2,y2:line.y2, stroke:'var(--text)','stroke-width':3,'stroke-dasharray':'6,5'}));
-      },
-      cols3:false,
-      choices: shuffle([{label:'Oui',ok:isAxis},{label:'Non',ok:!isAxis}])
-    };
+    return [fig, isAxis, isAxis ? expTrue : expFalse, { shape:shape, line:line }];
   }
 
   // ===================== Suites logiques de formes =====================
@@ -4737,7 +4724,7 @@ function phrase(tpl, vars){
       svg.appendChild(el('rect',{x:x0+k*c,y:y0+r*c,width:c,height:c,fill:cells[r][k] ? color : 'var(--surface)',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.45}));
     }
   }
-  function genSymVisuelQuestion(level){
+  function symVisuelGen(level){
     var rows = level===0 ? 3 : 5, count = level===0 ? 4 : level===1 ? 5 : 7;
     var left, tries = 0, right, trans, flip, off;
     function empty(){ var g=[]; for(var r=0;r<5;r++){ g.push([false,false,false]); } return g; }
@@ -4759,28 +4746,8 @@ function phrase(tpl, vars){
       var rr = randInt(0,rows-1), kk = randInt(0,2); off[rr][kk] = !off[rr][kk];
       tries++;
     } while(tries<100 && (new Set([key(right),key(trans),key(flip),key(off)])).size<4);
-    if(tries>=100) return genSymVisuelQuestion(level);
-    var opts = shuffle([{g:right,ok:true},{g:trans,ok:false},{g:flip,ok:false},{g:off,ok:false}]);
-    var C = 22;
-    return {
-      tag:'Symétrie', question:'Quel dessin complète la figure pour qu\'elle soit symétrique par rapport à la ligne rouge ?',
-      sub:'Imagine un miroir posé sur la ligne : ce qui est loin de la ligne à gauche est loin de la ligne à droite.',
-      explain:'Avec un miroir sur la ligne, chaque case coloriée à gauche a sa case « jumelle » à droite, à la même hauteur et à la même distance de la ligne : la colonne près de la ligne reste près de la ligne.',
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var x0 = 100 - 3*C, y0 = 100 - 2.5*C;
-        drawHalfGrid(svg, left, x0, y0, C, 'var(--accent2)');
-        for(var r2=0;r2<5;r2++) for(var k2=0;k2<3;k2++) svg.appendChild(el('rect',{x:100+k2*C,y:y0+r2*C,width:C,height:C,fill:'none',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.2,'stroke-dasharray':'3,3'}));
-        svg.appendChild(el('line',{x1:100,y1:y0-6,x2:100,y2:y0+5*C+6,stroke:'#d33','stroke-width':3}));
-      },
-      cols3:false,
-      choices: opts.map(function(o, i){
-        return { label:'Dessin ' + (i+1), ok:o.ok, viewBox:'0 0 100 100', draw:function(svg){
-          svg.appendChild(el('line',{x1:20,y1:4,x2:20,y2:96,stroke:'#d33','stroke-width':2.5}));
-          drawHalfGrid(svg, o.g, 20, 7.5, 17, 'var(--accent2)');
-        } };
-      })
-    };
+    if(tries>=100) return symVisuelGen(level);
+    return [left, right, trans, flip, off];
   }
 
   // ===================== Énigmes =====================
@@ -4830,23 +4797,11 @@ function phrase(tpl, vars){
     { text:"Je n'ai aucune face plane : je suis rond de partout. Qui suis-je ?", answer:"boule", pool:["boule", "cylindre", "cône", "cube"] },
     { text:"Je suis un quadrilatère qui a 4 côtés égaux. Si on me pose sur une pointe, je ressemble à un diamant. Qui suis-je ?", answer:"losange", pool:["losange", "rectangle", "triangle", "pentagone"] }
   ];
-  function genEnigmeQuestion(){
-    var r = pickFresh('enigme', ENIGME_POOL);
-    var poolOthers = shuffle(r.pool.filter(function(p){return p!==r.answer;})).slice(0,3);
-    var labels = shuffle([r.answer].concat(poolOthers));
-    return {
-      tag:'Énigme',
-      question: r.text,
-      sub:'Lis bien l\'énigme et retrouve la bonne réponse.',
-      explain:'La réponse est « ' + r.answer + ' » : ' + ((typeof SOLID_FACTS!=='undefined' && SOLID_FACTS[r.answer]) || 'relis bien les indices de l\'énigme.'),
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(svgText(100,120,64,'?'));
-      },
-      cols3:false,
-      choices: labels.map(function(l){ return { label:l, ok:l===r.answer }; })
-    };
-  }
+  TEMPLATE_FNS.enigmeIdx = function(){ return ENIGME_POOL.indexOf(pickFresh('enigme', ENIGME_POOL)); };
+  TEMPLATE_FNS.enigmeText = function(i){ return ENIGME_POOL[i].text; };
+  TEMPLATE_FNS.enigmeAns = function(i){ return ENIGME_POOL[i].answer; };
+  TEMPLATE_FNS.enigmeOthers = function(i){ var r = ENIGME_POOL[i]; return shuffle(r.pool.filter(function(p){ return p !== r.answer; })).slice(0, 3); };
+  TEMPLATE_FNS.enigmeFact = function(i){ return (typeof SOLID_FACTS !== 'undefined' && SOLID_FACTS[ENIGME_POOL[i].answer]) || 'relis bien les indices de l\'énigme.'; };
 
   // ---- Paramètres par niveau (0 = Facile, 1 = Moyen, 2 = Difficile) ----
   var GEO_LEVELS = [
@@ -5047,12 +5002,55 @@ function phrase(tpl, vars){
   registerQuizType({ id:'decodage', domain:'repere', label:'Trajet', longLabel:'Trajet (décodage)', defaultLevels:[2],
     randomNote:'Les points de départ/arrivée et les propositions de trajet erronées sont tirés au hasard à chaque question.',
     generate:genDecodageQuestion });
-  registerQuizType({ id:'symVrai', domain:'symetrie', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2],
-    randomNote:'4 figures tirées en alternance : rectangle (jamais carré), carré (ses diagonales sont de vrais axes), triangle isocèle, cercle (toute droite par le centre est un axe). La droite est soit un vrai axe, soit décalée ou oblique ; la figure et les mesures sont tirées au hasard.',
-    generate:genSymVraiQuestion });
-  registerQuizType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
-    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 44 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
-    generate:genEnigmeQuestion });
+  // ---- Symétrie (vrai axe ? / compléter), énigmes : fiches ----
+  SCENES.symAxe = { exprs:['g'], texts:[],
+    make:function(a){ return a.g[3]; },
+    draw:function(svg, d){
+      d.shape(svg);
+      svg.appendChild(el('line',{x1:d.line.x1,y1:d.line.y1,x2:d.line.x2,y2:d.line.y2, stroke:'var(--text)','stroke-width':3,'stroke-dasharray':'6,5'}));
+    } };
+  // moitié gauche d'une figure sur grille 3×5, ligne miroir rouge au milieu
+  SCENES.symLeft = { exprs:['g'], texts:[],
+    make:function(a){ return { g:a.g }; },
+    draw:function(svg, d){
+      var C = 22, x0 = 100 - 3*C, y0 = 100 - 2.5*C;
+      drawHalfGrid(svg, d.g, x0, y0, C, 'var(--accent2)');
+      for(var r=0;r<5;r++) for(var k=0;k<3;k++) svg.appendChild(el('rect',{x:100+k*C,y:y0+r*C,width:C,height:C,fill:'none',stroke:'var(--text)','stroke-width':1,'stroke-opacity':0.2,'stroke-dasharray':'3,3'}));
+      svg.appendChild(el('line',{x1:100,y1:y0-6,x2:100,y2:y0+5*C+6,stroke:'#d33','stroke-width':3}));
+    } };
+  // une proposition de moitié droite (choix de figure)
+  SCENES.symHalf = { exprs:['g'], texts:[],
+    make:function(a){ return { g:a.g }; },
+    draw:function(svg, d){
+      svg.setAttribute('viewBox','0 0 100 100');
+      svg.appendChild(el('line',{x1:20,y1:4,x2:20,y2:96,stroke:'#d33','stroke-width':2.5}));
+      drawHalfGrid(svg, d.g, 20, 7.5, 17, 'var(--accent2)');
+    } };
+  TEMPLATE_FNS.symAxeGen = symAxeGen;
+  TEMPLATE_FNS.symAxeNom = function(fig){ return { rect:'du rectangle', carre:'du carré', tri:'du triangle', cercle:'du cercle' }[fig]; };
+  TEMPLATE_FNS.symVisuelGen = symVisuelGen;
+  TEMPLATE_FNS.symFigs = function(s){ return [[s[1]], [s[2]], [s[3]], [s[4]]]; };
+
+  registerTemplateType({ id:'symVrai', domain:'symetrie', label:'Symétrie (vrai/faux)', longLabel:'Vrai axe de symétrie ?', defaultLevels:[2], tag:'Symétrie',
+    levels:[ {}, {}, {} ],
+    forms:[ { vars:{ g:'symAxeGen()', fig:'at(g,0)', isAxis:'at(g,1)', ex:'at(g,2)' }, answer:"isAxis ? 'Oui' : 'Non'", wrong:"[isAxis ? 'Non' : 'Oui']",
+      question:'Cette droite est-elle un axe de symétrie {symAxeNom(fig)} ?', sub:'Imagine que tu plies la figure le long de la droite : les deux côtés se superposent-ils exactement ?',
+      explain:'{ex}', scene:{ type:'symAxe', g:'g' } } ],
+    note:"Une droite en pointillés sur un rectangle, un carré, un triangle isocèle ou un cercle : est-ce un axe de symétrie ? Une fois sur deux c'est vrai (milieu, diagonale du carré, médiane du triangle, droite par le centre du cercle) ; sinon la droite est décalée ou oblique. Les figures sortent sans remise." });
+  registerTemplateType({ id:'symVisuel', domain:'symetrie', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2], tag:'Symétrie',
+    levels:[ {}, {}, {} ],
+    forms:[ { vars:{ s:'symVisuelGen(level)', figs:'symFigs(s)', left:'at(s,0)' }, answer:'0',
+      question:"Quel dessin complète la figure pour qu'elle soit symétrique par rapport à la ligne rouge ?",
+      sub:'Imagine un miroir posé sur la ligne : ce qui est loin de la ligne à gauche est loin de la ligne à droite.',
+      explain:'Avec un miroir sur la ligne, chaque case coloriée à gauche a sa case « jumelle » à droite, à la même hauteur et à la même distance de la ligne : la colonne près de la ligne reste près de la ligne.',
+      scene:{ type:'symLeft', g:'left' }, figures:{ scene:'symHalf', items:'figs', label:'Dessin' } } ],
+    note:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).' });
+  registerTemplateType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2], tag:'Énigme',
+    levels:[ {}, {}, {} ],
+    forms:[ { vars:{ i:'enigmeIdx()', ans:'enigmeAns(i)' }, answer:'ans', wrong:'enigmeOthers(i)',
+      question:'{enigmeText(i)}', sub:"Lis bien l'énigme et retrouve la bonne réponse.", explain:'La réponse est « {ans} » : {enigmeFact(i)}', eq:'?' } ],
+    note:"L'énigme est tirée au hasard dans une banque FIXE de 44 énigmes (tirées sans répétition tant qu'on n'a pas tout vu) (texte non généré : toujours les mêmes formulations)." });
+
   // ---- Suite de formes, mesures, périmètre, intrus : fiches (scènes propres au thème) ----
   function boxFrame(svg){ svg.setAttribute('viewBox','0 0 200 200'); }
   SCENES.suite = { exprs:['items'], texts:[],
@@ -5208,9 +5206,6 @@ function phrase(tpl, vars){
     ],
     note:'Quatre formes A, B, C, D : trois se ressemblent, une est différente. Facile : triangle, carré ou cercle ; Moyen : polygones de 3 à 6 côtés ; Difficile : pentagone/hexagone/octogone, ou carrés contre un rectangle.' });
 
-  registerQuizType({ id:'symVisuel', domain:'symetrie', label:'Symétrie : compléter (visuel)', longLabel:'Symétrie : choisir le dessin complété', defaultLevels:[1,2],
-    randomNote:'Une moitié de figure sur une grille et une ligne rouge (miroir) ; on choisit, parmi 4 dessins, la moitié symétrique. Les pièges : la même moitié sans miroir, la moitié retournée en hauteur, et une case fausse. Moyen : 5 cases ; Difficile : 7 cases (Facile, si activé : 4 cases sur 3 lignes).',
-    generate:genSymVisuelQuestion });
   /* ===================== THÈME HORLOGE =====================
      Lire l'heure, Régler l'heure, et la question de Quizz « Lire l'heure ».
   */
@@ -5509,89 +5504,7 @@ function phrase(tpl, vars){
     { icon:'📚', start:'La lecture commence', end:'Elle se termine', what:'La lecture' },
     { icon:'🏊', start:'La séance de piscine commence', end:'Elle se termine', what:'La séance' }
   ];
-  function labelChoices(correctMin, fmt, candidates){
-    var correct = fmt(correctMin), seen = {}, wrong = [];
-    seen[correct] = true;
-    shuffle(candidates.slice()).forEach(function(v){
-      var l = fmt(v);
-      if(v > 0 && !seen[l] && wrong.length < 3){ seen[l] = true; wrong.push(l); }
-    });
-    return shuffle([correct].concat(wrong)).map(function(l){ return { label:l, ok:l===correct }; });
-  }
-  function genDureeQuestion(level){
-    var sc = pick(DUREE_SCENES);
-    var kinds = level===0 ? ['end','end','dur'] : level===1 ? ['end','dur','start'] : ['end','dur','start','conv'];
-    var kind = pick(kinds);
-    var stepMin = level===0 ? 60 : level===1 ? 15 : 5;
-    var startMin, dur, endMin, question, explain, fmt, correctMin, cands, sub, drawTxt;
-
-    if(kind==='conv'){
-      var hh = randInt(1,3), mm = pick([15,30,45]);
-      var totalMin = hh*60 + mm;
-      question = hh + ' h ' + mm + ' min, ça fait combien de minutes en tout ?';
-      explain = '1 heure = 60 minutes. ' + hh + ' h = ' + (hh*60) + ' min, puis on ajoute ' + mm + ' min : ' + totalMin + ' minutes.';
-      var okLabel = totalMin + ' minutes';
-      var cw = [hh*100+mm, hh*10+mm, totalMin+30, totalMin-30, totalMin+15, (hh+1)*60+mm, hh*60];
-      var seen = {}; seen[okLabel] = true; var wrong = [];
-      shuffle(cw).forEach(function(v){ var l = v + ' minutes'; if(v>0 && !seen[l] && wrong.length<3){ seen[l]=true; wrong.push(l); } });
-      return {
-        tag:'Durées', question:question, sub:'Une heure, c\'est 60 minutes.', explain:explain,
-        draw:function(){
-          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-          svg.appendChild(svgText(100,120,64,'⏱️'));
-        },
-        cols3:false,
-        choices: shuffle([okLabel].concat(wrong)).map(function(l){ return { label:l, ok:l===okLabel }; })
-      };
-    }
-    // heures de départ : 12 h max en Facile, sinon la journée entière
-    var hMin = level===0 ? 1 : 6, hMax = level===0 ? 9 : 19;
-    startMin = randInt(hMin, hMax) * 60 + (level===0 ? 0 : pick(level===1 ? [0,15,30,45] : [0,5,10,15,20,25,30,35,40,45,50,55]));
-    var durChoices = level===0 ? [60,120,180] : level===1 ? [30,45,60,90,120] : [35,40,50,75,80,95,105,125,140,165];
-    dur = pick(durChoices);
-    endMin = startMin + dur;
-    var T = minutesToLabel24;
-    if(kind==='end'){
-      question = sc.start + ' à ' + T(startMin) + ' et cela dure ' + fmtDuree(dur) + '. À quelle heure est-ce fini ?';
-      explain = T(startMin) + ' + ' + fmtDuree(dur) + ' = ' + T(endMin) + '.';
-      if(level>=1 && (startMin%60) + (dur%60) >= 60) explain += ' (On passe à l\'heure suivante quand on dépasse 60 minutes.)';
-      correctMin = endMin; fmt = T;
-      cands = [endMin-60, endMin+60, endMin+120, endMin-120, endMin+30, endMin-30, endMin+15, endMin-15, endMin+10, endMin-10, startMin+dur*2, startMin-dur];
-      sub = 'Ajoute la durée à l\'heure de début.';
-      drawTxt = T(startMin) + ' + ' + fmtDuree(dur);
-    } else if(kind==='dur'){
-      question = sc.what + ' commence à ' + T(startMin) + ' et finit à ' + T(endMin) + '. Combien de temps cela dure-t-il ?';
-      explain = 'De ' + T(startMin) + ' à ' + T(endMin) + ', il s\'écoule ' + fmtDuree(dur) + '.';
-      correctMin = dur; fmt = fmtDuree;
-      cands = [dur+30, dur-30, dur+60, dur-60, dur+120, dur+180, dur+15, dur-15, dur+10, dur-10, dur+5, dur-5];
-      sub = 'Compte le temps qui passe entre le début et la fin.';
-      drawTxt = T(startMin) + ' → ' + T(endMin);
-    } else {
-      question = sc.what + ' dure ' + fmtDuree(dur) + ' et finit à ' + T(endMin) + '. À quelle heure cela a-t-il commencé ?';
-      explain = 'On recule de ' + fmtDuree(dur) + ' depuis ' + T(endMin) + ' : ' + T(endMin) + ' - ' + fmtDuree(dur) + ' = ' + T(startMin) + '.';
-      correctMin = startMin; fmt = T;
-      cands = [startMin-60, startMin+60, startMin-120, startMin+120, startMin+30, startMin-30, startMin+15, startMin-15, endMin+dur, startMin+10, startMin-10];
-      sub = 'Retire la durée à l\'heure de fin.';
-      drawTxt = T(endMin) + ' - ' + fmtDuree(dur);
-    }
-    if(level===0) cands = cands.filter(function(v){ return v>=60 && v%60===0; });
-    else if(level===1) cands = cands.filter(function(v){ return v%15===0; });
-    return {
-      tag:'Durées', question:question, sub:sub, explain:explain,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(svgText(100,95,54,sc.icon));
-        svg.appendChild(svgText(100,150,24,drawTxt));
-      },
-      cols3:false,
-      choices: labelChoices(correctMin, fmt, cands)
-    };
-  }
-
-  // ---- Déclaration du type de Quizz « Durées » (les autres types de l'heure sont des fiches, en bas de ce fichier) ----
-  registerQuizType({ id:'duree', domain:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
-    randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
-    generate:function(level){ return genDureeQuestion(level); } });
+  // ---- Durées : fiche (voir plus bas) ----
 
   /* ===================== FICHES D'ACTIVITÉS : heure et calendrier (moteur : gabarits.js, chargé avant ce fichier) =====================
      Lire l'heure, Choisir l'horloge, Calendrier : décrits par des données (moteur : gabarits.js).
@@ -5699,6 +5612,49 @@ function phrase(tpl, vars){
         explain:"À partir de {at(JOURS,i)}, on {fwd ? 'avance' : 'recule'} de {n} jours : on arrive à {at(JOURS,i+(fwd?n:-n))}.", scene:CAL_SCENE }
     ],
     note:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.' });
+
+  BANKS.DUREE_ICON = DUREE_SCENES.map(function(d){ return d.icon; });
+  BANKS.DUREE_START = DUREE_SCENES.map(function(d){ return d.start; });
+  BANKS.DUREE_WHAT = DUREE_SCENES.map(function(d){ return d.what; });
+  BANKS.DUREE_N = DUREE_SCENES.length;
+  TEMPLATE_FNS.dureeT = minutesToLabel24;
+  TEMPLATE_FNS.dureeFmt = fmtDuree;
+  // trois mauvaises réponses : candidats filtrés selon le niveau (heures pleines en Facile, quarts d'heure en Moyen), libellés différents de la bonne
+  TEMPLATE_FNS.dureeWrong = function(correct, cands, level, kind){
+    var fmt = kind === 'D' ? fmtDuree : minutesToLabel24, good = fmt(correct), seen = {}, wrong = [];
+    if(level === 0) cands = cands.filter(function(v){ return v >= 60 && v % 60 === 0; });
+    else if(level === 1) cands = cands.filter(function(v){ return v % 15 === 0; });
+    seen[good] = true;
+    shuffle(cands.slice()).forEach(function(v){ var l = fmt(v); if(v > 0 && !seen[l] && wrong.length < 3){ seen[l] = true; wrong.push(l); } });
+    return wrong;
+  };
+  TEMPLATE_FNS.minList = function(a){ return a.map(function(v){ return v + ' minutes'; }); };
+  TEMPLATE_FNS.dureeRetenue = function(s, d, level){ return level >= 1 && s % 60 + d % 60 >= 60 ? " (On passe à l'heure suivante quand on dépasse 60 minutes.)" : ''; };
+  var DUREE_EXPL_END = "{dureeT(s)} + {dureeFmt(d)} = {dureeT(e)}.{dureeRetenue(s,d,level)}";
+  var DUREE_VARS = { i:{int:[0,'DUREE_N-1']}, h:{int:['hMin','hMax']}, m:{pick:'mins'}, d:{pick:'durs'}, s:'h*60+m', e:'s+d' };
+  function dureeVars(extra){ var v = {}, k; for(k in DUREE_VARS) v[k] = DUREE_VARS[k]; for(k in extra) v[k] = extra[k]; return v; }
+  registerTemplateType({ id:'duree', domain:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2], tag:'Durées',
+    levels:[
+      { hMin:1, hMax:9,  mins:[0], durs:[60,120,180] },
+      { hMin:6, hMax:19, mins:[0,15,30,45], durs:[30,45,60,90,120] },
+      { hMin:6, hMax:19, mins:[0,5,10,15,20,25,30,35,40,45,50,55], durs:[35,40,50,75,80,95,105,125,140,165] }
+    ],
+    forms:[
+      { w:'level==0 ? 2 : 1', vars:dureeVars({ ans:'dureeT(e)', cands:'[e-60,e+60,e+120,e-120,e+30,e-30,e+15,e-15,e+10,e-10,s+d*2,s-d]' }), answer:'ans', wrong:"dureeWrong(e, cands, level, 'T')",
+        question:'{at(DUREE_START,i)} à {dureeT(s)} et cela dure {dureeFmt(d)}. À quelle heure est-ce fini ?', sub:"Ajoute la durée à l'heure de début.",
+        explain:DUREE_EXPL_END, scene:{ type:'emoji', icon:'at(DUREE_ICON,i)', caption:"dureeT(s) + ' + ' + dureeFmt(d)" } },
+      { vars:dureeVars({ ans:'dureeFmt(d)', cands:'[d+30,d-30,d+60,d-60,d+120,d+180,d+15,d-15,d+10,d-10,d+5,d-5]' }), answer:'ans', wrong:"dureeWrong(d, cands, level, 'D')",
+        question:'{at(DUREE_WHAT,i)} commence à {dureeT(s)} et finit à {dureeT(e)}. Combien de temps cela dure-t-il ?', sub:'Compte le temps qui passe entre le début et la fin.',
+        explain:"De {dureeT(s)} à {dureeT(e)}, il s'écoule {dureeFmt(d)}.", scene:{ type:'emoji', icon:'at(DUREE_ICON,i)', caption:"dureeT(s) + ' → ' + dureeT(e)" } },
+      { levels:[1,2], vars:dureeVars({ ans:'dureeT(s)', cands:'[s-60,s+60,s-120,s+120,s+30,s-30,s+15,s-15,e+d,s+10,s-10]' }), answer:'ans', wrong:"dureeWrong(s, cands, level, 'T')",
+        question:'{at(DUREE_WHAT,i)} dure {dureeFmt(d)} et finit à {dureeT(e)}. À quelle heure cela a-t-il commencé ?', sub:"Retire la durée à l'heure de fin.",
+        explain:"On recule de {dureeFmt(d)} depuis {dureeT(e)} : {dureeT(e)} - {dureeFmt(d)} = {dureeT(s)}.", scene:{ type:'emoji', icon:'at(DUREE_ICON,i)', caption:"dureeT(e) + ' - ' + dureeFmt(d)" } },
+      { levels:[2], vars:{ hh:{int:[1,3]}, mm:{pick:[15,30,45]}, t:'hh*60+mm', ans:"t+' minutes'" }, answer:'ans',
+        wrong:"minList(others([hh*100+mm, hh*10+mm, t+30, t-30, t+15, (hh+1)*60+mm, hh*60], t, 3))",
+        question:'{hh} h {mm} min, ça fait combien de minutes en tout ?', sub:'Une heure, c\'est 60 minutes.',
+        explain:'1 heure = 60 minutes. {hh} h = {hh*60} min, puis on ajoute {mm} min : {t} minutes.', scene:{ type:'emoji', icon:"'⏱️'", caption:'' } }
+    ],
+    note:"On calcule avec le temps : trouver l'heure de fin, la durée, ou l'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d'heure. Difficile : minutes quelconques, passage à l'heure suivante, et conversion heures → minutes." });
   /* ===================== NOMBRES JUSQU'À 1000 ET CALCUL ÉCRIT =====================
      Types de Quizz de numération (blocs, lettres, ±10/±100, droite graduée, encadrer)
      et de calcul (additions/soustractions posées, multiplier et partager).
