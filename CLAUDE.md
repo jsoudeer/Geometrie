@@ -13,7 +13,7 @@ suggestion de suite.
 Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction cité dans `HISTORIQUE.md`.
 
 ## Règles du dépôt
-- **Ne jamais modifier `index.html` à la main** : modifier `src/`, puis `python3 tools/build.py` ; `--check` doit passer.
+- **Ne jamais modifier `index.html` ni `docs/index.html`, `docs/sw.js`, `docs/manifest.webmanifest` à la main** : modifier `src/` (ou `tools/build.py` pour le site installable), puis `python3 tools/build.py` ; `--check` doit passer. `docs/` = site installable (PWA, GitHub Pages) ; `docs/fonts` et `docs/icons` sont des fichiers fixes.
 - Une activité arithmétique simple = une fiche (`registerTemplateType`, `fiches-calcul.js`, `fiches-nombres.js` ou, pour l'heure, `horloge.js`, voir `src/README.md`). Sinon `registerQuizType` (QCM) ou `registerFamily` (écran propre, voir `atelier.js` ; elles passent par
   le déroulé commun `makeQuestionFlow` : 3 essais, solution montrée, série).
 - Les `var` d'un JS ne sont pas remontées : l'ordre dans `src/manifest.json` compte.
@@ -22,7 +22,7 @@ Ne lire un fichier de `src/js/` qu'au besoin, avec Grep sur le nom de fonction c
 ## Test (Playwright, `tools/tests/`)
 - `cd tools/tests && node <nom>_check.js` (page de test `index_test.html`, `window.__t.__eval` donne accès aux variables).
 - Avant de valider : lancer les tests du sujet touché + `uniform_check`, `progress_check`, `avance_check`,
-  `fresh_check`, `atelier_check`, `atelier2_check`, `challenge_check`, `nav_check`, `audit_check` (47 types × 3 niveaux), `fit_check` (tout tient dans un écran de téléphone), `vocabulaire_check` (+ `skills_check`, `competences_check` pour la Bataille/compétences, `niveaux_check` pour les niveaux Solides/Monnaie, `seed_check` pour le hasard, `gabarits_check` + `nombres_check` + `formes_check` pour les fiches d'activités, `pack_check` pour les paquets d'activités, `patron_check` pour les patrons dessinés ; `a11y_audit` (axe-core, voir son en-tête) quand un écran ou un formulaire change). Les « ✘ » affichés sont souvent des
+  `fresh_check`, `atelier_check`, `atelier2_check`, `challenge_check`, `nav_check`, `audit_check` (47 types × 3 niveaux), `fit_check` (tout tient dans un écran de téléphone), `vocabulaire_check` (+ `skills_check`, `competences_check` pour la Bataille/compétences, `niveaux_check` pour les niveaux Solides/Monnaie, `seed_check` pour le hasard, `gabarits_check` + `nombres_check` + `formes_check` pour les fiches d'activités, `pack_check` pour les paquets d'activités, `patron_check` pour les patrons dessinés, `pwa_check` pour le site installable et le hors ligne ; `a11y_audit` (axe-core, voir son en-tête) quand un écran ou un formulaire change). Les « ✘ » affichés sont souvent des
   messages d'erreur voulus du jeu : se fier à « ÉCHEC »/« AssertionError »/« PAGE ERRORS ».
 - Un test instable est un défaut à corriger tout de suite (ex. attendre la fin des animations avant de mesurer).
 - `lib.js` marque les guides (tutoriels) comme déjà vus : sinon ils voileraient l'écran ; `withPage({guides:true})` pour les tester.

@@ -4,8 +4,8 @@
 On modifie les fichiers de `src/`, puis on reconstruit :
 
 ```
-python3 tools/build.py           # écrit index.html
-python3 tools/build.py --check   # vérifie que index.html est à jour
+python3 tools/build.py           # écrit index.html (fragment de l'artefact) ET le site installable docs/ (index.html, manifest.webmanifest, sw.js)
+python3 tools/build.py --check   # vérifie que index.html et docs/ sont à jour
 ```
 
 L'ordre d'assemblage est dans `src/manifest.json`. Tout le JS tient dans une seule
