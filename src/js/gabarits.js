@@ -2,7 +2,7 @@
      Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
      quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
      les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
-     Les scènes (equation, blocks, scatter, grid, emoji, numberline) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
+     Les scènes (equation, blocks, scatter, grid, emoji, numberline, fraction, clock) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
      jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
 
      Fiche :
@@ -10,7 +10,10 @@
          levels:[ {paramètres du niveau 0}, {…1}, {…2} ],      // nombres, textes ou listes : ils entrent dans l'environnement
          forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain,
                    eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …},
-                   extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles) } ],
+                   extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles)
+                   |  wrong:expr (réponses de texte : liste des fausses réponses, ex. others(JOURS, bonne, 3) ; `answer` est la bonne)
+                   |  figures:{scene, items:expr, label?} (« quelle figure ? » : items = liste de listes de paramètres de la scène, la 1re est la bonne) } ],
+         Banques de textes : JOURS, MOIS ; fonctions : at(liste,i) (en tournant), others(liste, sauf, n).
          note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
      spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
      Dans les textes : {expr}. Dans note : k0, k1, k2 = paramètre k du niveau 0, 1, 2. */
@@ -20,7 +23,16 @@
     min:Math.min, max:Math.max, abs:Math.abs, floor:Math.floor, round:Math.round,
     rand:function(){ return rnd(); },
     // listes lisibles : [2,5,10] -> « 2, 5 et 10 »
-    liste:function(a){ return a.length < 2 ? a.join('') : a.slice(0,-1).join(', ') + ' et ' + a[a.length-1]; }
+    liste:function(a){ return a.length < 2 ? a.join('') : a.slice(0,-1).join(', ') + ' et ' + a[a.length-1]; },
+    // élément d'une liste, en tournant : at(JOURS, 7) = le même jour que at(JOURS, 0) ; at(JOURS, -1) = le dernier
+    at:function(a, i){ var n = a.length; return a[((Math.floor(i) % n) + n) % n]; },
+    // n éléments de la liste, au hasard et différents, sans `except` : les fausses réponses d'une question de texte
+    others:function(a, except, n){ return shuffle(a.filter(function(x, i){ return x !== except && a.indexOf(x) === i; })).slice(0, n); }
+  };
+  // Banques de textes : listes prêtes à l'emploi, lisibles par toutes les fiches (noms en majuscules).
+  var BANKS = {
+    JOURS:['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'],
+    MOIS:['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']
   };
   function own(o, k){ return Object.prototype.hasOwnProperty.call(o, k); }
   var EXPR_CACHE = Object.create(null);   // sans prototype : « constructor » ne doit pas être pris pour une expression déjà compilée
@@ -191,6 +203,27 @@
         var r = d.rows, c = d.cols, gap = Math.min(30, 170/c, 170/r), x0 = 100 - (c-1)*gap/2, y0 = 100 - (r-1)*gap/2, i, j;
         for(i=0;i<r;i++) for(j=0;j<c;j++) svg.appendChild(el('circle',{cx:x0+j*gap,cy:y0+i*gap,r:Math.min(10,gap*0.36),fill:i%2 ? 'var(--accent2)' : 'var(--accent)',stroke:'var(--text)','stroke-width':1.8}));
       } },
+    // une figure partagée en n parts égales dont k sont coloriées : disque (pie) ou bande (bar)
+    fraction: { exprs:['n','k','shape'], texts:[],
+      make:function(a){ var n = clampInt(a.n, 1, 12); return { n:n, k:clampInt(a.k, 0, n), shape:a.shape === 'bar' ? 'bar' : 'pie' }; },
+      draw:function(svg, d){
+        var fill = 'var(--accent)', off = 'var(--surface)', i, n = d.n;
+        if(d.shape === 'pie'){
+          var r = 75;
+          for(i=0;i<n;i++){
+            var a0 = -Math.PI/2 + i*2*Math.PI/n, a1 = -Math.PI/2 + (i+1)*2*Math.PI/n;
+            var p = 'M 100 100 L '+(100+r*Math.cos(a0))+' '+(100+r*Math.sin(a0))+' A '+r+' '+r+' 0 0 1 '+(100+r*Math.cos(a1))+' '+(100+r*Math.sin(a1))+' Z';
+            svg.appendChild(el('path',{d:p, fill:i<d.k ? fill : off, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+          }
+        } else {
+          var w = 170, h = 85;
+          for(i=0;i<n;i++) svg.appendChild(el('rect',{x:15+i*w/n, y:57.5, width:w/n, height:h, fill:i<d.k ? fill : off, stroke:'var(--text)','stroke-width':2.5}));
+        }
+      } },
+    // une horloge à aiguilles : h (0 à 23, l'horloge ne montre que h mod 12) et m minutes
+    clock: { exprs:['h','m'], texts:[],
+      make:function(a){ return { h:clampInt(a.h, 0, 23), m:clampInt(a.m, 0, 59) }; },
+      draw:function(svg, d){ drawClockFace(svg, angleToXY(((d.h%12) + d.m/60) * 30 - 90, 42), angleToXY((d.m/60)*360 - 90, 62)); } },
     // un gros emoji et une ligne de légende
     emoji: { exprs:['icon'], texts:['caption'],
       make:function(a){ return a; },
@@ -211,12 +244,20 @@
     if(!f.forms || !f.forms.length) bad('aucune forme de question');
     f.forms.forEach(function(form, fi){
       var known = Object.create(null); known.level = 1; known.tries = 1;
+      for(var bk in BANKS) known[bk] = 1;
       f.levels.forEach(function(p){ for(var k in p) known[k] = 1; });
       var vars = form.vars || {};
       try {
         for(var name in vars){ var need = {}; specIdents(vars[name], need); for(var n in need) if(!known[n] && !own(EXPR_FNS, n) && n.charAt(0) !== '(') bad('forme ' + fi + ' : « ' + n + ' » inconnu dans la variable ' + name); known[name] = 1; }
         var all = [].concat(form.where || [], form.answer, form.extras || [], form.w === undefined ? [] : [form.w]).map(compileExpr)
           .concat(['question','sub','explain'].map(function(k){ if(typeof form[k] !== 'string') bad('forme ' + fi + ' : « ' + k + ' » manquant'); return compileText(form[k]); }));
+        if(form.wrong !== undefined) all.push(compileExpr(form.wrong));
+        if(form.figures){
+          var fg = form.figures, fdef = own(SCENES, fg.scene) ? SCENES[fg.scene] : null;
+          if(!fdef || fdef.texts.length) bad('forme ' + fi + ' : « figures » : scène inconnue ou sans paramètres numériques « ' + fg.scene + ' »');
+          if(typeof fg.items !== 'string') bad('forme ' + fi + ' : « figures.items » manquant');
+          all.push(compileExpr(fg.items));
+        }
         var sc = formScene(form), def = own(SCENES, sc.type) ? SCENES[sc.type] : null;
         if(!def) bad('forme ' + fi + ' : scène inconnue « ' + sc.type + ' »');
         def.exprs.forEach(function(k){ if(sc[k] === undefined) bad('forme ' + fi + ' : scène « ' + sc.type + ' » : « ' + k + ' » manquant'); all.push(compileExpr(sc[k])); });
@@ -236,9 +277,10 @@
     return compileText(f.note)(env);
   }
 
-  function genFromFiche(f, level){
+  function genFromFiche(f, level, svgId){
     var params = f.levels[level], base = Object.create(null), k;
     base.level = level; base.__fns = TEMPLATE_FNS;
+    for(k in BANKS) base[k] = BANKS[k];
     for(k in params) base[k] = params[k];
     // forme tirée selon ses poids (expressions : « level==2 ? 0.4 : 0 »)
     var cands = [], total = 0;
@@ -260,18 +302,34 @@
     var sc = formScene(form), sdef = SCENES[sc.type], sargs = {};
     sdef.exprs.forEach(function(k){ sargs[k] = evalExpr(sc[k], env); });
     sdef.texts.forEach(function(k){ sargs[k] = compileText(sc[k])(env); });
-    var sdata = sdef.make(sargs);
+    var sdata = sdef.make(sargs), choices, cols3 = false;
+    if(form.figures){
+      // « Quelle figure… ? » : items = liste de listes de paramètres de la scène, la première est la bonne ; ordre mélangé ici
+      var fg = form.figures, fdef = SCENES[fg.scene], items = evalExpr(fg.items, env);
+      choices = shuffle(items.map(function(args, i){
+        var a = {}; fdef.exprs.forEach(function(k, j){ a[k] = args[j]; });
+        var data = fdef.make(a);
+        return { ok:i === 0, viewBox:'0 0 200 200', draw:function(svg){ fdef.draw(svg, data); } };
+      })).map(function(c, i){ c.label = (fg.label || 'Figure') + ' ' + (i + 1); return c; });
+    } else if(form.wrong){
+      // réponses de texte : la bonne + la liste calculée de fausses réponses, mélangées
+      var good = String(correct);
+      choices = shuffle([good].concat(evalExpr(form.wrong, env).map(String))).map(function(l){ return { label:l, ok:l === good }; });
+    } else if(form.options){
+      cols3 = form.cols3 !== false;
+      choices = form.options.map(function(l){ return { label:l, ok:l === correct }; });
+    } else choices = numChoices(correct, extras);
     return {
       tag: f.tag || 'Calcul',
       question: compileText(form.question)(env),
       sub: compileText(form.sub)(env),
       explain: compileText(form.explain)(env),
       draw: function(){
-        var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
+        var svg = document.getElementById(svgId || 'm4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
         sdef.draw(svg, sdata);
       },
-      cols3: !!form.options && form.cols3 !== false,
-      choices: form.options ? form.options.map(function(l){ return { label:l, ok:l === correct }; }) : numChoices(correct, extras)
+      cols3: cols3,
+      choices: choices
     };
   }
 
@@ -279,7 +337,7 @@
   function makeTemplateDef(f){
     validateFiche(f);
     return { id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
-      randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } };
+      randomNote: templateNote(f), generate:function(level, svgId){ return genFromFiche(f, level, svgId); } };
   }
   function registerTemplateType(f){
     var def = makeTemplateDef(f);

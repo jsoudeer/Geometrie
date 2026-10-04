@@ -51,10 +51,11 @@
     if(!Array.isArray(f.forms) || f.forms.length < 1 || f.forms.length > 20) err('« forms » : de 1 à 20 formes de question');
     (f.forms || []).forEach(function(form, fi){
       if(!packIsObj(form)){ err('forme ' + fi + ' invalide'); return; }
-      var strs = [form.w, form.answer, form.question, form.sub, form.explain, form.eq].concat(form.where || [], form.extras || [], form.options || []);
+      var strs = [form.w, form.answer, form.question, form.sub, form.explain, form.eq, form.wrong].concat(form.where || [], form.extras || [], form.options || []);
       if(strs.some(function(x){ return x !== undefined && (typeof x !== 'string' && typeof x !== 'number' || String(x).length > PACK_LIMITS.expr * 2); })) err('forme ' + fi + ' : texte ou expression trop long');
       if(JSON.stringify(form).length > 6000) err('forme ' + fi + ' : trop longue');
       if(form.vars !== undefined && (!packIsObj(form.vars) || Object.keys(form.vars).length > 14 || Object.keys(form.vars).some(function(k){ return !PARAM_RE.test(k) || PACK_RESERVED[k]; }))) err('forme ' + fi + ' : variables invalides');
+      if(form.figures !== undefined && (!packIsObj(form.figures) || !packIsStr(form.figures.scene, 1, 20) || !packIsStr(form.figures.items, 1, PACK_LIMITS.expr) || form.figures.label !== undefined && !packIsStr(form.figures.label, 0, 30))) err('forme ' + fi + ' : « figures » invalide');
       if(form.where !== undefined && (!Array.isArray(form.where) || form.where.length > 8)) err('forme ' + fi + ' : « where » invalide');
       if(form.extras !== undefined && (!Array.isArray(form.extras) || form.extras.length > 10)) err('forme ' + fi + ' : « extras » invalide');
       if(form.options !== undefined && (!Array.isArray(form.options) || form.options.length < 2 || form.options.length > 4 || form.options.some(function(o){ return !packIsStr(o, 1, 30); }))) err('forme ' + fi + ' : « options » : de 2 à 4 réponses courtes');
