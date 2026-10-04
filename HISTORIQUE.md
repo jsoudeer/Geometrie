@@ -303,7 +303,10 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
   `reveal_check`, `guide_check`, `battle_check`, `bataille_ui_check` mis à jour.
 - **Docs** : `cours.md` (raretés, compétences, évolutions, reveal, guides), `PROJETS.md`, `src/README.md`.
 
-## 54. Audit P2 (partiel) : niveaux réels pour Solides et Monnaie (04/10/2026)
+## 54. Boutique à jour des étoiles (04/10/2026)
+Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (compteur et boutons « Acheter » restaient à l'ancien total) tant qu'on ne changeait pas de clan, seul moment où elle était redessinée. Désormais `showTab('shop')` redessine la Boutique à chaque ouverture, et `addStar` la redessine si elle est déjà ouverte. Test : `shop_refresh_check.js` (échoue sur l'ancienne version, passe sur la nouvelle). Au passage : `numChoices` et `bigNumQuestion`, utilisés par le thème Nombres, déplacés de `calcul.js` vers `noyau.js` (retirer Calcul cassait Nombres, vu par `theme_removal_check.js`) ; `golden.js` identique avant/après.
+
+## 55. Audit P2 (partiel) : niveaux réels pour Solides et Monnaie (04/10/2026)
 - `solideNom` : Facile = 5 solides simples (cube, pavé, cylindre, cône, boule), Moyen = 8 (+ pyramide, tétraèdre, prisme triangulaire), Difficile = 12 ; les mauvaises réponses sont prises dans le même niveau (`SOLIDE_NOM_LEVELS`).
 - `solideCompte` : 3 / 4 / 9 polyèdres selon le niveau (`SOLIDE_COMPTE_LEVELS`).
 - `monnaie` : Facile 2 pièces (1, 2, 5 €), Moyen 2-3 (≤ 10 €), Difficile 3-4 (≤ 20 €) (`MONNAIE_LEVELS`) ; le dessin à 4 pièces sert enfin.

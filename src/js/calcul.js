@@ -122,11 +122,6 @@
 
   // ===================== Arithmétique élargie =====================
   // Petit utilitaire : 4 boutons numériques, la bonne réponse + 3 valeurs voisines.
-  function numChoices(correct, extra, suffix){
-    var pool = [correct-1, correct+1, correct-2, correct+2, correct+3, correct-3].concat(extra || []);
-    pool = pool.filter(function(v){ return v>=0 && v!==correct; });
-    return numChoiceSet(correct, pool).map(function(v){ return { label:String(v) + (suffix||''), ok:v===correct }; });
-  }
   function eqQuestion(tag, question, sub, explain, eq, correct, extra){
     return {
       tag:tag, question:question, sub:sub, explain:explain,
@@ -250,14 +245,6 @@
   }
 
   // ===================== Nombres : numération et ordre =====================
-  function bigNumQuestion(tag, question, sub, explain, txt, correct, extra){
-    return {
-      tag:tag, question:question, sub:sub, explain:explain,
-      draw:function(){ drawEquation(txt); },
-      cols3:false,
-      choices: numChoices(correct, extra)
-    };
-  }
   // -- Numération : dizaines, unités, centaines ; composer un nombre --
   function genNumerationQuestion(level){
     var hi = level===0 ? 59 : level===1 ? 99 : 999;

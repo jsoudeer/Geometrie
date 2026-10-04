@@ -1,7 +1,7 @@
   /* ===================== NOMBRES JUSQU'À 1000 ET CALCUL ÉCRIT =====================
      Types de Quizz de numération (blocs, lettres, ±10/±100, droite graduée, encadrer)
      et de calcul (additions/soustractions posées, multiplier et partager).
-     Utilise les outils de calcul.js (numChoices, bigNumQuestion…). */
+     Utilise les outils partagés de noyau.js (numChoices, bigNumQuestion…). */
 
   // ---- Nombres en lettres (0 à 999, orthographe traditionnelle) ----
   var LETTRES_U = ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
