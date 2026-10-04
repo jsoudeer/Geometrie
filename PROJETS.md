@@ -79,6 +79,9 @@ moins pertinent.
 - [ ] Polices Google Fonts chargées depuis Internet : les embarquer pour l'usage hors ligne
   (empaquetage Tauri / Capacitor).
 - [ ] Nettoyer `wip/` (11 Mo d'images brutes versionnées).
+- [ ] Test fragile : `tools/tests/drag_check.js`, vérification « glisser rapide suivi », échoue
+  environ 1 fois sur 6 au hasard (déjà avant le 04/10/2026). Le geste simulé est très court (2 pas) :
+  rendre le test moins sensible au temps, ou vérifier que la poignée suit bien un geste très rapide.
 
 - [ ] (**non retenu pour l'instant : risque addictif**) **Boutique en « gatcha »** (idée du 04/10/2026, à étudier après les tests réels) : remplacer l'achat direct
   d'une mascotte par un tirage au sort payé en étoiles (probabilités par rareté) ; **si on tire un doublon, le

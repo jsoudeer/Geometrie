@@ -14,6 +14,9 @@
     stars += n;
     document.getElementById('starCount').textContent = stars;
     try{ localStorage.setItem('geo_stars', String(stars)); }catch(e){}
+    // la boutique déjà ouverte suit le nouveau total (compteur, boutons « Acheter »)
+    var shop = document.getElementById('tab-shop');
+    if(shop && !shop.hidden && typeof renderShop === 'function') renderShop();
   }
   try{
     var saved = localStorage.getItem('geo_stars');
@@ -239,6 +242,9 @@
       document.getElementById('tab-'+tab).hidden = false;
       document.getElementById('mascot-dock').hidden = true;
       if(tab === 'battle') renderBtSetup();
+      // la boutique est redessinée à chaque ouverture : les étoiles gagnées
+      // depuis la dernière visite débloquent les boutons « Acheter »
+      if(tab === 'shop') renderShop();
     }
     updateMenuButton();
   }
@@ -814,6 +820,21 @@
       pts.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
     }
     return pts;
+  }
+  // Réponses chiffrées d'une question de Quizz (la bonne + 3 voisines), et question
+  // « nombre » complète : partagées par les thèmes Calcul et Nombres.
+  function numChoices(correct, extra, suffix){
+    var pool = [correct-1, correct+1, correct-2, correct+2, correct+3, correct-3].concat(extra || []);
+    pool = pool.filter(function(v){ return v>=0 && v!==correct; });
+    return numChoiceSet(correct, pool).map(function(v){ return { label:String(v) + (suffix||''), ok:v===correct }; });
+  }
+  function bigNumQuestion(tag, question, sub, explain, txt, correct, extra){
+    return {
+      tag:tag, question:question, sub:sub, explain:explain,
+      draw:function(){ drawEquation(txt); },
+      cols3:false,
+      choices: numChoices(correct, extra)
+    };
   }
   // Illustration d'une question de Quizz réduite à un texte (ex. « 3 + 4 = ? »).
   function drawEquation(txt){
