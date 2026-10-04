@@ -1,5 +1,5 @@
 // P5b de l'audit : paquets d'activités (paquets.js) — validation, installation, activation, mise à jour, retrait,
-// persistance sur l'appareil, import par l'écran Réglages, activité qui échoue écartée.
+// persistance sur l'appareil, activité qui échoue écartée.
 const fs = require('fs'), path = require('path');
 const { withPage } = require('./lib');
 const SAMPLE_PATH = path.join(__dirname, '../../exemples/paquet-exemple.kvb.json');
@@ -100,24 +100,11 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     return JSON.stringify({ before:before, after:after, fallback: !!q.question && q.choices.length >= 2, err: entry.erreur }); })()`);
   chk(fail.before && !fail.after && fail.fallback && /boum/.test(fail.err), 'activité qui plante : écartée, remplacée par une question normale, message gardé');
 
-  // 7. import par l'écran Réglages (fichier)
-  await page.setInputFiles('#packs-file', SAMPLE_PATH);
-  await page.waitForTimeout(500);
-  const ui = await page.evaluate(() => ({ msg: document.getElementById('packs-msg').textContent, items: document.querySelectorAll('#packs-list .pack-item').length, title: (document.querySelector('#packs-list .pack-title') || {}).textContent }));
-  chk(/installé/.test(ui.msg) && ui.items === 1 && /Paquet d'exemple/.test(ui.title), 'import par fichier : « ' + ui.msg + ' » ; liste : ' + ui.title);
-  await page.setInputFiles('#packs-file', { name: 'mauvais.kvb.json', mimeType: 'application/json', buffer: Buffer.from('{"format":"kvb-pack","formatVersion":1,"id":"x"}') });
-  await page.waitForTimeout(400);
-  chk(/refusé/.test(await page.evaluate(() => document.getElementById('packs-msg').textContent)), 'import d\'un fichier invalide : message de refus affiché');
-  await page.evaluate(() => document.querySelector('#packs-list .pack-toggle').click());
-  chk(/Activer/.test(await page.evaluate(() => document.querySelector('#packs-list .pack-toggle').textContent)), 'bouton « Désactiver » → « Activer »');
-  await page.evaluate(() => document.querySelector('#packs-list .pack-remove').click());
-  chk((await page.evaluate(() => document.querySelectorAll('#packs-list .pack-item').length)) === 0, 'bouton « Retirer » : la liste est vide');
-
   // 8. les textes d'un paquet ne sont jamais interprétés comme du HTML
   const xss = clone(); xss.id = 'xss.test'; xss.titre = '<img src=x onerror=window.__pwn=1>'; xss.activites[1].questions[0].q = '<img src=x onerror=window.__pwn=1> Quel mois ?';
   await install(xss);
   await page.evaluate(() => window.__t.__eval(`quizTypeById('custom:xss.test/calendrier-classe').generate(0)`)); await page.waitForTimeout(100);
-  chk(!(await page.evaluate(() => window.__pwn)) && (await page.evaluate(() => document.querySelectorAll('#packs-list img').length)) === 0, 'du HTML dans un paquet reste du texte (aucune balise injectée)');
+  chk(!(await page.evaluate(() => window.__pwn)) , 'du HTML dans un paquet reste du texte (aucune balise injectée)');
   await ev(`packRemove('xss.test')`);
 
   // 9. un paquet peut aussi utiliser la banque de jours, les réponses de texte, la scène horloge et le choix de figure

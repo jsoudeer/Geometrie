@@ -754,33 +754,6 @@
   /* Retour d'une réponse (voir makeQuestionFlow) : titre ✔/✘, puis détail, puis explication. */
   .feedback .fb-title{ font-weight:800; }
   .feedback > div:not(.fb-title):not(.explain-line){ font-weight:700; }
-
-/* Paquets d'activités (Réglages, derrière le code adulte) */
-.packs-list{ list-style:none; margin:0 0 10px; padding:0; }
-.pack-item{ border:2px solid var(--text); border-radius:12px; padding:8px 10px; margin-bottom:8px; background:var(--surface); }
-.pack-title{ font-weight:700; margin-bottom:6px; overflow-wrap:anywhere; }
-.pack-item .btn-row{ gap:6px; flex-wrap:wrap; }
-.pack-item .btn{ flex:1 1 auto; min-height:44px; }
-
-.ed-form{ border:2px solid var(--text); border-radius:12px; padding:10px; margin-bottom:10px; background:var(--surface); }
-.ed-form h3{ margin:0 0 8px; font-size:1rem; }
-.ed-field{ display:flex; flex-direction:column; gap:3px; margin-bottom:8px; }
-.ed-field label{ font-weight:700; font-size:.9rem; }
-.ed-field input, .ed-field select{ min-height:44px; font:inherit; padding:6px 8px; border:2px solid var(--text); border-radius:10px; background:#fff; color:var(--text); box-sizing:border-box; width:100%; }
-.ed-levels, .ed-question{ border:1px solid var(--text); border-radius:10px; margin:0 0 8px; padding:6px 8px; }
-.ed-check{ display:inline-flex; align-items:center; gap:4px; min-height:44px; margin-right:10px; }
-.ed-form .btn-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
-.ed-form .btn{ flex:1 1 auto; min-height:44px; }
-.ed-preview{ margin:0; padding-left:22px; }
-.ed-prev-item{ margin-bottom:6px; overflow-wrap:anywhere; }
-.ed-prev-q{ font-weight:700; }
-.ed-prev-a{ font-size:.9rem; }
-
-.ed-grid{ display:grid; grid-template-columns:repeat(6, 1fr); gap:4px; margin-bottom:10px; }
-.ed-cell{ aspect-ratio:1; min-height:40px; border:2px solid var(--text); border-radius:8px; background:var(--surface); cursor:pointer; padding:0; }
-.ed-cell.on{ background:var(--accent); }
-.ed-cell:focus-visible{ outline:3px solid var(--text); outline-offset:2px; }
-.ed-net-preview{ width:100%; max-width:240px; height:auto; display:block; margin:4px 0; }
   /* ============ MODULE 6 : BOUTIQUE + BATAILLE ============ */
   .arena-star-note{
     display:flex; align-items:center; gap:8px; background:var(--surface2);
@@ -1430,20 +1403,6 @@
         </form>
         <div id="debug-tools" hidden>
           <p class="muted settings-hint" role="status">Mode débogage actif jusqu'à la fermeture de la page.</p>
-          <div id="editor-panel">
-            <p class="muted settings-hint"><strong>✏️ Mes activités</strong> : crée une activité (table, ajout / retrait, questions à toi), teste-la, puis enregistre-la.</p>
-            <button class="btn ghost" id="edit-new-btn" type="button" style="width:100%;margin-bottom:8px;">✏️ Créer une activité</button>
-            <p class="muted settings-hint" id="edit-msg" role="status" aria-live="polite"></p>
-            <ul id="edit-list" class="packs-list"></ul>
-            <div id="edit-form" class="ed-form" hidden></div>
-          </div>
-          <div id="packs-panel">
-            <p class="muted settings-hint"><strong>📦 Paquets d'activités</strong> : des fichiers <code>.kvb.json</code> qui ajoutent des activités (réservé aux adultes).</p>
-            <input type="file" id="packs-file" accept=".json,application/json" hidden>
-            <button class="btn ghost" id="packs-import-btn" type="button" style="width:100%;margin-bottom:8px;">📥 Importer un paquet…</button>
-            <p class="muted settings-hint" id="packs-msg" role="status" aria-live="polite"></p>
-            <ul id="packs-list" class="packs-list"></ul>
-          </div>
           <button class="btn ghost" id="unlock-all-btn" type="button" style="width:100%;margin-bottom:8px;">🔓 Tout débloquer</button>
           <button class="btn ghost" id="debug-plus50-btn" type="button" style="width:100%;margin-bottom:8px;">⭐ +50 étoiles</button>
           <button class="btn ghost" id="debug-off-btn" type="button" style="width:100%;">🔒 Quitter le mode débogage</button>
@@ -2825,6 +2784,416 @@ function phrase(tpl, vars){
     return vars[k];
   });
 }
+  /* ===================== GABARITS D'ACTIVITÉS (moteur de fiches) =====================
+     Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
+     quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
+     les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
+     Les scènes (equation, blocks, scatter, grid, emoji, numberline, fraction, clock, cells, money, words) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
+     jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
+
+     Fiche :
+       { id, domain, label, longLabel, defaultLevels, tag?,
+         levels:[ {paramètres du niveau 0}, {…1}, {…2} ],      // nombres, textes ou listes : ils entrent dans l'environnement
+         forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain,
+                   eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …},
+                   extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles)
+                   |  wrong:expr (réponses de texte : liste des fausses réponses, ex. others(JOURS, bonne, 3) ; `answer` est la bonne)
+                   |  figures:{scene, items:expr, label?} (« quelle figure ? » : items = liste de listes de paramètres de la scène, la 1re est la bonne)
+                   suffix? (unité collée aux réponses numériques : '€') } ],
+         freshForms:true : les formes sortent sans remise (problèmes écrits). Variables « objet » : {person:true} (w.nom, w.il, w.Il, w.at),
+         {thing:'jeu'|'gourmand'|'fruit'|'article'} (o.obj, o.sing, o.un, o.seuls, o.chacun, o.icon, o.genre), {color:true} (c.m, c.f).
+         Banques de textes : JOURS, MOIS ; fonctions : at(liste,i) (en tournant), others(liste, sauf, n).
+         note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
+     spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
+     Dans les textes : {expr}. Dans note : k0, k1, k2 = paramètre k du niveau 0, 1, 2. */
+
+  // ---- évaluateur d'expressions (+ - * / % < <= > >= == != && || ! ?: appels de fonctions) ----
+  var EXPR_FNS = {
+    min:Math.min, max:Math.max, abs:Math.abs, floor:Math.floor, round:Math.round,
+    rand:function(){ return rnd(); },
+    // listes lisibles : [2,5,10] -> « 2, 5 et 10 »
+    liste:function(a){ return a.length < 2 ? a.join('') : a.slice(0,-1).join(', ') + ' et ' + a[a.length-1]; },
+    // élément d'une liste, en tournant : at(JOURS, 7) = le même jour que at(JOURS, 0) ; at(JOURS, -1) = le dernier
+    at:function(a, i){ var n = a.length; return a[((Math.floor(i) % n) + n) % n]; },
+    // n éléments de la liste, au hasard et différents, sans `except` : les fausses réponses d'une question de texte
+    // joindre([5,2], '€ + ') -> « 5€ + 2 » ; total([5,2]) -> 7 ; tirages([1,2,5], 3) -> 3 valeurs au hasard (avec remise)
+    joindre:function(a, sep){ return a.join(sep); },
+    total:function(a){ return a.reduce(function(x, y){ return x + y; }, 0); },
+    tirages:function(a, n){ var o = []; for(var i = 0; i < Math.min(40, n); i++) o.push(pick(a)); return o; },
+    // la liste avec « ? » à la place de l'élément i (suites à trou)
+    masque:function(a, i){ return a.map(function(v, k){ return k === i ? '?' : String(v); }); },
+    // « 1 bille », « 5 billes » ; « 5 billes rouges » (accord de la couleur avec le genre de l'objet)
+    nb:function(n, sing, plur){ return n + ' ' + (n > 1 ? plur : sing); },
+    nbc:function(n, sing, plur, genre, cm, cf){ return n + ' ' + (n > 1 ? plur : sing) + ' ' + (genre === 'f' ? cf : cm) + (n > 1 ? 's' : ''); },
+    others:function(a, except, n){ return shuffle(a.filter(function(x, i){ return x !== except && a.indexOf(x) === i; })).slice(0, n); }
+  };
+  // Banques de textes : listes prêtes à l'emploi, lisibles par toutes les fiches (noms en majuscules).
+  var BANKS = {
+    JOURS:['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'],
+    MOIS:['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']
+  };
+  function own(o, k){ return Object.prototype.hasOwnProperty.call(o, k); }
+  var EXPR_CACHE = Object.create(null);   // sans prototype : « constructor » ne doit pas être pris pour une expression déjà compilée
+  function compileExpr(src){
+    src = String(src);
+    if(EXPR_CACHE[src]) return EXPR_CACHE[src];
+    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][\w.]*)|'([^']*)'|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
+    while(pos < src.length){
+      re.lastIndex = pos; m = re.exec(src);
+      if(!m){ if(/^\s*$/.test(src.slice(pos))) break; throw new Error('expression illisible : ' + src); }
+      pos = re.lastIndex;
+      if(m[1] !== undefined) toks.push({ t:'n', v:parseFloat(m[1]) });
+      else if(m[2] !== undefined) toks.push({ t:'i', v:m[2] });
+      else if(m[3] !== undefined) toks.push({ t:'s', v:m[3] });
+      else toks.push({ t:'o', v:m[4] });
+    }
+    var k = 0, idents = {};
+    function peek(){ return toks[k]; }
+    function eat(v){ var t = toks[k]; if(!t || t.t !== 'o' || t.v !== v) throw new Error('« ' + v + ' » attendu dans : ' + src); k++; }
+    function isOp(v){ var t = toks[k]; return t && t.t === 'o' && t.v === v; }
+    function ternary(){
+      var c = orE();
+      if(isOp('?')){ k++; var a = ternary(); eat(':'); var b = ternary(); return function(e){ return c(e) ? a(e) : b(e); }; }
+      return c;
+    }
+    function bin(next, ops){
+      return function(){
+        var l = next();
+        while(toks[k] && toks[k].t === 'o' && ops.indexOf(toks[k].v) !== -1){
+          var op = toks[k++].v, r = next(), a = l;
+          l = (function(a, r, op){ return function(e){
+            var x = a(e), y = r(e);
+            switch(op){
+              case '||': return x || y; case '&&': return x && y;
+              case '==': return x === y; case '!=': return x !== y;
+              case '<': return x < y; case '<=': return x <= y; case '>': return x > y; case '>=': return x >= y;
+              case '+': return x + y; case '-': return x - y; case '*': return x * y; case '/': return x / y; default: return x % y;
+            } }; })(a, r, op);
+        }
+        return l;
+      };
+    }
+    var orE, andE, eqE, relE, addE, mulE;
+    mulE = bin(unary, ['*','/','%']); addE = bin(mulE, ['+','-']); relE = bin(addE, ['<','<=','>','>=']);
+    eqE = bin(relE, ['==','!=']); andE = bin(eqE, ['&&']); orE = bin(andE, ['||']);
+    function unary(){
+      if(isOp('-')){ k++; var u = unary(); return function(e){ return -u(e); }; }
+      if(isOp('!')){ k++; var v = unary(); return function(e){ return !v(e); }; }
+      return primary();
+    }
+    function primary(){
+      var t = toks[k++];
+      if(!t) throw new Error('expression incomplète : ' + src);
+      if(t.t === 'n' || t.t === 's') return function(){ return t.v; };
+      if(t.t === 'o' && t.v === '('){ var x = ternary(); eat(')'); return x; }
+      if(t.t === 'o' && t.v === '['){
+        var items = [];
+        if(!isOp(']')){ do { items.push(ternary()); if(!isOp(',')) break; k++; } while(true); }
+        eat(']'); return function(e){ return items.map(function(f){ return f(e); }); };
+      }
+      if(t.t !== 'i') throw new Error('« ' + t.v + ' » inattendu dans : ' + src);
+      if(isOp('(')){
+        k++; var args = [];
+        if(!isOp(')')){ do { args.push(ternary()); if(!isOp(',')) break; k++; } while(true); }
+        eat(')'); idents['()' + t.v] = 1;
+        return function(e){
+          var f = own(EXPR_FNS, t.v) ? EXPR_FNS[t.v] : own(e.__fns, t.v) ? e.__fns[t.v] : null;
+          if(!f) throw new Error('fonction inconnue : ' + t.v);
+          return f.apply(null, args.map(function(a){ return a(e); }));
+        };
+      }
+      idents[t.v] = 1;
+      return function(e){ return e[t.v]; };
+    }
+    var root = ternary();
+    if(k < toks.length) throw new Error('reste inattendu dans : ' + src);
+    root.idents = idents;
+    return (EXPR_CACHE[src] = root);
+  }
+  function evalExpr(src, env){ return compileExpr(src)(env); }
+
+  // ---- textes : « Combien font {a} + {b} ? » ----
+  function compileText(src){
+    var parts = String(src).split(/\{([^}]*)\}/), fs = [];
+    for(var i=0;i<parts.length;i++) fs.push(i%2 ? compileExpr(parts[i]) : parts[i]);
+    var fn = function(env){ return fs.map(function(f){ return typeof f === 'string' ? f : f(env); }).join(''); };
+    fn.idents = {};
+    fs.forEach(function(f){ if(typeof f !== 'string') for(var k in f.idents) fn.idents[k] = 1; });
+    return fn;
+  }
+
+  // ---- personnes, choses, couleurs : les champs d'une valeur « objet » sont lus avec un point (w.nom, o.obj, c.m) ----
+  var PERSON_FIELDS = ['nom','il','Il','at'], THING_FIELDS = ['obj','sing','seuls','chacun','icon','genre','un'], COLOR_FIELDS = ['m','f'];
+  function specFields(spec){ return spec && spec.person ? PERSON_FIELDS : spec && spec.thing ? THING_FIELDS : spec && spec.color ? COLOR_FIELDS : null; }
+  function drawObject(spec){
+    if(spec.person) return accords(prenomAuHasard());
+    if(spec.thing){
+      var o = spec.thing === 'article' ? articleAuHasard() : objetAuHasard(spec.thing), v = accords(null, o);
+      v.icon = o.icon || ''; v.genre = o.genre; v.un = unArticle(o);
+      return v;
+    }
+    return pick(COULEURS);
+  }
+
+  // ---- tirage d'une variable ----
+  function drawVar(spec, env){
+    if(typeof spec === 'number' || typeof spec === 'string') return evalExpr(spec, env);
+    if(spec.int){
+      var lo = evalExpr(spec.int[0], env), hi = evalExpr(spec.int[1], env);
+      return randInt(lo, hi) * (spec.step || 1);
+    }
+    if(spec.pick){ var list = typeof spec.pick === 'string' ? env[spec.pick] : spec.pick; return pick(list); }
+    if(spec.any) return drawVar(pick(spec.any), env);
+    if(specFields(spec)) return drawObject(spec);
+    throw new Error('variable inconnue : ' + JSON.stringify(spec));
+  }
+  function specIdents(spec, out){
+    if(typeof spec === 'number') return;
+    if(typeof spec === 'string'){ var c = compileExpr(spec); for(var k in c.idents) out[k] = 1; return; }
+    if(spec.int) spec.int.forEach(function(x){ specIdents(x, out); });
+    else if(spec.pick){ if(typeof spec.pick === 'string') out[spec.pick] = 1; }
+    else if(spec.any) spec.any.forEach(function(s){ specIdents(s, out); });
+    else if(specFields(spec)){
+      if(spec.thing !== undefined && spec.thing !== 'article' && ['jeu','gourmand','fruit'].indexOf(spec.thing) === -1) throw new Error('chose inconnue : ' + spec.thing);
+    }
+    else throw new Error('variable inconnue : ' + JSON.stringify(spec));
+  }
+
+  // ---- SCÈNES : ce qui est dessiné. make(args) tire tout ce qui est aléatoire (une seule fois, à la génération) ;
+  // draw(svg, données) dessine, sans rien tirer : redessiner = même image. exprs = paramètres lus comme
+  // expressions, texts = paramètres lus comme textes à {trous}.
+  function clampInt(v, lo, hi){ v = Math.floor(+v); return isNaN(v) ? lo : Math.max(lo, Math.min(hi, v)); }
+  var SCENES = {
+    equation: { exprs:[], texts:['text'],
+      make:function(a){ return a; },
+      draw:function(svg, d){ svg.appendChild(svgText(100,112,d.text.length>11 ? 24 : 34,d.text)); } },
+    // plaques (100), barres (10), cubes (1) : « quel nombre est représenté ? »
+    blocks: { exprs:['hu','te','un'], texts:[],
+      make:function(a){ return { hu:clampInt(a.hu, 0, 20), te:clampInt(a.te, 0, 12), un:clampInt(a.un, 0, 30) }; },
+      draw:function(svg, d){
+        var hu = d.hu, te = d.te, un = d.un, i, j, s = 30, g = 3;
+        for(i=0;i<hu;i++){
+          var px = 8 + (i%5)*(s+g+3), py = 6 + Math.floor(i/5)*(s+g);
+          svg.appendChild(el('rect',{x:px,y:py,width:s,height:s,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--text)','stroke-width':2}));
+          for(j=1;j<5;j++){
+            svg.appendChild(el('line',{x1:px+j*s/5,y1:py,x2:px+j*s/5,y2:py+s,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
+            svg.appendChild(el('line',{x1:px,y1:py+j*s/5,x2:px+s,y2:py+j*s/5,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
+          }
+        }
+        var yb = hu>5 ? 82 : hu>0 ? 52 : 30;
+        for(i=0;i<te;i++){
+          var bx = 10 + i*13;
+          svg.appendChild(el('rect',{x:bx,y:yb,width:10,height:90,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
+          for(j=1;j<10;j++) svg.appendChild(el('line',{x1:bx,y1:yb+j*9,x2:bx+10,y2:yb+j*9,stroke:'var(--text)','stroke-width':0.6}));
+        }
+        for(i=0;i<un;i++) svg.appendChild(el('rect',{x:138+(i%3)*19,y:yb+4+Math.floor(i/3)*21,width:15,height:15,fill:'var(--accent)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':1.5}));
+      } },
+    // n objets éparpillés sur une grille 4×4 (positions et petits décalages tirés une fois)
+    scatter: { exprs:['n','icon'], texts:[],
+      make:function(a){
+        var cells = []; for(var i=0;i<16;i++) cells.push(i);
+        var chosen = shuffle(cells).slice(0, clampInt(a.n, 0, 16));
+        return { icon:a.icon, items: chosen.map(function(c){ return { c:c, dx:randInt(-6,6), dy:randInt(-4,4) }; }) };
+      },
+      draw:function(svg, d){ d.items.forEach(function(it){ svg.appendChild(svgText(28 + (it.c%4)*48 + it.dx, 52 + Math.floor(it.c/4)*44 + it.dy, 30, d.icon)); }); } },
+    // droite graduée : nb graduations de pas `step` depuis `start`, une flèche « ? » à la graduation k
+    numberline: { exprs:['start','step','nb','labelEvery','k'], texts:[],
+      make:function(a){ var nb = clampInt(a.nb, 2, 20); return { start:a.start, step:a.step, nb:nb, labelEvery:clampInt(a.labelEvery, 1, nb), k:clampInt(a.k, 0, nb) }; },
+      draw:function(svg, d){
+        var x0 = 16, w = 168, y = 120, i;
+        svg.appendChild(el('line',{x1:x0-6,y1:y,x2:x0+w+6,y2:y,stroke:'var(--text)','stroke-width':3,'stroke-linecap':'round'}));
+        for(i=0;i<=d.nb;i++){
+          var x = x0 + i*w/d.nb, big = i%d.labelEvery===0;
+          svg.appendChild(el('line',{x1:x,y1:y-(big?11:7),x2:x,y2:y+(big?11:7),stroke:'var(--text)','stroke-width':big?3:2}));
+          if(big) svg.appendChild(svgText(x, y+32, 15, String(d.start + i*d.step)));
+        }
+        var ax = x0 + d.k*w/d.nb;
+        svg.appendChild(el('polygon',{points:(ax-10)+','+(y-52)+' '+(ax+10)+','+(y-52)+' '+ax+','+(y-14),fill:'var(--accent)',stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+        svg.appendChild(svgText(ax, y-60, 22, '?'));
+      } },
+    // rows × cols points
+    grid: { exprs:['rows','cols'], texts:[],
+      make:function(a){ return { rows:clampInt(a.rows, 1, 12), cols:clampInt(a.cols, 1, 12) }; },
+      draw:function(svg, d){
+        var r = d.rows, c = d.cols, gap = Math.min(30, 170/c, 170/r), x0 = 100 - (c-1)*gap/2, y0 = 100 - (r-1)*gap/2, i, j;
+        for(i=0;i<r;i++) for(j=0;j<c;j++) svg.appendChild(el('circle',{cx:x0+j*gap,cy:y0+i*gap,r:Math.min(10,gap*0.36),fill:i%2 ? 'var(--accent2)' : 'var(--accent)',stroke:'var(--text)','stroke-width':1.8}));
+      } },
+    // une figure partagée en n parts égales dont k sont coloriées : disque (pie) ou bande (bar)
+    fraction: { exprs:['n','k','shape'], texts:[],
+      make:function(a){ var n = clampInt(a.n, 1, 12); return { n:n, k:clampInt(a.k, 0, n), shape:a.shape === 'bar' ? 'bar' : 'pie' }; },
+      draw:function(svg, d){
+        var fill = 'var(--accent)', off = 'var(--surface)', i, n = d.n;
+        if(d.shape === 'pie'){
+          var r = 75;
+          for(i=0;i<n;i++){
+            var a0 = -Math.PI/2 + i*2*Math.PI/n, a1 = -Math.PI/2 + (i+1)*2*Math.PI/n;
+            var p = 'M 100 100 L '+(100+r*Math.cos(a0))+' '+(100+r*Math.sin(a0))+' A '+r+' '+r+' 0 0 1 '+(100+r*Math.cos(a1))+' '+(100+r*Math.sin(a1))+' Z';
+            svg.appendChild(el('path',{d:p, fill:i<d.k ? fill : off, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+          }
+        } else {
+          var w = 170, h = 85;
+          for(i=0;i<n;i++) svg.appendChild(el('rect',{x:15+i*w/n, y:57.5, width:w/n, height:h, fill:i<d.k ? fill : off, stroke:'var(--text)','stroke-width':2.5}));
+        }
+      } },
+    // une horloge à aiguilles : h (0 à 23, l'horloge ne montre que h mod 12) et m minutes
+    clock: { exprs:['h','m'], texts:[],
+      make:function(a){ return { h:clampInt(a.h, 0, 23), m:clampInt(a.m, 0, 59) }; },
+      draw:function(svg, d){ drawClockFace(svg, angleToXY(((d.h%12) + d.m/60) * 30 - 90, 42), angleToXY((d.m/60)*360 - 90, 62)); } },
+    // une rangée de cases contenant les valeurs de la liste (suite de nombres, « ? » pour le trou)
+    cells: { exprs:['items'], texts:[],
+      make:function(a){ return { items:(a.items || []).slice(0, 8).map(String) }; },
+      draw:function(svg, d){
+        var n = d.items.length, w = Math.min(34, (190 - (n-1)*5) / n), gap = 5, x0 = (200 - (n*w + (n-1)*gap)) / 2;
+        d.items.forEach(function(txt, k){
+          var x = x0 + k*(w+gap);
+          svg.appendChild(el('rect',{x:x,y:88,width:w,height:34,rx:6,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
+          svg.appendChild(svgText(x+w/2,112,txt.length>2?16:19,txt));
+        });
+      } },
+    // des pièces (valeur < 5) et des billets (valeur ≥ 5), jusqu'à 4
+    money: { exprs:['items'], texts:[],
+      make:function(a){ return { items:(a.items || []).slice(0, 4).map(function(v){ return clampInt(v, 1, 500); }) }; },
+      draw:function(svg, d){
+        var pos = [[55,100],[100,65],[145,100],[100,140]];
+        d.items.forEach(function(v, i){
+          var cx = pos[i][0], cy = pos[i][1];
+          if(v < 5) svg.appendChild(el('circle',{cx:cx,cy:cy,r:26, fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2.5}));
+          else svg.appendChild(el('rect',{x:cx-34,y:cy-20,width:68,height:40,rx:4, fill:'var(--accent2)', stroke:'var(--text)','stroke-width':2.5}));
+          svg.appendChild(svgText(cx,cy+6,16,v+'€'));
+        });
+      } },
+    // un texte en gros, coupé en lignes (après un espace ou un tiret) : un nombre écrit en lettres
+    words: { exprs:[], texts:['text'],
+      make:function(a){ return { text:String(a.text).slice(0, 120) }; },
+      draw:function(svg, d){
+        var words = d.text.split(/(?<=\s|-)/), lines = [''], i;
+        for(i=0;i<words.length;i++){ if((lines[lines.length-1] + words[i]).length > 14 && lines[lines.length-1]) lines.push(''); lines[lines.length-1] += words[i]; }
+        lines.forEach(function(t, k){ svg.appendChild(svgText(100, 100 - (lines.length-1)*14 + k*30, 24, t.trim())); });
+      } },
+    // un gros emoji et une ligne de légende
+    emoji: { exprs:['icon'], texts:['caption'],
+      make:function(a){ return a; },
+      draw:function(svg, d){ svg.appendChild(svgText(100,95,64,d.icon)); svg.appendChild(svgText(100,150,26,d.caption)); } }
+  };
+
+  // La scène d'une forme : `scene:{type:…}` ou, en raccourci, `eq:'texte'` (une équation écrite).
+  function formScene(form){ return form.scene || { type:'equation', text:form.eq }; }
+  var TEMPLATE_FICHES = {};
+  var TEMPLATE_FNS = {};   // fonctions nommées utilisables dans les fiches (carry, explainAdd…), déclarées par fiches-calcul.js
+
+  // Vérifie une fiche (erreur claire si elle est mal formée) : toutes les expressions se compilent,
+  // tous les noms utilisés existent. Appelée à l'enregistrement.
+  function validateFiche(f){
+    function bad(msg){ throw new Error('fiche « ' + f.id + ' » : ' + msg); }
+    ['id','domain','label','longLabel'].forEach(function(k){ if(!f[k]) bad('« ' + k + ' » manquant'); });
+    if(!f.levels || f.levels.length !== 3) bad('3 niveaux attendus (Facile, Moyen, Difficile)');
+    if(!f.forms || !f.forms.length) bad('aucune forme de question');
+    f.forms.forEach(function(form, fi){
+      var known = Object.create(null); known.level = 1; known.tries = 1;
+      for(var bk in BANKS) known[bk] = 1;
+      f.levels.forEach(function(p){ for(var k in p) known[k] = 1; });
+      var vars = form.vars || {};
+      try {
+        for(var name in vars){ var need = {}; specIdents(vars[name], need); for(var n in need) if(!known[n] && !own(EXPR_FNS, n) && n.charAt(0) !== '(') bad('forme ' + fi + ' : « ' + n + ' » inconnu dans la variable ' + name); known[name] = 1; (specFields(vars[name]) || []).forEach(function(fk){ known[name + '.' + fk] = 1; }); }
+        var all = [].concat(form.where || [], form.answer, form.extras || [], form.w === undefined ? [] : [form.w]).map(compileExpr)
+          .concat(['question','sub','explain'].map(function(k){ if(typeof form[k] !== 'string') bad('forme ' + fi + ' : « ' + k + ' » manquant'); return compileText(form[k]); }));
+        if(form.wrong !== undefined) all.push(compileExpr(form.wrong));
+        if(form.figures){
+          var fg = form.figures, fdef = own(SCENES, fg.scene) ? SCENES[fg.scene] : null;
+          if(!fdef || fdef.texts.length) bad('forme ' + fi + ' : « figures » : scène inconnue ou sans paramètres numériques « ' + fg.scene + ' »');
+          if(typeof fg.items !== 'string') bad('forme ' + fi + ' : « figures.items » manquant');
+          all.push(compileExpr(fg.items));
+        }
+        var sc = formScene(form), def = own(SCENES, sc.type) ? SCENES[sc.type] : null;
+        if(!def) bad('forme ' + fi + ' : scène inconnue « ' + sc.type + ' »');
+        def.exprs.forEach(function(k){ if(sc[k] === undefined) bad('forme ' + fi + ' : scène « ' + sc.type + ' » : « ' + k + ' » manquant'); all.push(compileExpr(sc[k])); });
+        def.texts.forEach(function(k){ if(typeof sc[k] !== 'string') bad('forme ' + fi + ' : scène « ' + sc.type + ' » : « ' + k + ' » manquant'); all.push(compileText(sc[k])); });
+        all.forEach(function(c){ for(var n in c.idents){
+          var fn = n.charAt(0) === '(' ? n.slice(2) : null;
+          if(fn ? !(own(EXPR_FNS, fn) || own(TEMPLATE_FNS, fn)) : !known[n]) bad('forme ' + fi + ' : « ' + (fn || n) + ' » inconnu'); } });
+      } catch(err){ if(err.message.indexOf('fiche') === 0) throw err; bad(err.message); }
+    });
+    compileText(f.note || '');
+  }
+
+  // Note de réglage GÉNÉRÉE depuis les paramètres de niveau : elle ne peut plus contredire le code.
+  function templateNote(f){
+    var env = Object.create(null); env.__fns = TEMPLATE_FNS;
+    f.levels.forEach(function(p, i){ for(var k in p) env[k + i] = p[k]; });
+    return compileText(f.note)(env);
+  }
+
+  function genFromFiche(f, level, svgId){
+    var params = f.levels[level], base = Object.create(null), k;
+    base.level = level; base.__fns = TEMPLATE_FNS;
+    for(k in BANKS) base[k] = BANKS[k];
+    for(k in params) base[k] = params[k];
+    // forme tirée selon ses poids (expressions : « level==2 ? 0.4 : 0 »)
+    var cands = [], total = 0;
+    f.forms.forEach(function(form){
+      if(form.levels && form.levels.indexOf(level) === -1) return;
+      var w = form.w === undefined ? 1 : evalExpr(form.w, base);
+      if(w > 0){ cands.push([form, w]); total += w; }
+    });
+    var r = rnd() * total, form = cands[cands.length-1][0];
+    if(f.freshForms) form = pickFresh(f.id + '|' + level, cands.map(function(c){ return c[0]; }));      // sans remise : toutes les formes passent avant qu'une revienne
+    else for(var i=0;i<cands.length;i++){ r -= cands[i][1]; if(r < 0){ form = cands[i][0]; break; } }
+    var env, tries = 0;
+    do {
+      tries++;
+      env = Object.create(base); env.tries = tries;
+      for(var name in form.vars){
+        var dv = drawVar(form.vars[name], env); env[name] = dv;
+        if(specFields(form.vars[name])) for(var fk in dv) env[name + '.' + fk] = dv[fk];
+      }
+    } while(tries < 200 && (form.where || []).some(function(c){ return !evalExpr(c, env); }));
+    var correct = evalExpr(form.answer, env);
+    var extras = (form.extras || []).map(function(x){ return evalExpr(x, env); });
+    var sc = formScene(form), sdef = SCENES[sc.type], sargs = {};
+    sdef.exprs.forEach(function(k){ sargs[k] = evalExpr(sc[k], env); });
+    sdef.texts.forEach(function(k){ sargs[k] = compileText(sc[k])(env); });
+    var sdata = sdef.make(sargs), choices, cols3 = false;
+    if(form.figures){
+      // « Quelle figure… ? » : items = liste de listes de paramètres de la scène, la première est la bonne ; ordre mélangé ici
+      var fg = form.figures, fdef = SCENES[fg.scene], items = evalExpr(fg.items, env);
+      choices = shuffle(items.map(function(args, i){
+        var a = {}; fdef.exprs.forEach(function(k, j){ a[k] = args[j]; });
+        var data = fdef.make(a);
+        return { ok:i === 0, viewBox:'0 0 200 200', draw:function(svg){ fdef.draw(svg, data); } };
+      })).map(function(c, i){ c.label = (fg.label || 'Figure') + ' ' + (i + 1); return c; });
+    } else if(form.wrong){
+      // réponses de texte : la bonne + la liste calculée de fausses réponses, mélangées
+      var good = String(correct);
+      choices = shuffle([good].concat(evalExpr(form.wrong, env).map(String))).map(function(l){ return { label:l, ok:l === good }; });
+    } else if(form.options){
+      cols3 = form.cols3 !== false;
+      choices = form.options.map(function(l){ return { label:l, ok:l === correct }; });
+    } else choices = numChoices(correct, extras, form.suffix);
+    return {
+      tag: f.tag || 'Calcul',
+      question: compileText(form.question)(env),
+      sub: compileText(form.sub)(env),
+      explain: compileText(form.explain)(env),
+      draw: function(){
+        var svg = document.getElementById(svgId || 'm4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
+        sdef.draw(svg, sdata);
+      },
+      cols3: cols3,
+      choices: choices
+    };
+  }
+
+  // Définition d'un type de Quizz à partir d'une fiche (validée) — sans l'enregistrer.
+  function makeTemplateDef(f){
+    validateFiche(f);
+    return { id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
+      randomNote: templateNote(f), generate:function(level, svgId){ return genFromFiche(f, level, svgId); } };
+  }
+  function registerTemplateType(f){
+    var def = makeTemplateDef(f);
+    TEMPLATE_FICHES[f.id] = f;
+    registerQuizType(def);
+  }
   /* ===================== THÈME GÉOMÉTRIE =====================
      Mesurer (règle), Estimer une longueur, Déformer (formes) et les questions de Quizz de géométrie :
      côtés, sommets, nom, angles, alignement, milieu, repérage, codage/décodage,
@@ -4896,7 +5265,7 @@ function phrase(tpl, vars){
   */
 
   /* ===================== MODULE 5 : HORLOGE (à part entière) =====================
-     Deux modes : "Lire l'heure" (QCM, réutilise la fiche « heure » (fiches-temps.js)) et
+     Deux modes : "Lire l'heure" (QCM, réutilise la fiche « heure » (en bas de ce fichier)) et
      "Régler l'heure" (l'enfant fait glisser les aiguilles au doigt). */
   function svgPointFromEvent(svg, evt){
     var rect = svg.getBoundingClientRect();
@@ -5268,204 +5637,117 @@ function phrase(tpl, vars){
     };
   }
 
-  // ---- Déclaration du type de Quizz « Durées » (les autres types de l'heure sont des fiches : fiches-temps.js) ----
+  // ---- Déclaration du type de Quizz « Durées » (les autres types de l'heure sont des fiches, en bas de ce fichier) ----
   registerQuizType({ id:'duree', domain:'temps', label:'Durées', longLabel:'Durées : heure de fin, temps écoulé (QCM)', defaultLevels:[0,1,2],
     randomNote:'On calcule avec le temps : trouver l\'heure de fin, la durée, ou l\'heure de début. Facile : heures pleines (ex. 3 h + 2 h). Moyen : demi-heures et quarts d\'heure. Difficile : minutes quelconques, passage à l\'heure suivante, et conversion heures → minutes.',
     generate:function(level){ return genDureeQuestion(level); } });
-  /* ===================== THÈME CALCUL =====================
-     Questions de Quizz de calcul : opérations, monnaie, maths de la vie.
-  */
 
-  // ===================== Monnaie =====================
-  function drawMoneyItem(svg,cx,cy,value,isCoin){
-    if(isCoin) svg.appendChild(el('circle',{cx:cx,cy:cy,r:26, fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2.5}));
-    else svg.appendChild(el('rect',{x:cx-34,y:cy-20,width:68,height:40,rx:4, fill:'var(--accent2)', stroke:'var(--text)','stroke-width':2.5}));
-    svg.appendChild(svgText(cx,cy+6,16,value+'€'));
-  }
-  // Facile : 2 pièces/billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu'à 10 € ; Difficile : 3 ou 4, jusqu'à 20 €.
-  var MONNAIE_LEVELS = [
-    { pool:[1,2,5],        min:2, max:2 },
-    { pool:[1,2,5,10],     min:2, max:3 },
-    { pool:[1,2,5,10,20],  min:3, max:4 }
-  ];
-  function genMonnaieQuestion(level){
-    var pool=MONNAIE_LEVELS[level].pool;
-    var count = randInt(MONNAIE_LEVELS[level].min, MONNAIE_LEVELS[level].max);
-    var items=[], sum=0;
-    for(var i=0;i<count;i++){ var v=pick(pool); items.push(v); sum+=v; }
-    var positions=[[55,100],[100,65],[145,100],[100,140]];
-    return {
-      tag:'Monnaie',
-      question:'Combien d\'argent y a-t-il en tout ?',
-      sub:'Additionne la valeur de chaque pièce ou billet.',
-      explain: items.join('€ + ') + '€ = ' + sum + '€.',
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        items.forEach(function(v,i){ drawMoneyItem(svg, positions[i][0], positions[i][1], v, v<5); });
-      },
-      cols3:false,
-      choices: numChoiceSet(sum, [sum-5,sum-2,sum-1,sum+1,sum+2,sum+5].filter(function(v){return v>0;})).map(function(v){ return { label:String(v)+'€', ok:v===sum }; })
-    };
-  }
+  /* ===================== FICHES D'ACTIVITÉS : heure et calendrier (moteur : gabarits.js, chargé avant ce fichier) =====================
+     Lire l'heure, Choisir l'horloge, Calendrier : décrits par des données (moteur : gabarits.js).
+     Scènes : `clock` (horloge à aiguilles) ; banques de textes JOURS / MOIS ; réponses de texte (`wrong`) ;
+     choix d'une figure (`figures`). Les fonctions ci-dessous sont les seuls calculs que les fiches ne savent pas écrire. */
 
-  // ===================== Maths de la vie courante =====================
-  function genVieQuestion(){
-    var templates = [
-      function(){
-        var a=randInt(1,10), b=randInt(1,10), sum=a+b, w=prenomAuHasard(), o=objetAuHasard('jeu'), c=deuxDifferents(COULEURS);
-        var v = accords(w, o); v.a1 = nbObjetCouleur(a, o, c[0]); v.b1 = nbObjetCouleur(b, o, c[1]);
-        return { icon:o.icon, question:phrase('{nom} a {a1} et {b1}. Combien de {obj} {at} en tout ?', v), explain: a + ' + ' + b + ' = ' + sum + ' ' + o.plur + '.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
-      },
-      function(){
-        var a=randInt(2,15), b=randInt(1,a-1), diff=a-b;
-        return { icon:'📏', question:'Un crayon mesure ' + a + ' cm. Un autre mesure ' + b + ' cm. Quelle est la différence de longueur ?', explain: a + ' - ' + b + ' = ' + diff + ' cm.', correct:diff, pool:[diff-2,diff-1,diff+1,diff+2,diff+3] };
-      },
-      function(){
-        var p1=randInt(1,10), p2=randInt(1,10), sum=p1+p2, f=deuxDifferents(OBJETS.filter(function(o){ return o.groupe==='fruit'; }));
-        return { icon:'💶', question:'Au marché, ' + unArticle(f[0]) + ' coûte ' + p1 + '€ et ' + unArticle(f[1]) + ' coûte ' + p2 + '€. Combien coûtent les deux fruits ensemble ?', explain: p1 + '€ + ' + p2 + '€ = ' + sum + '€.', correct:sum, pool:[sum-2,sum-1,sum+1,sum+2,sum+3] };
-      },
-      function(){
-        var total=randInt(10,20), done=randInt(1,total-1), remain=total-done, w=prenomAuHasard();
-        return { icon:'🚶', question:phrase('Sur le chemin de l\'école, il y a {total} arbres. {nom} en a déjà compté {done}. Combien lui en reste-t-il à compter ?', {nom:w.nom, total:total, done:done}), explain: total + ' - ' + done + ' = ' + remain + '.', correct:remain, pool:[remain-2,remain-1,remain+1,remain+2,remain+3] };
-      },
-      function(){
-        var boxes=randInt(2,6), perBox=randInt(2,5), total2=boxes*perBox, o=objetAuHasard('gourmand');
-        return { icon:o.icon, question:'Il y a ' + boxes + ' boîtes de ' + o.plur + '. Chaque boîte contient ' + perBox + ' ' + o.plur + '. Combien de ' + o.plur + ' y a-t-il en tout ?', explain: boxes + ' × ' + perBox + ' = ' + total2 + ' ' + o.plur + '.', correct:total2, pool:[total2-4,total2-2,total2+2,total2+4,total2+6] };
-      },
-      function(){
-        var paid=randInt(10,20), cost=randInt(1,paid-1), change=paid-cost, w=prenomAuHasard(), x=articleAuHasard();
-        return { icon:'💰', question:phrase('{nom} paie avec un billet de {paid}€ {x} qui coûte {cost}€. Combien de monnaie va-t-on lui rendre ?', {nom:w.nom, paid:paid, x:unArticle(x), cost:cost}), explain: paid + '€ - ' + cost + '€ = ' + change + '€.', correct:change, pool:[change-2,change-1,change+1,change+2,change+3] };
-      }
-    ];
-    var t = pickFresh('vie', templates)();
-    var pool = t.pool.filter(function(v){ return v>=0; });
-    return {
-      tag:'Maths de la vie',
-      question: t.question,
-      sub:'Lis bien l\'énoncé avant de calculer.',
-      explain: t.explain,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        svg.appendChild(svgText(100,120,54,t.icon));
-      },
-      cols3:false,
-      choices: numChoiceSet(t.correct, pool).map(function(v){ return { label:String(v), ok:v===t.correct }; })
-    };
-  }
-
-  // ===================== Arithmétique élargie =====================
-  // -- Suites de nombres --
-  var SUITE_NB_STEPS = [[1,2,5,10],[2,3,5,10],[3,4,6,7,9,11,20,25]];
-  function genSuiteNombresQuestion(level){
-    var step = pick(SUITE_NB_STEPS[level]);
-    var desc = level>=1 && rnd()<0.4;
-    var n = 5, first;
-    if(desc) first = step*(n-1) + randInt(0, level===2 ? 30 : 10);
-    else first = randInt(0, level===0 ? 10 : level===1 ? 20 : 40);
-    var seq = [], i;
-    for(i=0;i<n;i++) seq.push(desc ? first - i*step : first + i*step);
-    var hole = level===0 ? n-1 : randInt(1, n-1);
-    var answer = seq[hole];
-    var shown = seq.map(function(v, k){ return k===hole ? '?' : String(v); });
-    return {
-      tag:'Suite de nombres',
-      question:'Quel nombre manque dans cette suite ?',
-      sub:'Cherche de combien on avance (ou on recule) à chaque fois.',
-      explain:'On ' + (desc ? 'recule' : 'avance') + ' de ' + step + ' à chaque fois : ' + seq.join(', ') + '. Le nombre qui manque est ' + answer + '.',
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var w=34, gap=5, x0=(200-(n*w+(n-1)*gap))/2;
-        shown.forEach(function(txt, k){
-          var x = x0 + k*(w+gap);
-          svg.appendChild(el('rect',{x:x,y:88,width:w,height:34,rx:6,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
-          svg.appendChild(svgText(x+w/2,112,txt.length>2?16:19,txt));
-        });
-      },
-      cols3:false,
-      choices: numChoices(answer, [answer+step, answer-step, answer+2*step, answer-2*step])
-    };
-  }
-
-  // ===================== Nombres : numération et ordre =====================
-  // -- Numération : dizaines, unités, centaines ; composer un nombre --
-  function genNumerationQuestion(level){
-    var hi = level===0 ? 59 : level===1 ? 99 : 999;
-    var n = level===2 ? randInt(101, hi) : randInt(11, hi);
-    var c = Math.floor(n/100), d = Math.floor(n/10)%10, u = n%10;
-    var kinds = level===0 ? ['chiffreD','chiffreU','compose'] : level===1 ? ['chiffreD','chiffreU','compose','nbDiz'] : ['chiffreC','chiffreD','chiffreU','compose','nbDiz'];
-    var kind = pick(kinds);
-    if(kind==='chiffreD') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des dizaines ?','Le chiffre des dizaines est l\'avant-dernier chiffre.',
-      'Dans ' + n + ', le chiffre des dizaines est ' + d + ' (' + d + ' dizaine' + (d>1?'s':'') + ').', String(n), d, [c, u, d+1, d-1]);
-    if(kind==='chiffreU') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des unités ?','Le chiffre des unités est le dernier chiffre.',
-      'Dans ' + n + ', le chiffre des unités est ' + u + '.', String(n), u, [c, d, u+1, u-1]);
-    if(kind==='chiffreC') return bigNumQuestion('Nombres','Dans ' + n + ', quel est le chiffre des centaines ?','Le chiffre des centaines est le premier chiffre.',
-      'Dans ' + n + ', le chiffre des centaines est ' + c + '.', String(n), c, [d, u, c+1, c-1]);
-    if(kind==='nbDiz'){
-      var t = randInt(2, 9) * 10 + (level===2 ? randInt(0,9)*100 : 0);
-      var nd = t/10;
-      return bigNumQuestion('Nombres','Combien y a-t-il de dizaines dans ' + t + ' ?','Une dizaine = 10.',
-        t + ' = ' + nd + ' × 10, donc il y a ' + nd + ' dizaines.', String(t), nd, [nd+1, nd-1, t, nd*10, nd+10]);
+  TEMPLATE_FNS.clockLabel = minutesToClockLabel;                 // 90 -> « 1 h 30 » (cadran : 1 à 12)
+  TEMPLATE_FNS.clockLabel24 = minutesToLabel24;                   // 1050 -> « 17 h 30 » (0 h à 23 h)
+  TEMPLATE_FNS.clockExplain = clockExplain;                       // clockExplain(h, m, « 3 h 30 »)
+  TEMPLATE_FNS.periodPhrase = function(h){ return periodOfDay(h).phrase; };
+  TEMPLATE_FNS.periodEmoji = function(h){ return periodOfDay(h).emoji; };
+  // trois fausses heures voisines (au pas des minutes du niveau) pour un cadran de 12 h
+  TEMPLATE_FNS.heureWrong12 = function(total, step){
+    var seen = {}, pool = []; seen[minutesToClockLabel(total)] = true;
+    [-3,-2,-1,1,2,3].forEach(function(k){
+      var l = minutesToClockLabel(((total + k*step) % 720 + 720) % 720);
+      if(!seen[l]){ seen[l] = true; pool.push(l); }
+    });
+    return shuffle(pool).slice(0, 3);
+  };
+  // 24 h : le piège classique (oublier d'ajouter ou de retirer 12 h) et deux heures voisines à 5, 10 ou 15 minutes près
+  TEMPLATE_FNS.heureWrong24 = function(total){
+    var seen = {}, near = [], shifted = minutesToLabel24((total + 720) % 1440);
+    seen[minutesToLabel24(total)] = true; seen[shifted] = true;
+    [-3,-2,-1,1,2,3].forEach(function(k){
+      var l = minutesToLabel24(((total + k*5) % 1440 + 1440) % 1440);
+      if(!seen[l]){ seen[l] = true; near.push(l); }
+    });
+    return [shifted].concat(shuffle(near).slice(0, 2));
+  };
+  TEMPLATE_FNS.heure24Explain = function(hour, m){
+    var total = hour*60 + m, label = minutesToLabel24(total), period = periodOfDay(hour);
+    var ex = clockExplain(hour, m, minutesToClockLabel(total) + ' sur l\'horloge');
+    if(hour === 0) return ex + ' Juste après minuit, l\'horloge montre 12 mais on dit 0 h : il est ' + label + '.';
+    if(hour >= 13) return ex + ' Comme c\'est ' + period.phrase + ', on ajoute 12 h : ' + (hour-12) + ' + 12 = ' + hour + '. Il est donc ' + label + '.';
+    return ex + ' Comme c\'est ' + period.phrase + ', l\'heure ne change pas : on garde ' + label + '.';
+  };
+  // 4 horloges [h, m] dont la première est la bonne ; les autres sont des pièges : aiguilles échangées, heure ou minutes d'à côté
+  TEMPLATE_FNS.clockOptions = function(h, m, level){
+    var options = [[h, m]], used = {};
+    function key(hh, mm){ return ((hh%12)*60 + mm) + ''; }
+    used[key(h, m)] = true;
+    function add(hh, mm){
+      hh = ((hh-1+12)%12)+1; mm = ((mm%60)+60)%60;
+      if(used[key(hh, mm)]) return false;
+      used[key(hh, mm)] = true; options.push([hh, mm]); return true;
     }
-    // composition : 30 + 4 = ?  /  300 + 40 + 7 = ?
-    var txt = level===2 ? (c*100 + ' + ' + d*10 + ' + ' + u) : (d*10 + ' + ' + u);
-    if(level===2 && d===0) txt = c*100 + ' + ' + u;
-    return bigNumQuestion('Nombres','Quel nombre obtient-on ?','Additionne les centaines, dizaines et unités.',
-      txt + ' = ' + n + '.', txt + ' = ?', n, [n+10, n-10, n+1, n-1, n+100, d*10+u]);
-  }
-  // -- Ordre : suivant, précédent, entre, plus grand, plus petit, pair --
-  function genOrdreQuestion(level){
-    var hi = level===0 ? 20 : level===1 ? 100 : 1000;
-    var kinds = level===0 ? ['suivant','precedent','grand','petit'] : ['suivant','precedent','entre','grand','petit','pair'];
-    var kind = pick(kinds);
-    var n = randInt(3, hi-2);
-    if(level>0 && rnd()<0.4) n = Math.round(n/10)*10 + pick([-1,0,9]);   // frontières de dizaines
-    n = Math.max(3, Math.min(hi-2, n));
-    if(kind==='suivant') return bigNumQuestion('Nombres','Quel nombre vient juste après ' + n + ' ?','Ajoute 1.',(n+1) + ' vient juste après ' + n + ' : ' + n + ' + 1 = ' + (n+1) + '.', n + ' → ?', n+1, [n+2, n-1, n+10, n]);
-    if(kind==='precedent') return bigNumQuestion('Nombres','Quel nombre vient juste avant ' + n + ' ?','Retire 1.',(n-1) + ' vient juste avant ' + n + ' : ' + n + ' - 1 = ' + (n-1) + '.', '? → ' + n, n-1, [n-2, n+1, n-10, n]);
-    if(kind==='entre') return bigNumQuestion('Nombres','Quel nombre est entre ' + (n-1) + ' et ' + (n+1) + ' ?','Cherche le nombre qui est juste au milieu.',(n-1) + ' < ' + n + ' < ' + (n+1) + '.', (n-1) + ' … ' + (n+1), n, [n-2, n+2, n+10, n-10]);
-    if(kind==='pair'){
-      var ev = 2*randInt(1, Math.floor(hi/2)-1);
-      var opts = [], guard2 = 0;
-      while(opts.length<3 && guard2++<200){
-        var od = 2*randInt(0, Math.floor(hi/2)-1) + 1;
-        if(opts.indexOf(od)===-1) opts.push(od);
-      }
-      return {
-        tag:'Nombres', question:'Quel est le nombre pair ?', sub:'Un nombre pair se termine par 0, 2, 4, 6 ou 8.',
-        explain: ev + ' est pair (il se termine par ' + (ev%10) + ') ; les autres sont impairs.',
-        draw:function(){ drawEquation('pair ou impair ?'); }, cols3:false,
-        choices: shuffle([ev].concat(opts)).map(function(v){ return { label:String(v), ok:v===ev }; })
-      };
-    }
-    // plus grand / plus petit parmi 4 nombres
-    var vals = [n], guard = 0;
-    while(vals.length<4 && guard++<50){ var v = randInt(1, hi); if(vals.indexOf(v)===-1) vals.push(v); }
-    var target = kind==='grand' ? Math.max.apply(null, vals) : Math.min.apply(null, vals);
-    return {
-      tag:'Nombres', question: kind==='grand' ? 'Quel est le plus grand de ces nombres ?' : 'Quel est le plus petit de ces nombres ?',
-      sub:'Compare-les un par un.',
-      explain: target + ' est le ' + (kind==='grand' ? 'plus grand' : 'plus petit') + ' : ' + vals.slice().sort(function(a,b){ return a-b; }).join(' < ') + '.',
-      draw:function(){ drawEquation(kind==='grand' ? 'le plus grand ?' : 'le plus petit ?'); }, cols3:false,
-      choices: shuffle(vals.slice()).map(function(v){ return { label:String(v), ok:v===target }; })
-    };
-  }
+    if(m % 5 === 0) add(m===0 ? 12 : m/5, h*5 % 60);
+    add(h+1, m); add(h-1, m);
+    var tries = 0;
+    while(options.length < 4 && tries++ < 50){ add(h, m + pick(level===0 ? [30] : [15,30,45,5,10])); if(options.length < 4) add(h + pick([-2,2,3]), m); }
+    if(options.length < 4) throw new Error('horloges : pas assez de pièges différents');
+    var good = options[0], rest = options.slice(1);
+    return [good].concat(rest.slice(0, 3));      // la bonne en tête ; le moteur mélange
+  };
 
-  // ---- Déclaration des types de Quizz du thème Calcul ----
-  registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
-    randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard. Facile : 2 pièces ou billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu\'à 10 € ; Difficile : 3 ou 4, jusqu\'à 20 €.',
-    generate:genMonnaieQuestion });
-  registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
-    randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
-    generate:genVieQuestion });
-  registerQuizType({ id:'suiteNombres', domain:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
-    randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
-    generate:genSuiteNombresQuestion });
-  registerQuizType({ id:'numeration', domain:'nombres', label:'Dizaines et unités', longLabel:'Dizaines et unités (numération)', defaultLevels:[0,1,2],
-    randomNote:'Chiffre des dizaines/unités (centaines en Difficile), nombre de dizaines, ou composer un nombre (30 + 4). Facile : jusqu\'à 59 ; Moyen : jusqu\'à 99 ; Difficile : jusqu\'à 999.',
-    generate:genNumerationQuestion });
-  registerQuizType({ id:'ordre', domain:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2],
-    randomNote:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à 20 ; Moyen : jusqu\'à 100 ; Difficile : jusqu\'à 1000, souvent autour des changements de dizaine.',
-    generate:genOrdreQuestion });
+  // -- Lire l'heure (cadran de 12 h ; en Difficile, 0 h à 23 h avec le moment de la journée) --
+  registerTemplateType({ id:'heure', domain:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2], tag:'Lire l\'heure',
+    levels:[ { mins:[0,30], step:30 }, { mins:[0,15,30,45], step:15 }, {} ],
+    forms:[
+      { levels:[0,1], vars:{ hour:{int:[1,12]}, m:{pick:'mins'}, total:'(hour%12)*60+m', lab:'clockLabel(total)' }, answer:'lab', wrong:'heureWrong12(total,step)',
+        question:'Quelle heure indique cette horloge ?', sub:'Regarde bien la petite aiguille (les heures) et la grande (les minutes).',
+        explain:'{clockExplain(hour,m,lab)}', scene:{ type:'clock', h:'hour', m:'m' } },
+      { levels:[2], vars:{ hour:{int:[0,23]}, m:{pick:[0,5,10,15,20,25,30,35,40,45,50,55]}, total:'hour*60+m' }, answer:'clockLabel24(total)', wrong:'heureWrong24(total)',
+        question:'C\'est {periodPhrase(hour)} {periodEmoji(hour)}. Quelle heure indique cette horloge ?',
+        sub:'Les heures vont de 0 h à 23 h (l\'après-midi : 13 h, 14 h, 15 h…). Regarde bien les deux aiguilles.',
+        explain:'{heure24Explain(hour,m)}', scene:{ type:'clock', h:'hour', m:'m' } }
+    ],
+    note:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).' });
+
+  // -- Choisir la bonne horloge parmi 4 dessins --
+  registerTemplateType({ id:'horlogeChoix', domain:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2], tag:'Lire l\'heure',
+    levels:[ { steps:[0,30] }, { steps:[0,15,30,45] }, { steps:[0,5,10,15,20,25,30,35,40,45,50,55] } ],
+    forms:[
+      { vars:{ h:{int:[1,12]}, m:{pick:'steps'}, lab:'clockLabel(h*60+m)', opts:'clockOptions(h,m,level)' }, answer:'0',
+        question:'Quelle horloge indique {lab} ?', sub:'La petite aiguille montre l\'heure, la grande aiguille les minutes.',
+        explain:'{clockExplain(h,m,lab)}', eq:'{lab}', figures:{ scene:'clock', items:'opts', label:'Horloge' } }
+    ],
+    note:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.' });
+
+  // -- Calendrier : jours de la semaine et mois (banques JOURS et MOIS) --
+  var CAL_SUB = 'Réfléchis à l\'ordre des jours ou des mois.';
+  var CAL_SCENE = { type:'emoji', icon:"'📅'", caption:'' };
+  registerTemplateType({ id:'calendrier', domain:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2], tag:'Calendrier',
+    levels:[ {}, {}, {} ],
+    forms:[
+      { levels:[0,1], vars:{ i:{int:[0,6]} }, answer:'at(JOURS,i+1)', wrong:'others(JOURS,at(JOURS,i+1),3)',
+        question:'Quel jour vient juste après {at(JOURS,i)} ?', sub:CAL_SUB, explain:'Après {at(JOURS,i)} vient {at(JOURS,i+1)}.', scene:CAL_SCENE },
+      { levels:[0,1], vars:{ i:{int:[0,6]} }, answer:'at(JOURS,i-1)', wrong:'others(JOURS,at(JOURS,i-1),3)',
+        question:'Quel jour vient juste avant {at(JOURS,i)} ?', sub:CAL_SUB, explain:'Avant {at(JOURS,i)} il y a {at(JOURS,i-1)}.', scene:CAL_SCENE },
+      { levels:[0], vars:{}, answer:"'7 jours'", wrong:"others(['5 jours','6 jours','7 jours','8 jours','10 jours'],'7 jours',3)",
+        question:'Combien y a-t-il de jours dans une semaine ?', sub:CAL_SUB, explain:'La semaine a 7 jours : lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche.', scene:CAL_SCENE },
+      { levels:[1], vars:{}, answer:"'12 mois'", wrong:"others(['10 mois','11 mois','12 mois','13 mois','52 mois'],'12 mois',3)",
+        question:'Combien y a-t-il de mois dans une année ?', sub:CAL_SUB, explain:'L\'année a 12 mois, de janvier à décembre.', scene:CAL_SCENE },
+      { levels:[1,2], vars:{ m:{int:[0,11]} }, answer:'at(MOIS,m+1)', wrong:'others(MOIS,at(MOIS,m+1),3)',
+        question:'Quel mois vient juste après {at(MOIS,m)} ?', sub:CAL_SUB, explain:'Après {at(MOIS,m)} vient {at(MOIS,m+1)}.', scene:CAL_SCENE },
+      { levels:[1,2], vars:{ m:{int:[0,11]} }, answer:'at(MOIS,m-1)', wrong:'others(MOIS,at(MOIS,m-1),3)',
+        question:'Quel mois vient juste avant {at(MOIS,m)} ?', sub:CAL_SUB, explain:'Avant {at(MOIS,m)} il y a {at(MOIS,m-1)}.', scene:CAL_SCENE },
+      { levels:[2], vars:{ a:{int:[0,6]}, gap:{int:[2,5]} }, answer:"gap+' jours'", wrong:"others(['2 jours','3 jours','4 jours','5 jours','6 jours'],gap+' jours',3)",
+        question:'Combien de jours passent de {at(JOURS,a)} à {at(JOURS,a+gap)} ?', sub:'Compte les jours qui passent, un par un.',
+        explain:'De {at(JOURS,a)} à {at(JOURS,a+gap)}, on avance de {gap} jours.', scene:CAL_SCENE },
+      { levels:[2], w:2, vars:{ i:{int:[0,6]}, n:{int:[2,6]}, fwd:'rand()<0.6' }, answer:'at(JOURS,i+(fwd?n:-n))', wrong:'others(JOURS,at(JOURS,i+(fwd?n:-n)),3)',
+        question:"Aujourd'hui, c'est {at(JOURS,i)}. Quel jour {fwd ? 'sera-t-on dans '+n+' jours ?' : 'était-on il y a '+n+' jours ?'}",
+        sub:"Compte les jours un par un, en {fwd ? 'avançant' : 'reculant'}.",
+        explain:"À partir de {at(JOURS,i)}, on {fwd ? 'avance' : 'recule'} de {n} jours : on arrive à {at(JOURS,i+(fwd?n:-n))}.", scene:CAL_SCENE }
+    ],
+    note:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.' });
   /* ===================== NOMBRES JUSQU'À 1000 ET CALCUL ÉCRIT =====================
      Types de Quizz de numération (blocs, lettres, ±10/±100, droite graduée, encadrer)
      et de calcul (additions/soustractions posées, multiplier et partager).
@@ -5488,88 +5770,6 @@ function phrase(tpl, vars){
     var cent = c===1 ? 'cent' : LETTRES_U[c] + ' cent' + (r===0 ? 's' : '');
     return r===0 ? cent : cent + ' ' + lettres100(r);
   }
-  function genLettresQuestion(level){
-    var n = level===0 ? randInt(10,69) : level===1 ? randInt(70,99) : randInt(101,999);
-    if(level===2 && n%100===0) n += randInt(1,99);
-    var w = nombreEnLettres(n);
-    var c = Math.floor(n/100), d = Math.floor(n/10)%10, u = n%10;
-    if(rnd()<0.5){
-      var swap = c ? c*100 + u*10 + d : u*10 + d;
-      var extra = [n+10, n-10, swap, n+1, n-1];
-      if(n%100>=70) extra.push(n-10, n-20);        // soixante-dix, quatre-vingt-dix… : pièges 60+, 80+
-      var q = bigNumQuestion('Nombres','Quel est ce nombre écrit en chiffres ?','Découpe le mot : cent, vingt, soixante… (quatre-vingt = 4 × 20).', w + ' s\'écrit ' + n + '.', w.length>16 ? '…' : w, n, extra);
-      q.draw = function(){
-        var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
-        var words = w.split(/(?<=\s|-)/), lines = [''], i;
-        for(i=0;i<words.length;i++){ if((lines[lines.length-1] + words[i]).length>14 && lines[lines.length-1]) lines.push(''); lines[lines.length-1] += words[i]; }
-        lines.forEach(function(t, k){ svg.appendChild(svgText(100, 100 - (lines.length-1)*14 + k*30, 24, t.trim())); });
-      };
-      return q;
-    }
-    var pool = [n+10, n-10, c ? c*100 + u*10 + d : u*10 + d, n+1, n-1, n+100, n-100].filter(function(v){ return v>9 && v<1000 && v!==n; });   // < 1000 : nombreEnLettres ne sait pas écrire « dix cent »
-    var seen = {}; seen[w] = true; var wrong = [];
-    shuffle(pool).forEach(function(v){ var t = nombreEnLettres(v); if(!seen[t] && wrong.length<3){ seen[t] = true; wrong.push(t); } });
-    return {
-      tag:'Nombres', question:'Comment s\'écrit ce nombre en lettres ?', sub:'Cherche le mot qui correspond exactement au nombre.',
-      explain: n + ' s\'écrit « ' + w + ' ».',
-      draw:function(){ drawEquation(String(n)); }, cols3:false,
-      choices: shuffle([w].concat(wrong)).map(function(l){ return { label:l, ok:l===w }; })
-    };
-  }
-
-  // ---- Ajouter / enlever 10, 100 (et 1 aux frontières) ----
-  function genPlusMoinsQuestion(level){
-    var step, n, sign;
-    if(level===0){ step = 10; sign = pick([1,-1]); n = sign>0 ? randInt(1,8)*10 + (rnd()<0.5 ? 0 : randInt(1,9)) : randInt(2,9)*10 + (rnd()<0.5 ? 0 : randInt(1,9)); }
-    else if(level===1){
-      step = pick([10,10,100]); sign = pick([1,-1]);
-      if(step===100) n = sign>0 ? randInt(100,899) : randInt(200,999);
-      else n = sign>0 ? randInt(11,89) : randInt(20,99);
-    }
-    else {
-      step = pick([1,10,100,20,30,200]); sign = pick([1,-1]);
-      if(step===1){ n = sign>0 ? pick([99,199,299,399,499,599,699,799,899,109,119,129,139]) : pick([100,200,300,400,500,600,700,800,900,110,120,130,140]); }
-      else if(step===10 || step===20 || step===30){ n = sign>0 ? randInt(100,970-step) : randInt(110+step, 999); if(rnd()<0.6) n = Math.floor(n/100)*100 + (sign>0 ? randInt(10,99-step+10) : randInt(0,step)); }
-      else { n = sign>0 ? randInt(100,999-step) : randInt(100+step,999); }
-    }
-    var res = n + sign*step;
-    if(res<0 || res>1000) return genPlusMoinsQuestion(level);
-    var txt = n + (sign>0 ? ' + ' : ' - ') + step;
-    var how = step===1 ? (sign>0 ? 'Ajoute 1 : le chiffre des unités passe à 0 et on retient.' : 'Enlève 1 : attention au passage de la dizaine ou de la centaine.')
-      : step%100===0 ? 'Seul le chiffre des centaines change.' : 'Seul le chiffre des dizaines change (attention à la centaine !).';
-    return bigNumQuestion('Nombres', 'Quel est le résultat de ' + txt + ' ?', how,
-      txt + ' = ' + res + '.', txt, res,
-      [res+sign*step, res-sign*step*2, n+sign*step*10, res+10*sign, res-10*sign, res+100*sign].filter(function(v){ return v!==res; }));
-  }
-
-  // ---- Encadrer et arrondir ----
-  function genEncadrerQuestion(level){
-    var base = level===2 ? 100 : 10;
-    var hi = level===0 ? 99 : 999;
-    var n;
-    do { n = randInt(base===100 ? 101 : 11, hi); }
-    while(n%base===0 || n%10===5 || (base===100 && Math.floor(n/10)%10===5));   // jamais un 5 en dernier chiffre : « arrondis 605 à la dizaine » serait ambigu (milieu exact)
-    var lo = Math.floor(n/base)*base, up = lo + base;
-    var arrondi = level>0 && rnd()<0.5;
-    if(level===2 && arrondi && rnd()<0.4){ base = 10; lo = Math.floor(n/10)*10; up = lo + 10; }
-    if(arrondi){
-      var near = (n-lo) < (up-n) ? lo : up;
-      var unit = base===100 ? 'la centaine' : 'la dizaine';
-      return bigNumQuestion('Nombres','Arrondis ' + n + ' à ' + unit + ' la plus proche.','Entre quels ' + (base===100 ? 'centaines' : 'dizaines') + ' est-il ? Duquel est-il le plus proche ?',
-        n + ' est entre ' + lo + ' et ' + up + ', plus proche de ' + near + '.', n + ' ≈ ?', near, [lo, up, lo-base, up+base, near+(near===lo ? 1 : -1)*Math.floor(base/10)]);
-    }
-    var labels = function(a){ return 'entre ' + a + ' et ' + (a+base); };
-    var okL = labels(lo), wrongs = [labels(lo-base), labels(lo+base), 'entre ' + lo + ' et ' + (up+base), 'entre ' + (lo-base) + ' et ' + up, 'entre ' + (lo+base) + ' et ' + (up+2*base)].filter(function(t){ return !/entre -/.test(t) && t!==okL; });
-    wrongs = shuffle(wrongs).slice(0,3);
-    return {
-      tag:'Nombres', question:'Entre quelles ' + (base===100 ? 'centaines' : 'dizaines') + ' se trouve ' + n + ' ?', sub:'Trouve la ' + (base===100 ? 'centaine' : 'dizaine') + ' juste avant et celle juste après.',
-      explain: lo + ' < ' + n + ' < ' + up + ' : ' + n + ' est ' + okL + '.',
-      draw:function(){ drawEquation(String(n)); }, cols3:false,
-      choices: shuffle([okL].concat(wrongs)).map(function(l){ return { label:l, ok:l===okL }; })
-    };
-  }
-
-
   // ---- Opérations posées : explications colonne par colonne ----
   var COL_NAMES = ['unités','dizaines','centaines'];
   function addExplain(a, b){
@@ -5597,393 +5797,8 @@ function phrase(tpl, vars){
   function hasBorrow(a, b){ var A = String(a), B = String(b), i, br = 0; for(i=0;i<A.length;i++){ var need = +(B.charAt(B.length-1-i)||0) + br; var da = +A.charAt(A.length-1-i); br = da<need ? 1 : 0; if(br) return true; } return false; }
   // ---- Multiplier (grilles, additions répétées) et partager ----
   // ---- Problèmes à deux étapes ----
-  var PROBLEMES2 = [
-    function(L){ var A = L ? randInt(40,90) : randInt(10,20), B = randInt(3, Math.floor(A/2)), C = randInt(3, L ? 30 : 9), r = A-B+C, w = prenomAuHasard(), o = objetAuHasard('jeu');
-      return { icon:o.icon, q:phrase('{nom} a {A} {obj}. {Il} en perd {B}, puis {il} en gagne {C}. Combien de {obj} {at} maintenant ?', Object.assign(accords(w, o), {A:A, B:B, C:C})), ex:A + ' - ' + B + ' = ' + (A-B) + ', puis ' + (A-B) + ' + ' + C + ' = ' + r + '.', r:r, wrong:[A-B, A+C, A+B+C, A-B-C] }; },
-    function(L){ var A = L ? randInt(30,70) : randInt(8,15), B = randInt(2, Math.floor(A/2)), C = randInt(3, L ? 25 : 9), r = A-B+C;
-      return { icon:'🚌', q:'Dans un bus, il y a ' + A + ' personnes. À l\'arrêt, ' + B + ' personnes descendent et ' + C + ' montent. Combien y a-t-il de personnes dans le bus ?', ex:A + ' - ' + B + ' = ' + (A-B) + ', puis ' + (A-B) + ' + ' + C + ' = ' + r + '.', r:r, wrong:[A-B, A+C, A+B+C, A-B-C] }; },
-    function(L){ var B = L ? randInt(12,35) : randInt(2,8), C = L ? randInt(10,30) : randInt(2,8), A = B + C + randInt(1, L ? 30 : 8), r = A-B-C, w = prenomAuHasard(), x = deuxDifferents(ARTICLES);
-      return { icon:'💰', q:phrase('{nom} a {A}€. {Il} achète {x1} à {B}€ et {x2} à {C}€. Combien d\'euros lui reste-t-il ?', Object.assign(accords(w), {A:A, B:B, C:C, x1:unArticle(x[0]), x2:unArticle(x[1])})), ex:B + ' + ' + C + ' = ' + (B+C) + ', puis ' + A + ' - ' + (B+C) + ' = ' + r + '.', r:r, wrong:[A-B, A-C, B+C, A+B+C] }; },
-    function(L){ var B = L ? randInt(20,60) : randInt(3,9), C = L ? randInt(15,50) : randInt(3,9), T = B + C + randInt(2, L ? 40 : 9), r = T-B-C, w = prenomAuHasard();
-      return { icon:'📖', q:phrase('{nom} lit {B} pages lundi et {C} pages mardi. Son livre a {T} pages. Combien de pages lui reste-t-il à lire ?', {nom:w.nom, B:B, C:C, T:T}), ex:B + ' + ' + C + ' = ' + (B+C) + ', puis ' + T + ' - ' + (B+C) + ' = ' + r + '.', r:r, wrong:[T-B, T-C, B+C, T+B+C] }; },
-    function(){ var b = randInt(3,6), p = randInt(3,6), e = randInt(2, b*p-2), r = b*p-e, o = objetAuHasard('gourmand');
-      return { icon:o.icon, q:phrase('Il y a {b} boîtes de {p} {obj}. On mange {e} {obj}. Combien de {obj} reste-t-il ?', Object.assign(accords(null, o), {b:b, p:p, e:e})), ex:b + ' × ' + p + ' = ' + (b*p) + ', puis ' + (b*p) + ' - ' + e + ' = ' + r + '.', r:r, wrong:[b*p, b*p+e, p-e > 0 ? p-e : r+2, b+p-e > 0 ? b+p-e : r+3] }; },
-    function(){ var n = randInt(2,5), c = randInt(2,5), A = n*c + randInt(1,15), r = A-n*c, w = prenomAuHasard(), x = articleAuHasard();
-      return { icon:'📒', q:phrase('{nom} a {A}€. {Il} achète {n} {obj} à {c}€ {chacun}. Combien d\'euros lui reste-t-il ?', Object.assign(accords(w, {plur:x.plur, genre:x.genre}), {A:A, n:n, c:c})), ex:n + ' × ' + c + ' = ' + (n*c) + ', puis ' + A + ' - ' + (n*c) + ' = ' + r + '.', r:r, wrong:[n*c, A-c, A-n, A+n*c] }; },
-    function(){ var b = randInt(3,6), p = randInt(3,6), x = randInt(2,9), r = b*p+x, w = prenomAuHasard(), o = objetAuHasard('jeu');
-      return { icon:o.icon, q:phrase('{nom} a {b} paquets de {p} {obj} et {x} {obj} {seuls}. Combien de {obj} {at} en tout ?', Object.assign(accords(w, o), {b:b, p:p, x:x})), ex:b + ' × ' + p + ' = ' + (b*p) + ', puis ' + (b*p) + ' + ' + x + ' = ' + r + '.', r:r, wrong:[b*p, b+p+x, r-x*2 > 0 ? r-x*2 : r+4, r+p] }; },
-    function(){ var p = randInt(2,5), k = randInt(2,5), u = randInt(2,5), r = p*(k+u), o = objetAuHasard('fruit');
-      return { icon:o.icon, q:phrase('Un panier contient {k} {obj}. Un autre en contient {u}. On remplit {p} fois les deux paniers. Combien de {obj} en tout ?', Object.assign(accords(null, o), {k:k, u:u, p:p})), ex:k + ' + ' + u + ' = ' + (k+u) + ', puis ' + p + ' × ' + (k+u) + ' = ' + r + '.', r:r, wrong:[k+u, p*k, p*u, r+p] }; }
-  ];
-  function genProbleme2Question(level){
-    var pool = level===1 ? PROBLEMES2.slice(0,4) : PROBLEMES2;
-    var t = pickFresh('probleme2|' + level, pool)(level===2 ? 1 : 0);
-    return {
-      tag:'Problèmes', question:t.q, sub:'Il y a deux étapes : fais-les l\'une après l\'autre.', explain:t.ex,
-      draw:function(){ var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = ""; svg.appendChild(svgText(100,120,54,t.icon)); },
-      cols3:false, choices:numChoices(t.r, t.wrong.filter(function(v){ return v!==t.r; }))
-    };
-  }
 
   // ---- Déclaration des types ----
-  registerQuizType({ id:'lettres', domain:'nombres', label:'Nombres en lettres', longLabel:'Nombres en lettres', defaultLevels:[0,1,2],
-    randomNote:'Passer des lettres aux chiffres, ou des chiffres aux lettres. Facile : 10 à 69 ; Moyen : 70 à 99 (soixante-dix, quatre-vingts…) ; Difficile : 101 à 999.',
-    generate:genLettresQuestion });
-  registerQuizType({ id:'plusMoins', domain:'nombres', label:'Ajouter 10, 100', longLabel:'Ajouter ou enlever 10, 100…', defaultLevels:[0,1,2],
-    randomNote:'Facile : +10 / -10 jusqu\'à 100 ; Moyen : +10 / -10 jusqu\'à 100 et +100 / -100 jusqu\'à 1000 ; Difficile : aussi +1 / -1 aux frontières (399 + 1), +20, +30, +200, avec passage de la centaine.',
-    generate:genPlusMoinsQuestion });
-  registerQuizType({ id:'encadrer', domain:'nombres', label:'Encadrer, arrondir', longLabel:'Encadrer et arrondir un nombre', defaultLevels:[0,1,2],
-    randomNote:'Facile : entre quelles dizaines (jusqu\'à 99) ; Moyen : jusqu\'à 999, et arrondir à la dizaine ; Difficile : entre quelles centaines, arrondir à la centaine ou à la dizaine.',
-    generate:genEncadrerQuestion });
-  registerQuizType({ id:'probleme2', domain:'calcul', label:'Problèmes à 2 étapes', longLabel:'Problèmes à deux étapes', defaultLevels:[1,2],
-    randomNote:'Un énoncé qui demande deux calculs à la suite (perdre puis gagner, deux achats, boîtes de gâteaux…). Moyen : additions et soustractions, nombres jusqu\'à environ 30 ; Difficile : nombres jusqu\'à environ 100 et énoncés avec une multiplication. Les modèles sont tirés sans répétition.',
-    generate:genProbleme2Question });
-  /* ===================== GABARITS D'ACTIVITÉS (moteur de fiches) =====================
-     Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
-     quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
-     les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
-     Les scènes (equation, blocks, scatter, grid, emoji, numberline, fraction, clock) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
-     jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
-
-     Fiche :
-       { id, domain, label, longLabel, defaultLevels, tag?,
-         levels:[ {paramètres du niveau 0}, {…1}, {…2} ],      // nombres, textes ou listes : ils entrent dans l'environnement
-         forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain,
-                   eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …},
-                   extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles)
-                   |  wrong:expr (réponses de texte : liste des fausses réponses, ex. others(JOURS, bonne, 3) ; `answer` est la bonne)
-                   |  figures:{scene, items:expr, label?} (« quelle figure ? » : items = liste de listes de paramètres de la scène, la 1re est la bonne) } ],
-         Banques de textes : JOURS, MOIS ; fonctions : at(liste,i) (en tournant), others(liste, sauf, n).
-         note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
-     spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
-     Dans les textes : {expr}. Dans note : k0, k1, k2 = paramètre k du niveau 0, 1, 2. */
-
-  // ---- évaluateur d'expressions (+ - * / % < <= > >= == != && || ! ?: appels de fonctions) ----
-  var EXPR_FNS = {
-    min:Math.min, max:Math.max, abs:Math.abs, floor:Math.floor, round:Math.round,
-    rand:function(){ return rnd(); },
-    // listes lisibles : [2,5,10] -> « 2, 5 et 10 »
-    liste:function(a){ return a.length < 2 ? a.join('') : a.slice(0,-1).join(', ') + ' et ' + a[a.length-1]; },
-    // élément d'une liste, en tournant : at(JOURS, 7) = le même jour que at(JOURS, 0) ; at(JOURS, -1) = le dernier
-    at:function(a, i){ var n = a.length; return a[((Math.floor(i) % n) + n) % n]; },
-    // n éléments de la liste, au hasard et différents, sans `except` : les fausses réponses d'une question de texte
-    others:function(a, except, n){ return shuffle(a.filter(function(x, i){ return x !== except && a.indexOf(x) === i; })).slice(0, n); }
-  };
-  // Banques de textes : listes prêtes à l'emploi, lisibles par toutes les fiches (noms en majuscules).
-  var BANKS = {
-    JOURS:['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'],
-    MOIS:['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']
-  };
-  function own(o, k){ return Object.prototype.hasOwnProperty.call(o, k); }
-  var EXPR_CACHE = Object.create(null);   // sans prototype : « constructor » ne doit pas être pris pour une expression déjà compilée
-  function compileExpr(src){
-    src = String(src);
-    if(EXPR_CACHE[src]) return EXPR_CACHE[src];
-    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|'([^']*)'|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
-    while(pos < src.length){
-      re.lastIndex = pos; m = re.exec(src);
-      if(!m){ if(/^\s*$/.test(src.slice(pos))) break; throw new Error('expression illisible : ' + src); }
-      pos = re.lastIndex;
-      if(m[1] !== undefined) toks.push({ t:'n', v:parseFloat(m[1]) });
-      else if(m[2] !== undefined) toks.push({ t:'i', v:m[2] });
-      else if(m[3] !== undefined) toks.push({ t:'s', v:m[3] });
-      else toks.push({ t:'o', v:m[4] });
-    }
-    var k = 0, idents = {};
-    function peek(){ return toks[k]; }
-    function eat(v){ var t = toks[k]; if(!t || t.t !== 'o' || t.v !== v) throw new Error('« ' + v + ' » attendu dans : ' + src); k++; }
-    function isOp(v){ var t = toks[k]; return t && t.t === 'o' && t.v === v; }
-    function ternary(){
-      var c = orE();
-      if(isOp('?')){ k++; var a = ternary(); eat(':'); var b = ternary(); return function(e){ return c(e) ? a(e) : b(e); }; }
-      return c;
-    }
-    function bin(next, ops){
-      return function(){
-        var l = next();
-        while(toks[k] && toks[k].t === 'o' && ops.indexOf(toks[k].v) !== -1){
-          var op = toks[k++].v, r = next(), a = l;
-          l = (function(a, r, op){ return function(e){
-            var x = a(e), y = r(e);
-            switch(op){
-              case '||': return x || y; case '&&': return x && y;
-              case '==': return x === y; case '!=': return x !== y;
-              case '<': return x < y; case '<=': return x <= y; case '>': return x > y; case '>=': return x >= y;
-              case '+': return x + y; case '-': return x - y; case '*': return x * y; case '/': return x / y; default: return x % y;
-            } }; })(a, r, op);
-        }
-        return l;
-      };
-    }
-    var orE, andE, eqE, relE, addE, mulE;
-    mulE = bin(unary, ['*','/','%']); addE = bin(mulE, ['+','-']); relE = bin(addE, ['<','<=','>','>=']);
-    eqE = bin(relE, ['==','!=']); andE = bin(eqE, ['&&']); orE = bin(andE, ['||']);
-    function unary(){
-      if(isOp('-')){ k++; var u = unary(); return function(e){ return -u(e); }; }
-      if(isOp('!')){ k++; var v = unary(); return function(e){ return !v(e); }; }
-      return primary();
-    }
-    function primary(){
-      var t = toks[k++];
-      if(!t) throw new Error('expression incomplète : ' + src);
-      if(t.t === 'n' || t.t === 's') return function(){ return t.v; };
-      if(t.t === 'o' && t.v === '('){ var x = ternary(); eat(')'); return x; }
-      if(t.t === 'o' && t.v === '['){
-        var items = [];
-        if(!isOp(']')){ do { items.push(ternary()); if(!isOp(',')) break; k++; } while(true); }
-        eat(']'); return function(e){ return items.map(function(f){ return f(e); }); };
-      }
-      if(t.t !== 'i') throw new Error('« ' + t.v + ' » inattendu dans : ' + src);
-      if(isOp('(')){
-        k++; var args = [];
-        if(!isOp(')')){ do { args.push(ternary()); if(!isOp(',')) break; k++; } while(true); }
-        eat(')'); idents['()' + t.v] = 1;
-        return function(e){
-          var f = own(EXPR_FNS, t.v) ? EXPR_FNS[t.v] : own(e.__fns, t.v) ? e.__fns[t.v] : null;
-          if(!f) throw new Error('fonction inconnue : ' + t.v);
-          return f.apply(null, args.map(function(a){ return a(e); }));
-        };
-      }
-      idents[t.v] = 1;
-      return function(e){ return e[t.v]; };
-    }
-    var root = ternary();
-    if(k < toks.length) throw new Error('reste inattendu dans : ' + src);
-    root.idents = idents;
-    return (EXPR_CACHE[src] = root);
-  }
-  function evalExpr(src, env){ return compileExpr(src)(env); }
-
-  // ---- textes : « Combien font {a} + {b} ? » ----
-  function compileText(src){
-    var parts = String(src).split(/\{([^}]*)\}/), fs = [];
-    for(var i=0;i<parts.length;i++) fs.push(i%2 ? compileExpr(parts[i]) : parts[i]);
-    var fn = function(env){ return fs.map(function(f){ return typeof f === 'string' ? f : f(env); }).join(''); };
-    fn.idents = {};
-    fs.forEach(function(f){ if(typeof f !== 'string') for(var k in f.idents) fn.idents[k] = 1; });
-    return fn;
-  }
-
-  // ---- tirage d'une variable ----
-  function drawVar(spec, env){
-    if(typeof spec === 'number' || typeof spec === 'string') return evalExpr(spec, env);
-    if(spec.int){
-      var lo = evalExpr(spec.int[0], env), hi = evalExpr(spec.int[1], env);
-      return randInt(lo, hi) * (spec.step || 1);
-    }
-    if(spec.pick){ var list = typeof spec.pick === 'string' ? env[spec.pick] : spec.pick; return pick(list); }
-    if(spec.any) return drawVar(pick(spec.any), env);
-    throw new Error('variable inconnue : ' + JSON.stringify(spec));
-  }
-  function specIdents(spec, out){
-    if(typeof spec === 'number') return;
-    if(typeof spec === 'string'){ var c = compileExpr(spec); for(var k in c.idents) out[k] = 1; return; }
-    if(spec.int) spec.int.forEach(function(x){ specIdents(x, out); });
-    else if(spec.pick){ if(typeof spec.pick === 'string') out[spec.pick] = 1; }
-    else if(spec.any) spec.any.forEach(function(s){ specIdents(s, out); });
-    else throw new Error('variable inconnue : ' + JSON.stringify(spec));
-  }
-
-  // ---- SCÈNES : ce qui est dessiné. make(args) tire tout ce qui est aléatoire (une seule fois, à la génération) ;
-  // draw(svg, données) dessine, sans rien tirer : redessiner = même image. exprs = paramètres lus comme
-  // expressions, texts = paramètres lus comme textes à {trous}.
-  function clampInt(v, lo, hi){ v = Math.floor(+v); return isNaN(v) ? lo : Math.max(lo, Math.min(hi, v)); }
-  var SCENES = {
-    equation: { exprs:[], texts:['text'],
-      make:function(a){ return a; },
-      draw:function(svg, d){ svg.appendChild(svgText(100,112,d.text.length>11 ? 24 : 34,d.text)); } },
-    // plaques (100), barres (10), cubes (1) : « quel nombre est représenté ? »
-    blocks: { exprs:['hu','te','un'], texts:[],
-      make:function(a){ return { hu:clampInt(a.hu, 0, 20), te:clampInt(a.te, 0, 12), un:clampInt(a.un, 0, 30) }; },
-      draw:function(svg, d){
-        var hu = d.hu, te = d.te, un = d.un, i, j, s = 30, g = 3;
-        for(i=0;i<hu;i++){
-          var px = 8 + (i%5)*(s+g+3), py = 6 + Math.floor(i/5)*(s+g);
-          svg.appendChild(el('rect',{x:px,y:py,width:s,height:s,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--text)','stroke-width':2}));
-          for(j=1;j<5;j++){
-            svg.appendChild(el('line',{x1:px+j*s/5,y1:py,x2:px+j*s/5,y2:py+s,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
-            svg.appendChild(el('line',{x1:px,y1:py+j*s/5,x2:px+s,y2:py+j*s/5,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
-          }
-        }
-        var yb = hu>5 ? 82 : hu>0 ? 52 : 30;
-        for(i=0;i<te;i++){
-          var bx = 10 + i*13;
-          svg.appendChild(el('rect',{x:bx,y:yb,width:10,height:90,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
-          for(j=1;j<10;j++) svg.appendChild(el('line',{x1:bx,y1:yb+j*9,x2:bx+10,y2:yb+j*9,stroke:'var(--text)','stroke-width':0.6}));
-        }
-        for(i=0;i<un;i++) svg.appendChild(el('rect',{x:138+(i%3)*19,y:yb+4+Math.floor(i/3)*21,width:15,height:15,fill:'var(--accent)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':1.5}));
-      } },
-    // n objets éparpillés sur une grille 4×4 (positions et petits décalages tirés une fois)
-    scatter: { exprs:['n','icon'], texts:[],
-      make:function(a){
-        var cells = []; for(var i=0;i<16;i++) cells.push(i);
-        var chosen = shuffle(cells).slice(0, clampInt(a.n, 0, 16));
-        return { icon:a.icon, items: chosen.map(function(c){ return { c:c, dx:randInt(-6,6), dy:randInt(-4,4) }; }) };
-      },
-      draw:function(svg, d){ d.items.forEach(function(it){ svg.appendChild(svgText(28 + (it.c%4)*48 + it.dx, 52 + Math.floor(it.c/4)*44 + it.dy, 30, d.icon)); }); } },
-    // droite graduée : nb graduations de pas `step` depuis `start`, une flèche « ? » à la graduation k
-    numberline: { exprs:['start','step','nb','labelEvery','k'], texts:[],
-      make:function(a){ var nb = clampInt(a.nb, 2, 20); return { start:a.start, step:a.step, nb:nb, labelEvery:clampInt(a.labelEvery, 1, nb), k:clampInt(a.k, 0, nb) }; },
-      draw:function(svg, d){
-        var x0 = 16, w = 168, y = 120, i;
-        svg.appendChild(el('line',{x1:x0-6,y1:y,x2:x0+w+6,y2:y,stroke:'var(--text)','stroke-width':3,'stroke-linecap':'round'}));
-        for(i=0;i<=d.nb;i++){
-          var x = x0 + i*w/d.nb, big = i%d.labelEvery===0;
-          svg.appendChild(el('line',{x1:x,y1:y-(big?11:7),x2:x,y2:y+(big?11:7),stroke:'var(--text)','stroke-width':big?3:2}));
-          if(big) svg.appendChild(svgText(x, y+32, 15, String(d.start + i*d.step)));
-        }
-        var ax = x0 + d.k*w/d.nb;
-        svg.appendChild(el('polygon',{points:(ax-10)+','+(y-52)+' '+(ax+10)+','+(y-52)+' '+ax+','+(y-14),fill:'var(--accent)',stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
-        svg.appendChild(svgText(ax, y-60, 22, '?'));
-      } },
-    // rows × cols points
-    grid: { exprs:['rows','cols'], texts:[],
-      make:function(a){ return { rows:clampInt(a.rows, 1, 12), cols:clampInt(a.cols, 1, 12) }; },
-      draw:function(svg, d){
-        var r = d.rows, c = d.cols, gap = Math.min(30, 170/c, 170/r), x0 = 100 - (c-1)*gap/2, y0 = 100 - (r-1)*gap/2, i, j;
-        for(i=0;i<r;i++) for(j=0;j<c;j++) svg.appendChild(el('circle',{cx:x0+j*gap,cy:y0+i*gap,r:Math.min(10,gap*0.36),fill:i%2 ? 'var(--accent2)' : 'var(--accent)',stroke:'var(--text)','stroke-width':1.8}));
-      } },
-    // une figure partagée en n parts égales dont k sont coloriées : disque (pie) ou bande (bar)
-    fraction: { exprs:['n','k','shape'], texts:[],
-      make:function(a){ var n = clampInt(a.n, 1, 12); return { n:n, k:clampInt(a.k, 0, n), shape:a.shape === 'bar' ? 'bar' : 'pie' }; },
-      draw:function(svg, d){
-        var fill = 'var(--accent)', off = 'var(--surface)', i, n = d.n;
-        if(d.shape === 'pie'){
-          var r = 75;
-          for(i=0;i<n;i++){
-            var a0 = -Math.PI/2 + i*2*Math.PI/n, a1 = -Math.PI/2 + (i+1)*2*Math.PI/n;
-            var p = 'M 100 100 L '+(100+r*Math.cos(a0))+' '+(100+r*Math.sin(a0))+' A '+r+' '+r+' 0 0 1 '+(100+r*Math.cos(a1))+' '+(100+r*Math.sin(a1))+' Z';
-            svg.appendChild(el('path',{d:p, fill:i<d.k ? fill : off, stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
-          }
-        } else {
-          var w = 170, h = 85;
-          for(i=0;i<n;i++) svg.appendChild(el('rect',{x:15+i*w/n, y:57.5, width:w/n, height:h, fill:i<d.k ? fill : off, stroke:'var(--text)','stroke-width':2.5}));
-        }
-      } },
-    // une horloge à aiguilles : h (0 à 23, l'horloge ne montre que h mod 12) et m minutes
-    clock: { exprs:['h','m'], texts:[],
-      make:function(a){ return { h:clampInt(a.h, 0, 23), m:clampInt(a.m, 0, 59) }; },
-      draw:function(svg, d){ drawClockFace(svg, angleToXY(((d.h%12) + d.m/60) * 30 - 90, 42), angleToXY((d.m/60)*360 - 90, 62)); } },
-    // un gros emoji et une ligne de légende
-    emoji: { exprs:['icon'], texts:['caption'],
-      make:function(a){ return a; },
-      draw:function(svg, d){ svg.appendChild(svgText(100,95,64,d.icon)); svg.appendChild(svgText(100,150,26,d.caption)); } }
-  };
-
-  // La scène d'une forme : `scene:{type:…}` ou, en raccourci, `eq:'texte'` (une équation écrite).
-  function formScene(form){ return form.scene || { type:'equation', text:form.eq }; }
-  var TEMPLATE_FICHES = {};
-  var TEMPLATE_FNS = {};   // fonctions nommées utilisables dans les fiches (carry, explainAdd…), déclarées par fiches-calcul.js
-
-  // Vérifie une fiche (erreur claire si elle est mal formée) : toutes les expressions se compilent,
-  // tous les noms utilisés existent. Appelée à l'enregistrement.
-  function validateFiche(f){
-    function bad(msg){ throw new Error('fiche « ' + f.id + ' » : ' + msg); }
-    ['id','domain','label','longLabel'].forEach(function(k){ if(!f[k]) bad('« ' + k + ' » manquant'); });
-    if(!f.levels || f.levels.length !== 3) bad('3 niveaux attendus (Facile, Moyen, Difficile)');
-    if(!f.forms || !f.forms.length) bad('aucune forme de question');
-    f.forms.forEach(function(form, fi){
-      var known = Object.create(null); known.level = 1; known.tries = 1;
-      for(var bk in BANKS) known[bk] = 1;
-      f.levels.forEach(function(p){ for(var k in p) known[k] = 1; });
-      var vars = form.vars || {};
-      try {
-        for(var name in vars){ var need = {}; specIdents(vars[name], need); for(var n in need) if(!known[n] && !own(EXPR_FNS, n) && n.charAt(0) !== '(') bad('forme ' + fi + ' : « ' + n + ' » inconnu dans la variable ' + name); known[name] = 1; }
-        var all = [].concat(form.where || [], form.answer, form.extras || [], form.w === undefined ? [] : [form.w]).map(compileExpr)
-          .concat(['question','sub','explain'].map(function(k){ if(typeof form[k] !== 'string') bad('forme ' + fi + ' : « ' + k + ' » manquant'); return compileText(form[k]); }));
-        if(form.wrong !== undefined) all.push(compileExpr(form.wrong));
-        if(form.figures){
-          var fg = form.figures, fdef = own(SCENES, fg.scene) ? SCENES[fg.scene] : null;
-          if(!fdef || fdef.texts.length) bad('forme ' + fi + ' : « figures » : scène inconnue ou sans paramètres numériques « ' + fg.scene + ' »');
-          if(typeof fg.items !== 'string') bad('forme ' + fi + ' : « figures.items » manquant');
-          all.push(compileExpr(fg.items));
-        }
-        var sc = formScene(form), def = own(SCENES, sc.type) ? SCENES[sc.type] : null;
-        if(!def) bad('forme ' + fi + ' : scène inconnue « ' + sc.type + ' »');
-        def.exprs.forEach(function(k){ if(sc[k] === undefined) bad('forme ' + fi + ' : scène « ' + sc.type + ' » : « ' + k + ' » manquant'); all.push(compileExpr(sc[k])); });
-        def.texts.forEach(function(k){ if(typeof sc[k] !== 'string') bad('forme ' + fi + ' : scène « ' + sc.type + ' » : « ' + k + ' » manquant'); all.push(compileText(sc[k])); });
-        all.forEach(function(c){ for(var n in c.idents){
-          var fn = n.charAt(0) === '(' ? n.slice(2) : null;
-          if(fn ? !(own(EXPR_FNS, fn) || own(TEMPLATE_FNS, fn)) : !known[n]) bad('forme ' + fi + ' : « ' + (fn || n) + ' » inconnu'); } });
-      } catch(err){ if(err.message.indexOf('fiche') === 0) throw err; bad(err.message); }
-    });
-    compileText(f.note || '');
-  }
-
-  // Note de réglage GÉNÉRÉE depuis les paramètres de niveau : elle ne peut plus contredire le code.
-  function templateNote(f){
-    var env = Object.create(null); env.__fns = TEMPLATE_FNS;
-    f.levels.forEach(function(p, i){ for(var k in p) env[k + i] = p[k]; });
-    return compileText(f.note)(env);
-  }
-
-  function genFromFiche(f, level, svgId){
-    var params = f.levels[level], base = Object.create(null), k;
-    base.level = level; base.__fns = TEMPLATE_FNS;
-    for(k in BANKS) base[k] = BANKS[k];
-    for(k in params) base[k] = params[k];
-    // forme tirée selon ses poids (expressions : « level==2 ? 0.4 : 0 »)
-    var cands = [], total = 0;
-    f.forms.forEach(function(form){
-      if(form.levels && form.levels.indexOf(level) === -1) return;
-      var w = form.w === undefined ? 1 : evalExpr(form.w, base);
-      if(w > 0){ cands.push([form, w]); total += w; }
-    });
-    var r = rnd() * total, form = cands[cands.length-1][0];
-    for(var i=0;i<cands.length;i++){ r -= cands[i][1]; if(r < 0){ form = cands[i][0]; break; } }
-    var env, tries = 0;
-    do {
-      tries++;
-      env = Object.create(base); env.tries = tries;
-      for(var name in form.vars) env[name] = drawVar(form.vars[name], env);
-    } while(tries < 200 && (form.where || []).some(function(c){ return !evalExpr(c, env); }));
-    var correct = evalExpr(form.answer, env);
-    var extras = (form.extras || []).map(function(x){ return evalExpr(x, env); });
-    var sc = formScene(form), sdef = SCENES[sc.type], sargs = {};
-    sdef.exprs.forEach(function(k){ sargs[k] = evalExpr(sc[k], env); });
-    sdef.texts.forEach(function(k){ sargs[k] = compileText(sc[k])(env); });
-    var sdata = sdef.make(sargs), choices, cols3 = false;
-    if(form.figures){
-      // « Quelle figure… ? » : items = liste de listes de paramètres de la scène, la première est la bonne ; ordre mélangé ici
-      var fg = form.figures, fdef = SCENES[fg.scene], items = evalExpr(fg.items, env);
-      choices = shuffle(items.map(function(args, i){
-        var a = {}; fdef.exprs.forEach(function(k, j){ a[k] = args[j]; });
-        var data = fdef.make(a);
-        return { ok:i === 0, viewBox:'0 0 200 200', draw:function(svg){ fdef.draw(svg, data); } };
-      })).map(function(c, i){ c.label = (fg.label || 'Figure') + ' ' + (i + 1); return c; });
-    } else if(form.wrong){
-      // réponses de texte : la bonne + la liste calculée de fausses réponses, mélangées
-      var good = String(correct);
-      choices = shuffle([good].concat(evalExpr(form.wrong, env).map(String))).map(function(l){ return { label:l, ok:l === good }; });
-    } else if(form.options){
-      cols3 = form.cols3 !== false;
-      choices = form.options.map(function(l){ return { label:l, ok:l === correct }; });
-    } else choices = numChoices(correct, extras);
-    return {
-      tag: f.tag || 'Calcul',
-      question: compileText(form.question)(env),
-      sub: compileText(form.sub)(env),
-      explain: compileText(form.explain)(env),
-      draw: function(){
-        var svg = document.getElementById(svgId || 'm4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
-        sdef.draw(svg, sdata);
-      },
-      cols3: cols3,
-      choices: choices
-    };
-  }
-
-  // Définition d'un type de Quizz à partir d'une fiche (validée) — sans l'enregistrer.
-  function makeTemplateDef(f){
-    validateFiche(f);
-    return { id:f.id, domain:f.domain, label:f.label, longLabel:f.longLabel, defaultLevels:f.defaultLevels || [0,1,2],
-      randomNote: templateNote(f), generate:function(level, svgId){ return genFromFiche(f, level, svgId); } };
-  }
-  function registerTemplateType(f){
-    var def = makeTemplateDef(f);
-    TEMPLATE_FICHES[f.id] = f;
-    registerQuizType(def);
-  }
   /* ===================== FICHES D'ACTIVITÉS : calcul =====================
      12 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
      à registerTemplateType. Les `levels` sont les réglages Facile / Moyen / Difficile ; la note de réglage
@@ -6238,112 +6053,205 @@ function phrase(tpl, vars){
         explain:'La figure est partagée en {n} parts égales et {k} sont coloriées : {k}/{n}.', scene:{ type:'fraction', n:'n', k:'k', shape:'shape' } }
     ],
     note:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).' });
-  /* ===================== FICHES D'ACTIVITÉS : heure et calendrier =====================
-     Lire l'heure, Choisir l'horloge, Calendrier : décrits par des données (moteur : gabarits.js).
-     Scènes : `clock` (horloge à aiguilles) ; banques de textes JOURS / MOIS ; réponses de texte (`wrong`) ;
-     choix d'une figure (`figures`). Les fonctions ci-dessous sont les seuls calculs que les fiches ne savent pas écrire. */
+  /* ===================== FICHES D'ACTIVITÉS : nombres et calcul (suite) =====================
+     Numération, ordre, ± 10 / 100, encadrer, nombres en lettres, suites, monnaie : décrits par des données
+     (moteur : gabarits.js). Les fonctions ci-dessous sont les seuls calculs que les fiches ne savent pas écrire. */
 
-  TEMPLATE_FNS.clockLabel = minutesToClockLabel;                 // 90 -> « 1 h 30 » (cadran : 1 à 12)
-  TEMPLATE_FNS.clockLabel24 = minutesToLabel24;                   // 1050 -> « 17 h 30 » (0 h à 23 h)
-  TEMPLATE_FNS.clockExplain = clockExplain;                       // clockExplain(h, m, « 3 h 30 »)
-  TEMPLATE_FNS.periodPhrase = function(h){ return periodOfDay(h).phrase; };
-  TEMPLATE_FNS.periodEmoji = function(h){ return periodOfDay(h).emoji; };
-  // trois fausses heures voisines (au pas des minutes du niveau) pour un cadran de 12 h
-  TEMPLATE_FNS.heureWrong12 = function(total, step){
-    var seen = {}, pool = []; seen[minutesToClockLabel(total)] = true;
-    [-3,-2,-1,1,2,3].forEach(function(k){
-      var l = minutesToClockLabel(((total + k*step) % 720 + 720) % 720);
-      if(!seen[l]){ seen[l] = true; pool.push(l); }
-    });
-    return shuffle(pool).slice(0, 3);
+  // ---- fonctions nommées ----
+  TEMPLATE_FNS.enLettres = nombreEnLettres;                        // 71 -> « soixante et onze »
+  // trois fausses écritures en lettres (nombres voisins, chiffres inversés)
+  TEMPLATE_FNS.lettresWrong = function(n){
+    var c = Math.floor(n/100), d = Math.floor(n/10)%10, u = n%10, w = nombreEnLettres(n);
+    var pool = [n+10, n-10, c ? c*100 + u*10 + d : u*10 + d, n+1, n-1, n+100, n-100].filter(function(v){ return v > 9 && v < 1000 && v !== n; });   // < 1000 : nombreEnLettres ne sait pas écrire « dix cent »
+    var seen = {}, wrong = []; seen[w] = true;
+    shuffle(pool).forEach(function(v){ var t = nombreEnLettres(v); if(!seen[t] && wrong.length < 3){ seen[t] = true; wrong.push(t); } });
+    return wrong;
   };
-  // 24 h : le piège classique (oublier d'ajouter ou de retirer 12 h) et deux heures voisines à 5, 10 ou 15 minutes près
-  TEMPLATE_FNS.heureWrong24 = function(total){
-    var seen = {}, near = [], shifted = minutesToLabel24((total + 720) % 1440);
-    seen[minutesToLabel24(total)] = true; seen[shifted] = true;
-    [-3,-2,-1,1,2,3].forEach(function(k){
-      var l = minutesToLabel24(((total + k*5) % 1440 + 1440) % 1440);
-      if(!seen[l]){ seen[l] = true; near.push(l); }
-    });
-    return [shifted].concat(shuffle(near).slice(0, 2));
+  // trois nombres impairs différents de 1 à hi
+  TEMPLATE_FNS.impairs = function(hi, k){
+    var odd = [], g = 0;
+    while(odd.length < k && g++ < 200){ var od = 2*randInt(0, Math.floor(hi/2)-1) + 1; if(odd.indexOf(od) === -1) odd.push(od); }
+    return odd;
   };
-  TEMPLATE_FNS.heure24Explain = function(hour, m){
-    var total = hour*60 + m, label = minutesToLabel24(total), period = periodOfDay(hour);
-    var ex = clockExplain(hour, m, minutesToClockLabel(total) + ' sur l\'horloge');
-    if(hour === 0) return ex + ' Juste après minuit, l\'horloge montre 12 mais on dit 0 h : il est ' + label + '.';
-    if(hour >= 13) return ex + ' Comme c\'est ' + period.phrase + ', on ajoute 12 h : ' + (hour-12) + ' + 12 = ' + hour + '. Il est donc ' + label + '.';
-    return ex + ' Comme c\'est ' + period.phrase + ', l\'heure ne change pas : on garde ' + label + '.';
+  // quatre nombres différents de 1 à hi, le premier est n
+  TEMPLATE_FNS.quatreNombres = function(n, hi){
+    var vals = [n], g = 0;
+    while(vals.length < 4 && g++ < 50){ var v = randInt(1, hi); if(vals.indexOf(v) === -1) vals.push(v); }
+    return vals;
   };
-  // 4 horloges [h, m] dont la première est la bonne ; les autres sont des pièges : aiguilles échangées, heure ou minutes d'à côté
-  TEMPLATE_FNS.clockOptions = function(h, m, level){
-    var options = [[h, m]], used = {};
-    function key(hh, mm){ return ((hh%12)*60 + mm) + ''; }
-    used[key(h, m)] = true;
-    function add(hh, mm){
-      hh = ((hh-1+12)%12)+1; mm = ((mm%60)+60)%60;
-      if(used[key(hh, mm)]) return false;
-      used[key(hh, mm)] = true; options.push([hh, mm]); return true;
-    }
-    if(m % 5 === 0) add(m===0 ? 12 : m/5, h*5 % 60);
-    add(h+1, m); add(h-1, m);
-    var tries = 0;
-    while(options.length < 4 && tries++ < 50){ add(h, m + pick(level===0 ? [30] : [15,30,45,5,10])); if(options.length < 4) add(h + pick([-2,2,3]), m); }
-    if(options.length < 4) throw new Error('horloges : pas assez de pièges différents');
-    var good = options[0], rest = options.slice(1);
-    return [good].concat(rest.slice(0, 3));      // la bonne en tête ; le moteur mélange
+  TEMPLATE_FNS.plusGrand = function(a){ return Math.max.apply(null, a); };
+  TEMPLATE_FNS.plusPetit = function(a){ return Math.min.apply(null, a); };
+  TEMPLATE_FNS.croissant = function(a){ return a.slice().sort(function(x, y){ return x - y; }).join(' < '); };
+  // suite arithmétique de n termes (en descendant si desc)
+  TEMPLATE_FNS.suite = function(first, step, n, desc){ var o = []; for(var i = 0; i < n; i++) o.push(desc ? first - i*step : first + i*step); return o; };
+  TEMPLATE_FNS.joindre = function(a, sep){ return a.join(sep); };
+  // fausses réponses de « entre quelles dizaines / centaines » (jamais de nombre négatif)
+  TEMPLATE_FNS.encadrerWrong = function(lo, base){
+    var up = lo + base, lab = function(a, b){ return 'entre ' + a + ' et ' + b; }, okL = lab(lo, up);
+    var wr = [lab(lo-base, lo), lab(lo+base, up+base), lab(lo, up+base), lab(lo-base, up), lab(lo+base, up+2*base)].filter(function(t){ return !/entre -/.test(t) && t !== okL; });
+    return shuffle(wr).slice(0, 3);
   };
 
-  // -- Lire l'heure (cadran de 12 h ; en Difficile, 0 h à 23 h avec le moment de la journée) --
-  registerTemplateType({ id:'heure', domain:'temps', label:'Lire l\'heure', longLabel:'Lire l\'heure (QCM)', defaultLevels:[0,1,2], tag:'Lire l\'heure',
-    levels:[ { mins:[0,30], step:30 }, { mins:[0,15,30,45], step:15 }, {} ],
+  // -- Numération : chiffre des dizaines / unités / centaines, nombre de dizaines, composer un nombre --
+  var NUM_VARS = { n:{int:['lo','hi']}, c:'floor(n/100)', d:'floor(n/10)%10', u:'n%10' };
+  function numVars(extra){ var v = JSON.parse(JSON.stringify(NUM_VARS)); for(var k in extra) v[k] = extra[k]; return v; }
+  registerTemplateType({ id:'numeration', domain:'nombres', label:'Dizaines et unités', longLabel:'Dizaines et unités (numération)', defaultLevels:[0,1,2], tag:'Nombres',
+    levels:[ { lo:11, hi:59 }, { lo:11, hi:99 }, { lo:101, hi:999 } ],
     forms:[
-      { levels:[0,1], vars:{ hour:{int:[1,12]}, m:{pick:'mins'}, total:'(hour%12)*60+m', lab:'clockLabel(total)' }, answer:'lab', wrong:'heureWrong12(total,step)',
-        question:'Quelle heure indique cette horloge ?', sub:'Regarde bien la petite aiguille (les heures) et la grande (les minutes).',
-        explain:'{clockExplain(hour,m,lab)}', scene:{ type:'clock', h:'hour', m:'m' } },
-      { levels:[2], vars:{ hour:{int:[0,23]}, m:{pick:[0,5,10,15,20,25,30,35,40,45,50,55]}, total:'hour*60+m' }, answer:'clockLabel24(total)', wrong:'heureWrong24(total)',
-        question:'C\'est {periodPhrase(hour)} {periodEmoji(hour)}. Quelle heure indique cette horloge ?',
-        sub:'Les heures vont de 0 h à 23 h (l\'après-midi : 13 h, 14 h, 15 h…). Regarde bien les deux aiguilles.',
-        explain:'{heure24Explain(hour,m)}', scene:{ type:'clock', h:'hour', m:'m' } }
+      { vars:NUM_VARS, answer:'d', extras:['c','u','d+1','d-1'], question:'Dans {n}, quel est le chiffre des dizaines ?', sub:'Le chiffre des dizaines est l\'avant-dernier chiffre.',
+        explain:"Dans {n}, le chiffre des dizaines est {d} ({d} dizaine{d>1 ? 's' : ''}).", eq:'{n}' },
+      { vars:NUM_VARS, answer:'u', extras:['c','d','u+1','u-1'], question:'Dans {n}, quel est le chiffre des unités ?', sub:'Le chiffre des unités est le dernier chiffre.',
+        explain:'Dans {n}, le chiffre des unités est {u}.', eq:'{n}' },
+      { levels:[2], vars:NUM_VARS, answer:'c', extras:['d','u','c+1','c-1'], question:'Dans {n}, quel est le chiffre des centaines ?', sub:'Le chiffre des centaines est le premier chiffre.',
+        explain:'Dans {n}, le chiffre des centaines est {c}.', eq:'{n}' },
+      { levels:[1,2], vars:{ t0:{int:[2,9],step:10}, h:{int:[0,9],step:100}, t:'t0 + (level==2 ? h : 0)', nd:'t/10' }, answer:'nd', extras:['nd+1','nd-1','t','nd*10','nd+10'],
+        question:'Combien y a-t-il de dizaines dans {t} ?', sub:'Une dizaine = 10.', explain:'{t} = {nd} × 10, donc il y a {nd} dizaines.', eq:'{t}' },
+      { vars:numVars({ txt:"level==2 ? (d==0 ? c*100 + ' + ' + u : c*100 + ' + ' + d*10 + ' + ' + u) : d*10 + ' + ' + u" }), answer:'n', extras:['n+10','n-10','n+1','n-1','n+100','d*10+u'],
+        question:'Quel nombre obtient-on ?', sub:'Additionne les centaines, dizaines et unités.', explain:'{txt} = {n}.', eq:'{txt} = ?' }
     ],
-    note:'L\'heure affichée est tirée au hasard. C\'est le NIVEAU qui fixe la précision autorisée : à l\'heure pile/demie en Facile, + quarts d\'heure en Moyen, en Difficile toutes les 5 min ET les heures de 0 h à 23 h (l\'énoncé donne le moment de la journée : nuit, matin, après-midi, soir ; le piège : oublier d\'ajouter 12 h l\'après-midi).' });
+    note:'Chiffre des dizaines/unités (centaines en Difficile), nombre de dizaines, ou composer un nombre (30 + 4). Facile : jusqu\'à {hi0} ; Moyen : jusqu\'à {hi1} ; Difficile : jusqu\'à {hi2}.' });
 
-  // -- Choisir la bonne horloge parmi 4 dessins --
-  registerTemplateType({ id:'horlogeChoix', domain:'temps', label:'Choisir l\'horloge (visuel)', longLabel:'Choisir la bonne horloge (dessins)', defaultLevels:[0,1,2], tag:'Lire l\'heure',
-    levels:[ { steps:[0,30] }, { steps:[0,15,30,45] }, { steps:[0,5,10,15,20,25,30,35,40,45,50,55] } ],
+  // -- Ordre : suivant, précédent, entre, plus grand, plus petit, pair --
+  var ORD_VARS = { n0:{int:[3,'hi-2']}, adj:'level > 0 && rand() < 0.4', off:{pick:[-1,0,9]}, n:'max(3, min(hi-2, adj ? round(n0/10)*10 + off : n0))' };   // frontières de dizaines
+  function ordVars(extra){ var v = JSON.parse(JSON.stringify(ORD_VARS)); for(var k in extra) v[k] = extra[k]; return v; }
+  registerTemplateType({ id:'ordre', domain:'nombres', label:'Ordre des nombres', longLabel:'Ordre des nombres (avant, après, plus grand, pair)', defaultLevels:[0,1,2], tag:'Nombres',
+    levels:[ { hi:20 }, { hi:100 }, { hi:1000 } ],
     forms:[
-      { vars:{ h:{int:[1,12]}, m:{pick:'steps'}, lab:'clockLabel(h*60+m)', opts:'clockOptions(h,m,level)' }, answer:'0',
-        question:'Quelle horloge indique {lab} ?', sub:'La petite aiguille montre l\'heure, la grande aiguille les minutes.',
-        explain:'{clockExplain(h,m,lab)}', eq:'{lab}', figures:{ scene:'clock', items:'opts', label:'Horloge' } }
+      { vars:ORD_VARS, answer:'n+1', extras:['n+2','n-1','n+10','n'], question:'Quel nombre vient juste après {n} ?', sub:'Ajoute 1.',
+        explain:'{n+1} vient juste après {n} : {n} + 1 = {n+1}.', eq:'{n} → ?' },
+      { vars:ORD_VARS, answer:'n-1', extras:['n-2','n+1','n-10','n'], question:'Quel nombre vient juste avant {n} ?', sub:'Retire 1.',
+        explain:'{n-1} vient juste avant {n} : {n} - 1 = {n-1}.', eq:'? → {n}' },
+      { levels:[1,2], vars:ORD_VARS, answer:'n', extras:['n-2','n+2','n+10','n-10'], question:'Quel nombre est entre {n-1} et {n+1} ?', sub:'Cherche le nombre qui est juste au milieu.',
+        explain:'{n-1} < {n} < {n+1}.', eq:'{n-1} … {n+1}' },
+      { vars:ordVars({ vals:'quatreNombres(n, hi)', best:'plusGrand(vals)' }), answer:'best', wrong:'others(vals, best, 3)', question:'Quel est le plus grand de ces nombres ?', sub:'Compare-les un par un.',
+        explain:'{best} est le plus grand : {croissant(vals)}.', eq:'le plus grand ?' },
+      { vars:ordVars({ vals:'quatreNombres(n, hi)', best:'plusPetit(vals)' }), answer:'best', wrong:'others(vals, best, 3)', question:'Quel est le plus petit de ces nombres ?', sub:'Compare-les un par un.',
+        explain:'{best} est le plus petit : {croissant(vals)}.', eq:'le plus petit ?' },
+      { levels:[1,2], vars:{ ev:{int:[1,'floor(hi/2)-1'],step:2} }, answer:'ev', wrong:'impairs(hi, 3)', question:'Quel est le nombre pair ?', sub:'Un nombre pair se termine par 0, 2, 4, 6 ou 8.',
+        explain:'{ev} est pair (il se termine par {ev%10}) ; les autres sont impairs.', eq:'pair ou impair ?' }
     ],
-    note:'L\'heure est écrite en chiffres ; on choisit parmi 4 horloges dessinées. Les mauvaises réponses sont des pièges : aiguilles échangées, heure d\'à côté, minutes d\'à côté. Facile : heures pile et demies ; Moyen : + quarts ; Difficile : toutes les 5 minutes.' });
+    note:'Nombre juste avant/après, nombre entre deux autres, plus grand / plus petit parmi 4, nombre pair (dès Moyen). Facile : jusqu\'à {hi0} ; Moyen : jusqu\'à {hi1} ; Difficile : jusqu\'à {hi2}, souvent autour des changements de dizaine.' });
 
-  // -- Calendrier : jours de la semaine et mois (banques JOURS et MOIS) --
-  var CAL_SUB = 'Réfléchis à l\'ordre des jours ou des mois.';
-  var CAL_SCENE = { type:'emoji', icon:"'📅'", caption:'' };
-  registerTemplateType({ id:'calendrier', domain:'temps', label:'Calendrier', longLabel:'Calendrier (jours, mois)', defaultLevels:[0,1,2], tag:'Calendrier',
+  // -- Ajouter ou enlever 10, 100… (jamais de résultat négatif ni au-dessus de 1000) --
+  var PM_DIZ = 'Seul le chiffre des dizaines change (attention à la centaine !).', PM_CENT = 'Seul le chiffre des centaines change.';
+  function pmForm(levels, w, stp, nVars, sub){
+    var v = { sg:{pick:[1,-1]}, stp:stp };
+    for(var k in nVars) v[k] = nVars[k];
+    v.res = 'n + sg*stp'; v.txt = "n + (sg>0 ? ' + ' : ' - ') + stp";
+    return { levels:levels, w:w, vars:v, where:['res >= 0 && res <= 1000'], answer:'res', extras:['res+sg*stp','res-sg*stp*2','n+sg*stp*10','res+10*sg','res-10*sg','res+100*sg'],
+      question:'Quel est le résultat de {txt} ?', sub:sub, explain:'{txt} = {res}.', eq:'{txt}' };
+  }
+  registerTemplateType({ id:'plusMoins', domain:'nombres', label:'Ajouter 10, 100', longLabel:'Ajouter ou enlever 10, 100…', defaultLevels:[0,1,2], tag:'Nombres',
     levels:[ {}, {}, {} ],
     forms:[
-      { levels:[0,1], vars:{ i:{int:[0,6]} }, answer:'at(JOURS,i+1)', wrong:'others(JOURS,at(JOURS,i+1),3)',
-        question:'Quel jour vient juste après {at(JOURS,i)} ?', sub:CAL_SUB, explain:'Après {at(JOURS,i)} vient {at(JOURS,i+1)}.', scene:CAL_SCENE },
-      { levels:[0,1], vars:{ i:{int:[0,6]} }, answer:'at(JOURS,i-1)', wrong:'others(JOURS,at(JOURS,i-1),3)',
-        question:'Quel jour vient juste avant {at(JOURS,i)} ?', sub:CAL_SUB, explain:'Avant {at(JOURS,i)} il y a {at(JOURS,i-1)}.', scene:CAL_SCENE },
-      { levels:[0], vars:{}, answer:"'7 jours'", wrong:"others(['5 jours','6 jours','7 jours','8 jours','10 jours'],'7 jours',3)",
-        question:'Combien y a-t-il de jours dans une semaine ?', sub:CAL_SUB, explain:'La semaine a 7 jours : lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche.', scene:CAL_SCENE },
-      { levels:[1], vars:{}, answer:"'12 mois'", wrong:"others(['10 mois','11 mois','12 mois','13 mois','52 mois'],'12 mois',3)",
-        question:'Combien y a-t-il de mois dans une année ?', sub:CAL_SUB, explain:'L\'année a 12 mois, de janvier à décembre.', scene:CAL_SCENE },
-      { levels:[1,2], vars:{ m:{int:[0,11]} }, answer:'at(MOIS,m+1)', wrong:'others(MOIS,at(MOIS,m+1),3)',
-        question:'Quel mois vient juste après {at(MOIS,m)} ?', sub:CAL_SUB, explain:'Après {at(MOIS,m)} vient {at(MOIS,m+1)}.', scene:CAL_SCENE },
-      { levels:[1,2], vars:{ m:{int:[0,11]} }, answer:'at(MOIS,m-1)', wrong:'others(MOIS,at(MOIS,m-1),3)',
-        question:'Quel mois vient juste avant {at(MOIS,m)} ?', sub:CAL_SUB, explain:'Avant {at(MOIS,m)} il y a {at(MOIS,m-1)}.', scene:CAL_SCENE },
-      { levels:[2], vars:{ a:{int:[0,6]}, gap:{int:[2,5]} }, answer:"gap+' jours'", wrong:"others(['2 jours','3 jours','4 jours','5 jours','6 jours'],gap+' jours',3)",
-        question:'Combien de jours passent de {at(JOURS,a)} à {at(JOURS,a+gap)} ?', sub:'Compte les jours qui passent, un par un.',
-        explain:'De {at(JOURS,a)} à {at(JOURS,a+gap)}, on avance de {gap} jours.', scene:CAL_SCENE },
-      { levels:[2], w:2, vars:{ i:{int:[0,6]}, n:{int:[2,6]}, fwd:'rand()<0.6' }, answer:'at(JOURS,i+(fwd?n:-n))', wrong:'others(JOURS,at(JOURS,i+(fwd?n:-n)),3)',
-        question:"Aujourd'hui, c'est {at(JOURS,i)}. Quel jour {fwd ? 'sera-t-on dans '+n+' jours ?' : 'était-on il y a '+n+' jours ?'}",
-        sub:"Compte les jours un par un, en {fwd ? 'avançant' : 'reculant'}.",
-        explain:"À partir de {at(JOURS,i)}, on {fwd ? 'avance' : 'recule'} de {n} jours : on arrive à {at(JOURS,i+(fwd?n:-n))}.", scene:CAL_SCENE }
+      // Facile : ± 10
+      pmForm([0], 1, 10, { b:{int:['sg>0 ? 1 : 2', 'sg>0 ? 8 : 9'], step:10}, e:'rand() < 0.5 ? 0 : 1 + floor(rand()*9)', n:'b + e' }, PM_DIZ),
+      // Moyen : ± 10 (2 fois sur 3) ou ± 100
+      pmForm([1], 2, 10, { n:{int:['sg>0 ? 11 : 20', 'sg>0 ? 89 : 99']} }, PM_DIZ),
+      pmForm([1], 1, 100, { n:{int:['sg>0 ? 100 : 200', 'sg>0 ? 899 : 999']} }, PM_CENT),
+      // Difficile : ± 1 aux frontières, ± 10 / 20 / 30, ± 100 / 200
+      pmForm([2], 1, 1, { n:'at(sg>0 ? [99,199,299,399,499,599,699,799,899,109,119,129,139] : [100,200,300,400,500,600,700,800,900,110,120,130,140], floor(rand()*13))' },
+        "{sg>0 ? 'Ajoute 1 : le chiffre des unités passe à 0 et on retient.' : 'Enlève 1 : attention au passage de la dizaine ou de la centaine.'}"),
+      pmForm([2], 3, {pick:[10,20,30]}, { n0:{int:['sg>0 ? 100 : 110+stp', 'sg>0 ? 970-stp : 999']}, alt:'rand() < 0.6', r2:'sg>0 ? 10 + floor(rand()*(100-stp)) : floor(rand()*(stp+1))',
+        n:'alt ? floor(n0/100)*100 + r2 : n0' }, PM_DIZ),
+      pmForm([2], 2, {pick:[100,200]}, { n:{int:['sg>0 ? 100 : 100+stp', 'sg>0 ? 999-stp : 999']} }, PM_CENT)
     ],
-    note:'Facile : jour d\'avant / d\'après, jours dans la semaine. Moyen : + mois d\'avant / d\'après, mois dans l\'année. Difficile : « dans 4 jours / il y a 3 jours », nombre de jours entre deux jours, mois.' });
+    note:'Facile : +10 / -10 jusqu\'à 100 ; Moyen : +10 / -10 jusqu\'à 100 et +100 / -100 jusqu\'à 1000 ; Difficile : aussi +1 / -1 aux frontières (399 + 1), +20, +30, +200, avec passage de la centaine.' });
+
+  // -- Encadrer, arrondir --
+  var ENC_N = { n:{int:['lo','hi']} }, ENC_WHERE = ['n % b0 != 0', 'n % 10 != 5', 'b0 != 100 || floor(n/10)%10 != 5'];   // jamais un 5 en dernier chiffre : « arrondis 605 à la dizaine » serait ambigu
+  registerTemplateType({ id:'encadrer', domain:'nombres', label:'Encadrer, arrondir', longLabel:'Encadrer et arrondir un nombre', defaultLevels:[0,1,2], tag:'Nombres',
+    levels:[ { lo:11, hi:99, b0:10, pArrondi:0 }, { lo:11, hi:999, b0:10, pArrondi:0.5 }, { lo:101, hi:999, b0:100, pArrondi:0.5 } ],
+    forms:[
+      { w:'1 - pArrondi', vars:{ n:{int:['lo','hi']}, base:'b0', lo2:'floor(n/base)*base', up:'lo2 + base', ok:"'entre ' + lo2 + ' et ' + up" }, where:ENC_WHERE,
+        answer:'ok', wrong:'encadrerWrong(lo2, base)',
+        question:"Entre quelles {base==100 ? 'centaines' : 'dizaines'} se trouve {n} ?", sub:"Trouve la {base==100 ? 'centaine' : 'dizaine'} juste avant et celle juste après.",
+        explain:'{lo2} < {n} < {up} : {n} est {ok}.', eq:'{n}' },
+      { w:'pArrondi', vars:{ n:{int:['lo','hi']}, base:'level==2 && rand() < 0.4 ? 10 : b0', lo2:'floor(n/base)*base', up:'lo2 + base', near:'(n-lo2) < (up-n) ? lo2 : up' }, where:ENC_WHERE,
+        answer:'near', extras:['lo2','up','lo2-base','up+base','near + (near==lo2 ? 1 : -1)*floor(base/10)'],
+        question:"Arrondis {n} à {base==100 ? 'la centaine' : 'la dizaine'} la plus proche.", sub:"Entre quels {base==100 ? 'centaines' : 'dizaines'} est-il ? Duquel est-il le plus proche ?",
+        explain:'{n} est entre {lo2} et {up}, plus proche de {near}.', eq:'{n} ≈ ?' }
+    ],
+    note:'Facile : entre quelles dizaines (jusqu\'à 99) ; Moyen : jusqu\'à 999, et arrondir à la dizaine ; Difficile : entre quelles centaines, arrondir à la centaine ou à la dizaine.' });
+
+  // -- Nombres en lettres : des lettres aux chiffres, ou des chiffres aux lettres --
+  registerTemplateType({ id:'lettres', domain:'nombres', label:'Nombres en lettres', longLabel:'Nombres en lettres', defaultLevels:[0,1,2], tag:'Nombres',
+    levels:[ { lo:10, hi:69 }, { lo:70, hi:99 }, { lo:101, hi:999 } ],
+    forms:[
+      { vars:{ n:{int:['lo','hi']}, w:'enLettres(n)', c:'floor(n/100)', d:'floor(n/10)%10', u:'n%10', swap:'c ? c*100 + u*10 + d : u*10 + d' }, where:['level < 2 || n % 100 != 0'],
+        answer:'n', extras:['n+10','n-10','swap','n+1','n-1','n%100 >= 70 ? n-20 : n+100'],
+        question:'Quel est ce nombre écrit en chiffres ?', sub:'Découpe le mot : cent, vingt, soixante… (quatre-vingt = 4 × 20).', explain:"{w} s'écrit {n}.", scene:{ type:'words', text:'{w}' } },
+      { vars:{ n:{int:['lo','hi']}, w:'enLettres(n)' }, where:['level < 2 || n % 100 != 0'], answer:'w', wrong:'lettresWrong(n)',
+        question:"Comment s'écrit ce nombre en lettres ?", sub:'Cherche le mot qui correspond exactement au nombre.', explain:"{n} s'écrit « {w} ».", eq:'{n}' }
+    ],
+    note:'Passer des lettres aux chiffres, ou des chiffres aux lettres. Facile : {lo0} à {hi0} ; Moyen : {lo1} à {hi1} (soixante-dix, quatre-vingts…) ; Difficile : {lo2} à {hi2}.' });
+
+  // -- Suites de nombres : on avance (ou recule) du même nombre à chaque fois --
+  registerTemplateType({ id:'suiteNombres', domain:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[0,1,2], tag:'Suite de nombres',
+    levels:[ { steps:[1,2,5,10], pDesc:0, f0:10, dx:10, hole:4 }, { steps:[2,3,5,10], pDesc:0.4, f0:20, dx:10, hole:0 }, { steps:[3,4,6,7,9,11,20,25], pDesc:0.4, f0:40, dx:30, hole:0 } ],
+    forms:[
+      { vars:{ step:{pick:'steps'}, desc:'rand() < pDesc', first:'desc ? step*4 + floor(rand()*(dx+1)) : floor(rand()*(f0+1))', seq:'suite(first, step, 5, desc)',
+          h:'hole > 0 ? hole : 1 + floor(rand()*4)', ans:'at(seq, h)', shown:'masque(seq, h)' },
+        answer:'ans', extras:['ans+step','ans-step','ans+2*step','ans-2*step'], question:'Quel nombre manque dans cette suite ?', sub:'Cherche de combien on avance (ou on recule) à chaque fois.',
+        explain:"On {desc ? 'recule' : 'avance'} de {step} à chaque fois : {joindre(seq, ', ')}. Le nombre qui manque est {ans}.", scene:{ type:'cells', items:'shown' } }
+    ],
+    note:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de {liste(steps0)} ; Moyen : de {liste(steps1)}, parfois en descendant ; Difficile : de {liste(steps2)}.' });
+
+  // -- Monnaie : combien d'argent en tout ? --
+  registerTemplateType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2], tag:'Monnaie',
+    levels:[ { pool:[1,2,5], cmin:2, cmax:2 }, { pool:[1,2,5,10], cmin:2, cmax:3 }, { pool:[1,2,5,10,20], cmin:3, cmax:4 } ],
+    forms:[
+      { vars:{ k:{int:['cmin','cmax']}, items:'tirages(pool, k)', s:'total(items)' }, answer:'s', suffix:'€', extras:['s-5','s-2','s-1','s+1','s+2','s+5'],
+        question:"Combien d'argent y a-t-il en tout ?", sub:'Additionne la valeur de chaque pièce ou billet.', explain:"{joindre(items, '€ + ')}€ = {s}€.", scene:{ type:'money', items:'items' } }
+    ],
+    note:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard. Facile : {cmin0} pièces ou billets de {liste(pool0)} € ; Moyen : {cmin1} à {cmax1}, de {liste(pool1)} € ; Difficile : {cmin2} à {cmax2}, de {liste(pool2)} €.' });
+
+  // -- Problèmes écrits : prénoms (enfants et mascottes), objets et accords viennent de vocabulaire.js --
+  function icon(expr){ return { type:'emoji', icon:expr, caption:'' }; }
+  var CHOIX_SUB = 'Lis bien l\'énoncé avant de calculer.';
+  registerTemplateType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2], tag:'Maths de la vie', freshForms:true,
+    levels:[ {}, {}, {} ],
+    forms:[
+      { vars:{ a:{int:[1,10]}, b:{int:[1,10]}, s:'a+b', w:{person:true}, o:{thing:'jeu'}, c1:{color:true}, c2:{color:true} }, where:['c1.m != c2.m'], answer:'s', extras:['s-2','s-1','s+1','s+2','s+3'],
+        question:'{w.nom} a {nbc(a, o.sing, o.obj, o.genre, c1.m, c1.f)} et {nbc(b, o.sing, o.obj, o.genre, c2.m, c2.f)}. Combien de {o.obj} {w.at} en tout ?',
+        sub:CHOIX_SUB, explain:'{a} + {b} = {s} {o.obj}.', scene:icon('o.icon') },
+      { vars:{ a:{int:[2,15]}, b:{int:[1,'a-1']}, d:'a-b' }, answer:'d', extras:['d-2','d-1','d+1','d+2','d+3'],
+        question:'Un crayon mesure {a} cm. Un autre mesure {b} cm. Quelle est la différence de longueur ?', sub:CHOIX_SUB, explain:'{a} - {b} = {d} cm.', scene:icon("'📏'") },
+      { vars:{ p1:{int:[1,10]}, p2:{int:[1,10]}, s:'p1+p2', f1:{thing:'fruit'}, f2:{thing:'fruit'} }, where:['f1.sing != f2.sing'], answer:'s', extras:['s-2','s-1','s+1','s+2','s+3'],
+        question:'Au marché, {f1.un} coûte {p1}€ et {f2.un} coûte {p2}€. Combien coûtent les deux fruits ensemble ?', sub:CHOIX_SUB, explain:'{p1}€ + {p2}€ = {s}€.', scene:icon("'💶'") },
+      { vars:{ total:{int:[10,20]}, done:{int:[1,'total-1']}, remain:'total-done', w:{person:true} }, answer:'remain', extras:['remain-2','remain-1','remain+1','remain+2','remain+3'],
+        question:'Sur le chemin de l\'école, il y a {total} arbres. {w.nom} en a déjà compté {done}. Combien lui en reste-t-il à compter ?', sub:CHOIX_SUB, explain:'{total} - {done} = {remain}.', scene:icon("'🚶'") },
+      { vars:{ boxes:{int:[2,6]}, per:{int:[2,5]}, t:'boxes*per', o:{thing:'gourmand'} }, answer:'t', extras:['t-4','t-2','t+2','t+4','t+6'],
+        question:'Il y a {boxes} boîtes de {o.obj}. Chaque boîte contient {per} {o.obj}. Combien de {o.obj} y a-t-il en tout ?', sub:CHOIX_SUB, explain:'{boxes} × {per} = {t} {o.obj}.', scene:icon('o.icon') },
+      { vars:{ paid:{int:[10,20]}, cost:{int:[1,'paid-1']}, change:'paid-cost', w:{person:true}, x:{thing:'article'} }, answer:'change', extras:['change-2','change-1','change+1','change+2','change+3'],
+        question:'{w.nom} paie avec un billet de {paid}€ {x.un} qui coûte {cost}€. Combien de monnaie va-t-on lui rendre ?', sub:CHOIX_SUB, explain:'{paid}€ - {cost}€ = {change}€.', scene:icon("'💰'") }
+    ],
+    note:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.' });
+
+  // -- Problèmes à deux étapes --
+  var P2_SUB = 'Il y a deux étapes : fais-les l\'une après l\'autre.';
+  registerTemplateType({ id:'probleme2', domain:'calcul', label:'Problèmes à 2 étapes', longLabel:'Problèmes à deux étapes', defaultLevels:[1,2], tag:'Problèmes', freshForms:true,
+    levels:[ { L:0 }, { L:0 }, { L:1 } ],
+    forms:[
+      { vars:{ A:{int:['L ? 40 : 10','L ? 90 : 20']}, B:{int:[3,'floor(A/2)']}, C:{int:[3,'L ? 30 : 9']}, r:'A-B+C', w:{person:true}, o:{thing:'jeu'} }, answer:'r', extras:['A-B','A+C','A+B+C','A-B-C'],
+        question:'{w.nom} a {A} {o.obj}. {w.Il} en perd {B}, puis {w.il} en gagne {C}. Combien de {o.obj} {w.at} maintenant ?', sub:P2_SUB, explain:'{A} - {B} = {A-B}, puis {A-B} + {C} = {r}.', scene:icon('o.icon') },
+      { vars:{ A:{int:['L ? 30 : 8','L ? 70 : 15']}, B:{int:[2,'floor(A/2)']}, C:{int:[3,'L ? 25 : 9']}, r:'A-B+C' }, answer:'r', extras:['A-B','A+C','A+B+C','A-B-C'],
+        question:'Dans un bus, il y a {A} personnes. À l\'arrêt, {B} personnes descendent et {C} montent. Combien y a-t-il de personnes dans le bus ?', sub:P2_SUB, explain:'{A} - {B} = {A-B}, puis {A-B} + {C} = {r}.', scene:icon("'🚌'") },
+      { vars:{ B:{int:['L ? 12 : 2','L ? 35 : 8']}, C:{int:['L ? 10 : 2','L ? 30 : 8']}, e:{int:[1,'L ? 30 : 8']}, A:'B+C+e', r:'A-B-C', w:{person:true}, x1:{thing:'article'}, x2:{thing:'article'} }, where:['x1.sing != x2.sing'],
+        answer:'r', extras:['A-B','A-C','B+C','A+B+C'],
+        question:'{w.nom} a {A}€. {w.Il} achète {x1.un} à {B}€ et {x2.un} à {C}€. Combien d\'euros lui reste-t-il ?', sub:P2_SUB, explain:'{B} + {C} = {B+C}, puis {A} - {B+C} = {r}.', scene:icon("'💰'") },
+      { vars:{ B:{int:['L ? 20 : 3','L ? 60 : 9']}, C:{int:['L ? 15 : 3','L ? 50 : 9']}, e:{int:[2,'L ? 40 : 9']}, T:'B+C+e', r:'T-B-C', w:{person:true} }, answer:'r', extras:['T-B','T-C','B+C','T+B+C'],
+        question:'{w.nom} lit {B} pages lundi et {C} pages mardi. Son livre a {T} pages. Combien de pages lui reste-t-il à lire ?', sub:P2_SUB, explain:'{B} + {C} = {B+C}, puis {T} - {B+C} = {r}.', scene:icon("'📖'") },
+      { levels:[0,2], vars:{ b:{int:[3,6]}, p:{int:[3,6]}, e:{int:[2,'b*p-2']}, r:'b*p-e', o:{thing:'gourmand'} }, answer:'r', extras:['b*p','b*p+e','p-e > 0 ? p-e : r+2','b+p-e > 0 ? b+p-e : r+3'],
+        question:'Il y a {b} boîtes de {p} {o.obj}. On mange {e} {o.obj}. Combien de {o.obj} reste-t-il ?', sub:P2_SUB, explain:'{b} × {p} = {b*p}, puis {b*p} - {e} = {r}.', scene:icon('o.icon') },
+      { levels:[0,2], vars:{ n:{int:[2,5]}, c:{int:[2,5]}, e:{int:[1,15]}, A:'n*c+e', r:'A-n*c', w:{person:true}, x:{thing:'article'} }, answer:'r', extras:['n*c','A-c','A-n','A+n*c'],
+        question:'{w.nom} a {A}€. {w.Il} achète {n} {x.obj} à {c}€ {x.chacun}. Combien d\'euros lui reste-t-il ?', sub:P2_SUB, explain:'{n} × {c} = {n*c}, puis {A} - {n*c} = {r}.', scene:icon("'📒'") },
+      { levels:[0,2], vars:{ b:{int:[3,6]}, p:{int:[3,6]}, x:{int:[2,9]}, r:'b*p+x', w:{person:true}, o:{thing:'jeu'} }, answer:'r', extras:['b*p','b+p+x','r-x*2 > 0 ? r-x*2 : r+4','r+p'],
+        question:'{w.nom} a {b} paquets de {p} {o.obj} et {x} {o.obj} {o.seuls}. Combien de {o.obj} {w.at} en tout ?', sub:P2_SUB, explain:'{b} × {p} = {b*p}, puis {b*p} + {x} = {r}.', scene:icon('o.icon') },
+      { levels:[0,2], vars:{ p:{int:[2,5]}, k:{int:[2,5]}, u:{int:[2,5]}, r:'p*(k+u)', o:{thing:'fruit'} }, answer:'r', extras:['k+u','p*k','p*u','r+p'],
+        question:'Un panier contient {k} {o.obj}. Un autre en contient {u}. On remplit {p} fois les deux paniers. Combien de {o.obj} en tout ?', sub:P2_SUB, explain:'{k} + {u} = {k+u}, puis {p} × {k+u} = {r}.', scene:icon('o.icon') }
+    ],
+    note:'Un énoncé qui demande deux calculs à la suite (perdre puis gagner, deux achats, boîtes de gâteaux…). Moyen : additions et soustractions, nombres jusqu\'à environ 30 ; Difficile : nombres jusqu\'à environ 100 et énoncés avec une multiplication. Les modèles sont tirés sans répétition.' });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */
@@ -7687,10 +7595,9 @@ function phrase(tpl, vars){
      (structure, bornes, 200 tirages d'essai par niveau : une seule bonne réponse, propositions distinctes…) ;
      s'il est refusé, le message dit pourquoi, en français.
 
-     Fournisseur (PackSource) : { list(), save(entrée), remove(id) }. Aujourd'hui « appareil » = localStorage
-     (pas d'images dans les paquets pour l'instant, donc la place suffit) ; « fichier » = import / export d'un
-     .kvb.json depuis l'écran Réglages. Le jeu ne connaît que PackSource : un autre fournisseur (lien, cloud, IndexedDB)
-     se branche sans rien changer d'autre.
+     Fournisseur (PackSource) : { list(), save(entrée), remove(id) }. Aujourd'hui « appareil » = localStorage. Il n'y a PAS
+     d'écran pour importer ou créer un paquet pour l'instant (retiré des Réglages, voir HISTORIQUE §66) : le moteur reste
+     (installer, activer, retirer par code ; testé par pack_check.js) pour y revenir sans tout réécrire.
 
      Identifiants : une activité de paquet s'appelle `custom:<paquet>/<activité>` (jamais en collision avec les
      types intégrés ; l'historique de progression est rangé par cet identifiant). */
@@ -7861,11 +7768,6 @@ function phrase(tpl, vars){
       var niveaux = a.niveaux === undefined ? [0,1,2] : a.niveaux;
       if(!Array.isArray(niveaux) || !niveaux.length || niveaux.some(function(n){ return n !== 0 && n !== 1 && n !== 2; }) || new Set(niveaux).size !== niveaux.length) { e2('« niveaux » : une liste non vide parmi 0, 1, 2.'); niveaux = [0,1,2]; }
       var out = { id:a.id, type:a.type, label:a.label, domain:a.domain, niveaux:niveaux.slice().sort() };
-      // « meta » : réglages d'origine d'une activité créée avec l'éditeur (pour pouvoir la rouvrir) ; aucune incidence sur le jeu
-      if(a.meta !== undefined){
-        if(packIsObj(a.meta) && packIsStr(a.meta.modele, 1, 20) && Array.isArray(a.meta.p) && a.meta.p.length <= 8 && a.meta.p.every(function(x){ return typeof x === 'number' && isFinite(x); })) out.meta = { modele:a.meta.modele, p:a.meta.p.slice() };
-        else e2('« meta » invalide.');
-      }
       if(a.type === 'fixe'){
         if(a.tirage !== undefined && a.tirage !== 'sans remise') e2('« tirage » : seul « sans remise » est connu.');
         if(a.icone !== undefined) { if(packIsStr(a.icone, 1, 4)) out.icone = a.icone; else e2('« icone » : un emoji.'); }
@@ -7967,397 +7869,6 @@ function phrase(tpl, vars){
     PACKS.push(entry);
     if(entry.actif) packPlug(entry);
   });
-
-  // ---- écran Réglages : importer, activer, exporter, retirer (réservé aux adultes : derrière le code) ----
-  var packsUIRefresh = function(){};     // rafraîchit la liste des paquets (assigné par packsUI ; appelé par l'éditeur)
-  (function packsUI(){
-    var list = document.getElementById('packs-list'), msg = document.getElementById('packs-msg'),
-        file = document.getElementById('packs-file'), btn = document.getElementById('packs-import-btn');
-    if(!list || !btn) return;
-    function say(m){ msg.textContent = m; }
-    function render(){
-      list.innerHTML = '';
-      PACKS.forEach(function(e){
-        var li = document.createElement('li'); li.className = 'pack-item';
-        var t = document.createElement('div'); t.className = 'pack-title';
-        t.textContent = e.pack.titre + ' — v' + e.pack.version + ' · ' + e.pack.activites.length + ' activité' + (e.pack.activites.length > 1 ? 's' : '') + (e.pack.auteur ? ' · ' + e.pack.auteur : '');
-        li.appendChild(t);
-        if(e.erreur){ var er = document.createElement('div'); er.className = 'muted settings-hint'; er.textContent = e.erreur; li.appendChild(er); }
-        var row = document.createElement('div'); row.className = 'btn-row';
-        [['pack-toggle', e.actif ? '⏸ Désactiver' : '▶ Activer', function(){ packSetActive(e.pack.id, !e.actif); render(); }],
-         ['pack-export', '📤 Exporter', function(){
-            var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([packExportText(e.pack.id)], { type:'application/json' }));
-            a.download = e.pack.id + '.kvb.json'; document.body.appendChild(a); a.click(); a.remove(); }],
-         ['pack-remove', '🗑 Retirer', function(){ packRemove(e.pack.id); say('Paquet retiré : « ' + e.pack.titre + ' ».'); render(); }]
-        ].forEach(function(b){
-          var x = document.createElement('button'); x.type = 'button'; x.className = 'btn ghost ' + b[0]; x.textContent = b[1];
-          x.addEventListener('click', b[2]); row.appendChild(x);
-        });
-        li.appendChild(row); list.appendChild(li);
-      });
-    }
-    btn.addEventListener('click', function(){ file.click(); });
-    file.addEventListener('change', function(){
-      var f = file.files && file.files[0]; if(!f) return;
-      if(f.size > PACK_LIMITS.octets * 2){ say('Paquet refusé : fichier trop volumineux.'); file.value = ''; return; }
-      var rd = new FileReader();
-      rd.onload = function(){ var r = packInstallText(String(rd.result)); say(r.message); render(); file.value = ''; };
-      rd.onerror = function(){ say('Impossible de lire ce fichier.'); };
-      rd.readAsText(f);
-    });
-    packsUIRefresh = render;
-    render();
-  })();
-  /* ===================== ÉDITEUR D'ACTIVITÉS (parents et enseignants) =====================
-     Crée des activités sans écrire de fichier : on choisit un modèle, on règle, on teste 20 questions, on enregistre.
-     Les activités créées vivent dans UN paquet personnel (« perso.moi », « Mes activités ») : il passe par la même
-     validation et le même branchement que n'importe quel paquet (paquets.js), donc il est aussi exportable.
-     Quatre modèles : une table de multiplication, ajouter / retirer un nombre fixe, une activité du jeu reprise avec d'autres plages (gabarits), des questions écrites
-     à la main (type « fixe »). Chaque activité garde ses réglages d'origine (`meta`) pour pouvoir être rouverte.
-     La logique (editeurBuildAct, editeurApercu, editeurSave, editeurRemove) est séparée de l'écran (editeurUI). */
-
-  var EDIT_PACK_ID = 'perso.moi';
-  var EDIT_MODELES = [
-    { id:'table',     label:'Une table de multiplication' },
-    { id:'plusmoins', label:'Ajouter ou retirer un nombre' },
-    { id:'fiche',     label:'Une activité du jeu, à ma façon' },
-    { id:'patron',    label:'Un patron de cube à dessiner' },
-    { id:'libre',     label:'Mes propres questions' }
-  ];
-  var EDIT_GRID_ROWS = 5, EDIT_GRID_COLS = 6;
-  // Activités du jeu qu'on peut reprendre en changeant la taille des nombres à chaque niveau.
-  // param = réglage de niveau modifié ; lo/hi = bornes permises ; min(niveau) = plancher qui dépend des autres réglages du niveau.
-  var EDIT_BASES = [
-    { id:'calc',         param:'max', lo:3, hi:100 },
-    { id:'soustraction', param:'aHi', lo:5, hi:100, min:function(l){ return l.aLo + 2; } },
-    { id:'doubleMoitie', param:'hi',  lo:2, hi:100 },
-    { id:'compare',      param:'hi',  lo:10, hi:999, min:function(l){ return l.lo + 5; } }
-  ];
-  var NIVEAU_NOMS = ['Facile', 'Moyen', 'Difficile'];
-
-  function editeurInt(v, lo, hi){ var n = Number(v); return (typeof v !== 'object' && String(v).trim() !== '' && Number.isInteger(n) && n >= lo && n <= hi) ? n : null; }
-  function editeurSlug(label){
-    var s = String(label).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30).replace(/-+$/, '');
-    return s || 'activite';
-  }
-  function editeurActs(){ var e = packFind(EDIT_PACK_ID); return e ? e.pack.activites.slice() : []; }
-  function editeurFreeId(label){
-    var base = editeurSlug(label), ids = editeurActs().map(function(a){ return a.id; }), id = base, k = 2;
-    while(ids.indexOf(id) !== -1) id = base.slice(0, 36) + '-' + (k++);
-    return id;
-  }
-
-  // Construit une activité de paquet à partir des réglages de l'écran.
-  // v : { label, domain, niveaux:[0,1,2], p:[nombres…], icone, questions:[{q, bonne, fausses:[…], explication}] }
-  // Renvoie { act } ou { erreur } (message en français).
-  function editeurBuildAct(modele, v, id){
-    var niveaux = (v.niveaux || []).filter(function(n){ return n === 0 || n === 1 || n === 2; });
-    if(!niveaux.length) return { erreur:'Coche au moins un niveau.' };
-    var act = { id:id, label:String(v.label || '').trim(), domain:v.domain || 'calcul', niveaux:niveaux };
-    var p = v.p || [];
-    if(modele === 'table'){
-      var T = editeurInt(p[0], 2, 12), mx = [editeurInt(p[1], 2, 20), editeurInt(p[2], 2, 20), editeurInt(p[3], 2, 20)];
-      if(T === null) return { erreur:'La table doit être un nombre de 2 à 12.' };
-      if(mx.indexOf(null) !== -1) return { erreur:'Les « jusqu\'à × » doivent être des nombres de 2 à 20.' };
-      if(!(mx[0] <= mx[1] && mx[1] <= mx[2])) return { erreur:'Les « jusqu\'à × » doivent grandir de Facile à Difficile.' };
-      act.type = 'gabarit'; act.label = act.label || 'Table de ' + T; act.meta = { modele:modele, p:[T].concat(mx) };
-      act.fiche = {
-        levels:mx.map(function(m){ return { maxN:m }; }),
-        forms:[{ vars:{ n:{ int:[1, 'maxN'] }, r:T + '*n' }, answer:'r', extras:['r+' + T, 'r-' + T, 'r+1', 'r-1'],
-          question:'Combien font ' + T + ' × {n} ?', sub:'Utilise la table de ' + T + '.', explain:T + ' × {n} = {r}.', eq:T + ' × {n} = ?' }],
-        note:'La table de ' + T + ' jusqu\'à ' + T + ' × {maxN0} en Facile, ' + T + ' × {maxN1} en Moyen, ' + T + ' × {maxN2} en Difficile.' };
-    } else if(modele === 'plusmoins'){
-      var sens = editeurInt(p[0], 0, 1), K = editeurInt(p[1], 1, 99), hi = [editeurInt(p[2], 3, 100), editeurInt(p[3], 3, 100), editeurInt(p[4], 3, 100)];
-      if(sens === null) return { erreur:'Choisis « Ajouter » ou « Retirer ».' };
-      if(K === null) return { erreur:'Le nombre à ajouter ou retirer doit être de 1 à 99.' };
-      if(hi.indexOf(null) !== -1) return { erreur:'Les « nombres jusqu\'à » doivent être de 3 à 100.' };
-      if(!(hi[0] <= hi[1] && hi[1] <= hi[2])) return { erreur:'Les « nombres jusqu\'à » doivent grandir de Facile à Difficile.' };
-      var plus = sens === 0, sign = plus ? '+' : '-';
-      act.type = 'gabarit'; act.label = act.label || (plus ? 'Ajouter ' : 'Retirer ') + K; act.meta = { modele:modele, p:[sens, K].concat(hi) };
-      act.fiche = {
-        levels:hi.map(function(h){ return { hi:h }; }),
-        forms:[{ vars:{ n:plus ? { int:[1, 'hi'] } : { int:[K + 1, 'hi+' + K] }, r:'n' + sign + K }, answer:'r', extras:['r+10', 'r-10', 'r+1', 'r-1'],
-          question:'Combien font {n} ' + sign + ' ' + K + ' ?', sub:plus ? 'Ajoute ' + K + '.' : 'Retire ' + K + '.',
-          explain:'{n} ' + sign + ' ' + K + ' = {r}.', eq:'{n} ' + sign + ' ' + K + ' = ?' }],
-        note:(plus ? 'On ajoute ' : 'On retire ') + K + ' à un nombre. Facile : nombres jusqu\'à {hi0} ; Moyen : jusqu\'à {hi1} ; Difficile : jusqu\'à {hi2}.' };
-    } else if(modele === 'fiche'){
-      var bi = editeurInt(p[0], 0, EDIT_BASES.length - 1);
-      if(bi === null) return { erreur:'Choisis l\'activité de départ.' };
-      var B = EDIT_BASES[bi], F = TEMPLATE_FICHES[B.id], vv = [editeurInt(p[1], 1, 999), editeurInt(p[2], 1, 999), editeurInt(p[3], 1, 999)];
-      if(vv.indexOf(null) !== -1) return { erreur:'Écris un nombre pour chaque niveau.' };
-      for(var li = 0; li < 3; li++){
-        var plancher = Math.max(B.lo, B.min ? B.min(F.levels[li]) : 0);
-        if(vv[li] < plancher || vv[li] > B.hi) return { erreur:'En ' + NIVEAU_NOMS[li] + ' : un nombre de ' + plancher + ' à ' + B.hi + '.' };
-      }
-      if(!(vv[0] <= vv[1] && vv[1] <= vv[2])) return { erreur:'Les nombres doivent grandir de Facile à Difficile.' };
-      var fiche = JSON.parse(JSON.stringify({ tag:F.tag, levels:F.levels, forms:F.forms, note:F.note }));
-      fiche.levels.forEach(function(l, i){ l[B.param] = vv[i]; });
-      act.type = 'gabarit'; act.label = act.label || F.label + ' à ma façon'; act.fiche = fiche; act.meta = { modele:modele, p:[bi].concat(vv) };
-    } else if(modele === 'patron'){
-      var gerr = packGridCheck(v.grille);
-      if(gerr) return { erreur:'Patron : ' + gerr };
-      act.type = 'patron'; act.domain = 'solides'; act.label = act.label || 'Mon patron'; act.grille = v.grille; act.meta = { modele:modele, p:[] };
-    } else if(modele === 'libre'){
-      if(!act.label) return { erreur:'Donne un titre à ton activité.' };
-      var qs = [];
-      for(var i = 0; i < (v.questions || []).length; i++){
-        var q = v.questions[i], bonne = String(q.bonne || '').trim(), fa = (q.fausses || []).map(function(f){ return String(f).trim(); }).filter(Boolean);
-        if(!String(q.q || '').trim()) return { erreur:'Question ' + (i + 1) + ' : écris l\'énoncé.' };
-        if(!bonne) return { erreur:'Question ' + (i + 1) + ' : écris la bonne réponse.' };
-        if(!fa.length) return { erreur:'Question ' + (i + 1) + ' : écris au moins une mauvaise réponse.' };
-        if(new Set([bonne].concat(fa)).size !== fa.length + 1) return { erreur:'Question ' + (i + 1) + ' : deux réponses sont identiques.' };
-        qs.push({ q:String(q.q).trim(), bonnes:[bonne], fausses:fa, explication:String(q.explication || '').trim() });
-      }
-      if(!qs.length) return { erreur:'Écris au moins une question.' };
-      act.type = 'fixe'; act.tirage = 'sans remise'; act.icone = String(v.icone || '').trim() || '❓'; act.questions = qs; act.meta = { modele:modele, p:[] };
-    } else return { erreur:'Modèle inconnu.' };
-    return { act:act };
-  }
-
-  // Aperçu : 20 questions (au plus, une fois chacune pour les questions écrites à la main) au niveau lv.
-  // Renvoie { erreurs } ou { questions:[{ q, bonne, autres, explication }] }. Rien n'est enregistré.
-  function editeurApercu(act, lv){
-    var r = packValidate({ format:'kvb-pack', formatVersion:1, id:'perso.apercu', version:1, titre:'Aperçu', activites:[act] });
-    if(!r.pack) return { erreurs:r.erreurs };
-    if(act.type === 'patron'){      // pas de questions : le moteur 3D dit si le patron se referme
-      var net = r.defs[0].obj;
-      return { patron:{ solide:M3_ANSWER_LABELS[net.answer], ferme:net.answer !== 'aucun', explication:netExplain(net),
-        faces:net.faces.map(function(f){ return f.pts; }) } };
-    }
-    var def = r.defs[0], n = act.type === 'fixe' ? Math.min(20, act.questions.length) : 20;
-    var out = withSeed(2024, function(){
-      var l = [];
-      for(var i = 0; i < n; i++){
-        var g = def.generate(lv);
-        l.push({ q:g.question, bonne:g.choices.filter(function(c){ return c.ok; })[0].label,
-                 autres:g.choices.filter(function(c){ return !c.ok; }).map(function(c){ return c.label; }), explication:g.explain });
-      }
-      return l;
-    });
-    return { questions:out };
-  }
-
-  // Enregistre (ajoute ou remplace) une activité dans le paquet personnel.
-  function editeurSave(act){
-    var e = packFind(EDIT_PACK_ID), acts = editeurActs(), pos = -1;
-    acts.forEach(function(a, i){ if(a.id === act.id) pos = i; });
-    if(pos === -1) acts.push(act); else acts[pos] = act;
-    var r = packInstall({ format:'kvb-pack', formatVersion:1, id:EDIT_PACK_ID, version:e ? e.pack.version + 1 : 1, titre:'Mes activités', auteur:'', activites:acts });
-    if(r.ok){ if(e && !e.actif) packSetActive(EDIT_PACK_ID, true); packsUIRefresh(); }
-    return r;
-  }
-  function editeurRemove(id){
-    var e = packFind(EDIT_PACK_ID); if(!e) return;
-    var acts = e.pack.activites.filter(function(a){ return a.id !== id; });
-    if(!acts.length) packRemove(EDIT_PACK_ID);
-    else packInstall({ format:'kvb-pack', formatVersion:1, id:EDIT_PACK_ID, version:e.pack.version + 1, titre:'Mes activités', auteur:'', activites:acts });
-    packsUIRefresh();
-  }
-
-  // ---- écran (dans Réglages, derrière le code adulte) ----
-  (function editeurUI(){
-    var newBtn = document.getElementById('edit-new-btn'), listEl = document.getElementById('edit-list'), formEl = document.getElementById('edit-form');
-    if(!newBtn || !listEl || !formEl) return;
-    var cur = null;      // { modele, id|null }
-
-    function el(tag, props, kids){
-      var x = document.createElement(tag);
-      Object.keys(props || {}).forEach(function(k){ if(k === 'text') x.textContent = props[k]; else if(k === 'cls') x.className = props[k]; else x.setAttribute(k, props[k]); });
-      (kids || []).forEach(function(c){ x.appendChild(c); });
-      return x;
-    }
-    function field(id, label, input){ var w = el('div', { cls:'ed-field' }); w.appendChild(el('label', { 'for':id, text:label })); input.id = id; w.appendChild(input); return w; }
-    function num(id, label, val, lo, hi){ var i = el('input', { type:'number', inputmode:'numeric', min:lo, max:hi }); i.value = val; return field(id, label, i); }
-    function btn(id, text, fn, cls){ var b = el('button', { type:'button', cls:'btn ' + (cls || 'ghost'), text:text }); b.id = id; b.addEventListener('click', fn); return b; }
-    function val(id){ var x = document.getElementById(id); return x ? x.value : ''; }
-
-    function renderList(){
-      listEl.innerHTML = '';
-      editeurActs().forEach(function(a){
-        var li = el('li', { cls:'pack-item' });
-        li.appendChild(el('div', { cls:'pack-title', text:a.label + ' · ' + (DOMAINS.filter(function(d){ return d.id === a.domain; })[0] || {}).short }));
-        var row = el('div', { cls:'btn-row' });
-        row.appendChild(btn('', '✏️ Modifier', function(){ open(a.meta ? a.meta.modele : 'libre', a); }));
-        row.appendChild(btn('', '🗑 Supprimer', function(){ editeurRemove(a.id); say('Activité supprimée : « ' + a.label + ' ».'); renderList(); }));
-        row.querySelectorAll('button')[0].className += ' ed-modify'; row.querySelectorAll('button')[1].className += ' ed-delete';
-        li.appendChild(row); listEl.appendChild(li);
-      });
-    }
-    var msgEl = document.getElementById('edit-msg');
-    function say(m){ if(msgEl) msgEl.textContent = m; }
-
-    function setCell(b, on){
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-      b.setAttribute('aria-label', 'Ligne ' + (+b.getAttribute('data-r') + 1) + ', colonne ' + (+b.getAttribute('data-c') + 1) + ' : ' + (on ? 'case du patron' : 'vide'));
-      b.classList.toggle('on', on);
-    }
-    function questionBlock(q, i){
-      var box = el('fieldset', { cls:'ed-question' });
-      box.appendChild(el('legend', { text:'Question ' + (i + 1) }));
-      function inp(cls, label, v, max){ var x = el('input', { type:'text', maxlength:max, cls:cls }); x.value = v || ''; var id = 'ed-' + cls + '-' + i; return field(id, label, x); }
-      box.appendChild(inp('q', 'Énoncé', q.q, 300));
-      box.appendChild(inp('bonne', 'Bonne réponse', q.bonne, 60));
-      for(var k = 0; k < 3; k++) box.appendChild(inp('fausse' + k, 'Mauvaise réponse ' + (k + 1) + (k ? ' (facultatif)' : ''), (q.fausses || [])[k], 60));
-      box.appendChild(inp('expl', 'Explication (facultatif)', q.explication, 400));
-      var rm = btn('', '🗑 Retirer cette question', function(){ box.remove(); renumber(); }); rm.className += ' ed-q-remove'; box.appendChild(rm);
-      return box;
-    }
-    function renumber(){
-      var qs = formEl.querySelectorAll('.ed-question');
-      qs.forEach(function(b, i){ b.querySelector('legend').textContent = 'Question ' + (i + 1); });
-    }
-
-    function open(modele, act){
-      cur = { modele:modele, id:act ? act.id : null };
-      var p = act && act.meta ? act.meta.p : null;
-      formEl.innerHTML = ''; formEl.hidden = false; say('');
-      formEl.appendChild(el('h3', { text:(act ? 'Modifier : ' : 'Nouvelle activité : ') + EDIT_MODELES.filter(function(m){ return m.id === modele; })[0].label }));
-      var t = el('input', { type:'text', maxlength:60 }); t.value = act ? act.label : '';
-      formEl.appendChild(field('ed-label', 'Titre' + (modele === 'libre' ? '' : ' (facultatif)'), t));
-      var dom = el('select', {}); DOMAINS.forEach(function(d){ var o = el('option', { value:d.id, text:d.icon + ' ' + d.label }); dom.appendChild(o); });
-      dom.value = act ? act.domain : (modele === 'libre' ? 'logique' : 'calcul');
-      if(modele !== 'patron') formEl.appendChild(field('ed-domain', 'Thème', dom));     // un patron est toujours dans le thème « Solides »
-      var lv = el('fieldset', { cls:'ed-levels' }); lv.appendChild(el('legend', { text:'Niveaux où l\'activité apparaît' }));
-      ['Facile', 'Moyen', 'Difficile'].forEach(function(nm, k){
-        var c = el('input', { type:'checkbox', id:'ed-niv' + k }); c.checked = act ? act.niveaux.indexOf(k) !== -1 : true;
-        var lab = el('label', { 'for':'ed-niv' + k, cls:'ed-check' }); lab.appendChild(c); lab.appendChild(document.createTextNode(' ' + nm)); lv.appendChild(lab);
-      });
-      formEl.appendChild(lv);
-      var box = el('div', { id:'ed-fields' });
-      if(modele === 'table'){
-        p = p || [7, 5, 8, 10];
-        box.appendChild(num('ed-p0', 'Table de', p[0], 2, 12));
-        ['Facile', 'Moyen', 'Difficile'].forEach(function(nm, k){ box.appendChild(num('ed-p' + (k + 1), 'Jusqu\'à × … en ' + nm, p[k + 1], 2, 20)); });
-      } else if(modele === 'patron'){
-        box.appendChild(el('p', { cls:'muted settings-hint', text:'Touche les cases pour dessiner le patron (6 colonnes sur 5 lignes). Le jeu vérifie lui-même s\'il se plie en cube.' }));
-        var rows = (act ? act.grille : '.X../XXXX/.X..').split('/'), grid = el('div', { id:'ed-grid', cls:'ed-grid', role:'group', 'aria-label':'Grille du patron' });
-        for(var gr = 0; gr < EDIT_GRID_ROWS; gr++) for(var gc = 0; gc < EDIT_GRID_COLS; gc++){
-          var cell = el('button', { type:'button', cls:'ed-cell', 'data-r':String(gr), 'data-c':String(gc) });
-          setCell(cell, (rows[gr] || '')[gc] === 'X');
-          cell.addEventListener('click', function(){ setCell(this, this.getAttribute('aria-pressed') !== 'true'); });
-          cell.addEventListener('keydown', function(e){        // flèches : on se déplace dans la grille
-            var d = { ArrowRight:[0,1], ArrowLeft:[0,-1], ArrowDown:[1,0], ArrowUp:[-1,0] }[e.key]; if(!d) return;
-            var t = grid.querySelector('[data-r="' + (+this.dataset.r + d[0]) + '"][data-c="' + (+this.dataset.c + d[1]) + '"]');
-            if(t){ t.focus(); e.preventDefault(); } });
-          grid.appendChild(cell);
-        }
-        box.appendChild(grid);
-      } else if(modele === 'fiche'){
-        var bases = EDIT_BASES.map(function(b){ return TEMPLATE_FICHES[b.id]; });
-        p = p || [0].concat(bases[0].levels.map(function(l){ return l[EDIT_BASES[0].param]; }));
-        var sb = el('select', {}); bases.forEach(function(f, i){ sb.appendChild(el('option', { value:String(i), text:f.label })); }); sb.value = String(p[0]);
-        box.appendChild(field('ed-p0', 'Activité de départ', sb));
-        [1, 2, 3].forEach(function(j){ box.appendChild(num('ed-p' + j, 'Nombres jusqu\'à … en ' + NIVEAU_NOMS[j - 1], p[j], 1, 999)); });
-        sb.addEventListener('change', function(){      // on repart des réglages d'origine de l'activité choisie
-          var bb = EDIT_BASES[+sb.value], ff = TEMPLATE_FICHES[bb.id];
-          [1, 2, 3].forEach(function(j){ document.getElementById('ed-p' + j).value = ff.levels[j - 1][bb.param]; });
-        });
-      } else if(modele === 'plusmoins'){
-        p = p || [0, 5, 10, 20, 50];
-        var s = el('select', {}); s.appendChild(el('option', { value:'0', text:'Ajouter' })); s.appendChild(el('option', { value:'1', text:'Retirer' })); s.value = String(p[0]);
-        box.appendChild(field('ed-p0', 'Opération', s));
-        box.appendChild(num('ed-p1', 'Le nombre', p[1], 1, 99));
-        ['Facile', 'Moyen', 'Difficile'].forEach(function(nm, k){ box.appendChild(num('ed-p' + (k + 2), 'Nombres jusqu\'à … en ' + nm, p[k + 2], 3, 100)); });
-      } else {
-        var ic = el('input', { type:'text', maxlength:4 }); ic.value = act ? act.icone : '❓';
-        box.appendChild(field('ed-icone', 'Image (un emoji)', ic));
-        var qs = el('div', { id:'ed-questions' });
-        (act ? act.questions : [{}]).forEach(function(q, i){
-          qs.appendChild(questionBlock({ q:q.q, bonne:q.bonnes ? q.bonnes[0] : '', fausses:q.fausses, explication:q.explication }, i));
-        });
-        box.appendChild(qs);
-        box.appendChild(btn('ed-add-q', '➕ Ajouter une question', function(){
-          var n = qs.querySelectorAll('.ed-question').length;
-          if(n >= 40){ say('40 questions au plus par activité.'); return; }
-          qs.appendChild(questionBlock({}, n)); }));
-      }
-      formEl.appendChild(box);
-      var sel = el('select', {}); ['Facile', 'Moyen', 'Difficile'].forEach(function(nm, k){ sel.appendChild(el('option', { value:String(k), text:nm })); });
-      var tr = el('div', { cls:'btn-row' });
-      tr.appendChild(btn('ed-test', modele === 'patron' ? '🔍 Tester le patron' : '🔍 Tester 20 questions', test));
-      tr.appendChild(btn('ed-save', '💾 Enregistrer', save, 'primary'));
-      tr.appendChild(btn('ed-cancel', 'Annuler', close));
-      if(modele !== 'patron') formEl.appendChild(field('ed-test-level', 'Tester au niveau', sel));
-      formEl.appendChild(tr);
-      formEl.appendChild(el('p', { id:'ed-msg2', cls:'muted settings-hint', role:'alert' }));
-      formEl.appendChild(el('ol', { id:'ed-preview', cls:'ed-preview' }));
-      t.focus();
-    }
-    function close(){ formEl.hidden = true; formEl.innerHTML = ''; cur = null; newBtn.focus(); }   // le clavier reprend là où il était
-    function say2(m){ var x = document.getElementById('ed-msg2'); if(x) x.textContent = m; }
-
-    function read(){
-      var v = { label:val('ed-label'), domain:val('ed-domain'), niveaux:[0, 1, 2].filter(function(k){ return document.getElementById('ed-niv' + k).checked; }), p:[], questions:[] };
-      for(var i = 0; document.getElementById('ed-p' + i); i++) v.p.push(val('ed-p' + i));
-      if(cur.modele === 'patron'){
-        var rowsOut = [];
-        for(var gr = 0; gr < EDIT_GRID_ROWS; gr++){
-          var line = '';
-          for(var gc = 0; gc < EDIT_GRID_COLS; gc++) line += formEl.querySelector('[data-r="' + gr + '"][data-c="' + gc + '"]').getAttribute('aria-pressed') === 'true' ? 'X' : '.';
-          rowsOut.push(line);
-        }
-        while(rowsOut.length && !/X/.test(rowsOut[rowsOut.length - 1])) rowsOut.pop();       // lignes vides en bas
-        while(rowsOut.length && !/X/.test(rowsOut[0])) rowsOut.shift();                         // et en haut
-        var left = Math.min.apply(null, rowsOut.map(function(l){ return l.indexOf('X') === -1 ? 99 : l.indexOf('X'); }));
-        v.grille = rowsOut.map(function(l){ return l.slice(left).replace(/\.+$/, '') || '.'; }).join('/');
-      }
-      if(cur.modele === 'libre'){
-        v.icone = val('ed-icone');
-        formEl.querySelectorAll('.ed-question').forEach(function(b){
-          v.questions.push({ q:b.querySelector('input.q').value, bonne:b.querySelector('input.bonne').value,
-            fausses:[0, 1, 2].map(function(k){ return b.querySelector('input.fausse' + k).value; }), explication:b.querySelector('input.expl').value });
-        });
-      }
-      return v;
-    }
-    function build(){ return editeurBuildAct(cur.modele, read(), cur.id || editeurFreeId(val('ed-label') || (cur.modele === 'table' ? 'table ' + val('ed-p0') : cur.modele === 'plusmoins' ? (val('ed-p0') === '1' ? 'retirer ' : 'ajouter ') + val('ed-p1') : ''))); }
-
-    function test(){
-      var b = build(), pv = document.getElementById('ed-preview'); pv.innerHTML = ''; say2('');
-      if(b.erreur){ say2(b.erreur); return; }
-      var lv = Number(val('ed-test-level') || 0);
-      if(b.act.niveaux.indexOf(lv) === -1) lv = b.act.niveaux[0];
-      var r = editeurApercu(b.act, lv);
-      if(r.erreurs){ say2('Cette activité n\'est pas valide : ' + r.erreurs.join(' — ')); return; }
-      if(r.patron){
-        say2((r.patron.ferme ? '✔ Ce patron se plie : c\'est un ' + r.patron.solide.toLowerCase() + '. ' : '✘ Ce n\'est pas un patron de cube. ') + r.patron.explication);
-        var all = [].concat.apply([], r.patron.faces), xs = all.map(function(p){ return p[0]; }), ys = all.map(function(p){ return p[1]; });
-        var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), w = Math.max.apply(null, xs) - x0, h = Math.max.apply(null, ys) - y0, NS = 'http://www.w3.org/2000/svg';
-        var svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', (x0 - 0.2) + ' ' + (y0 - 0.2) + ' ' + (w + 0.4) + ' ' + (h + 0.4)); svg.setAttribute('role', 'img');
-        svg.setAttribute('aria-label', 'Le patron dessiné : ' + r.patron.faces.length + ' faces'); svg.setAttribute('class', 'ed-net-preview');
-        r.patron.faces.forEach(function(f){ var pg = document.createElementNS(NS, 'polygon'); pg.setAttribute('points', f.map(function(p){ return p.join(','); }).join(' '));
-          pg.setAttribute('fill', r.patron.ferme ? 'var(--accent)' : 'var(--surface)'); pg.setAttribute('stroke', 'var(--text)'); pg.setAttribute('stroke-width', '0.05'); svg.appendChild(pg); });
-        var li0 = el('li', { cls:'ed-prev-item' }); li0.appendChild(svg); pv.appendChild(li0);
-        return;
-      }
-      say2(r.questions.length + ' question' + (r.questions.length > 1 ? 's' : '') + ' d\'essai (niveau ' + ['Facile', 'Moyen', 'Difficile'][lv] + ') : vérifie les réponses avant d\'enregistrer.');
-      r.questions.forEach(function(q){
-        var li = el('li', { cls:'ed-prev-item' });
-        li.appendChild(el('div', { cls:'ed-prev-q', text:q.q }));
-        li.appendChild(el('div', { cls:'ed-prev-a', text:'✔ ' + q.bonne + '   ✘ ' + q.autres.join(' · ') }));
-        pv.appendChild(li);
-      });
-    }
-    function save(){
-      var b = build(); say2('');
-      if(b.erreur){ say2(b.erreur); return; }
-      var r = editeurSave(b.act);
-      if(!r.ok){ say2(r.message); return; }
-      say('Activité enregistrée : « ' + b.act.label + ' ». Elle apparaît dans « Configurer les activités ».');
-      close(); renderList();
-    }
-
-    newBtn.addEventListener('click', function(){
-      formEl.innerHTML = ''; formEl.hidden = false; cur = null;
-      formEl.appendChild(el('p', { text:'Quel genre d\'activité ?' }));
-      var row = el('div', { cls:'btn-row' });
-      EDIT_MODELES.forEach(function(m){ var b = btn('', m.label, function(){ open(m.id); }); b.className += ' ed-modele ed-modele-' + m.id; row.appendChild(b); });
-      formEl.appendChild(row);
-      formEl.appendChild(btn('ed-cancel', 'Annuler', close));
-    });
-    renderList();
-    var prev = packsUIRefresh; packsUIRefresh = function(){ prev(); renderList(); };
-  })();
   /* ===================== QUIZZ (moteur) + ORCHESTRATEUR + CONFIGURATION DES ACTIVITÉS =====================
      Moteur du Quizz : registre des types, niveaux, tirage, affichage, correction.
      Puis l'orchestrateur (niveaux, chrono, séries) et le panneau de configuration.

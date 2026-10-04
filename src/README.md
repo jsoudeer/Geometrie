@@ -23,15 +23,13 @@ src/
     noyau.js            outils partagés (el, shuffle, pick, rand…), thème, sons, effets,
                         mascotte, registre des types de Quizz
     geometrie.js        Mesurer, Déformer + questions de Quizz de géométrie
-    horloge.js          Lire l'heure, Régler l'heure + questions « Lire l'heure » et « Durées »
+    horloge.js          Lire l'heure, Régler l'heure, la question « Durées » et les fiches Lire l'heure, Choisir l'horloge, Calendrier (en bas du fichier)
     vocabulaire.js      bibliothèques PRENOMS / mascottes / OBJETS / ARTICLES / COULEURS et accords (`phrase`, `accords`) : à utiliser pour tout problème à histoire
-    calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
     nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
     gabarits.js         moteur de FICHES d'activités arithmétiques : évaluateur d'expressions sûr (pas d'eval), variables, contraintes, fausses réponses, textes, note de réglage générée ; `registerTemplateType(fiche)`
-    fiches-temps.js     les fiches Lire l'heure, Choisir l'horloge, Calendrier (scène `clock`, banques JOURS / MOIS, réponses de texte, choix de figure) ; chargé après fiches-calcul.js
+    fiches-nombres.js   les fiches de nombres et problèmes : numération, ordre, ± 10 / 100, encadrer, nombres en lettres, suites, monnaie, Maths de la vie, Problèmes à 2 étapes (variables « personne » / « chose » / « couleur » de vocabulaire.js) ; chargé après fiches-temps.js
     fiches-calcul.js    les fiches des 12 activités migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions et Soustractions posées, Dénombrement visuel, Compter jusqu'à 1000, Multiplier/partager, Droite graduée, Comparer
-    paquets.js          paquets d'activités (`kvb-pack`) : validation complète, fournisseur `appareil` (localStorage), installation / activation / mise à jour / retrait, import-export de fichier (Réglages) ; chargé juste avant orchestrateur.js
-    editeur.js          éditeur d'activités (Réglages, code adulte) : 4 modèles, « Tester 20 questions », enregistrement dans le paquet personnel `perso.moi` ; chargé juste après paquets.js
+    paquets.js          paquets d'activités (`kvb-pack`) : validation complète, fournisseur `appareil` (localStorage), installation / activation / mise à jour / retrait par code ; AUCUN écran (retiré des Réglages) ; chargé juste avant orchestrateur.js
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
@@ -126,12 +124,11 @@ registerTemplateType({ id:'soustraction', domain:'calcul', label:'Soustraction',
 
 Scène (ce qui est dessiné) : `eq:'texte'` (équation écrite) ou `scene:{type:'blocks'|'scatter'|'grid'|'emoji'|'numberline'|'equation', …}` ; réponses non numériques : `options:['<','=','>']` avec `answer` = l'une d'elles (chaînes entre apostrophes dans les expressions) (paramètres = expressions ou textes à {trous}, voir `SCENES` dans `gabarits.js` ; le tirage se fait dans `make`, le dessin dans `draw`, qui ne tire rien).
 
-Variables : une expression, `{int:[lo,hi], step?}`, `{pick:[…]}` (ou nom d'un réglage), `{any:[spec,…]}` ; `where` = contraintes (rejet borné, `tries` = n° d'essai) ; `w` = poids de la forme ; `levels:[…]` = niveaux où la forme existe. Expressions : `+ - * / %`, comparaisons, `&& || !`, `?:`, `min max abs floor round rand liste`, plus les fonctions déclarées dans `TEMPLATE_FNS` (`carry`, `explainAdd`, `tableHint`). La fiche est validée à l'enregistrement (`validateFiche`) : un nom inconnu ou une faute de syntaxe lève une erreur claire. Test : `gabarits_check.js`.
+Variables : une expression, `{int:[lo,hi], step?}`, `{pick:[…]}` (ou nom d'un réglage), `{any:[spec,…]}` ; `where` = contraintes (rejet borné, `tries` = n° d'essai) ; `w` = poids de la forme ; `levels:[…]` = niveaux où la forme existe. Expressions : `+ - * / %`, comparaisons, `&& || !`, `?:`, `min max abs floor round rand liste`, plus les fonctions déclarées dans `TEMPLATE_FNS` (`carry`, `explainAdd`, `tableHint`). La fiche est validée à l'enregistrement (`validateFiche`) : un nom inconnu ou une faute de syntaxe lève une erreur claire. Test : `gabarits_check.js` (et `nombres_check.js` pour les fiches de nombres).
 
 ## Paquets d'activités (sans code)
 
-Un adulte ajoute des activités par un fichier `.kvb.json` (modèle : `exemples/paquet-exemple.kvb.json`). Deux sortes : `fixe` (liste de questions `{q, bonnes:[1], fausses:[1 à 3], explication}`) et `gabarit` (une `fiche`, voir plus haut). Format, limites et messages d'erreur : `paquets.js` (`packValidate`). Les identifiants sont `custom:<paquet>/<activité>`. Un autre fournisseur que `appareil` (lien, cloud) se branche en remplaçant `packSourceAppareil`. Test : `pack_check.js`.
-L'éditeur (`editeur.js`) fabrique ces activités depuis un écran : `editeurBuildAct(modele, réglages, id)` → activité, `editeurApercu`, `editeurSave`, `editeurRemove` ; elles sont rangées dans le paquet `perso.moi`, avec `meta` (modèle + nombres) pour pouvoir les rouvrir. Le modèle « à ma façon » reprend une fiche du jeu (liste `EDIT_BASES` : réglage de niveau modifiable et bornes). Pour ajouter un modèle : un cas dans `editeurBuildAct`, un bloc de champs dans `open`, une entrée dans `EDIT_MODELES`. Test : `editeur_check.js`.
+Le moteur sait lire des activités depuis un fichier `.kvb.json`, sans écran pour l'instant (appel `packInstallText(texte)` ; reprendre l'écran retiré dans l'historique git, §62-§65) (modèle : `exemples/paquet-exemple.kvb.json`). Deux sortes : `fixe` (liste de questions `{q, bonnes:[1], fausses:[1 à 3], explication}`) et `gabarit` (une `fiche`, voir plus haut). Format, limites et messages d'erreur : `paquets.js` (`packValidate`). Les identifiants sont `custom:<paquet>/<activité>`. Un autre fournisseur que `appareil` (lien, cloud) se branche en remplaçant `packSourceAppareil`. Test : `pack_check.js`.
 Un **patron de cube** est une activité de paquet de type `patron` (`grille:'.X../XXXX/.X..'`, 6 × 5 cases au plus, 2 à 10 cases d'un seul morceau) : `packPatronDef` appelle `makeNet` (patron3d.js), qui calcule seul s'il se referme ; il rejoint `NET_DEFS` (groupe « Mes patrons ») et les réglages d'activités de la famille « Patron → Solide ». Test : `patron_check.js`.
 
 ## Ajouter une activité à écran propre
@@ -172,7 +169,7 @@ niveau de son écran. Dans la rangée, « Nouvelle activité » (id en `-next` o
 ## Retirer un thème
 
 L'orchestrateur ne nomme aucune activité : retirer `horloge.js`, `patron3d.js`,
-`calcul.js`, `atelier.js` ou `geometrie.js` du manifeste retire simplement ses activités
+`nombres.js`, `atelier.js` ou `geometrie.js` du manifeste retire simplement ses activités
 et ses questions de Quizz. Les outils de dessin utilisés par plusieurs thèmes (`palette`,
 `isoPoly`, `ngonPoints`, `drawEquation`, `svgText`…) vivent dans `noyau.js`.
 `tools/tests/theme_removal_check.js` le vérifie pour chaque thème.

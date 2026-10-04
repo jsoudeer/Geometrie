@@ -1,8 +1,7 @@
-// P8 de l'audit : patrons dessinés en cases (paquets de type « patron » + éditeur).
+// P8 de l'audit : patrons dessinés en cases (paquets de type « patron »).
 //  - le moteur 3D de patron3d.js dit « cube » exactement quand un vrai dé, roulé sur les cases, touche 6 faces différentes
 //    (oracle indépendant, sur tous les assemblages de 2 à 7 cases qui tiennent dans 6 × 5) ;
 //  - un patron de paquet rejoint la famille « Patron → Solide », se joue, se plie, se retire ;
-//  - l'éditeur : grille au clavier et au doigt, test du patron, enregistrement, modification.
 const { withPage } = require('./lib');
 withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, async (page) => {
   let bad = 0; const chk = (ok, msg) => { console.log(ok ? '  ok' : '  ✘ ÉCHEC', msg); if (!ok) bad++; };
@@ -73,41 +72,6 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     ['une seule case', A('a', 'X'), /2 à 10/], ['11 cases', A('a', 'XXXXXX/XXXXX'), /2 à 10/], ['deux morceaux', A('a', 'XX./..X'), /un seul morceau/], ['caractère étranger', A('a', 'XY'), /6 colonnes/]];
   for (const [nom, act, re] of refus) { const x = await J(`JSON.stringify(packInstall(${JSON.stringify(pack([act]))}))`); chk(!x.ok && re.test(x.message), 'refus (' + nom + ') : ' + x.message.slice(0, 110)); }
 
-  // 4. éditeur
-  await page.evaluate(() => { document.getElementById('settings-overlay').hidden = false; document.getElementById('debug-panel').hidden = false; document.getElementById('debug-tools').hidden = false; document.getElementById('edit-new-btn').scrollIntoView(); });
-  await page.click('#edit-new-btn'); await page.click('.ed-modele-patron');
-  chk((await page.locator('#ed-grid .ed-cell').count()) === 30 && (await page.locator('#ed-grid .ed-cell.on').count()) === 6, 'éditeur : grille de 6 × 5 cases, la croix est proposée au départ');
-  chk((await page.getAttribute('#ed-grid .ed-cell[data-r="0"][data-c="1"]', 'aria-pressed')) === 'true' && /Ligne 1, colonne 2 : case du patron/.test(await page.getAttribute('#ed-grid .ed-cell[data-r="0"][data-c="1"]', 'aria-label')), 'éditeur : chaque case annonce sa place et son état');
-  await page.click('#ed-test');
-  chk(/se plie : c'est un cube/.test(await page.textContent('#ed-msg2')) && (await page.locator('#ed-preview svg').count()) === 1 && (await page.locator('#ed-preview polygon').count()) === 6, 'éditeur : « Tester le patron » dit que la croix se plie en cube et la dessine');
-  await page.click('#ed-grid .ed-cell[data-r="1"][data-c="0"]');         // on retire la case de gauche : 5 carrés seulement
-  await page.click('#ed-test');
-  chk(/Ce n'est pas un patron de cube/.test(await page.textContent('#ed-msg2')) && (await page.locator('#ed-preview polygon').count()) === 5, 'éditeur : avec une case en moins, le jeu dit que ce n\'est pas un patron de cube');
-  // clavier : flèches dans la grille, espace pour cocher
-  await page.focus('#ed-grid .ed-cell[data-r="1"][data-c="0"]'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowDown');
-  chk(await page.evaluate(() => { const a = document.activeElement; return a.dataset.r === '2' && a.dataset.c === '1'; }), 'éditeur : les flèches déplacent le curseur dans la grille');
-  await page.focus('#ed-grid .ed-cell[data-r="1"][data-c="0"]'); await page.keyboard.press('Space');
-  chk((await page.getAttribute('#ed-grid .ed-cell[data-r="1"][data-c="0"]', 'aria-pressed')) === 'true', 'éditeur : la barre d\'espace coche une case');
-  // décalage dans la grille : le dessin est recadré (coins vides retirés)
-  await page.click('#ed-grid .ed-cell[data-r="0"][data-c="1"]'); await page.click('#ed-grid .ed-cell[data-r="0"][data-c="1"]');   // allumé / éteint / rallumé : neutre
-  await page.fill('#ed-label', 'La croix de Léa'); await page.click('#ed-save');
-  const saved = await J(`JSON.stringify(editeurActs().filter(function(a){ return a.type==='patron'; }))`);
-  chk(saved.length === 1 && saved[0].grille === '.X/XXXX/.X' && saved[0].label === 'La croix de Léa' && saved[0].domain === 'solides', 'éditeur : enregistré, recadré sur ses cases (' + (saved[0] || {}).grille + ')');
-  chk((await ev(`NET_DEFS.filter(function(d){ return d.id === 'custom:perso.moi/' + editeurActs()[0].id; }).length`)) === 1, 'éditeur : le patron est dans « Patron → Solide »');
-  await page.locator('#edit-list .ed-modify').last().click();
-  chk((await page.locator('#ed-grid .ed-cell.on').count()) === 6 && (await page.inputValue('#ed-label')) === 'La croix de Léa', 'éditeur : « Modifier » rouvre la grille dessinée');
-  await page.click('#ed-cancel');
-  // erreurs de dessin
-  await page.click('#edit-new-btn'); await page.click('.ed-modele-patron');
-  for (const [r0, c0] of [[0, 1], [1, 0], [1, 1], [1, 2], [1, 3], [2, 1]]) await page.click(`#ed-grid .ed-cell[data-r="${r0}"][data-c="${c0}"]`);
-  await page.click('#ed-save');
-  chk(/2 à 10|Patron/.test(await page.textContent('#ed-msg2')), 'éditeur : une grille vide est refusée avec un message (' + (await page.textContent('#ed-msg2')) + ')');
-  await page.click('#ed-grid .ed-cell[data-r="0"][data-c="0"]'); await page.click('#ed-grid .ed-cell[data-r="4"][data-c="5"]'); await page.click('#ed-save');
-  chk(/un seul morceau/.test(await page.textContent('#ed-msg2')), 'éditeur : deux morceaux séparés sont refusés');
-  await page.screenshot({ path: '/tmp/geo_tests/patron_editeur.png' });
-  await page.click('#ed-cancel');
-  while ((await page.locator('#edit-list .ed-delete').count()) > 0) await page.locator('#edit-list .ed-delete').first().click();
-  chk((await ev(`NET_DEFS.filter(function(d){ return d.group==='perso'; }).length`)) === 0, 'supprimer les patrons de l\'éditeur les retire du jeu');
   console.log(bad ? 'ÉCHEC patron : ' + bad : 'patron OK');
   if (bad) process.exitCode = 1;
 });

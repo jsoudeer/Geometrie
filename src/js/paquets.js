@@ -6,10 +6,9 @@
      (structure, bornes, 200 tirages d'essai par niveau : une seule bonne réponse, propositions distinctes…) ;
      s'il est refusé, le message dit pourquoi, en français.
 
-     Fournisseur (PackSource) : { list(), save(entrée), remove(id) }. Aujourd'hui « appareil » = localStorage
-     (pas d'images dans les paquets pour l'instant, donc la place suffit) ; « fichier » = import / export d'un
-     .kvb.json depuis l'écran Réglages. Le jeu ne connaît que PackSource : un autre fournisseur (lien, cloud, IndexedDB)
-     se branche sans rien changer d'autre.
+     Fournisseur (PackSource) : { list(), save(entrée), remove(id) }. Aujourd'hui « appareil » = localStorage. Il n'y a PAS
+     d'écran pour importer ou créer un paquet pour l'instant (retiré des Réglages, voir HISTORIQUE §66) : le moteur reste
+     (installer, activer, retirer par code ; testé par pack_check.js) pour y revenir sans tout réécrire.
 
      Identifiants : une activité de paquet s'appelle `custom:<paquet>/<activité>` (jamais en collision avec les
      types intégrés ; l'historique de progression est rangé par cet identifiant). */
@@ -180,11 +179,6 @@
       var niveaux = a.niveaux === undefined ? [0,1,2] : a.niveaux;
       if(!Array.isArray(niveaux) || !niveaux.length || niveaux.some(function(n){ return n !== 0 && n !== 1 && n !== 2; }) || new Set(niveaux).size !== niveaux.length) { e2('« niveaux » : une liste non vide parmi 0, 1, 2.'); niveaux = [0,1,2]; }
       var out = { id:a.id, type:a.type, label:a.label, domain:a.domain, niveaux:niveaux.slice().sort() };
-      // « meta » : réglages d'origine d'une activité créée avec l'éditeur (pour pouvoir la rouvrir) ; aucune incidence sur le jeu
-      if(a.meta !== undefined){
-        if(packIsObj(a.meta) && packIsStr(a.meta.modele, 1, 20) && Array.isArray(a.meta.p) && a.meta.p.length <= 8 && a.meta.p.every(function(x){ return typeof x === 'number' && isFinite(x); })) out.meta = { modele:a.meta.modele, p:a.meta.p.slice() };
-        else e2('« meta » invalide.');
-      }
       if(a.type === 'fixe'){
         if(a.tirage !== undefined && a.tirage !== 'sans remise') e2('« tirage » : seul « sans remise » est connu.');
         if(a.icone !== undefined) { if(packIsStr(a.icone, 1, 4)) out.icone = a.icone; else e2('« icone » : un emoji.'); }
@@ -286,44 +280,3 @@
     PACKS.push(entry);
     if(entry.actif) packPlug(entry);
   });
-
-  // ---- écran Réglages : importer, activer, exporter, retirer (réservé aux adultes : derrière le code) ----
-  var packsUIRefresh = function(){};     // rafraîchit la liste des paquets (assigné par packsUI ; appelé par l'éditeur)
-  (function packsUI(){
-    var list = document.getElementById('packs-list'), msg = document.getElementById('packs-msg'),
-        file = document.getElementById('packs-file'), btn = document.getElementById('packs-import-btn');
-    if(!list || !btn) return;
-    function say(m){ msg.textContent = m; }
-    function render(){
-      list.innerHTML = '';
-      PACKS.forEach(function(e){
-        var li = document.createElement('li'); li.className = 'pack-item';
-        var t = document.createElement('div'); t.className = 'pack-title';
-        t.textContent = e.pack.titre + ' — v' + e.pack.version + ' · ' + e.pack.activites.length + ' activité' + (e.pack.activites.length > 1 ? 's' : '') + (e.pack.auteur ? ' · ' + e.pack.auteur : '');
-        li.appendChild(t);
-        if(e.erreur){ var er = document.createElement('div'); er.className = 'muted settings-hint'; er.textContent = e.erreur; li.appendChild(er); }
-        var row = document.createElement('div'); row.className = 'btn-row';
-        [['pack-toggle', e.actif ? '⏸ Désactiver' : '▶ Activer', function(){ packSetActive(e.pack.id, !e.actif); render(); }],
-         ['pack-export', '📤 Exporter', function(){
-            var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([packExportText(e.pack.id)], { type:'application/json' }));
-            a.download = e.pack.id + '.kvb.json'; document.body.appendChild(a); a.click(); a.remove(); }],
-         ['pack-remove', '🗑 Retirer', function(){ packRemove(e.pack.id); say('Paquet retiré : « ' + e.pack.titre + ' ».'); render(); }]
-        ].forEach(function(b){
-          var x = document.createElement('button'); x.type = 'button'; x.className = 'btn ghost ' + b[0]; x.textContent = b[1];
-          x.addEventListener('click', b[2]); row.appendChild(x);
-        });
-        li.appendChild(row); list.appendChild(li);
-      });
-    }
-    btn.addEventListener('click', function(){ file.click(); });
-    file.addEventListener('change', function(){
-      var f = file.files && file.files[0]; if(!f) return;
-      if(f.size > PACK_LIMITS.octets * 2){ say('Paquet refusé : fichier trop volumineux.'); file.value = ''; return; }
-      var rd = new FileReader();
-      rd.onload = function(){ var r = packInstallText(String(rd.result)); say(r.message); render(); file.value = ''; };
-      rd.onerror = function(){ say('Impossible de lire ce fichier.'); };
-      rd.readAsText(f);
-    });
-    packsUIRefresh = render;
-    render();
-  })();

@@ -2,7 +2,7 @@
      Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
      quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
      les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
-     Les scènes (equation, blocks, scatter, grid, emoji, numberline, fraction, clock) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
+     Les scènes (equation, blocks, scatter, grid, emoji, numberline, fraction, clock, cells, money, words) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
      jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
 
      Fiche :
@@ -12,7 +12,10 @@
                    eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …},
                    extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles)
                    |  wrong:expr (réponses de texte : liste des fausses réponses, ex. others(JOURS, bonne, 3) ; `answer` est la bonne)
-                   |  figures:{scene, items:expr, label?} (« quelle figure ? » : items = liste de listes de paramètres de la scène, la 1re est la bonne) } ],
+                   |  figures:{scene, items:expr, label?} (« quelle figure ? » : items = liste de listes de paramètres de la scène, la 1re est la bonne)
+                   suffix? (unité collée aux réponses numériques : '€') } ],
+         freshForms:true : les formes sortent sans remise (problèmes écrits). Variables « objet » : {person:true} (w.nom, w.il, w.Il, w.at),
+         {thing:'jeu'|'gourmand'|'fruit'|'article'} (o.obj, o.sing, o.un, o.seuls, o.chacun, o.icon, o.genre), {color:true} (c.m, c.f).
          Banques de textes : JOURS, MOIS ; fonctions : at(liste,i) (en tournant), others(liste, sauf, n).
          note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
      spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
@@ -27,6 +30,15 @@
     // élément d'une liste, en tournant : at(JOURS, 7) = le même jour que at(JOURS, 0) ; at(JOURS, -1) = le dernier
     at:function(a, i){ var n = a.length; return a[((Math.floor(i) % n) + n) % n]; },
     // n éléments de la liste, au hasard et différents, sans `except` : les fausses réponses d'une question de texte
+    // joindre([5,2], '€ + ') -> « 5€ + 2 » ; total([5,2]) -> 7 ; tirages([1,2,5], 3) -> 3 valeurs au hasard (avec remise)
+    joindre:function(a, sep){ return a.join(sep); },
+    total:function(a){ return a.reduce(function(x, y){ return x + y; }, 0); },
+    tirages:function(a, n){ var o = []; for(var i = 0; i < Math.min(40, n); i++) o.push(pick(a)); return o; },
+    // la liste avec « ? » à la place de l'élément i (suites à trou)
+    masque:function(a, i){ return a.map(function(v, k){ return k === i ? '?' : String(v); }); },
+    // « 1 bille », « 5 billes » ; « 5 billes rouges » (accord de la couleur avec le genre de l'objet)
+    nb:function(n, sing, plur){ return n + ' ' + (n > 1 ? plur : sing); },
+    nbc:function(n, sing, plur, genre, cm, cf){ return n + ' ' + (n > 1 ? plur : sing) + ' ' + (genre === 'f' ? cf : cm) + (n > 1 ? 's' : ''); },
     others:function(a, except, n){ return shuffle(a.filter(function(x, i){ return x !== except && a.indexOf(x) === i; })).slice(0, n); }
   };
   // Banques de textes : listes prêtes à l'emploi, lisibles par toutes les fiches (noms en majuscules).
@@ -39,7 +51,7 @@
   function compileExpr(src){
     src = String(src);
     if(EXPR_CACHE[src]) return EXPR_CACHE[src];
-    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|'([^']*)'|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
+    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_][\w.]*)|'([^']*)'|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
     while(pos < src.length){
       re.lastIndex = pos; m = re.exec(src);
       if(!m){ if(/^\s*$/.test(src.slice(pos))) break; throw new Error('expression illisible : ' + src); }
@@ -124,6 +136,19 @@
     return fn;
   }
 
+  // ---- personnes, choses, couleurs : les champs d'une valeur « objet » sont lus avec un point (w.nom, o.obj, c.m) ----
+  var PERSON_FIELDS = ['nom','il','Il','at'], THING_FIELDS = ['obj','sing','seuls','chacun','icon','genre','un'], COLOR_FIELDS = ['m','f'];
+  function specFields(spec){ return spec && spec.person ? PERSON_FIELDS : spec && spec.thing ? THING_FIELDS : spec && spec.color ? COLOR_FIELDS : null; }
+  function drawObject(spec){
+    if(spec.person) return accords(prenomAuHasard());
+    if(spec.thing){
+      var o = spec.thing === 'article' ? articleAuHasard() : objetAuHasard(spec.thing), v = accords(null, o);
+      v.icon = o.icon || ''; v.genre = o.genre; v.un = unArticle(o);
+      return v;
+    }
+    return pick(COULEURS);
+  }
+
   // ---- tirage d'une variable ----
   function drawVar(spec, env){
     if(typeof spec === 'number' || typeof spec === 'string') return evalExpr(spec, env);
@@ -133,6 +158,7 @@
     }
     if(spec.pick){ var list = typeof spec.pick === 'string' ? env[spec.pick] : spec.pick; return pick(list); }
     if(spec.any) return drawVar(pick(spec.any), env);
+    if(specFields(spec)) return drawObject(spec);
     throw new Error('variable inconnue : ' + JSON.stringify(spec));
   }
   function specIdents(spec, out){
@@ -141,6 +167,9 @@
     if(spec.int) spec.int.forEach(function(x){ specIdents(x, out); });
     else if(spec.pick){ if(typeof spec.pick === 'string') out[spec.pick] = 1; }
     else if(spec.any) spec.any.forEach(function(s){ specIdents(s, out); });
+    else if(specFields(spec)){
+      if(spec.thing !== undefined && spec.thing !== 'article' && ['jeu','gourmand','fruit'].indexOf(spec.thing) === -1) throw new Error('chose inconnue : ' + spec.thing);
+    }
     else throw new Error('variable inconnue : ' + JSON.stringify(spec));
   }
 
@@ -224,6 +253,37 @@
     clock: { exprs:['h','m'], texts:[],
       make:function(a){ return { h:clampInt(a.h, 0, 23), m:clampInt(a.m, 0, 59) }; },
       draw:function(svg, d){ drawClockFace(svg, angleToXY(((d.h%12) + d.m/60) * 30 - 90, 42), angleToXY((d.m/60)*360 - 90, 62)); } },
+    // une rangée de cases contenant les valeurs de la liste (suite de nombres, « ? » pour le trou)
+    cells: { exprs:['items'], texts:[],
+      make:function(a){ return { items:(a.items || []).slice(0, 8).map(String) }; },
+      draw:function(svg, d){
+        var n = d.items.length, w = Math.min(34, (190 - (n-1)*5) / n), gap = 5, x0 = (200 - (n*w + (n-1)*gap)) / 2;
+        d.items.forEach(function(txt, k){
+          var x = x0 + k*(w+gap);
+          svg.appendChild(el('rect',{x:x,y:88,width:w,height:34,rx:6,fill:'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
+          svg.appendChild(svgText(x+w/2,112,txt.length>2?16:19,txt));
+        });
+      } },
+    // des pièces (valeur < 5) et des billets (valeur ≥ 5), jusqu'à 4
+    money: { exprs:['items'], texts:[],
+      make:function(a){ return { items:(a.items || []).slice(0, 4).map(function(v){ return clampInt(v, 1, 500); }) }; },
+      draw:function(svg, d){
+        var pos = [[55,100],[100,65],[145,100],[100,140]];
+        d.items.forEach(function(v, i){
+          var cx = pos[i][0], cy = pos[i][1];
+          if(v < 5) svg.appendChild(el('circle',{cx:cx,cy:cy,r:26, fill:'var(--accent3)', stroke:'var(--text)','stroke-width':2.5}));
+          else svg.appendChild(el('rect',{x:cx-34,y:cy-20,width:68,height:40,rx:4, fill:'var(--accent2)', stroke:'var(--text)','stroke-width':2.5}));
+          svg.appendChild(svgText(cx,cy+6,16,v+'€'));
+        });
+      } },
+    // un texte en gros, coupé en lignes (après un espace ou un tiret) : un nombre écrit en lettres
+    words: { exprs:[], texts:['text'],
+      make:function(a){ return { text:String(a.text).slice(0, 120) }; },
+      draw:function(svg, d){
+        var words = d.text.split(/(?<=\s|-)/), lines = [''], i;
+        for(i=0;i<words.length;i++){ if((lines[lines.length-1] + words[i]).length > 14 && lines[lines.length-1]) lines.push(''); lines[lines.length-1] += words[i]; }
+        lines.forEach(function(t, k){ svg.appendChild(svgText(100, 100 - (lines.length-1)*14 + k*30, 24, t.trim())); });
+      } },
     // un gros emoji et une ligne de légende
     emoji: { exprs:['icon'], texts:['caption'],
       make:function(a){ return a; },
@@ -248,7 +308,7 @@
       f.levels.forEach(function(p){ for(var k in p) known[k] = 1; });
       var vars = form.vars || {};
       try {
-        for(var name in vars){ var need = {}; specIdents(vars[name], need); for(var n in need) if(!known[n] && !own(EXPR_FNS, n) && n.charAt(0) !== '(') bad('forme ' + fi + ' : « ' + n + ' » inconnu dans la variable ' + name); known[name] = 1; }
+        for(var name in vars){ var need = {}; specIdents(vars[name], need); for(var n in need) if(!known[n] && !own(EXPR_FNS, n) && n.charAt(0) !== '(') bad('forme ' + fi + ' : « ' + n + ' » inconnu dans la variable ' + name); known[name] = 1; (specFields(vars[name]) || []).forEach(function(fk){ known[name + '.' + fk] = 1; }); }
         var all = [].concat(form.where || [], form.answer, form.extras || [], form.w === undefined ? [] : [form.w]).map(compileExpr)
           .concat(['question','sub','explain'].map(function(k){ if(typeof form[k] !== 'string') bad('forme ' + fi + ' : « ' + k + ' » manquant'); return compileText(form[k]); }));
         if(form.wrong !== undefined) all.push(compileExpr(form.wrong));
@@ -290,12 +350,16 @@
       if(w > 0){ cands.push([form, w]); total += w; }
     });
     var r = rnd() * total, form = cands[cands.length-1][0];
-    for(var i=0;i<cands.length;i++){ r -= cands[i][1]; if(r < 0){ form = cands[i][0]; break; } }
+    if(f.freshForms) form = pickFresh(f.id + '|' + level, cands.map(function(c){ return c[0]; }));      // sans remise : toutes les formes passent avant qu'une revienne
+    else for(var i=0;i<cands.length;i++){ r -= cands[i][1]; if(r < 0){ form = cands[i][0]; break; } }
     var env, tries = 0;
     do {
       tries++;
       env = Object.create(base); env.tries = tries;
-      for(var name in form.vars) env[name] = drawVar(form.vars[name], env);
+      for(var name in form.vars){
+        var dv = drawVar(form.vars[name], env); env[name] = dv;
+        if(specFields(form.vars[name])) for(var fk in dv) env[name + '.' + fk] = dv[fk];
+      }
     } while(tries < 200 && (form.where || []).some(function(c){ return !evalExpr(c, env); }));
     var correct = evalExpr(form.answer, env);
     var extras = (form.extras || []).map(function(x){ return evalExpr(x, env); });
@@ -318,7 +382,7 @@
     } else if(form.options){
       cols3 = form.cols3 !== false;
       choices = form.options.map(function(l){ return { label:l, ok:l === correct }; });
-    } else choices = numChoices(correct, extras);
+    } else choices = numChoices(correct, extras, form.suffix);
     return {
       tag: f.tag || 'Calcul',
       question: compileText(form.question)(env),
