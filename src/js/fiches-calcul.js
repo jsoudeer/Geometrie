@@ -1,0 +1,96 @@
+  /* ===================== FICHES D'ACTIVITÉS : calcul =====================
+     6 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
+     à registerTemplateType. Les `levels` sont les réglages Facile / Moyen / Difficile ; la note de réglage
+     (« note ») est générée à partir d'eux. */
+
+  // Fonctions nommées que les fiches peuvent appeler (carry(a,b), explainAdd(a,b), tableHint(t)).
+  TEMPLATE_FNS.carry = hasCarry;
+  TEMPLATE_FNS.explainAdd = addExplain;
+  TEMPLATE_FNS.tableHint = function(t){
+    return t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
+  };
+
+  // -- Calcul : a + b (et, en Difficile, « a + x = c ») --
+  registerTemplateType({ id:'calc', domain:'calcul', label:'Calcul', longLabel:'Calcul', defaultLevels:[0,1,2],
+    levels:[ { max:10 }, { max:20 }, { max:20 } ],
+    forms:[
+      { vars:{ a:{int:[0,'max']}, b:{int:[0,'max-a']}, s:'a+b' }, answer:'s',
+        question:'Combien font {a} + {b} ?', sub:'Calcule le résultat de cette addition.', explain:'{a} + {b} = {s}.', eq:'{a} + {b} = ?' },
+      { w:'level==2 ? 1 : 0', vars:{ a:{int:[0,'max']}, x:{int:[0,'max-a']}, c:'a+x' }, answer:'x',
+        question:'Trouve x : {a} + x = {c}', sub:'Cherche le nombre qui manque pour que l\'égalité soit vraie.',
+        explain:'x = {c} - {a} = {x}, car {a} + {x} = {c}.', eq:'{a} + x = {c}' }
+    ],
+    note:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage : a + b jusqu\'à {max0} en Facile, {max1} en Moyen, {max2} en Difficile, où l\'on trouve aussi parfois x dans « a + x = c ».' });
+
+  // -- Soustraction --
+  registerTemplateType({ id:'soustraction', domain:'calcul', label:'Soustraction', longLabel:'Soustraction', defaultLevels:[0,1,2],
+    levels:[ { aLo:2, aHi:10, bLo:1 }, { aLo:8, aHi:20, bLo:1 }, { aLo:21, aHi:60, bLo:6 } ],
+    forms:[
+      { vars:{ a:{int:['aLo','aHi']}, b:{int:['bLo','a-1']}, d:'a-b' }, answer:'d', extras:['a+b','d+10','d-10'],
+        question:'Combien font {a} - {b} ?', sub:'Calcule le résultat de cette soustraction.',
+        explain:'{a} - {b} = {d}. (Vérification : {d} + {b} = {a}.)', eq:'{a} - {b} = ?' }
+    ],
+    note:'a - b avec b plus petit que a. Facile : nombres jusqu\'à {aHi0} ; Moyen : jusqu\'à {aHi1} ; Difficile : jusqu\'à {aHi2} (avec retenues).' });
+
+  // -- Doubles et moitiés --
+  registerTemplateType({ id:'doubleMoitie', domain:'calcul', label:'Doubles et moitiés', longLabel:'Doubles et moitiés', defaultLevels:[0,1,2],
+    levels:[ { hi:10 }, { hi:20 }, { hi:50 } ],
+    forms:[
+      { vars:{ n:{int:[1,'hi']}, r:'2*n' }, answer:'r', extras:['n','r+10','r-10','n*3'],
+        question:'Quel est le double de {n} ?', sub:'Le double, c\'est le nombre plus lui-même.',
+        explain:'Le double de {n} : {n} + {n} = {r}.', eq:'double de {n} = ?' },
+      { vars:{ h:{int:[1,'hi']}, m:'2*h' }, answer:'h', extras:['m','h+10','h-10','m-1'],
+        question:'Quelle est la moitié de {m} ?', sub:'La moitié, c\'est partager en deux parts égales.',
+        explain:'La moitié de {m} : {h} + {h} = {m}, donc la moitié est {h}.', eq:'moitié de {m} = ?' }
+    ],
+    note:'Le double ou la moitié d\'un nombre (la moitié porte toujours sur un nombre pair). Facile : jusqu\'à {hi0} ; Moyen : jusqu\'à {hi1} ; Difficile : jusqu\'à {hi2}.' });
+
+  // -- Compléments (à 10, à 20, à 100) --
+  var COMPLEMENT_TEXT = {
+    question:'{a} + ? = {target}', sub:'Cherche le nombre à ajouter pour arriver à {target}.',
+    explain:'{target} - {a} = {x}, car {a} + {x} = {target}.', eq:'{a} + ? = {target}'
+  };
+  function complementForm(levels, aSpec, extras){
+    var f = { levels:levels, vars:{ a:aSpec, x:'target-a' }, answer:'x', extras:extras };
+    for(var k in COMPLEMENT_TEXT) f[k] = COMPLEMENT_TEXT[k];
+    return f;
+  }
+  registerTemplateType({ id:'complement', domain:'calcul', label:'Compléments', longLabel:'Compléments (à 10, 20, 100)', defaultLevels:[0,1,2],
+    levels:[ { target:10 }, { target:20 }, { target:100 } ],
+    forms:[
+      complementForm([0,1], {int:[1,'target-1']}, ['x+1','x-1']),
+      complementForm([2], {int:[1,19], step:5}, ['x+5','x-5','x+10','x-10'])
+    ],
+    note:'« a + ? = cible ». Facile : compléments à {target0} ; Moyen : à {target1} ; Difficile : à {target2} (multiples de 5).' });
+
+  // -- Tables de multiplication --
+  registerTemplateType({ id:'tables', domain:'calcul', label:'Tables', longLabel:'Tables de multiplication', defaultLevels:[1,2],
+    levels:[ { tables:[2,10] }, { tables:[2,5,10] }, { tables:[2,3,4,5,10] } ],
+    forms:[
+      { w:'level==2 ? 0.6 : 1', vars:{ t:{pick:'tables'}, n:{int:[1,10]}, r:'t*n' }, answer:'r', extras:['r+t','r-t','r+10','r-10'],
+        question:'Combien font {t} × {n} ?', sub:'Utilise la table de {t}.', explain:'{t} × {n} = {r}. {tableHint(t)}', eq:'{t} × {n} = ?' },
+      { w:'level==2 ? 0.4 : 0', vars:{ t:{pick:'tables'}, n:{int:[1,10]}, r:'t*n' }, answer:'n', extras:['n+t','n-t','n*2'],
+        question:'{t} × ? = {r}', sub:'Cherche par combien il faut multiplier {t}.', explain:'{t} × {n} = {r}. {tableHint(t)}', eq:'{t} × ? = {r}' }
+    ],
+    note:'Facile : tables de {liste(tables0)} ; Moyen : {liste(tables1)} ; Difficile : {liste(tables2)}, avec parfois le facteur manquant (5 × ? = 35).' });
+
+  // -- Additions posées (retenue) --
+  var ADDITION_TEXT = {
+    answer:'a+b', extras:['carry(a,b) ? s-10 : s+10', 'level==2 ? s+100 : s+20'],
+    question:'Calcule {a} + {b}.', sub:'Additionne en colonnes : unités, puis dizaines{hundreds} (n\'oublie pas la retenue).',
+    explain:'{explainAdd(a,b)}', eq:'{a} + {b}'
+  };
+  function additionForm(levels, vars, where){
+    var f = { levels:levels, vars:vars, where:where };
+    for(var k in ADDITION_TEXT) f[k] = ADDITION_TEXT[k];
+    f.answer = 's'; f.vars.s = 'a+b';
+    return f;
+  }
+  registerTemplateType({ id:'addition', domain:'calcul', label:'Additions posées', longLabel:'Additions en colonnes (retenue)', defaultLevels:[0,1,2],
+    levels:[ { max:99, hundreds:'' }, { max:99, hundreds:'' }, { max:999, hundreds:', puis centaines' } ],
+    forms:[
+      additionForm([0], { a:{int:[11,89]}, b:{any:[ {int:[1,9]}, {int:[1,8], step:10} ]} }, ['a+b<=max', '!carry(a,b)']),
+      additionForm([1], { a:{int:[15,89]}, b:{int:[11,60]} }, ['a+b<=max', 'carry(a,b) || tries>=100 || rand()>=0.6']),
+      additionForm([2], { a:{int:[120,899]}, b:{any:[ {int:[11,99]}, {int:[110,500]} ]} }, ['a+b<=max', 'carry(a,b) || tries>=100 || rand()>=0.5'])
+    ],
+    note:'Facile : sans retenue, jusqu\'à {max0} ; Moyen : 2 nombres de 2 chiffres jusqu\'à {max1}, souvent avec retenue ; Difficile : jusqu\'à {max2}, souvent avec retenue. L\'explication détaille chaque colonne.' });

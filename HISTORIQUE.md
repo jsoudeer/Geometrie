@@ -318,3 +318,10 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - Le dessin ne tire plus rien : formes (Côtés/Sommets/Nom), orientation des solides, décalages des objets de Dénombrement, couleurs/tailles/rotations de l'Intrus, longueurs des branches d'Angles sont tirés dans `generate` ; redessiner = même image.
 - Test : `seed_check.js` (47 types × 3 niveaux × 6 graines : même graine = même question et même image ; graines différentes = questions différentes ; garde-fou contre `Math.random()` dans les fichiers de questions).
 - Ouvre la voie aux questions « fixes » et aux aperçus de l'éditeur (P6) : « tester 20 questions » = 20 graines.
+
+## 57. Audit P4 : moteur de fiches et 6 activités de calcul migrées (04/10/2026)
+- **`gabarits.js`** : `registerTemplateType(fiche)`. Évaluateur d'expressions maison (priorités, `?:`, fonctions nommées ; ni `eval` ni code saisi), variables (`int`, `pick`, `any`, dérivées), contraintes `where` (rejet borné), formes pondérées par niveau, fausses réponses (`extras`), textes `{expr}`, scène `equation`, **note de réglage générée** depuis les réglages de niveau, **validation de la fiche** à l'enregistrement.
+- **`fiches-calcul.js`** : `calc`, `soustraction`, `doubleMoitie`, `complement`, `tables`, `addition` décrits par des fiches ; l'ancien code (fonctions `gen…`, `CALC_LEVELS`, `eqQuestion`) est supprimé. Mêmes plages, mêmes explications, mêmes oracles (`audit_check` inchangé et vert ; `gabarits_check` mesure les plages).
+- Le test a trouvé un défaut réel du moteur avant livraison : un nom comme `constructor` était pris pour une expression déjà compilée (cache à prototype) ; corrigé (caches et environnements sans prototype).
+- Reste (étapes suivantes) : `soustractionPosee`, `comptage`/`blocs1000` en fiches ; objet de niveaux pour les autres types ; scènes réutilisables (P5).
+- Les 6 types s'affichent désormais après les autres types de calcul dans les listes (ordre d'enregistrement).
