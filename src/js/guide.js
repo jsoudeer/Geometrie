@@ -4,12 +4,12 @@
      éléments réels, les explications restent justes quand l'interface change
      (aucune capture d'écran à refaire).
        accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
-       boutique : dès 25 étoiles (le prix d'un personnage) quand on n'a jamais rien acheté ;
+       boutique : dès 10 étoiles (le prix du moins cher) quand on n'a jamais rien acheté ;
        bataille : la première fois qu'on ouvre la Bataille ;
        serie    : à la première série de 10 bonnes réponses d'affilée.
      Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
      dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
-  var GUIDE_SHOP_STARS = BUY_COST;   // seuil d'étoiles du guide Boutique (= le prix d'un personnage)
+  var GUIDE_SHOP_STARS = RARITY_META.commun.cost;   // seuil d'étoiles du guide Boutique (= le prix du moins cher)
   var GUIDE_SERIE_START = 10;      // série sans faute qui lance le guide Série
     var guideSeen = {};
   try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
@@ -55,7 +55,7 @@
         { sel:'#stars-btn', enter:function(){ showTab(lastPracticeTab); },
           text:'Les étoiles ⭐ que tu gagnes servent à acheter de nouveaux personnages. Je t\'emmène à la boutique.' },
         { sel:'#shop-grid .sprite-card, #shop-grid > *', enter:function(){ showTab('shop'); },
-          text:'Voici les personnages. Un seul est offert, chacun des autres coûte 25 étoiles. Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Les rares et les personnages « Défi » ont une compétence pour la Bataille ; les communs la gagnent en évoluant jusqu\'au niveau Ultime.' },
+          text:'Voici les personnages. Un seul est offert, les autres coûtent 10 étoiles (communs) ou 20 (rares, illustrés). Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Les rares et les personnages « Défi » ont une compétence pour la Bataille ; les communs la gagnent en évoluant jusqu\'au niveau Ultime.' },
         { sel:'#shop-grid .sp-buy:not(:disabled)',
           text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent en relevant un défi (série sans faute ou course contre la montre).' },
         { sel:'#shop-mascot-panel',

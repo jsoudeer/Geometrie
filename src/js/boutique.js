@@ -8,13 +8,12 @@
   /* Raretés (règle du 04/10/2026) : un personnage DESSINÉ EN SVG est commun, un personnage
      illustré à la main (une image existe dans CUSTOM_IMG) est rare ; les personnages de défi
      (non achetables) ont leur propre rareté. Les points de base dépendent de la rareté : un commun a
-     moins de points. Tout personnage achetable coûte BUY_COST ⭐. Les couleurs `color` des pastilles
+     moins de points. Prix : commun 10 ⭐, rare 20 ⭐ (un clan complet, évolutions comprises, ≈ 900 ⭐). Les couleurs `color` des pastilles
      sont assez foncées pour que le texte blanc posé dessus soit lisible (contraste ≥ 4,5:1) ;
      `glow` est la lumière qui apparaît à la révélation. */
-  var BUY_COST = 25;
   var RARITY_META = {
-    commun: { label:'Commun', cost:BUY_COST, color:'#595959', glow:'#B4BCC6', pts:5 },
-    rare:   { label:'Rare',   cost:BUY_COST, color:'#1D5EA6', glow:'#3D8BFF', pts:9 },
+    commun: { label:'Commun', cost:10, color:'#595959', glow:'#B4BCC6', pts:5 },
+    rare:   { label:'Rare',   cost:20, color:'#1D5EA6', glow:'#3D8BFF', pts:9 },
     defi:   { label:'Défi',   cost:0,        color:'#A3246B', glow:'#FF4FA3', pts:0 }
   };
   var CAT_COLORS   = ['#FFC2D1','#FFE29A','#C9F2C6','#BFE3FF','#E4C9FF','#FFD6B0','#C6FFF2','#F2C6E0',
@@ -456,7 +455,7 @@
     }catch(e){}
   }
   /* ---- Évolutions : 2 montées par personnage (0 = de base, 1 = Évolué, 2 = Ultime).
-     Chaque montée coûte le prix d'achat du personnage (25 ⭐ ; 12 ⭐ pour un personnage
+     Chaque montée coûte le prix d'achat du personnage (10 ⭐ commun, 20 ⭐ rare ; 12 ⭐ pour un personnage
      de défi, qui est gratuit), ajoute 20 % de ses points de base (au moins +2) et améliore sa compétence. ---- */
   var EVO_MAX = 2, EVO_BONUS = 0.2, EVO_REWARD_COST = 12;
   var EVO_NAMES = ['De base','Évolué','Ultime'];

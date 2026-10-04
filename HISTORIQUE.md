@@ -291,7 +291,7 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 ## 53. Raretés, points et compétences de personnage (04/10/2026)
 - **Demande** : peur de l'effet addictif → pas de gatcha ; on garde l'achat direct et on code le concept de compétences.
 - **Raretés** (`boutique.js`) : commun (SVG) / rare (image dans `CUSTOM_IMG`) / défi. Plus de statistiques par rareté : `mkSprite` donne
-  5–7 points aux communs et 9–11 aux rares (+ numéro % 3). Achat et évolution : 25 ⭐ pour tout non-défi (`BUY_COST`). Évolution : +20 % (au moins +2).
+  5–7 points aux communs et 9–11 aux rares (+ numéro % 3). Achat et évolution : 10 ⭐ un commun, 20 ⭐ un rare (≈ 900 ⭐ par clan, évolutions comprises ; 1 seul personnage offert). Évolution : +20 % (au moins +2).
 - **Pas de migration** : les clés de sauvegarde ne changent pas.
 - **Reveal** : la couleur de rareté (halo `.rv-aura`, pastille `.rv-rarity`) apparaît à la moitié de l'animation (`REVEAL_TINT_MS`).
 - **Compétences** (`competences.js`, nouveau) : 10 compétences (doubler/fixe, complément, table, doubles, moitiés, plus grand, heure,

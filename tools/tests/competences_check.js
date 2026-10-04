@@ -13,12 +13,12 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
       if(s.rarity!=='defi' && (img ? 'rare' : 'commun') !== s.rarity) o.badRarity++;
       if(s.rarity==='commun'){ o.minC=Math.min(o.minC,s.pts); o.maxC=Math.max(o.maxC,s.pts); }
       if(s.rarity==='rare'){ o.minR=Math.min(o.minR,s.pts); o.maxR=Math.max(o.maxR,s.pts); } });
-    o.cost = all.filter(function(s){ return s.rarity!=='defi' && !s.starter; }).every(function(s){ return s.cost===25; });
+    o.cost = all.filter(function(s){ return s.rarity!=='defi' && !s.starter; }).every(function(s){ return s.cost===(s.rarity==='rare'?20:10); });
     o.keys = Object.keys(RARITY_META).join(); return o; })()`);
   chk(rar.badRarity === 0 && rar.rare > 0 && rar.commun > 0 && rar.defi === 30, `rareté : illustré = rare (${rar.rare}), SVG = commun (${rar.commun}), défis ${rar.defi}`);
   chk(rar.keys === 'commun,rare,defi', 'raretés existantes : ' + rar.keys);
   chk(rar.minC >= 5 && rar.maxC <= 7 && rar.minR >= 9 && rar.maxR <= 11 && rar.maxC < rar.minR, `points : communs ${rar.minC}-${rar.maxC}, rares ${rar.minR}-${rar.maxR} (un commun a moins de points)`);
-  chk(rar.cost, 'tout personnage achetable coûte 25 ⭐');
+  chk(rar.cost, 'prix : commun 10 ⭐, rare 20 ⭐');
 
   // --- attribution des compétences
   const att = await J(`(function(){ var all=CAT_SPRITES.concat(BRAINROT_SPRITES), cnt={}, miss=0, same=0;
