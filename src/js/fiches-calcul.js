@@ -8,7 +8,7 @@
   TEMPLATE_FNS.explainAdd = addExplain;
   TEMPLATE_FNS.borrow = hasBorrow;
   TEMPLATE_FNS.explainSub = subExplain;
-  TEMPLATE_FNS.somme = function(c, r){ return Array(r+1).join(c + ' + ').slice(0,-3); };   // somme(5,3) -> « 5 + 5 + 5 »
+  TEMPLATE_FNS.somme = function(c, r){ r = Math.max(1, Math.min(50, Math.floor(r))); return Array(r+1).join(c + ' + ').slice(0,-3); };   // somme(5,3) -> « 5 + 5 + 5 »
   TEMPLATE_FNS.blocsExplain = function(hu, te, un){
     return (hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + (hu*100 + te*10 + un) + '.';
   };
