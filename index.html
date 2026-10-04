@@ -1551,7 +1551,7 @@
     <section class="tabpanel" id="tab-shop" hidden>
       <div class="card">
         <div class="panel-head"><h2>Boutique 🛒</h2><button class="btn ghost small" type="button" data-back>↩️ Retour aux exercices</button></div>
-        <p class="muted">Débloque des personnages avec tes étoiles ⭐ (25 ⭐ chacun) ou en relevant des défis. Le clan affiché est le clan actif (bouton 👹 / 🐱 en haut).</p>
+        <p class="muted">Débloque des personnages avec tes étoiles ⭐ (10 ⭐ un commun, 20 ⭐ un rare) ou en relevant des défis. Le clan affiché est le clan actif (bouton 👹 / 🐱 en haut).</p>
         <div id="arena-shop-wrap">
           <div class="arena-star-note"><span aria-hidden="true">⭐</span><span id="shop-star-note">Tu as <strong id="shop-star-count">0</strong> étoile(s) à dépenser.</span></div>
           <p class="qtype-tag"><span id="shop-clan-tag">Chats kawaii 🐱</span> · <span id="shop-collection-count"></span></p>
@@ -8295,13 +8295,12 @@ function phrase(tpl, vars){
   /* Raretés (règle du 04/10/2026) : un personnage DESSINÉ EN SVG est commun, un personnage
      illustré à la main (une image existe dans CUSTOM_IMG) est rare ; les personnages de défi
      (non achetables) ont leur propre rareté. Les points de base dépendent de la rareté : un commun a
-     moins de points. Tout personnage achetable coûte BUY_COST ⭐. Les couleurs `color` des pastilles
+     moins de points. Prix : commun 10 ⭐, rare 20 ⭐ (un clan complet, évolutions comprises, ≈ 900 ⭐). Les couleurs `color` des pastilles
      sont assez foncées pour que le texte blanc posé dessus soit lisible (contraste ≥ 4,5:1) ;
      `glow` est la lumière qui apparaît à la révélation. */
-  var BUY_COST = 25;
   var RARITY_META = {
-    commun: { label:'Commun', cost:BUY_COST, color:'#595959', glow:'#B4BCC6', pts:5 },
-    rare:   { label:'Rare',   cost:BUY_COST, color:'#1D5EA6', glow:'#3D8BFF', pts:9 },
+    commun: { label:'Commun', cost:10, color:'#595959', glow:'#B4BCC6', pts:5 },
+    rare:   { label:'Rare',   cost:20, color:'#1D5EA6', glow:'#3D8BFF', pts:9 },
     defi:   { label:'Défi',   cost:0,        color:'#A3246B', glow:'#FF4FA3', pts:0 }
   };
   var CAT_COLORS   = ['#FFC2D1','#FFE29A','#C9F2C6','#BFE3FF','#E4C9FF','#FFD6B0','#C6FFF2','#F2C6E0',
@@ -8743,7 +8742,7 @@ function phrase(tpl, vars){
     }catch(e){}
   }
   /* ---- Évolutions : 2 montées par personnage (0 = de base, 1 = Évolué, 2 = Ultime).
-     Chaque montée coûte le prix d'achat du personnage (25 ⭐ ; 12 ⭐ pour un personnage
+     Chaque montée coûte le prix d'achat du personnage (10 ⭐ commun, 20 ⭐ rare ; 12 ⭐ pour un personnage
      de défi, qui est gratuit), ajoute 20 % de ses points de base (au moins +2) et améliore sa compétence. ---- */
   var EVO_MAX = 2, EVO_BONUS = 0.2, EVO_REWARD_COST = 12;
   var EVO_NAMES = ['De base','Évolué','Ultime'];
@@ -10726,12 +10725,12 @@ function phrase(tpl, vars){
      éléments réels, les explications restent justes quand l'interface change
      (aucune capture d'écran à refaire).
        accueil  : au premier lancement (boutons, niveaux, série, étoiles, bataille, réglages) ;
-       boutique : dès 25 étoiles (le prix d'un personnage) quand on n'a jamais rien acheté ;
+       boutique : dès 10 étoiles (le prix du moins cher) quand on n'a jamais rien acheté ;
        bataille : la première fois qu'on ouvre la Bataille ;
        serie    : à la première série de 10 bonnes réponses d'affilée.
      Chaque guide se rejoue depuis ⚙️ Réglages → 📖 Guides. L'état « déjà vu » est
      dans localStorage (geo_guides) ; geo_bought mémorise le premier achat. */
-  var GUIDE_SHOP_STARS = BUY_COST;   // seuil d'étoiles du guide Boutique (= le prix d'un personnage)
+  var GUIDE_SHOP_STARS = RARITY_META.commun.cost;   // seuil d'étoiles du guide Boutique (= le prix du moins cher)
   var GUIDE_SERIE_START = 10;      // série sans faute qui lance le guide Série
     var guideSeen = {};
   try{ guideSeen = JSON.parse(localStorage.getItem('geo_guides') || '{}') || {}; }catch(e){}
@@ -10777,7 +10776,7 @@ function phrase(tpl, vars){
         { sel:'#stars-btn', enter:function(){ showTab(lastPracticeTab); },
           text:'Les étoiles ⭐ que tu gagnes servent à acheter de nouveaux personnages. Je t\'emmène à la boutique.' },
         { sel:'#shop-grid .sprite-card, #shop-grid > *', enter:function(){ showTab('shop'); },
-          text:'Voici les personnages. Un seul est offert, chacun des autres coûte 25 étoiles. Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Les rares et les personnages « Défi » ont une compétence pour la Bataille ; les communs la gagnent en évoluant jusqu\'au niveau Ultime.' },
+          text:'Voici les personnages. Un seul est offert, les autres coûtent 10 étoiles (communs) ou 20 (rares, illustrés). Quand tu en as assez, touche « Acheter » : le personnage est à toi ! Les rares et les personnages « Défi » ont une compétence pour la Bataille ; les communs la gagnent en évoluant jusqu\'au niveau Ultime.' },
         { sel:'#shop-grid .sp-buy:not(:disabled)',
           text:'Ce bouton « Acheter » est actif : tu peux t\'offrir ce personnage. Les personnages « Défi » 🔒, eux, ne s\'achètent pas : ils se gagnent en relevant un défi (série sans faute ou course contre la montre).' },
         { sel:'#shop-mascot-panel',

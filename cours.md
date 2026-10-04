@@ -184,13 +184,13 @@ Chaque clan (Chats kawaii / Brainrot) a **35 personnages** : **un seul offert** 
 
 | Rareté | Qui ? | Points de base | Prix |
 |---|---|---|---|
-| Commun | personnage **dessiné en SVG** (sans illustration) | 5 à 7 ❤️ | 25 ⭐ |
-| Rare | personnage **illustré à la main** (une image existe) | 9 à 11 ❤️ | 25 ⭐ |
+| Commun | personnage **dessiné en SVG** (sans illustration) | 5 à 7 ❤️ | 10 ⭐ |
+| Rare | personnage **illustré à la main** (une image existe) | 9 à 11 ❤️ | 20 ⭐ |
 | **Défi** | Ne s'achète pas : se débloque par un défi | 8 à 17 ❤️ | — |
 
-La rareté se déduit de la présence d'une image : quand un personnage est illustré, il devient rare tout seul. Un commun a donc moins de points qu'un rare : c'est ce qui équilibre le jeu.
+La rareté se déduit de la présence d'une image : quand un personnage est illustré, il devient rare tout seul. Un commun a donc moins de points qu'un rare et coûte deux fois moins cher : c'est ce qui équilibre le jeu.
 
-Repères : une équipe de 5 personnages (1 offert + 4 achetés) coûte 100 ⭐ (1 ⭐ par bonne réponse, +3 ⭐ par victoire en bataille).
+Repères : une équipe de 5 personnages (1 offert + 4 achetés) coûte 40 à 80 ⭐ (1 ⭐ par bonne réponse, +3 ⭐ par victoire en bataille).
 
 ### Compétences
 Chaque personnage a **une compétence** (attribuée une fois pour toutes, 7 personnages par compétence). Elle sert en Bataille : c'est une petite question de maths où **la bonne réponse donne de gros dégâts** et **l'erreur des dégâts normaux** (jamais de pénalité).
@@ -204,8 +204,8 @@ Chaque personnage a **une compétence** (attribuée une fois pour toutes, 7 pers
 Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué / Ultime » sur sa carte, dans la Boutique) : niveau 0 *De base*, 1 *Évolué*, 2 *Ultime*.
 - **Cérémonie** : à chaque évolution, un écran spécial : le personnage se charge (il tremble, des lumières convergent, un son qui monte), puis **flash**, **ondes de choc** (3 au niveau Ultime, avec secousse de l'écran), explosion de particules, étoiles ★ qui apparaissent une à une avec leur « ding », et les points qui montent (❤️ 8 → 10). Un toucher passe directement à la fin. Le son change selon le clan, et la fanfare est plus grande au niveau Ultime.
 - **Admirer** : le bouton 🔍 d'une carte (ou un toucher sur la carte, ou sur la mascotte du clan en haut de la Boutique) ouvre le personnage en grand, en pied. On le **fait tourner du doigt** (effet de profondeur : fond, ombre au sol et particules bougent à des vitesses différentes), un toucher le fait sauter dans une pluie d'étincelles ; ◀ ▶ (ou les flèches du clavier) passent aux autres personnages possédés. Plus il a évolué, plus la scène est riche : particules, halo, rayons, et un anneau d'étoiles qui tourne autour du personnage Ultime.
-- **Prix** : le même que son achat (25 ⭐ ; 12 ⭐ pour un personnage de défi, qui est gratuit).
-- **Puissance** : chaque niveau ajoute **20 % des points de base** (au moins +2) : environ ×1,2 puis ×1,4, et elle améliore la compétence (voir plus haut). Le total des deux évolutions coûte donc deux fois le prix d'achat : tout acheter et tout faire évoluer vaut environ 1 800 ⭐ par clan (475 ⭐ rien que pour les achats) (plusieurs semaines de jeu).
+- **Prix** : le même que son achat (10 ⭐ un commun, 20 ⭐ un rare ; 12 ⭐ pour un personnage de défi, qui est gratuit).
+- **Puissance** : chaque niveau ajoute **20 % des points de base** (au moins +2) : environ ×1,2 puis ×1,4, et elle améliore la compétence (voir plus haut). Le total des deux évolutions coûte donc deux fois le prix d'achat : tout acheter et tout faire évoluer vaut environ 900 ⭐ par clan (300 ⭐ rien que pour les achats, un peu moins chez les Brainrot qui ont plus de communs ; les évolutions des personnages de défi, à 12 ⭐, s'y ajoutent) (plusieurs semaines de jeu).
 - **Visuel** (sur toutes les cartes et images) : niveau 1 = cadre coloré lumineux + ★ + 4 particules qui montent + halo lumineux derrière le personnage ; niveau 2 = double cadre doré (chats) ou magenta/vert (brainrots) qui pulse, ★★, 7 particules, halo avec rayons qui tournent, personnage un peu plus grand (effet « glitch » chez les brainrots). Chats : rose puis or ; Brainrots : vert néon puis magenta.
 - Les adversaires ne sont jamais évolués (leur total de points suit celui de ton équipe, évolutions comprises).
 - « Effacer ma progression » efface aussi les évolutions.
@@ -284,4 +284,4 @@ Le jeu garde les 3000 dernières réponses (séparées du bouton « Effacer ma p
 Au démarrage, l'image se coupe en deux : le côté Italian Brainrot et le côté Kawaii Cats se percutent avec éclair et étincelles. Un clic sur l'image rejoue le choc.
 
 ## Guides (tutoriels)
-Quatre guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 25 étoiles (le prix d'un personnage) quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille, **Série sans faute** au premier 10 d'affilée. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.
+Quatre guides en surbrillance (un voile sombre éclaire le vrai bouton expliqué) : **Découvrir le jeu** au premier lancement, **Acheter un personnage** dès 10 étoiles (le prix du moins cher) quand on n'a jamais rien acheté, **Combattre** la première fois qu'on ouvre la Bataille, **Série sans faute** au premier 10 d'affilée. Ils se rejouent depuis ⚙️ Réglages → 📖 Guides. « Passer » ou la touche Échap les ferme ; ils ne reviennent pas une fois vus. « Effacer ma progression » rend les guides Boutique et Bataille rejouables automatiquement.

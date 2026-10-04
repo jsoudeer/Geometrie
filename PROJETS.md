@@ -90,7 +90,7 @@ moins pertinent.
 ## Raretés, compétences de personnage et gatcha (idées du 04/10/2026)
 
 **État (§53)** : FAIT sans gatcha — raretés commun/rare/défi déduites de l'image, communs à 5–7 points et rares à 9–11, achat direct à
-25 ⭐, 10 compétences (`competences.js`), niveau = compétence plus forte, commun = compétence au niveau Ultime, teinte de rareté au reveal.
+10 ⭐ (commun) / 20 ⭐ (rare), 10 compétences (`competences.js`), niveau = compétence plus forte, commun = compétence au niveau Ultime, teinte de rareté au reveal.
 Pas de migration de sauvegarde. **Le gatcha reste NON retenu** (crainte de l'effet addictif) : ne le reprendre qu'après discussion avec
 l'utilisateur. Les compétences à base de figure/mesure (Miroir, Arrêt du temps, Mesure juste) restent à faire.
 Le texte ci-dessous est l'idée d'origine.
