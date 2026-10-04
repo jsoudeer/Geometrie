@@ -158,19 +158,6 @@
   }
   function hasCarry(a, b){ var A = String(a), B = String(b), i, c = 0; for(i=0;i<Math.max(A.length,B.length);i++){ var s = +(A.charAt(A.length-1-i)||0) + +(B.charAt(B.length-1-i)||0) + c; c = s>=10 ? 1 : 0; if(c) return true; } return false; }
   function hasBorrow(a, b){ var A = String(a), B = String(b), i, br = 0; for(i=0;i<A.length;i++){ var need = +(B.charAt(B.length-1-i)||0) + br; var da = +A.charAt(A.length-1-i); br = da<need ? 1 : 0; if(br) return true; } return false; }
-  function genSoustractionPoseeQuestion(level){
-    var a, b, guard = 0;
-    do {
-      if(level===0){ a = randInt(21,99); b = rnd()<0.5 ? randInt(1,9) : randInt(1,Math.floor(a/10)-1)*10; }
-      else if(level===1){ a = randInt(31,99); b = randInt(11,a-5); }
-      else { a = randInt(121,999); b = rnd()<0.5 ? randInt(11,99) : randInt(101,a-10); }
-      guard++;
-    } while(guard<200 && (a<=b || (level===0 && hasBorrow(a,b)) || (level>0 && guard<100 && !hasBorrow(a,b) && rnd()<0.6)));
-    var r = a - b;
-    return bigNumQuestion('Calcul','Calcule ' + a + ' - ' + b + '.','Soustrais en colonnes : unités, puis dizaines' + (level===2 ? ', puis centaines' : '') + ' (emprunte 1 si le chiffre du haut est trop petit).',
-      subExplain(a,b), a + ' - ' + b, r, [r+10, r-10, r+1, r-1, level===2 ? r+100 : r+20, level>0 ? Math.abs((Math.floor(a/10)%10 - Math.floor(b/10)%10))*10 + Math.abs(a%10 - b%10) : r+2]);
-  }
-
   // ---- Multiplier (grilles, additions répétées) et partager ----
   var PART_ICONS = ['🍬','🍪','⭐','🍎','🎈'];
   function genMultiplierQuestion(level){
@@ -218,13 +205,14 @@
   }
 
   // ---- Compter avec des blocs jusqu'à 999 (plaques, barres, cubes) ----
-  function genBlocsQuestion(level){
-    var hu = level===1 ? randInt(1,4) : randInt(1,9), te = randInt(0,9), un = randInt(0,9);
+  // Une seule scène et une seule question « quel nombre est représenté ? », partagées par
+  // « Compter jusqu'à 1000 » (blocs1000) et par le Dénombrement visuel (comptage, Moyen/Difficile).
+  function blocksQuestion(hu, te, un){
     var total = hu*100 + te*10 + un;
     var swapV = te*100 + hu*10 + un;
     return {
       tag:'Dénombrement', question:'Quel nombre est représenté avec ces blocs ?', sub:'Une plaque = 100, une barre = 10, un petit cube = 1.',
-      explain: hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
+      explain: (hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
       draw:function(){
         var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
         var i, j, s = 30, g = 3;
@@ -236,7 +224,7 @@
             svg.appendChild(el('line',{x1:px,y1:py+j*s/5,x2:px+s,y2:py+j*s/5,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
           }
         }
-        var yb = hu>5 ? 82 : 52;
+        var yb = hu>5 ? 82 : hu>0 ? 52 : 30;
         for(i=0;i<te;i++){
           var bx = 10 + i*13;
           svg.appendChild(el('rect',{x:bx,y:yb,width:10,height:90,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
@@ -246,6 +234,9 @@
       },
       cols3:false, choices: numChoices(total, [total+10, total-10, total+100, total-100, swapV !== total ? swapV : total+1, total+1, total-1])
     };
+  }
+  function genBlocsQuestion(level){
+    return blocksQuestion(level===1 ? randInt(1,4) : randInt(1,9), randInt(0,9), randInt(0,9));
   }
 
   // ---- Problèmes à deux étapes ----
@@ -293,9 +284,6 @@
   registerQuizType({ id:'droite', domain:'nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
     randomNote:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de 1 en 1 (0 à 10) ; Moyen : de 10 en 10 ou de 20 en 20 ; Difficile : de 50 en 50, de 100 en 100 ou de 10 en 10 entre deux centaines.',
     generate:genDroiteQuestion });
-  registerQuizType({ id:'soustractionPosee', domain:'calcul', label:'Soustractions posées', longLabel:'Soustractions en colonnes (emprunt)', defaultLevels:[0,1,2],
-    randomNote:'Facile : sans emprunt, jusqu\'à 99 ; Moyen : jusqu\'à 99, souvent avec emprunt ; Difficile : jusqu\'à 999, souvent avec emprunt. L\'explication détaille chaque colonne.',
-    generate:genSoustractionPoseeQuestion });
   registerQuizType({ id:'multiplier', domain:'calcul', label:'Multiplier, partager', longLabel:'Multiplier et partager (grilles, paquets)', defaultLevels:[0,1,2],
     randomNote:'Compter une grille de points, additionner plusieurs fois le même nombre, partager en parts égales (Moyen/Difficile : aussi faire des paquets). Facile : 2 et 3 lignes, partage entre 2 ; Moyen : jusqu\'à 5 × 5 ; Difficile : plus de colonnes, partages entre 2 à 10.',
     generate:genMultiplierQuestion });

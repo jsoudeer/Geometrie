@@ -28,7 +28,7 @@ src/
     calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
     nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
     gabarits.js         moteur de FICHES d'activités arithmétiques : évaluateur d'expressions sûr (pas d'eval), variables, contraintes, fausses réponses, textes, note de réglage générée ; `registerTemplateType(fiche)`
-    fiches-calcul.js    les fiches des 6 activités de calcul migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions posées
+    fiches-calcul.js    les fiches des 7 activités de calcul migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions et Soustractions posées
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
