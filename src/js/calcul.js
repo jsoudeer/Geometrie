@@ -8,9 +8,15 @@
     else svg.appendChild(el('rect',{x:cx-34,y:cy-20,width:68,height:40,rx:4, fill:'var(--accent2)', stroke:'var(--text)','stroke-width':2.5}));
     svg.appendChild(svgText(cx,cy+6,16,value+'€'));
   }
-  function genMonnaieQuestion(){
-    var pool=[1,2,5,10,20];
-    var count = 2+Math.floor(Math.random()*2);
+  // Facile : 2 pièces/billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu'à 10 € ; Difficile : 3 ou 4, jusqu'à 20 €.
+  var MONNAIE_LEVELS = [
+    { pool:[1,2,5],        min:2, max:2 },
+    { pool:[1,2,5,10],     min:2, max:3 },
+    { pool:[1,2,5,10,20],  min:3, max:4 }
+  ];
+  function genMonnaieQuestion(level){
+    var pool=MONNAIE_LEVELS[level].pool;
+    var count = randInt(MONNAIE_LEVELS[level].min, MONNAIE_LEVELS[level].max);
     var items=[], sum=0;
     for(var i=0;i<count;i++){ var v=pick(pool); items.push(v); sum+=v; }
     var positions=[[55,100],[100,65],[145,100],[100,140]];
@@ -441,7 +447,7 @@
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
     generate:genCalcQuestion });
   registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
-    randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
+    randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard. Facile : 2 pièces ou billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu\'à 10 € ; Difficile : 3 ou 4, jusqu\'à 20 €.',
     generate:genMonnaieQuestion });
   registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',

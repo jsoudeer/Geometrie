@@ -11,16 +11,7 @@
        dessinée à la main en SVG, qui tient lieu de prototype pour une
        vraie image stockée plus tard — voir la réponse ci-dessous).
   */
-  // Ordre d'affichage historique des types dans les listes (Configurer les
-  // activités, mode Manuel). Un type absent de cette liste (nouveau thème)
-  // s'affiche à la suite, dans l'ordre d'enregistrement.
-  var QCM_DISPLAY_ORDER = ['sides', 'vertices', 'name', 'calc', 'align', 'milieu', 'coord', 'solideNom', 'monnaie', 'heure', 'angle', 'image', 'coordFind', 'codage', 'chasse', 'solideCompte', 'vie', 'decodage', 'symVrai', 'enigme'];
-  QCM_TYPE_DEFS.sort(function(a, b){
-    var ia = QCM_DISPLAY_ORDER.indexOf(a.id), ib = QCM_DISPLAY_ORDER.indexOf(b.id);
-    if(ia === -1) ia = QCM_DISPLAY_ORDER.length + QCM_TYPE_DEFS.indexOf(a);
-    if(ib === -1) ib = QCM_DISPLAY_ORDER.length + QCM_TYPE_DEFS.indexOf(b);
-    return ia - ib;
-  });
+  // Les types s'affichent dans l'ordre d'enregistrement (ordre des fichiers du manifeste).
 
   // Niveaux du Quizz : `types` est rempli par rebuildM4Types() (appelée après le
   // chargement des éventuelles surcharges manuelles, voir plus bas) — jamais laissé

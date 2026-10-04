@@ -850,11 +850,18 @@
     aretes:'Une arête est un trait où deux faces se rejoignent.',
     sommets:'Un sommet est une pointe, un coin où plusieurs arêtes se rejoignent.'
   };
-  function genSolideNomQuestion(){
-    var keys = Object.keys(SOLID_META);
+  // Solides proposés par niveau (0 Facile, 1 Moyen, 2 Difficile) : les mauvaises
+  // réponses sont prises parmi les solides du même niveau.
+  var SOLIDE_NOM_LEVELS = [
+    ['cube','pave','cylindre','cone','boule'],
+    ['cube','pave','cylindre','cone','boule','pyramide','tetraedre','prisme_tri'],
+    Object.keys(SOLID_META)
+  ];
+  function genSolideNomQuestion(level){
+    var keys = SOLIDE_NOM_LEVELS[level];
     var key = pick(keys);
     var meta = SOLID_META[key];
-    var poolLabels = shuffle(SOLID_NAME_POOL.filter(function(l){return l!==meta.label;})).slice(0,3);
+    var poolLabels = shuffle(keys.map(function(k){ return SOLID_META[k].label; }).filter(function(l){return l!==meta.label;})).slice(0,3);
     var labels = shuffle([meta.label].concat(poolLabels));
     return {
       tag:'Solides',
@@ -870,8 +877,10 @@
   // (polyèdres) — cylindre/cône/boule en sont volontairement exclus, leurs
   // "faces" courbes prêtant à débat à ce niveau.
   var SOLID_COMPTE_KEYS = ['cube','pave','pyramide','tetraedre','octaedre','prisme_tri','prisme_penta','prisme_hexa','prisme_octo'];
-  function genSolideCompteQuestion(){
-    var key = pick(SOLID_COMPTE_KEYS);
+  // Facile et Moyen : cube, pavé, pyramide (+ tétraèdre en Moyen) ; Difficile : les 9 polyèdres.
+  var SOLIDE_COMPTE_LEVELS = [['cube','pave','pyramide'], ['cube','pave','pyramide','tetraedre'], SOLID_COMPTE_KEYS];
+  function genSolideCompteQuestion(level){
+    var key = pick(SOLIDE_COMPTE_LEVELS[level]);
     var meta = SOLID_META[key];
     var attr = pick(['faces','sommets','aretes']);
     var correct = meta[attr];
@@ -894,8 +903,8 @@
 
   // ---- Déclaration des types de Quizz sur les solides ----
   registerQuizType({ id:'solideNom', domain:'solides', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
-    randomNote:'Le solide est tiré au hasard parmi les 6 solides connus ; son nom (la réponse) en découle de façon fixe.',
+    randomNote:'Le solide est tiré au hasard, et les 3 mauvaises réponses sont d\'autres solides du même niveau. Facile : cube, pavé droit, cylindre, cône, boule. Moyen : + pyramide, tétraèdre, prisme à base triangulaire. Difficile : tous les solides (12), dont l\'octaèdre et les prismes.',
     generate:genSolideNomQuestion });
   registerQuizType({ id:'solideCompte', domain:'solides', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
-    randomNote:'Le solide (cube/pavé/pyramide) et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant est ensuite fixe pour ce solide.',
+    randomNote:'Le solide et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant en découle. Facile : cube, pavé, pyramide. Moyen : + tétraèdre. Difficile : les 9 polyèdres (octaèdre et prismes compris).',
     generate:genSolideCompteQuestion });

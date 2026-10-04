@@ -3043,7 +3043,7 @@ function phrase(tpl, vars){
   var m2StartPts = pts.map(function(p){ return p.slice(); });
   var m2ShapeIdx = 0;
 
-  // Les 3 formes cibles restent les mêmes (Losange/Rectangle/Parallélogramme),
+  // Les 5 formes cibles (Losange, Rectangle, Parallélogramme, Triangle isocèle…),
   // tirées au hasard à chaque exercice. Ce qui change maintenant avec le
   // niveau (Facile/Moyen/Difficile), c'est la distance de départ par rapport
   // à cette cible : un seul coin décalé en Facile, plusieurs coins bien
@@ -4536,12 +4536,10 @@ function phrase(tpl, vars){
     { text:'On me trouve souvent sous la forme d\'un chapeau de sorcière. Qui suis-je ?', answer:'cône', pool:['cône','pyramide à base carrée','cylindre','triangle'] },
     { text:'J\'ai 6 côtés et 6 sommets, comme les alvéoles d\'une ruche d\'abeilles. Qui suis-je ?', answer:'hexagone', pool:['hexagone','pentagone','carré','cercle'] },
     { text:'Je n\'ai que des angles droits, et si tous mes côtés étaient égaux, on m\'appellerait un carré. Qui suis-je ?', answer:'rectangle', pool:['rectangle','carré','losange','pentagone'] },
-    { text:'J\'ai deux faces planes qui sont des cercles identiques, reliées par une surface qui s\'enroule. Qui suis-je ?', answer:'cylindre', pool:['cylindre','cône','boule','cube'] },
     { text:'Je n\'ai aucun angle : impossible de me confondre avec un carré ou un triangle. Qui suis-je ?', answer:'cercle', pool:['cercle','losange','triangle','carré'] },
     { text:'J\'ai 8 sommets et 12 arêtes, mais toutes mes faces ne sont pas des carrés. Qui suis-je ?', answer:'pavé droit', pool:['pavé droit','cube','pyramide à base carrée','cylindre'] },
     { text:'Je ressemble à un carré, mais si on me penche un peu, mes angles ne sont plus droits. Qui suis-je devenu ?', answer:'losange', pool:['losange','rectangle','carré','pentagone'] },
     { text:'Mes 3 côtés ont tous la même longueur. Qui suis-je ?', answer:'triangle', pool:['triangle','losange','pentagone','carré'] },
-    { text:'J\'ai 8 sommets, 12 arêtes et 6 faces, toutes identiques et carrées. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] },
     { text:'J\'ai seulement 4 faces, toutes triangulaires, et 4 sommets : je suis la plus simple des pyramides. Qui suis-je ?', answer:'tétraèdre', pool:['tétraèdre','pyramide à base carrée','cube','octaèdre'] },
     { text:'Je suis formé de deux pyramides à base carrée collées par leur base : j\'ai 8 faces triangulaires. Qui suis-je ?', answer:'octaèdre', pool:['octaèdre','tétraèdre','cube','pyramide à base carrée'] },
     { text:'J\'ai 2 faces triangulaires et 3 faces rectangulaires : on me trouve dans les tentes de camping. Qui suis-je ?', answer:'prisme triangulaire', pool:['prisme triangulaire','pyramide à base carrée','tétraèdre','pavé droit'] },
@@ -4791,7 +4789,7 @@ function phrase(tpl, vars){
     randomNote:'4 figures tirées en alternance : rectangle (jamais carré), carré (ses diagonales sont de vrais axes), triangle isocèle, cercle (toute droite par le centre est un axe). La droite est soit un vrai axe, soit décalée ou oblique ; la figure et les mesures sont tirées au hasard.',
     generate:genSymVraiQuestion });
   registerQuizType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
-    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
+    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 44 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
   registerQuizType({ id:'suiteFormes', domain:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
     randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
@@ -5357,9 +5355,15 @@ function phrase(tpl, vars){
     else svg.appendChild(el('rect',{x:cx-34,y:cy-20,width:68,height:40,rx:4, fill:'var(--accent2)', stroke:'var(--text)','stroke-width':2.5}));
     svg.appendChild(svgText(cx,cy+6,16,value+'€'));
   }
-  function genMonnaieQuestion(){
-    var pool=[1,2,5,10,20];
-    var count = 2+Math.floor(Math.random()*2);
+  // Facile : 2 pièces/billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu'à 10 € ; Difficile : 3 ou 4, jusqu'à 20 €.
+  var MONNAIE_LEVELS = [
+    { pool:[1,2,5],        min:2, max:2 },
+    { pool:[1,2,5,10],     min:2, max:3 },
+    { pool:[1,2,5,10,20],  min:3, max:4 }
+  ];
+  function genMonnaieQuestion(level){
+    var pool=MONNAIE_LEVELS[level].pool;
+    var count = randInt(MONNAIE_LEVELS[level].min, MONNAIE_LEVELS[level].max);
     var items=[], sum=0;
     for(var i=0;i<count;i++){ var v=pick(pool); items.push(v); sum+=v; }
     var positions=[[55,100],[100,65],[145,100],[100,140]];
@@ -5790,7 +5794,7 @@ function phrase(tpl, vars){
     randomNote:'Les nombres de l\'opération sont tirés au hasard. C\'est le NIVEAU qui fixe la plage (jusqu\'à 10 en Facile, jusqu\'à 20 en Moyen/Difficile) et, en Difficile, la possibilité de tirer une variante "trouve le nombre manquant".',
     generate:genCalcQuestion });
   registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
-    randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard à chaque question.',
+    randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard. Facile : 2 pièces ou billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu\'à 10 € ; Difficile : 3 ou 4, jusqu\'à 20 €.',
     generate:genMonnaieQuestion });
   registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
@@ -6997,11 +7001,18 @@ function phrase(tpl, vars){
     aretes:'Une arête est un trait où deux faces se rejoignent.',
     sommets:'Un sommet est une pointe, un coin où plusieurs arêtes se rejoignent.'
   };
-  function genSolideNomQuestion(){
-    var keys = Object.keys(SOLID_META);
+  // Solides proposés par niveau (0 Facile, 1 Moyen, 2 Difficile) : les mauvaises
+  // réponses sont prises parmi les solides du même niveau.
+  var SOLIDE_NOM_LEVELS = [
+    ['cube','pave','cylindre','cone','boule'],
+    ['cube','pave','cylindre','cone','boule','pyramide','tetraedre','prisme_tri'],
+    Object.keys(SOLID_META)
+  ];
+  function genSolideNomQuestion(level){
+    var keys = SOLIDE_NOM_LEVELS[level];
     var key = pick(keys);
     var meta = SOLID_META[key];
-    var poolLabels = shuffle(SOLID_NAME_POOL.filter(function(l){return l!==meta.label;})).slice(0,3);
+    var poolLabels = shuffle(keys.map(function(k){ return SOLID_META[k].label; }).filter(function(l){return l!==meta.label;})).slice(0,3);
     var labels = shuffle([meta.label].concat(poolLabels));
     return {
       tag:'Solides',
@@ -7017,8 +7028,10 @@ function phrase(tpl, vars){
   // (polyèdres) — cylindre/cône/boule en sont volontairement exclus, leurs
   // "faces" courbes prêtant à débat à ce niveau.
   var SOLID_COMPTE_KEYS = ['cube','pave','pyramide','tetraedre','octaedre','prisme_tri','prisme_penta','prisme_hexa','prisme_octo'];
-  function genSolideCompteQuestion(){
-    var key = pick(SOLID_COMPTE_KEYS);
+  // Facile et Moyen : cube, pavé, pyramide (+ tétraèdre en Moyen) ; Difficile : les 9 polyèdres.
+  var SOLIDE_COMPTE_LEVELS = [['cube','pave','pyramide'], ['cube','pave','pyramide','tetraedre'], SOLID_COMPTE_KEYS];
+  function genSolideCompteQuestion(level){
+    var key = pick(SOLIDE_COMPTE_LEVELS[level]);
     var meta = SOLID_META[key];
     var attr = pick(['faces','sommets','aretes']);
     var correct = meta[attr];
@@ -7041,10 +7054,10 @@ function phrase(tpl, vars){
 
   // ---- Déclaration des types de Quizz sur les solides ----
   registerQuizType({ id:'solideNom', domain:'solides', label:'Solides', longLabel:'Nom du solide', defaultLevels:[0,1,2],
-    randomNote:'Le solide est tiré au hasard parmi les 6 solides connus ; son nom (la réponse) en découle de façon fixe.',
+    randomNote:'Le solide est tiré au hasard, et les 3 mauvaises réponses sont d\'autres solides du même niveau. Facile : cube, pavé droit, cylindre, cône, boule. Moyen : + pyramide, tétraèdre, prisme à base triangulaire. Difficile : tous les solides (12), dont l\'octaèdre et les prismes.',
     generate:genSolideNomQuestion });
   registerQuizType({ id:'solideCompte', domain:'solides', label:'Compter les solides', longLabel:'Compter faces/sommets/arêtes', defaultLevels:[1,2],
-    randomNote:'Le solide (cube/pavé/pyramide) et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant est ensuite fixe pour ce solide.',
+    randomNote:'Le solide et l\'attribut demandé (faces/sommets/arêtes) sont tirés au hasard ; le nombre correspondant en découle. Facile : cube, pavé, pyramide. Moyen : + tétraèdre. Difficile : les 9 polyèdres (octaèdre et prismes compris).',
     generate:genSolideCompteQuestion });
   // =====================================================================
   //  THÈME « ATELIERS » : activités interactives, on touche pour construire
@@ -7484,16 +7497,7 @@ function phrase(tpl, vars){
        dessinée à la main en SVG, qui tient lieu de prototype pour une
        vraie image stockée plus tard — voir la réponse ci-dessous).
   */
-  // Ordre d'affichage historique des types dans les listes (Configurer les
-  // activités, mode Manuel). Un type absent de cette liste (nouveau thème)
-  // s'affiche à la suite, dans l'ordre d'enregistrement.
-  var QCM_DISPLAY_ORDER = ['sides', 'vertices', 'name', 'calc', 'align', 'milieu', 'coord', 'solideNom', 'monnaie', 'heure', 'angle', 'image', 'coordFind', 'codage', 'chasse', 'solideCompte', 'vie', 'decodage', 'symVrai', 'enigme'];
-  QCM_TYPE_DEFS.sort(function(a, b){
-    var ia = QCM_DISPLAY_ORDER.indexOf(a.id), ib = QCM_DISPLAY_ORDER.indexOf(b.id);
-    if(ia === -1) ia = QCM_DISPLAY_ORDER.length + QCM_TYPE_DEFS.indexOf(a);
-    if(ib === -1) ib = QCM_DISPLAY_ORDER.length + QCM_TYPE_DEFS.indexOf(b);
-    return ia - ib;
-  });
+  // Les types s'affichent dans l'ordre d'enregistrement (ordre des fichiers du manifeste).
 
   // Niveaux du Quizz : `types` est rempli par rebuildM4Types() (appelée après le
   // chargement des éventuelles surcharges manuelles, voir plus bas) — jamais laissé

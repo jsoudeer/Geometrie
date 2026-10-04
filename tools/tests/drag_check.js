@@ -23,8 +23,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   const [x2, y2] = await center();
   chk(x2 === x1 && y2 === y1, 'souris relâchée : la poignée reste en place');
   // glisser très rapide (un seul grand saut)
-  await page.mouse.move(x2, y2); await page.mouse.down(); await page.mouse.move(x2 + sx * 40, y2 + sy * 14, { steps: 2 }); await page.mouse.up();
+  await page.mouse.move(x2, y2); await page.mouse.down(); await page.mouse.move(x2 - sx * 40, y2 - sy * 14, { steps: 2 });  // retour sur le chemin déjà parcouru : jamais contre un bord ni sur une autre poignée await page.mouse.up();
   const [x3] = await center();
-  chk(Math.abs(x3 - (x2 + sx * 40)) < 4, 'glisser rapide suivi');
+  chk(Math.abs(x3 - (x2 - sx * 40)) < 4, 'glisser rapide suivi');
   console.log(bad ? 'ÉCHEC' : 'OK');
 });

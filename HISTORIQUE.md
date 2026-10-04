@@ -302,3 +302,10 @@ Le personnage n'est plus révélé pendant la dernière rotation : `.rv-spinner`
 - **Tests** : `skills_check.js` (ex-boost_check), `competences_check.js` (8100 questions vérifiées par oracles), `evolution_check`,
   `reveal_check`, `guide_check`, `battle_check`, `bataille_ui_check` mis à jour.
 - **Docs** : `cours.md` (raretés, compétences, évolutions, reveal, guides), `PROJETS.md`, `src/README.md`.
+
+## 54. Audit P2 (partiel) : niveaux réels pour Solides et Monnaie (04/10/2026)
+- `solideNom` : Facile = 5 solides simples (cube, pavé, cylindre, cône, boule), Moyen = 8 (+ pyramide, tétraèdre, prisme triangulaire), Difficile = 12 ; les mauvaises réponses sont prises dans le même niveau (`SOLIDE_NOM_LEVELS`).
+- `solideCompte` : 3 / 4 / 9 polyèdres selon le niveau (`SOLIDE_COMPTE_LEVELS`).
+- `monnaie` : Facile 2 pièces (1, 2, 5 €), Moyen 2-3 (≤ 10 €), Difficile 3-4 (≤ 20 €) (`MONNAIE_LEVELS`) ; le dessin à 4 pièces sert enfin.
+- Notes de réglage corrigées (solides, énigmes : 44 après retrait de 2 doublons) ; `QCM_DISPLAY_ORDER` supprimé (ordre = ordre d'enregistrement) ; commentaire des formes cibles de Déformer.
+- Test : `niveaux_check.js`. Reste de P2 (objet `params`, `randomNote` générée) rattaché à P4.

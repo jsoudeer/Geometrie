@@ -180,7 +180,7 @@ Familles de types qui sont **le même moteur avec d'autres réglages** :
 | 5 | Guide « Boutique » pouvait **s'ouvrir en plein défi chronométré** (6 étoiles sans achat) et emmener l'enfant hors de l'écran de jeu | lu dans `guideCanInterrupt` | refus si un chrono tourne |
 | 6 | Texte du guide : les personnages « Défi » « se gagnent avec 20 bonnes réponses d'affilée » (il y a aussi les défis chronométrés ; séries à 20/25/30) | texte | reformulé |
 
-### 8.2 Constatés, non corrigés (petits ; à traiter avec le §10)
+### 8.2 Constatés (petits ; à traiter avec le §10) — **corrigés en P2 (§54)** : notes `solideNom`/`solideCompte`, `QCM_DISPLAY_ORDER`, niveau de `solideNom`/`monnaie` (et 4 pièces), énigmes en double, commentaire « 3 formes cibles ». Restent : `comptage` Facile (position tirée dans `draw()`, P3) et les types qui ignorent encore le niveau (P4)
 - `randomNote` périmées : `solideNom` annonce « 6 solides » (il y en a 12), `solideCompte` « cube/pavé/pyramide » (il y a 9 polyèdres) ; la liste d'ordre `QCM_DISPLAY_ORDER` (orchestrateur.js) est un reste historique incomplet.
 - 12 types ignorent le niveau (§2.2) ; `solideNom` Facile pose des solides très difficiles.
 - `monnaie` : dessin prévu pour 4 pièces/billets (`positions`), le tirage n'en donne que 2-3 ; le niveau n'est pas lu.
@@ -312,7 +312,7 @@ remplace ; l'historique de réponses reste, car il est rangé par `id` d'activit
 |---|---|---|---|
 | P0 ✔ | Correctifs §8.1 + `audit_check.js` (structure, oracles, anti-régression) | `audit_check.js` | fait |
 | P1 ✔ (§50-51 de l'historique : prénoms, objets, mascottes) | **Bibliothèques** `PRENOMS`, `OBJETS`, `LIEUX` + petit moteur de phrase (accord genre/nombre) ; migrer `vie` et `probleme2` (14 gabarits) sans changer leur logique | mêmes oracles ; 0 prénom/objet en dur ; ajout d'un prénom = 1 ligne | 1 séance |
-| P2 | **Objet de niveaux** par type (`params`), `randomNote` **générée** ; retirer `QCM_DISPLAY_ORDER`, corriger les notes ; faire lire `level` aux 12 types qui l'ignorent (au moins `solideNom`, `monnaie`) | audit : plus de note fausse ; `solideNom` Facile = 4 solides simples | 1-2 séances |
+| P2 ◐ (§54 de l'historique : notes Solides/énigmes exactes, `solideNom`, `solideCompte` et `monnaie` lisent le niveau, `QCM_DISPLAY_ORDER` retiré ; **reste** : objet `params` unique et `randomNote` générée, avec P4) | **Objet de niveaux** par type (`params`), `randomNote` **générée** ; retirer `QCM_DISPLAY_ORDER`, corriger les notes ; faire lire `level` aux 12 types qui l'ignorent (au moins `solideNom`, `monnaie`) | audit : plus de note fausse ; `solideNom` Facile = 4 solides simples | 1-2 séances |
 | P3 | **Graine** (PRNG `mulberry32` injectable) et fin du hasard dans `draw()` | deux `generate` à graine égale = même question ; redessiner = même image | 1 séance |
 | P4 | **Moteur de gabarits arithmétiques** (`registerTemplateType(fiche)`), migration de 6 types (`calc`, `soustraction`, `doubleMoitie`, `complement`, `tables`, `addition`) ; fusion `comptage`/`blocs1000` | oracles identiques ; mêmes plages mesurées (annexe A) ; code ≈ −400 lignes | 2 séances |
 | P5 | Scènes réutilisables (`grid`, `numberline`, `blocks`, `clock`, `fraction`) et banque de texte générique (calendrier, énigmes, unités, durées) | `variete_audit` ≥ avant | 2-3 séances |
