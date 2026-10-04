@@ -63,6 +63,20 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(Object.keys(m.compT[0]).join() === '10' && Object.keys(m.compT[1]).join() === '20' && Object.keys(m.compT[2]).join() === '100', 'compléments : à 10 / 20 / 100');
   chk(Object.keys(m.tabs[0]).sort().join() === '10,2' && Object.keys(m.tabs[1]).sort().join() === '10,2,5' && Object.keys(m.tabs[2]).sort().join() === '10,2,3,4,5' && m.tabMiss[0] === 0 && m.tabMiss[2] > 150 && m.tabMiss[2] < 330, 'tables : 2-10 / 2-5-10 / 2-3-4-5-10 ; facteur manquant seulement en Difficile (' + m.tabMiss[2] + '/600)');
   chk(m.add[0].c === 0 && m.add[0].max <= 99 && m.add[1].c > 300 && m.add[1].max <= 99 && m.add[2].c > 300 && m.add[2].max <= 999 && m.add[2].min >= 120, 'additions : sans retenue en Facile ; souvent avec retenue ensuite (' + m.add[1].c + ' et ' + m.add[2].c + '/600) ; ≤ 99 / ≤ 999');
+  // 5. soustractions posées (fiche) et scène de blocs partagée
+  const sp = await J(`(function(){
+    function def(id){ return QCM_TYPE_DEFS.filter(function(d){return d.id===id;})[0]; }
+    var o = { reg: !!TEMPLATE_FICHES.soustractionPosee, borrow:[0,0,0], max:[0,0,0], neg:0, c:[ [999,0], [999,0], [999,0] ], b1:0, bad:0, zeroPl:0 };
+    for(var lv=0; lv<3; lv++) for(var i=0;i<500;i++){
+      var q = def('soustractionPosee').generate(lv), n = /(\\d+) - (\\d+)/.exec(q.question), a=+n[1], b=+n[2];
+      if(hasBorrow(a,b)) o.borrow[lv]++; o.max[lv] = Math.max(o.max[lv], a); if(a<=b) o.neg++;
+      var c = def('comptage').generate(lv); if(lv>0){ var t = c.choices.filter(function(x){return x.ok;})[0].label; o.c[lv][0]=Math.min(o.c[lv][0],+t); o.c[lv][1]=Math.max(o.c[lv][1],+t); if(!/blocs/.test(c.question)) o.bad++; if(lv===2 && /^1? ?barres?/.test(c.explain)) o.zeroPl++; }
+      if(lv>0){ var bq = def('blocs1000').generate(lv), bt = +bq.choices.filter(function(x){return x.ok;})[0].label; if(bt>(lv===1?499:999) || bt<100) o.b1++; }
+    }
+    return JSON.stringify(o); })()`);
+  chk(sp.reg && sp.neg === 0 && sp.borrow[0] === 0 && sp.borrow[1] > 250 && sp.borrow[2] > 250 && sp.max[0] <= 99 && sp.max[1] <= 99 && sp.max[2] <= 999 && sp.max[2] > 900, 'soustractions posées (fiche) : sans emprunt en Facile, souvent avec ensuite ; a ≤ ' + sp.max.join('/') + ' ; toujours a > b');
+  chk(sp.bad === 0 && sp.c[1][1] <= 59 && sp.c[2][1] <= 259 && sp.c[2][0] >= 10 && sp.b1 === 0, 'comptage (Moyen/Difficile) et blocs1000 partagent la même scène de blocs ; plages ' + sp.c[1] + ' / ' + sp.c[2]);
+  await page.evaluate(() => window.__t.__eval("globalLevel=2; showFamily('quiz')")).catch(() => {});
   console.log(bad ? 'ÉCHEC gabarits : ' + bad : 'gabarits OK');
   if (bad) process.exitCode = 1;
 });

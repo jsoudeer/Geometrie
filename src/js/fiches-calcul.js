@@ -1,11 +1,13 @@
   /* ===================== FICHES D'ACTIVITÉS : calcul =====================
-     6 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
+     7 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
      à registerTemplateType. Les `levels` sont les réglages Facile / Moyen / Difficile ; la note de réglage
      (« note ») est générée à partir d'eux. */
 
   // Fonctions nommées que les fiches peuvent appeler (carry(a,b), explainAdd(a,b), tableHint(t)).
   TEMPLATE_FNS.carry = hasCarry;
   TEMPLATE_FNS.explainAdd = addExplain;
+  TEMPLATE_FNS.borrow = hasBorrow;
+  TEMPLATE_FNS.explainSub = subExplain;
   TEMPLATE_FNS.tableHint = function(t){
     return t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
   };
@@ -94,3 +96,19 @@
       additionForm([2], { a:{int:[120,899]}, b:{any:[ {int:[11,99]}, {int:[110,500]} ]} }, ['a+b<=max', 'carry(a,b) || tries>=100 || rand()>=0.5'])
     ],
     note:'Facile : sans retenue, jusqu\'à {max0} ; Moyen : 2 nombres de 2 chiffres jusqu\'à {max1}, souvent avec retenue ; Difficile : jusqu\'à {max2}, souvent avec retenue. L\'explication détaille chaque colonne.' });
+
+  // -- Soustractions posées (emprunt) --
+  function soustractionPoseeForm(levels, bSpec, where){
+    return { levels:levels, vars:{ a:{int:['aLo','max']}, b:bSpec, r:'a-b' }, where:where, answer:'r',
+      extras:['r+10','r-10','r+1','r-1','level==2 ? r+100 : r+20','level>0 ? abs(floor(a/10)%10 - floor(b/10)%10)*10 + abs(a%10 - b%10) : r+2'],
+      question:'Calcule {a} - {b}.', sub:'Soustrais en colonnes : unités, puis dizaines{hundreds} (emprunte 1 si le chiffre du haut est trop petit).',
+      explain:'{explainSub(a,b)}', eq:'{a} - {b}' };
+  }
+  registerTemplateType({ id:'soustractionPosee', domain:'calcul', label:'Soustractions posées', longLabel:'Soustractions en colonnes (emprunt)', defaultLevels:[0,1,2],
+    levels:[ { aLo:21, max:99, hundreds:'' }, { aLo:31, max:99, hundreds:'' }, { aLo:121, max:999, hundreds:', puis centaines' } ],
+    forms:[
+      soustractionPoseeForm([0], {any:[ {int:[1,9]}, {int:[1,'floor(a/10)-1'], step:10} ]}, ['a>b', '!borrow(a,b)']),
+      soustractionPoseeForm([1], {int:[11,'a-5']}, ['a>b', 'borrow(a,b) || tries>=100 || rand()>=0.6']),
+      soustractionPoseeForm([2], {any:[ {int:[11,99]}, {int:[101,'a-10']} ]}, ['a>b', 'borrow(a,b) || tries>=100 || rand()>=0.6'])
+    ],
+    note:'Facile : sans emprunt, jusqu\'à {max0} ; Moyen : jusqu\'à {max1}, souvent avec emprunt ; Difficile : jusqu\'à {max2}, souvent avec emprunt. L\'explication détaille chaque colonne.' });

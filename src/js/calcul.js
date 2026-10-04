@@ -298,37 +298,8 @@
       };
     }
     var hu = level===2 ? randInt(0,2) : 0, te = randInt(1,5), un = randInt(0,9);
-    var total = hu*100 + te*10 + un;
-    if(total===0) return genComptageQuestion(level);
-    return {
-      tag:'Dénombrement', question:'Quel nombre est représenté avec ces blocs ?', sub:'Une plaque = 100, une barre = 10, un petit cube = 1.',
-      explain:(hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var i, j, y0 = 8;
-        if(hu){
-          for(i=0;i<hu;i++){
-            var px = 100 - hu*25 + i*50 + 3;
-            svg.appendChild(el('rect',{x:px,y:y0,width:44,height:44,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--text)','stroke-width':2}));
-            for(j=1;j<10;j++){
-              svg.appendChild(el('line',{x1:px+j*4.4,y1:y0,x2:px+j*4.4,y2:y0+44,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
-              svg.appendChild(el('line',{x1:px,y1:y0+j*4.4,x2:px+44,y2:y0+j*4.4,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
-            }
-          }
-          y0 = 64;
-        } else y0 = 40;
-        for(i=0;i<te;i++){
-          var bx = 20 + i*17;
-          svg.appendChild(el('rect',{x:bx,y:y0,width:12,height:96,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
-          for(j=1;j<10;j++) svg.appendChild(el('line',{x1:bx,y1:y0+j*9.6,x2:bx+12,y2:y0+j*9.6,stroke:'var(--text)','stroke-width':0.6}));
-        }
-        for(i=0;i<un;i++){
-          var ux = 128 + (i%3)*20, uy = y0 + 4 + Math.floor(i/3)*22;
-          svg.appendChild(el('rect',{x:ux,y:uy,width:16,height:16,fill:'var(--accent)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':1.5}));
-        }
-      },
-      cols3:false, choices: numChoices(total, [total+10, total-10, total+1, total-1, total+100, hu*100+un*10+te])
-    };
+    if(hu*100 + te*10 + un === 0) return genComptageQuestion(level);
+    return blocksQuestion(hu, te, un);   // même scène que « Compter jusqu'à 1000 » (nombres.js)
   }
 
   // ---- Déclaration des types de Quizz du thème Calcul ----

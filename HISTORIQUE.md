@@ -325,3 +325,8 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - Le test a trouvé un défaut réel du moteur avant livraison : un nom comme `constructor` était pris pour une expression déjà compilée (cache à prototype) ; corrigé (caches et environnements sans prototype).
 - Reste (étapes suivantes) : `soustractionPosee`, `comptage`/`blocs1000` en fiches ; objet de niveaux pour les autres types ; scènes réutilisables (P5).
 - Les 6 types s'affichent désormais après les autres types de calcul dans les listes (ordre d'enregistrement).
+
+## 58. Audit P4 (suite) : soustractions posées en fiche, scène de blocs partagée (04/10/2026)
+- `soustractionPosee` migrée en fiche (7 activités par fiche) ; ancien code supprimé de `nombres.js` ; fonctions `borrow` et `explainSub` ajoutées aux fonctions nommées des fiches.
+- `blocksQuestion(hu, te, un)` (nombres.js) : une seule scène et une seule question « Quel nombre est représenté avec ces blocs ? » pour `blocs1000` et pour le Dénombrement visuel (Moyen/Difficile) ; les deux dessins en double sont fusionnés (les blocs de `comptage` sont un peu plus petits, comme ceux de `blocs1000`). Les identifiants de types ne changent pas : réglages et historique conservés.
+- Tests : `gabarits_check.js` étendu (soustractions posées, plages des blocs).

@@ -5689,37 +5689,8 @@ function phrase(tpl, vars){
       };
     }
     var hu = level===2 ? randInt(0,2) : 0, te = randInt(1,5), un = randInt(0,9);
-    var total = hu*100 + te*10 + un;
-    if(total===0) return genComptageQuestion(level);
-    return {
-      tag:'Dénombrement', question:'Quel nombre est représenté avec ces blocs ?', sub:'Une plaque = 100, une barre = 10, un petit cube = 1.',
-      explain:(hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var i, j, y0 = 8;
-        if(hu){
-          for(i=0;i<hu;i++){
-            var px = 100 - hu*25 + i*50 + 3;
-            svg.appendChild(el('rect',{x:px,y:y0,width:44,height:44,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--text)','stroke-width':2}));
-            for(j=1;j<10;j++){
-              svg.appendChild(el('line',{x1:px+j*4.4,y1:y0,x2:px+j*4.4,y2:y0+44,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
-              svg.appendChild(el('line',{x1:px,y1:y0+j*4.4,x2:px+44,y2:y0+j*4.4,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
-            }
-          }
-          y0 = 64;
-        } else y0 = 40;
-        for(i=0;i<te;i++){
-          var bx = 20 + i*17;
-          svg.appendChild(el('rect',{x:bx,y:y0,width:12,height:96,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
-          for(j=1;j<10;j++) svg.appendChild(el('line',{x1:bx,y1:y0+j*9.6,x2:bx+12,y2:y0+j*9.6,stroke:'var(--text)','stroke-width':0.6}));
-        }
-        for(i=0;i<un;i++){
-          var ux = 128 + (i%3)*20, uy = y0 + 4 + Math.floor(i/3)*22;
-          svg.appendChild(el('rect',{x:ux,y:uy,width:16,height:16,fill:'var(--accent)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':1.5}));
-        }
-      },
-      cols3:false, choices: numChoices(total, [total+10, total-10, total+1, total-1, total+100, hu*100+un*10+te])
-    };
+    if(hu*100 + te*10 + un === 0) return genComptageQuestion(level);
+    return blocksQuestion(hu, te, un);   // même scène que « Compter jusqu'à 1000 » (nombres.js)
   }
 
   // ---- Déclaration des types de Quizz du thème Calcul ----
@@ -5907,19 +5878,6 @@ function phrase(tpl, vars){
   }
   function hasCarry(a, b){ var A = String(a), B = String(b), i, c = 0; for(i=0;i<Math.max(A.length,B.length);i++){ var s = +(A.charAt(A.length-1-i)||0) + +(B.charAt(B.length-1-i)||0) + c; c = s>=10 ? 1 : 0; if(c) return true; } return false; }
   function hasBorrow(a, b){ var A = String(a), B = String(b), i, br = 0; for(i=0;i<A.length;i++){ var need = +(B.charAt(B.length-1-i)||0) + br; var da = +A.charAt(A.length-1-i); br = da<need ? 1 : 0; if(br) return true; } return false; }
-  function genSoustractionPoseeQuestion(level){
-    var a, b, guard = 0;
-    do {
-      if(level===0){ a = randInt(21,99); b = rnd()<0.5 ? randInt(1,9) : randInt(1,Math.floor(a/10)-1)*10; }
-      else if(level===1){ a = randInt(31,99); b = randInt(11,a-5); }
-      else { a = randInt(121,999); b = rnd()<0.5 ? randInt(11,99) : randInt(101,a-10); }
-      guard++;
-    } while(guard<200 && (a<=b || (level===0 && hasBorrow(a,b)) || (level>0 && guard<100 && !hasBorrow(a,b) && rnd()<0.6)));
-    var r = a - b;
-    return bigNumQuestion('Calcul','Calcule ' + a + ' - ' + b + '.','Soustrais en colonnes : unités, puis dizaines' + (level===2 ? ', puis centaines' : '') + ' (emprunte 1 si le chiffre du haut est trop petit).',
-      subExplain(a,b), a + ' - ' + b, r, [r+10, r-10, r+1, r-1, level===2 ? r+100 : r+20, level>0 ? Math.abs((Math.floor(a/10)%10 - Math.floor(b/10)%10))*10 + Math.abs(a%10 - b%10) : r+2]);
-  }
-
   // ---- Multiplier (grilles, additions répétées) et partager ----
   var PART_ICONS = ['🍬','🍪','⭐','🍎','🎈'];
   function genMultiplierQuestion(level){
@@ -5967,13 +5925,14 @@ function phrase(tpl, vars){
   }
 
   // ---- Compter avec des blocs jusqu'à 999 (plaques, barres, cubes) ----
-  function genBlocsQuestion(level){
-    var hu = level===1 ? randInt(1,4) : randInt(1,9), te = randInt(0,9), un = randInt(0,9);
+  // Une seule scène et une seule question « quel nombre est représenté ? », partagées par
+  // « Compter jusqu'à 1000 » (blocs1000) et par le Dénombrement visuel (comptage, Moyen/Difficile).
+  function blocksQuestion(hu, te, un){
     var total = hu*100 + te*10 + un;
     var swapV = te*100 + hu*10 + un;
     return {
       tag:'Dénombrement', question:'Quel nombre est représenté avec ces blocs ?', sub:'Une plaque = 100, une barre = 10, un petit cube = 1.',
-      explain: hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
+      explain: (hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
       draw:function(){
         var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
         var i, j, s = 30, g = 3;
@@ -5985,7 +5944,7 @@ function phrase(tpl, vars){
             svg.appendChild(el('line',{x1:px,y1:py+j*s/5,x2:px+s,y2:py+j*s/5,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
           }
         }
-        var yb = hu>5 ? 82 : 52;
+        var yb = hu>5 ? 82 : hu>0 ? 52 : 30;
         for(i=0;i<te;i++){
           var bx = 10 + i*13;
           svg.appendChild(el('rect',{x:bx,y:yb,width:10,height:90,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
@@ -5995,6 +5954,9 @@ function phrase(tpl, vars){
       },
       cols3:false, choices: numChoices(total, [total+10, total-10, total+100, total-100, swapV !== total ? swapV : total+1, total+1, total-1])
     };
+  }
+  function genBlocsQuestion(level){
+    return blocksQuestion(level===1 ? randInt(1,4) : randInt(1,9), randInt(0,9), randInt(0,9));
   }
 
   // ---- Problèmes à deux étapes ----
@@ -6042,9 +6004,6 @@ function phrase(tpl, vars){
   registerQuizType({ id:'droite', domain:'nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
     randomNote:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de 1 en 1 (0 à 10) ; Moyen : de 10 en 10 ou de 20 en 20 ; Difficile : de 50 en 50, de 100 en 100 ou de 10 en 10 entre deux centaines.',
     generate:genDroiteQuestion });
-  registerQuizType({ id:'soustractionPosee', domain:'calcul', label:'Soustractions posées', longLabel:'Soustractions en colonnes (emprunt)', defaultLevels:[0,1,2],
-    randomNote:'Facile : sans emprunt, jusqu\'à 99 ; Moyen : jusqu\'à 99, souvent avec emprunt ; Difficile : jusqu\'à 999, souvent avec emprunt. L\'explication détaille chaque colonne.',
-    generate:genSoustractionPoseeQuestion });
   registerQuizType({ id:'multiplier', domain:'calcul', label:'Multiplier, partager', longLabel:'Multiplier et partager (grilles, paquets)', defaultLevels:[0,1,2],
     randomNote:'Compter une grille de points, additionner plusieurs fois le même nombre, partager en parts égales (Moyen/Difficile : aussi faire des paquets). Facile : 2 et 3 lignes, partage entre 2 ; Moyen : jusqu\'à 5 × 5 ; Difficile : plus de colonnes, partages entre 2 à 10.',
     generate:genMultiplierQuestion });
@@ -6257,13 +6216,15 @@ function phrase(tpl, vars){
       randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } });
   }
   /* ===================== FICHES D'ACTIVITÉS : calcul =====================
-     6 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
+     7 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
      à registerTemplateType. Les `levels` sont les réglages Facile / Moyen / Difficile ; la note de réglage
      (« note ») est générée à partir d'eux. */
 
   // Fonctions nommées que les fiches peuvent appeler (carry(a,b), explainAdd(a,b), tableHint(t)).
   TEMPLATE_FNS.carry = hasCarry;
   TEMPLATE_FNS.explainAdd = addExplain;
+  TEMPLATE_FNS.borrow = hasBorrow;
+  TEMPLATE_FNS.explainSub = subExplain;
   TEMPLATE_FNS.tableHint = function(t){
     return t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
   };
@@ -6352,6 +6313,22 @@ function phrase(tpl, vars){
       additionForm([2], { a:{int:[120,899]}, b:{any:[ {int:[11,99]}, {int:[110,500]} ]} }, ['a+b<=max', 'carry(a,b) || tries>=100 || rand()>=0.5'])
     ],
     note:'Facile : sans retenue, jusqu\'à {max0} ; Moyen : 2 nombres de 2 chiffres jusqu\'à {max1}, souvent avec retenue ; Difficile : jusqu\'à {max2}, souvent avec retenue. L\'explication détaille chaque colonne.' });
+
+  // -- Soustractions posées (emprunt) --
+  function soustractionPoseeForm(levels, bSpec, where){
+    return { levels:levels, vars:{ a:{int:['aLo','max']}, b:bSpec, r:'a-b' }, where:where, answer:'r',
+      extras:['r+10','r-10','r+1','r-1','level==2 ? r+100 : r+20','level>0 ? abs(floor(a/10)%10 - floor(b/10)%10)*10 + abs(a%10 - b%10) : r+2'],
+      question:'Calcule {a} - {b}.', sub:'Soustrais en colonnes : unités, puis dizaines{hundreds} (emprunte 1 si le chiffre du haut est trop petit).',
+      explain:'{explainSub(a,b)}', eq:'{a} - {b}' };
+  }
+  registerTemplateType({ id:'soustractionPosee', domain:'calcul', label:'Soustractions posées', longLabel:'Soustractions en colonnes (emprunt)', defaultLevels:[0,1,2],
+    levels:[ { aLo:21, max:99, hundreds:'' }, { aLo:31, max:99, hundreds:'' }, { aLo:121, max:999, hundreds:', puis centaines' } ],
+    forms:[
+      soustractionPoseeForm([0], {any:[ {int:[1,9]}, {int:[1,'floor(a/10)-1'], step:10} ]}, ['a>b', '!borrow(a,b)']),
+      soustractionPoseeForm([1], {int:[11,'a-5']}, ['a>b', 'borrow(a,b) || tries>=100 || rand()>=0.6']),
+      soustractionPoseeForm([2], {any:[ {int:[11,99]}, {int:[101,'a-10']} ]}, ['a>b', 'borrow(a,b) || tries>=100 || rand()>=0.6'])
+    ],
+    note:'Facile : sans emprunt, jusqu\'à {max0} ; Moyen : jusqu\'à {max1}, souvent avec emprunt ; Difficile : jusqu\'à {max2}, souvent avec emprunt. L\'explication détaille chaque colonne.' });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */
