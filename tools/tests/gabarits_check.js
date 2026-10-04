@@ -92,6 +92,30 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   const kk = mu.kinds;
   chk(!kk[0].groupes && kk[0].grille > 100 && kk[0].repete > 100 && kk[0].partage > 100 && kk[1].groupes > 100 && kk[2].groupes > kk[2].partage * 1.5 && !kk[0]['?'] && !kk[1]['?'] && !kk[2]['?'], 'multiplier : 3 sortes en Facile, + paquets en Moyen, 2× plus de paquets en Difficile ' + JSON.stringify(kk));
   chk(mu.gMax[0] <= 5 && mu.gMin[0] >= 2 && mu.gMax[2] <= 10 && mu.cn[0] >= 3 && mu.cn[1] <= 12, 'plages : grille Facile ≤ 5 colonnes, Difficile ≤ 10 ; dénombrement Facile ' + mu.cn);
+  // 6. droite graduée (scène numberline) et comparer (réponses non numériques)
+  const dc = await J(`(function(){
+    function def(id){ return QCM_TYPE_DEFS.filter(function(d){return d.id===id;})[0]; }
+    var o = { reg: !!TEMPLATE_FICHES.droite && !!TEMPLATE_FICHES.compare, steps:[{},{},{}], k5:0, badV:0, badArrow:0, startOk:true, sign:{bad:0}, eq:[0,0,0], expr:[0,0,0], cols:0, labels:{}, expl:0, same:0, sameN:0 };
+    for(var lv=0; lv<3; lv++) for(var i=0;i<600;i++){
+      var q = def('droite').generate(lv), st = +/vaut (\\d+)/.exec(q.explain)[1], k = +/numéro (\\d+)/.exec(q.explain)[1], v = +q.choices.filter(function(x){return x.ok;})[0].label;
+      o.steps[lv][st] = 1; if(k===5) o.k5++;
+      var base = v - k*st; if(base < 0 || base % 100 !== 0 && st === 10 && lv === 2 || (lv < 2 && base !== 0)) o.startOk = false;
+      var svg = document.getElementById('m4Svg'); q.draw();
+      var tip = svg.querySelector('polygon').getAttribute('points').split(' ')[2].split(',')[0];
+      if(Math.abs(+tip - (16 + k*168/10)) > 0.01) o.badArrow++;
+      var c = def('compare').generate(lv); o.cols += c.cols3 ? 1 : 0; var lab = c.choices.map(function(x){return x.label;}).join(''); o.labels[lab] = 1;
+      var m = /: (.+) … (.+) \\?$/.exec(c.question), L = m[1].split(' + ').reduce(function(a,b){return a+ +b;},0), R = m[2].split(' + ').reduce(function(a,b){return a+ +b;},0);
+      var want = L<R ? '<' : L>R ? '>' : '=', got = c.choices.filter(function(x){return x.ok;});
+      if(got.length !== 1 || got[0].label !== want) o.sign.bad++;
+      if(m[1].indexOf('+') !== -1) o.expr[lv]++;
+      if(L === R) o.eq[lv]++;
+      if(c.explain.indexOf(want === '=' ? '=.' : want + ' ') === -1) o.expl++;
+    }
+    return JSON.stringify(o); })()`);
+  chk(dc.reg && Object.keys(dc.steps[0]).join() === '1' && Object.keys(dc.steps[1]).sort().join() === '10,20' && Object.keys(dc.steps[2]).sort().join() === '10,100,50' && dc.k5 === 0 && dc.startOk, 'droite graduée : pas 1 / 10 et 20 / 100, 50 et 10 ; jamais la graduation 5 ; départ 0 (sauf entre deux centaines)');
+  chk(dc.badArrow === 0, 'droite graduée : la flèche est dessinée à la bonne graduation');
+  chk(dc.sign.bad === 0 && dc.cols === 1800 && Object.keys(dc.labels).join() === '<=>' && dc.expl === 0, 'comparer : le signe est toujours juste (recalculé), 3 boutons < = >, explication cohérente');
+  chk(dc.expr[0] === 0 && dc.expr[1] > 300 && dc.expr[1] < 420 && dc.expr[2] > 380 && dc.expr[2] < 520 && dc.eq[0] > 60, 'comparer : additions 0 / ~60 % / ~75 % (' + dc.expr + ') — la note ne ment plus sur la Difficile ; égalités vues ' + dc.eq);
   console.log(bad ? 'ÉCHEC gabarits : ' + bad : 'gabarits OK');
   if (bad) process.exitCode = 1;
 });

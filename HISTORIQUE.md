@@ -336,3 +336,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - Migrés en fiches : Dénombrement visuel (`comptage`), Compter jusqu'à 1000 (`blocs1000`), Multiplier/partager (`multiplier` : grille, additions répétées, partages, paquets). Le code des blocs, qui existait en deux exemplaires, est maintenant une seule scène ; `blocksQuestion` disparaît.
 - Les 10 activités par fiche : 6 du §57 + soustractions posées + ces 3. Plages inchangées (`gabarits_check`), `audit_check` et `seed_check` verts.
 - Reste de P5 : scènes `numberline` (droite graduée), `clock`, `fraction`, banque de texte (calendrier, énigmes, unités, durées).
+
+## 60. Audit P5 (suite) : droite graduée et Comparer en fiches (04/10/2026)
+- Moteur : littéraux texte (`'<'`) dans les expressions, `options` (réponses non numériques, 3 boutons) et scène `numberline`.
+- `droite` (6 formes : pas 1 ; 10 ou 20 ; 100, 50, ou 10 entre deux centaines) et `compare` en fiches ; anciens `genDroiteQuestion` et `genCompareQuestion` supprimés. 12 activités par fiche.
+- **Note corrigée par le code** : « Comparer » annonçait « plus souvent des additions » en Difficile alors que le code tirait 60 % aux deux niveaux ; la part est maintenant un réglage (`pExpr` : 0 / 60 % / 75 %) et la note est générée depuis lui.
+- Tests : `gabarits_check.js` (pas et départ de la droite, flèche à la bonne graduation, signe recalculé, proportions d'additions).
