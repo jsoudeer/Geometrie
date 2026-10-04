@@ -309,3 +309,9 @@
 .ed-prev-item{ margin-bottom:6px; overflow-wrap:anywhere; }
 .ed-prev-q{ font-weight:700; }
 .ed-prev-a{ font-size:.9rem; }
+
+.ed-grid{ display:grid; grid-template-columns:repeat(6, 1fr); gap:4px; margin-bottom:10px; }
+.ed-cell{ aspect-ratio:1; min-height:40px; border:2px solid var(--text); border-radius:8px; background:var(--surface); cursor:pointer; padding:0; }
+.ed-cell.on{ background:var(--accent); }
+.ed-cell:focus-visible{ outline:3px solid var(--text); outline-offset:2px; }
+.ed-net-preview{ width:100%; max-width:240px; height:auto; display:block; margin:4px 0; }

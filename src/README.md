@@ -132,6 +132,7 @@ Variables : une expression, `{int:[lo,hi], step?}`, `{pick:[…]}` (ou nom d'un 
 
 Un adulte ajoute des activités par un fichier `.kvb.json` (modèle : `exemples/paquet-exemple.kvb.json`). Deux sortes : `fixe` (liste de questions `{q, bonnes:[1], fausses:[1 à 3], explication}`) et `gabarit` (une `fiche`, voir plus haut). Format, limites et messages d'erreur : `paquets.js` (`packValidate`). Les identifiants sont `custom:<paquet>/<activité>`. Un autre fournisseur que `appareil` (lien, cloud) se branche en remplaçant `packSourceAppareil`. Test : `pack_check.js`.
 L'éditeur (`editeur.js`) fabrique ces activités depuis un écran : `editeurBuildAct(modele, réglages, id)` → activité, `editeurApercu`, `editeurSave`, `editeurRemove` ; elles sont rangées dans le paquet `perso.moi`, avec `meta` (modèle + nombres) pour pouvoir les rouvrir. Le modèle « à ma façon » reprend une fiche du jeu (liste `EDIT_BASES` : réglage de niveau modifiable et bornes). Pour ajouter un modèle : un cas dans `editeurBuildAct`, un bloc de champs dans `open`, une entrée dans `EDIT_MODELES`. Test : `editeur_check.js`.
+Un **patron de cube** est une activité de paquet de type `patron` (`grille:'.X../XXXX/.X..'`, 6 × 5 cases au plus, 2 à 10 cases d'un seul morceau) : `packPatronDef` appelle `makeNet` (patron3d.js), qui calcule seul s'il se referme ; il rejoint `NET_DEFS` (groupe « Mes patrons ») et les réglages d'activités de la famille « Patron → Solide ». Test : `patron_check.js`.
 
 ## Ajouter une activité à écran propre
 

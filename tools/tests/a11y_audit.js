@@ -45,7 +45,7 @@ const FAMS = ['measure', 'estimate', 'deform', 'net', 'qcm', 'clock-lire', 'cloc
       await page.evaluate(() => { document.getElementById('debug-panel').hidden = false; document.getElementById('debug-tools').hidden = false; });
       await run('réglages : outils adultes (paquets, liste d\'activités)');
       await page.click('#edit-new-btn'); await run('éditeur : choix du modèle'); 
-      for (const m of ['table', 'plusmoins', 'fiche', 'libre']) {
+      for (const m of ['table', 'plusmoins', 'fiche', 'patron', 'libre']) {
         if (m !== 'table') await page.click('#edit-new-btn');
         await page.click('.ed-modele-' + m); await run('éditeur : ' + m);
         if (m === 'libre') {

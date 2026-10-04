@@ -63,6 +63,22 @@
     if(f.note !== undefined && !packIsStr(f.note, 0, 600)) err('« note » trop longue');
   }
 
+  // Patron dessiné en cases : lignes séparées par « / », « X » = case, « . » = vide (ex. « .X../XXXX/.X.. »).
+  // Au plus 6 colonnes × 5 lignes, de 2 à 10 cases qui se touchent par un côté. Renvoie un message ou null.
+  var PACK_GRID_RE = /^[.X]{1,6}(\/[.X]{1,6}){0,4}$/;
+  function packGridCheck(g){
+    if(typeof g !== 'string' || !PACK_GRID_RE.test(g)) return 'le patron doit tenir dans une grille de 6 colonnes sur 5 lignes (lignes séparées par « / », « X » pour une case, « . » pour du vide).';
+    var cells = [];
+    g.split('/').forEach(function(line, r){ for(var c = 0; c < line.length; c++) if(line[c] === 'X') cells.push(r + ',' + c); });
+    if(cells.length < 2 || cells.length > 10) return 'le patron doit avoir de 2 à 10 cases.';
+    var seen = {}, queue = [cells[0]]; seen[cells[0]] = true;
+    for(var q = 0; q < queue.length; q++){
+      var rc = queue[q].split(','), r0 = +rc[0], c0 = +rc[1];
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var k = (r0 + d[0]) + ',' + (c0 + d[1]); if(cells.indexOf(k) !== -1 && !seen[k]){ seen[k] = true; queue.push(k); } });
+    }
+    return queue.length === cells.length ? null : 'les cases doivent se toucher par un côté (un seul morceau).';
+  }
+
   // Questions d'essai : un tirage est refusé s'il n'est pas jouable.
   function packCheckQuestion(q, where){
     if(!q || typeof q !== 'object') return where + ' : pas de question';
@@ -83,7 +99,9 @@
       var id = 'custom:' + pack.id + '/' + act.id, where = '« ' + act.label + ' »';
       var def;
       try {
-        if(act.type === 'fixe'){
+        if(act.type === 'patron'){
+          def = packPatronDef(id, act, pack);
+        } else if(act.type === 'fixe'){
           def = packFixeDef(id, act, pack);
         } else {
           var fiche = JSON.parse(JSON.stringify(act.fiche));
@@ -95,7 +113,7 @@
         }
       } catch(e){ errs.push(where + ' : ' + e.message); return; }
       // essais : pour chaque niveau activé, tirages à graine (reproductibles) ; un seul défaut suffit à refuser
-      for(var k = 0; k < act.niveaux.length && !errs.length; k++){
+      for(var k = 0; k < act.niveaux.length && !errs.length && !def.obj; k++){
         var lv = act.niveaux[k];
         for(var i = 0; i < PACK_LIMITS.essais; i++){
           var msg = null;
@@ -108,6 +126,13 @@
       defs.push(def);
     });
     return { defs:defs, erreurs:errs };
+  }
+
+  // Activité « patron » : un patron de cube dessiné en cases ; le moteur 3D (patron3d.js) calcule lui-même s'il se referme.
+  // Elle rejoint la famille « Patron → Solide » (NET_DEFS, groupe « Mes patrons »).
+  function packPatronDef(id, act, pack){
+    var net = makeNet(id, gridPolys(act.grille), { solid:'cube' });
+    return { id:id, group:'perso', label:act.label, defaultLevels:act.niveaux, obj:net, randomNote:netNote(net), domain:'solides' };
   }
 
   // Activité « questions fixes » : liste écrite à la main, tirage sans remise, réponses mélangées par le jeu.
@@ -149,7 +174,7 @@
       if(!ACT_ID_RE.test(a.id || '')) e2('« id » : minuscules, chiffres, tiret (1 à 40 caractères).');
       else if(seen[a.id]) e2('« id » en double : ' + a.id);
       seen[a.id] = 1;
-      if(a.type !== 'gabarit' && a.type !== 'fixe') e2('« type » doit être « gabarit » ou « fixe ».');
+      if(a.type !== 'gabarit' && a.type !== 'fixe' && a.type !== 'patron') e2('« type » doit être « gabarit », « fixe » ou « patron ».');
       if(!packIsStr(a.label, 1, 60)) e2('« label » : de 1 à 60 caractères.');
       if(domains.indexOf(a.domain) === -1) e2('« domain » inconnu (' + domains.join(', ') + ').');
       var niveaux = a.niveaux === undefined ? [0,1,2] : a.niveaux;
@@ -178,6 +203,9 @@
           if(q.icone !== undefined && !packIsStr(q.icone, 1, 4)) e2(qw + ' : « icone » : un emoji.');
           out.questions.push({ q:q.q, bonnes:(q.bonnes || []).slice(), fausses:(q.fausses || []).slice(), explication:q.explication || '', icone:q.icone });
         });
+      } else if(a.type === 'patron'){
+        var ge = packGridCheck(a.grille);
+        if(ge) e2('« grille » : ' + ge); else out.grille = a.grille;
       } else if(a.type === 'gabarit'){
         var fiche = a.fiche;
         if(!packIsObj(fiche)){ e2('« fiche » attendue (voir src/README.md).'); }
@@ -200,6 +228,7 @@
   function packFind(id){ for(var i = 0; i < PACKS.length; i++) if(PACKS[i].pack.id === id) return PACKS[i]; return null; }
   function packPlug(entry){        // branche les activités d'un paquet actif dans le jeu
     entry.defs.forEach(function(d){
+      if(d.obj){ if(NET_DEFS.indexOf(d) === -1) NET_DEFS.push(d); return; }       // un patron rejoint la famille « Patron → Solide »
       if(QCM_TYPE_DEFS.indexOf(d) === -1){
         var gen = d.generate;
         d.generate = function(level){
@@ -211,7 +240,10 @@
     });
   }
   function packUnplug(entry, only){
-    (only || entry.defs).forEach(function(d){ var i = QCM_TYPE_DEFS.indexOf(d); if(i !== -1) QCM_TYPE_DEFS.splice(i, 1); });
+    (only || entry.defs).forEach(function(d){
+      var list = d.obj ? NET_DEFS : QCM_TYPE_DEFS, i = list.indexOf(d);
+      if(i !== -1) list.splice(i, 1);
+    });
     if(typeof refreshQuizTypes === 'function') refreshQuizTypes();
   }
   // Installe un paquet (objet JSON déjà lu). Renvoie { ok, message }.
