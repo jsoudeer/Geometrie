@@ -299,7 +299,7 @@
   var m2StartPts = pts.map(function(p){ return p.slice(); });
   var m2ShapeIdx = 0;
 
-  // Les 3 formes cibles restent les mêmes (Losange/Rectangle/Parallélogramme),
+  // Les 5 formes cibles (Losange, Rectangle, Parallélogramme, Triangle isocèle…),
   // tirées au hasard à chaque exercice. Ce qui change maintenant avec le
   // niveau (Facile/Moyen/Difficile), c'est la distance de départ par rapport
   // à cette cible : un seul coin décalé en Facile, plusieurs coins bien
@@ -1792,12 +1792,10 @@
     { text:'On me trouve souvent sous la forme d\'un chapeau de sorcière. Qui suis-je ?', answer:'cône', pool:['cône','pyramide à base carrée','cylindre','triangle'] },
     { text:'J\'ai 6 côtés et 6 sommets, comme les alvéoles d\'une ruche d\'abeilles. Qui suis-je ?', answer:'hexagone', pool:['hexagone','pentagone','carré','cercle'] },
     { text:'Je n\'ai que des angles droits, et si tous mes côtés étaient égaux, on m\'appellerait un carré. Qui suis-je ?', answer:'rectangle', pool:['rectangle','carré','losange','pentagone'] },
-    { text:'J\'ai deux faces planes qui sont des cercles identiques, reliées par une surface qui s\'enroule. Qui suis-je ?', answer:'cylindre', pool:['cylindre','cône','boule','cube'] },
     { text:'Je n\'ai aucun angle : impossible de me confondre avec un carré ou un triangle. Qui suis-je ?', answer:'cercle', pool:['cercle','losange','triangle','carré'] },
     { text:'J\'ai 8 sommets et 12 arêtes, mais toutes mes faces ne sont pas des carrés. Qui suis-je ?', answer:'pavé droit', pool:['pavé droit','cube','pyramide à base carrée','cylindre'] },
     { text:'Je ressemble à un carré, mais si on me penche un peu, mes angles ne sont plus droits. Qui suis-je devenu ?', answer:'losange', pool:['losange','rectangle','carré','pentagone'] },
     { text:'Mes 3 côtés ont tous la même longueur. Qui suis-je ?', answer:'triangle', pool:['triangle','losange','pentagone','carré'] },
-    { text:'J\'ai 8 sommets, 12 arêtes et 6 faces, toutes identiques et carrées. Qui suis-je ?', answer:'cube', pool:['cube','pavé droit','pyramide à base carrée','cylindre'] },
     { text:'J\'ai seulement 4 faces, toutes triangulaires, et 4 sommets : je suis la plus simple des pyramides. Qui suis-je ?', answer:'tétraèdre', pool:['tétraèdre','pyramide à base carrée','cube','octaèdre'] },
     { text:'Je suis formé de deux pyramides à base carrée collées par leur base : j\'ai 8 faces triangulaires. Qui suis-je ?', answer:'octaèdre', pool:['octaèdre','tétraèdre','cube','pyramide à base carrée'] },
     { text:'J\'ai 2 faces triangulaires et 3 faces rectangulaires : on me trouve dans les tentes de camping. Qui suis-je ?', answer:'prisme triangulaire', pool:['prisme triangulaire','pyramide à base carrée','tétraèdre','pavé droit'] },
@@ -2047,7 +2045,7 @@
     randomNote:'4 figures tirées en alternance : rectangle (jamais carré), carré (ses diagonales sont de vrais axes), triangle isocèle, cercle (toute droite par le centre est un axe). La droite est soit un vrai axe, soit décalée ou oblique ; la figure et les mesures sont tirées au hasard.',
     generate:genSymVraiQuestion });
   registerQuizType({ id:'enigme', domain:'logique', label:'Énigme', longLabel:'Énigme', defaultLevels:[2],
-    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 46 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
+    randomNote:'L\'énigme est tirée au hasard dans une banque FIXE de 44 énigmes (tirées sans répétition tant qu’on n’a pas tout vu) (texte non généré : toujours les mêmes formulations).',
     generate:genEnigmeQuestion });
   registerQuizType({ id:'suiteFormes', domain:'logique', label:'Suite de formes', longLabel:'Suite logique de formes', defaultLevels:[0,1,2],
     randomNote:'Un motif de formes/couleurs se répète (ex. rond, carré, rond, carré…) : on trouve la suivante. Facile : motif à 2 éléments (AB). Moyen : AAB, ABB ou ABC. Difficile : ABC, AABB, ABAC ou ABCD. Les symboles sont tirés au hasard.',
