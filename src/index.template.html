@@ -102,6 +102,13 @@
         </form>
         <div id="debug-tools" hidden>
           <p class="muted settings-hint" role="status">Mode débogage actif jusqu'à la fermeture de la page.</p>
+          <div id="editor-panel">
+            <p class="muted settings-hint"><strong>✏️ Mes activités</strong> : crée une activité (table, ajout / retrait, questions à toi), teste-la, puis enregistre-la.</p>
+            <button class="btn ghost" id="edit-new-btn" type="button" style="width:100%;margin-bottom:8px;">✏️ Créer une activité</button>
+            <p class="muted settings-hint" id="edit-msg" role="status" aria-live="polite"></p>
+            <ul id="edit-list" class="packs-list"></ul>
+            <div id="edit-form" class="ed-form" hidden></div>
+          </div>
           <div id="packs-panel">
             <p class="muted settings-hint"><strong>📦 Paquets d'activités</strong> : des fichiers <code>.kvb.json</code> qui ajoutent des activités (réservé aux adultes).</p>
             <input type="file" id="packs-file" accept=".json,application/json" hidden>

@@ -154,6 +154,11 @@
       var niveaux = a.niveaux === undefined ? [0,1,2] : a.niveaux;
       if(!Array.isArray(niveaux) || !niveaux.length || niveaux.some(function(n){ return n !== 0 && n !== 1 && n !== 2; }) || new Set(niveaux).size !== niveaux.length) { e2('« niveaux » : une liste non vide parmi 0, 1, 2.'); niveaux = [0,1,2]; }
       var out = { id:a.id, type:a.type, label:a.label, domain:a.domain, niveaux:niveaux.slice().sort() };
+      // « meta » : réglages d'origine d'une activité créée avec l'éditeur (pour pouvoir la rouvrir) ; aucune incidence sur le jeu
+      if(a.meta !== undefined){
+        if(packIsObj(a.meta) && packIsStr(a.meta.modele, 1, 20) && Array.isArray(a.meta.p) && a.meta.p.length <= 8 && a.meta.p.every(function(x){ return typeof x === 'number' && isFinite(x); })) out.meta = { modele:a.meta.modele, p:a.meta.p.slice() };
+        else e2('« meta » invalide.');
+      }
       if(a.type === 'fixe'){
         if(a.tirage !== undefined && a.tirage !== 'sans remise') e2('« tirage » : seul « sans remise » est connu.');
         if(a.icone !== undefined) { if(packIsStr(a.icone, 1, 4)) out.icone = a.icone; else e2('« icone » : un emoji.'); }
@@ -250,6 +255,7 @@
   });
 
   // ---- écran Réglages : importer, activer, exporter, retirer (réservé aux adultes : derrière le code) ----
+  var packsUIRefresh = function(){};     // rafraîchit la liste des paquets (assigné par packsUI ; appelé par l'éditeur)
   (function packsUI(){
     var list = document.getElementById('packs-list'), msg = document.getElementById('packs-msg'),
         file = document.getElementById('packs-file'), btn = document.getElementById('packs-import-btn');
@@ -285,5 +291,6 @@
       rd.onerror = function(){ say('Impossible de lire ce fichier.'); };
       rd.readAsText(f);
     });
+    packsUIRefresh = render;
     render();
   })();

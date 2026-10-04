@@ -295,3 +295,17 @@
 .pack-title{ font-weight:700; margin-bottom:6px; overflow-wrap:anywhere; }
 .pack-item .btn-row{ gap:6px; flex-wrap:wrap; }
 .pack-item .btn{ flex:1 1 auto; min-height:44px; }
+
+.ed-form{ border:2px solid var(--text); border-radius:12px; padding:10px; margin-bottom:10px; background:var(--surface); }
+.ed-form h3{ margin:0 0 8px; font-size:1rem; }
+.ed-field{ display:flex; flex-direction:column; gap:3px; margin-bottom:8px; }
+.ed-field label{ font-weight:700; font-size:.9rem; }
+.ed-field input, .ed-field select{ min-height:44px; font:inherit; padding:6px 8px; border:2px solid var(--text); border-radius:10px; background:#fff; color:var(--text); box-sizing:border-box; width:100%; }
+.ed-levels, .ed-question{ border:1px solid var(--text); border-radius:10px; margin:0 0 8px; padding:6px 8px; }
+.ed-check{ display:inline-flex; align-items:center; gap:4px; min-height:44px; margin-right:10px; }
+.ed-form .btn-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.ed-form .btn{ flex:1 1 auto; min-height:44px; }
+.ed-preview{ margin:0; padding-left:22px; }
+.ed-prev-item{ margin-bottom:6px; overflow-wrap:anywhere; }
+.ed-prev-q{ font-weight:700; }
+.ed-prev-a{ font-size:.9rem; }
