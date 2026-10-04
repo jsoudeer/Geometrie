@@ -2,14 +2,15 @@
      Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
      quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
      les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
-     Les scènes (equation, blocks, scatter, grid, emoji) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
+     Les scènes (equation, blocks, scatter, grid, emoji, numberline) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
      jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
 
      Fiche :
        { id, domain, label, longLabel, defaultLevels, tag?,
          levels:[ {paramètres du niveau 0}, {…1}, {…2} ],      // nombres, textes ou listes : ils entrent dans l'environnement
          forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain,
-                   eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …}, extras?:[expr,…] } ],
+                   eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …},
+                   extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles) } ],
          note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
      spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
      Dans les textes : {expr}. Dans note : k0, k1, k2 = paramètre k du niveau 0, 1, 2. */
@@ -26,14 +27,15 @@
   function compileExpr(src){
     src = String(src);
     if(EXPR_CACHE[src]) return EXPR_CACHE[src];
-    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
+    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|'([^']*)'|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
     while(pos < src.length){
       re.lastIndex = pos; m = re.exec(src);
       if(!m){ if(/^\s*$/.test(src.slice(pos))) break; throw new Error('expression illisible : ' + src); }
       pos = re.lastIndex;
       if(m[1] !== undefined) toks.push({ t:'n', v:parseFloat(m[1]) });
       else if(m[2] !== undefined) toks.push({ t:'i', v:m[2] });
-      else toks.push({ t:'o', v:m[3] });
+      else if(m[3] !== undefined) toks.push({ t:'s', v:m[3] });
+      else toks.push({ t:'o', v:m[4] });
     }
     var k = 0, idents = {};
     function peek(){ return toks[k]; }
@@ -72,7 +74,7 @@
     function primary(){
       var t = toks[k++];
       if(!t) throw new Error('expression incomplète : ' + src);
-      if(t.t === 'n') return function(){ return t.v; };
+      if(t.t === 'n' || t.t === 's') return function(){ return t.v; };
       if(t.t === 'o' && t.v === '('){ var x = ternary(); eat(')'); return x; }
       if(t.t === 'o' && t.v === '['){
         var items = [];
@@ -166,6 +168,21 @@
         return { icon:a.icon, items: chosen.map(function(c){ return { c:c, dx:randInt(-6,6), dy:randInt(-4,4) }; }) };
       },
       draw:function(svg, d){ d.items.forEach(function(it){ svg.appendChild(svgText(28 + (it.c%4)*48 + it.dx, 52 + Math.floor(it.c/4)*44 + it.dy, 30, d.icon)); }); } },
+    // droite graduée : nb graduations de pas `step` depuis `start`, une flèche « ? » à la graduation k
+    numberline: { exprs:['start','step','nb','labelEvery','k'], texts:[],
+      make:function(a){ return a; },
+      draw:function(svg, d){
+        var x0 = 16, w = 168, y = 120, i;
+        svg.appendChild(el('line',{x1:x0-6,y1:y,x2:x0+w+6,y2:y,stroke:'var(--text)','stroke-width':3,'stroke-linecap':'round'}));
+        for(i=0;i<=d.nb;i++){
+          var x = x0 + i*w/d.nb, big = i%d.labelEvery===0;
+          svg.appendChild(el('line',{x1:x,y1:y-(big?11:7),x2:x,y2:y+(big?11:7),stroke:'var(--text)','stroke-width':big?3:2}));
+          if(big) svg.appendChild(svgText(x, y+32, 15, String(d.start + i*d.step)));
+        }
+        var ax = x0 + d.k*w/d.nb;
+        svg.appendChild(el('polygon',{points:(ax-10)+','+(y-52)+' '+(ax+10)+','+(y-52)+' '+ax+','+(y-14),fill:'var(--accent)',stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+        svg.appendChild(svgText(ax, y-60, 22, '?'));
+      } },
     // rows × cols points
     grid: { exprs:['rows','cols'], texts:[],
       make:function(a){ return a; },
@@ -252,8 +269,8 @@
         var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
         sdef.draw(svg, sdata);
       },
-      cols3: false,
-      choices: numChoices(correct, extras)
+      cols3: !!form.options && form.cols3 !== false,
+      choices: form.options ? form.options.map(function(l){ return { label:l, ok:l === correct }; }) : numChoices(correct, extras)
     };
   }
 

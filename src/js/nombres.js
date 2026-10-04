@@ -101,37 +101,6 @@
     };
   }
 
-  // ---- Droite graduée ----
-  function genDroiteQuestion(level){
-    var start, step, nb, labelEvery, v, k;
-    var kinds = level===0 ? ['f'] : level===1 ? ['m1','m2'] : ['d1','d2','d3'];
-    var kind = pick(kinds);
-    if(kind==='f'){ start = 0; step = 1; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else if(kind==='m1'){ start = 0; step = 10; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else if(kind==='m2'){ start = 0; step = 20; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else if(kind==='d1'){ start = 0; step = 100; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else if(kind==='d2'){ start = 100*randInt(0,8); step = 10; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else { start = 0; step = 50; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    v = start + k*step;
-    var end = start + nb*step;
-    var q = bigNumQuestion('Nombres','Quel nombre indique la flèche ?','Regarde de combien on avance à chaque graduation : ' + step + '.',
-      'Chaque graduation vaut ' + step + '. La flèche est à la graduation numéro ' + k + ' : ' + k + ' × ' + step + (start ? ' + ' + start : '') + ' = ' + v + '.',
-      '', v, [v+step, v-step, v+2*step, v-2*step, start+(nb-k)*step, v+10].filter(function(x){ return x!==v; }));
-    q.draw = function(){
-      var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
-      var x0 = 16, w = 168, y = 120, i;
-      svg.appendChild(el('line',{x1:x0-6,y1:y,x2:x0+w+6,y2:y,stroke:'var(--text)','stroke-width':3,'stroke-linecap':'round'}));
-      for(i=0;i<=nb;i++){
-        var x = x0 + i*w/nb, big = i%labelEvery===0;
-        svg.appendChild(el('line',{x1:x,y1:y-(big?11:7),x2:x,y2:y+(big?11:7),stroke:'var(--text)','stroke-width':big?3:2}));
-        if(big) svg.appendChild(svgText(x, y+32, 15, String(start + i*step)));
-      }
-      var ax = x0 + k*w/nb;
-      svg.appendChild(el('polygon',{points:(ax-10)+','+(y-52)+' '+(ax+10)+','+(y-52)+' '+ax+','+(y-14),fill:'var(--accent)',stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
-      svg.appendChild(svgText(ax, y-60, 22, '?'));
-    };
-    return q;
-  }
 
   // ---- Opérations posées : explications colonne par colonne ----
   var COL_NAMES = ['unités','dizaines','centaines'];
@@ -198,9 +167,6 @@
   registerQuizType({ id:'encadrer', domain:'nombres', label:'Encadrer, arrondir', longLabel:'Encadrer et arrondir un nombre', defaultLevels:[0,1,2],
     randomNote:'Facile : entre quelles dizaines (jusqu\'à 99) ; Moyen : jusqu\'à 999, et arrondir à la dizaine ; Difficile : entre quelles centaines, arrondir à la centaine ou à la dizaine.',
     generate:genEncadrerQuestion });
-  registerQuizType({ id:'droite', domain:'nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
-    randomNote:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de 1 en 1 (0 à 10) ; Moyen : de 10 en 10 ou de 20 en 20 ; Difficile : de 50 en 50, de 100 en 100 ou de 10 en 10 entre deux centaines.',
-    generate:genDroiteQuestion });
   registerQuizType({ id:'probleme2', domain:'calcul', label:'Problèmes à 2 étapes', longLabel:'Problèmes à deux étapes', defaultLevels:[1,2],
     randomNote:'Un énoncé qui demande deux calculs à la suite (perdre puis gagner, deux achats, boîtes de gâteaux…). Moyen : additions et soustractions, nombres jusqu\'à environ 30 ; Difficile : nombres jusqu\'à environ 100 et énoncés avec une multiplication. Les modèles sont tirés sans répétition.',
     generate:genProbleme2Question });

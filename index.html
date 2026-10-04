@@ -5471,39 +5471,6 @@ function phrase(tpl, vars){
   }
 
   // ===================== Arithmétique élargie =====================
-  // -- Comparer (<, >, =) --
-  function genCompareQuestion(level){
-    var lo = level===0 ? 0 : 5, hi = level===0 ? 20 : level===1 ? 30 : 99;
-    var expr = level>=1 && rnd()<0.6;
-    var left, right, lv, rv;
-    if(expr){
-      var a=randInt(1,15), b=randInt(1,15), c, d;
-      lv = a+b;
-      // une fois sur trois, les deux côtés sont égaux (ex. 8 + 5 et 9 + 4)
-      if(rnd()<0.34){ var tries=0; do { c=randInt(Math.max(1,lv-15), Math.min(15,lv-1)); d=lv-c; tries++; } while((c===a || c===b) && tries<10); }
-      else { c=randInt(1,15); d=randInt(1,15); }
-      rv = c+d; left = a+' + '+b; right = c+' + '+d;
-    } else {
-      lv = randInt(lo,hi); rv = rnd()<0.2 ? lv : randInt(lo,hi);
-      left = String(lv); right = String(rv);
-    }
-    var sign = lv<rv ? '<' : lv>rv ? '>' : '=';
-    var explain = expr ? (left+' = '+lv+' et '+right+' = '+rv+'. ') : '';
-    explain += lv===rv ? lv + ' est égal à ' + rv + ' : ' + sign + '.' : (lv>rv ? lv+' est plus grand que '+rv : lv+' est plus petit que '+rv) + ' : ' + lv + ' ' + sign + ' ' + rv + '.';
-    return {
-      tag:'Calcul', question:'Quel signe faut-il mettre : ' + left + ' … ' + right + ' ?',
-      sub:'< veut dire « plus petit que », > « plus grand que », = « égal à ».',
-      explain: explain,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var txt = left + '  ?  ' + right;
-        svg.appendChild(svgText(100,112, txt.length>12 ? 22 : 34, txt));
-      },
-      cols3:true,
-      choices:['<','=','>'].map(function(l){ return { label:l, ok:l===sign }; })
-    };
-  }
-
   // -- Suites de nombres --
   var SUITE_NB_STEPS = [[1,2,5,10],[2,3,5,10],[3,4,6,7,9,11,20,25]];
   function genSuiteNombresQuestion(level){
@@ -5677,9 +5644,6 @@ function phrase(tpl, vars){
   registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
-  registerQuizType({ id:'compare', domain:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
-    randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
-    generate:genCompareQuestion });
   registerQuizType({ id:'suiteNombres', domain:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
     randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
     generate:genSuiteNombresQuestion });
@@ -5795,37 +5759,6 @@ function phrase(tpl, vars){
     };
   }
 
-  // ---- Droite graduée ----
-  function genDroiteQuestion(level){
-    var start, step, nb, labelEvery, v, k;
-    var kinds = level===0 ? ['f'] : level===1 ? ['m1','m2'] : ['d1','d2','d3'];
-    var kind = pick(kinds);
-    if(kind==='f'){ start = 0; step = 1; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else if(kind==='m1'){ start = 0; step = 10; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else if(kind==='m2'){ start = 0; step = 20; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else if(kind==='d1'){ start = 0; step = 100; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else if(kind==='d2'){ start = 100*randInt(0,8); step = 10; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    else { start = 0; step = 50; nb = 10; labelEvery = 5; do { k = randInt(1,9); } while(k===5); }
-    v = start + k*step;
-    var end = start + nb*step;
-    var q = bigNumQuestion('Nombres','Quel nombre indique la flèche ?','Regarde de combien on avance à chaque graduation : ' + step + '.',
-      'Chaque graduation vaut ' + step + '. La flèche est à la graduation numéro ' + k + ' : ' + k + ' × ' + step + (start ? ' + ' + start : '') + ' = ' + v + '.',
-      '', v, [v+step, v-step, v+2*step, v-2*step, start+(nb-k)*step, v+10].filter(function(x){ return x!==v; }));
-    q.draw = function(){
-      var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
-      var x0 = 16, w = 168, y = 120, i;
-      svg.appendChild(el('line',{x1:x0-6,y1:y,x2:x0+w+6,y2:y,stroke:'var(--text)','stroke-width':3,'stroke-linecap':'round'}));
-      for(i=0;i<=nb;i++){
-        var x = x0 + i*w/nb, big = i%labelEvery===0;
-        svg.appendChild(el('line',{x1:x,y1:y-(big?11:7),x2:x,y2:y+(big?11:7),stroke:'var(--text)','stroke-width':big?3:2}));
-        if(big) svg.appendChild(svgText(x, y+32, 15, String(start + i*step)));
-      }
-      var ax = x0 + k*w/nb;
-      svg.appendChild(el('polygon',{points:(ax-10)+','+(y-52)+' '+(ax+10)+','+(y-52)+' '+ax+','+(y-14),fill:'var(--accent)',stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
-      svg.appendChild(svgText(ax, y-60, 22, '?'));
-    };
-    return q;
-  }
 
   // ---- Opérations posées : explications colonne par colonne ----
   var COL_NAMES = ['unités','dizaines','centaines'];
@@ -5892,9 +5825,6 @@ function phrase(tpl, vars){
   registerQuizType({ id:'encadrer', domain:'nombres', label:'Encadrer, arrondir', longLabel:'Encadrer et arrondir un nombre', defaultLevels:[0,1,2],
     randomNote:'Facile : entre quelles dizaines (jusqu\'à 99) ; Moyen : jusqu\'à 999, et arrondir à la dizaine ; Difficile : entre quelles centaines, arrondir à la centaine ou à la dizaine.',
     generate:genEncadrerQuestion });
-  registerQuizType({ id:'droite', domain:'nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
-    randomNote:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de 1 en 1 (0 à 10) ; Moyen : de 10 en 10 ou de 20 en 20 ; Difficile : de 50 en 50, de 100 en 100 ou de 10 en 10 entre deux centaines.',
-    generate:genDroiteQuestion });
   registerQuizType({ id:'probleme2', domain:'calcul', label:'Problèmes à 2 étapes', longLabel:'Problèmes à deux étapes', defaultLevels:[1,2],
     randomNote:'Un énoncé qui demande deux calculs à la suite (perdre puis gagner, deux achats, boîtes de gâteaux…). Moyen : additions et soustractions, nombres jusqu\'à environ 30 ; Difficile : nombres jusqu\'à environ 100 et énoncés avec une multiplication. Les modèles sont tirés sans répétition.',
     generate:genProbleme2Question });
@@ -5902,14 +5832,15 @@ function phrase(tpl, vars){
      Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
      quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
      les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
-     Les scènes (equation, blocks, scatter, grid, emoji) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
+     Les scènes (equation, blocks, scatter, grid, emoji, numberline) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
      jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
 
      Fiche :
        { id, domain, label, longLabel, defaultLevels, tag?,
          levels:[ {paramètres du niveau 0}, {…1}, {…2} ],      // nombres, textes ou listes : ils entrent dans l'environnement
          forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain,
-                   eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …}, extras?:[expr,…] } ],
+                   eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …},
+                   extras?:[expr,…]  |  options?:['<','=','>'] (réponses non numériques : `answer` vaut alors l'une d'elles) } ],
          note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
      spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
      Dans les textes : {expr}. Dans note : k0, k1, k2 = paramètre k du niveau 0, 1, 2. */
@@ -5926,14 +5857,15 @@ function phrase(tpl, vars){
   function compileExpr(src){
     src = String(src);
     if(EXPR_CACHE[src]) return EXPR_CACHE[src];
-    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
+    var toks = [], re = /\s*(?:(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|'([^']*)'|(&&|\|\||<=|>=|==|!=|[-+*\/%<>!?:(),\[\]]))/y, m, pos = 0;
     while(pos < src.length){
       re.lastIndex = pos; m = re.exec(src);
       if(!m){ if(/^\s*$/.test(src.slice(pos))) break; throw new Error('expression illisible : ' + src); }
       pos = re.lastIndex;
       if(m[1] !== undefined) toks.push({ t:'n', v:parseFloat(m[1]) });
       else if(m[2] !== undefined) toks.push({ t:'i', v:m[2] });
-      else toks.push({ t:'o', v:m[3] });
+      else if(m[3] !== undefined) toks.push({ t:'s', v:m[3] });
+      else toks.push({ t:'o', v:m[4] });
     }
     var k = 0, idents = {};
     function peek(){ return toks[k]; }
@@ -5972,7 +5904,7 @@ function phrase(tpl, vars){
     function primary(){
       var t = toks[k++];
       if(!t) throw new Error('expression incomplète : ' + src);
-      if(t.t === 'n') return function(){ return t.v; };
+      if(t.t === 'n' || t.t === 's') return function(){ return t.v; };
       if(t.t === 'o' && t.v === '('){ var x = ternary(); eat(')'); return x; }
       if(t.t === 'o' && t.v === '['){
         var items = [];
@@ -6066,6 +5998,21 @@ function phrase(tpl, vars){
         return { icon:a.icon, items: chosen.map(function(c){ return { c:c, dx:randInt(-6,6), dy:randInt(-4,4) }; }) };
       },
       draw:function(svg, d){ d.items.forEach(function(it){ svg.appendChild(svgText(28 + (it.c%4)*48 + it.dx, 52 + Math.floor(it.c/4)*44 + it.dy, 30, d.icon)); }); } },
+    // droite graduée : nb graduations de pas `step` depuis `start`, une flèche « ? » à la graduation k
+    numberline: { exprs:['start','step','nb','labelEvery','k'], texts:[],
+      make:function(a){ return a; },
+      draw:function(svg, d){
+        var x0 = 16, w = 168, y = 120, i;
+        svg.appendChild(el('line',{x1:x0-6,y1:y,x2:x0+w+6,y2:y,stroke:'var(--text)','stroke-width':3,'stroke-linecap':'round'}));
+        for(i=0;i<=d.nb;i++){
+          var x = x0 + i*w/d.nb, big = i%d.labelEvery===0;
+          svg.appendChild(el('line',{x1:x,y1:y-(big?11:7),x2:x,y2:y+(big?11:7),stroke:'var(--text)','stroke-width':big?3:2}));
+          if(big) svg.appendChild(svgText(x, y+32, 15, String(d.start + i*d.step)));
+        }
+        var ax = x0 + d.k*w/d.nb;
+        svg.appendChild(el('polygon',{points:(ax-10)+','+(y-52)+' '+(ax+10)+','+(y-52)+' '+ax+','+(y-14),fill:'var(--accent)',stroke:'var(--text)','stroke-width':2.5,'stroke-linejoin':'round'}));
+        svg.appendChild(svgText(ax, y-60, 22, '?'));
+      } },
     // rows × cols points
     grid: { exprs:['rows','cols'], texts:[],
       make:function(a){ return a; },
@@ -6152,8 +6099,8 @@ function phrase(tpl, vars){
         var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
         sdef.draw(svg, sdata);
       },
-      cols3: false,
-      choices: numChoices(correct, extras)
+      cols3: !!form.options && form.cols3 !== false,
+      choices: form.options ? form.options.map(function(l){ return { label:l, ok:l === correct }; }) : numChoices(correct, extras)
     };
   }
 
@@ -6164,7 +6111,7 @@ function phrase(tpl, vars){
       randomNote: templateNote(f), generate:function(level){ return genFromFiche(f, level); } });
   }
   /* ===================== FICHES D'ACTIVITÉS : calcul =====================
-     10 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
+     12 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
      à registerTemplateType. Les `levels` sont les réglages Facile / Moyen / Difficile ; la note de réglage
      (« note ») est générée à partir d'eux. */
 
@@ -6176,6 +6123,10 @@ function phrase(tpl, vars){
   TEMPLATE_FNS.somme = function(c, r){ return Array(r+1).join(c + ' + ').slice(0,-3); };   // somme(5,3) -> « 5 + 5 + 5 »
   TEMPLATE_FNS.blocsExplain = function(hu, te, un){
     return (hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + (hu*100 + te*10 + un) + '.';
+  };
+  TEMPLATE_FNS.signe = function(x, y){ return x < y ? '<' : x > y ? '>' : '='; };
+  TEMPLATE_FNS.compareExplain = function(x, y){
+    return x === y ? x + ' est égal à ' + y + ' : =.' : (x > y ? x + ' est plus grand que ' + y : x + ' est plus petit que ' + y) + ' : ' + x + ' ' + (x < y ? '<' : '>') + ' ' + y + '.';
   };
   TEMPLATE_FNS.tableHint = function(t){
     return t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
@@ -6333,6 +6284,39 @@ function phrase(tpl, vars){
         explain:'{r} paquets car {r} × {c} = {total}.', scene:{ type:'emoji', icon:'ic', caption:'{total} → paquets de {c}' } }
     ],
     note:'Compter une grille de points, additionner plusieurs fois le même nombre, partager en parts égales (Moyen/Difficile : aussi faire des paquets). Facile : 2 à {rHi0} lignes, partage entre {liste(kids0)} ; Moyen : jusqu\'à {rHi1} lignes de {cHi1} points ; Difficile : jusqu\'à {cHi2} colonnes, partages entre {liste(kids2)}.' });
+
+  // -- Droite graduée : lire le nombre pointé (10 graduations, pas de 1, 10, 20, 50 ou 100) --
+  function droiteForm(levels, start, step){
+    return { levels:levels, vars:{ start:start, step:step, k:{int:[1,9]}, v:'start + k*step' }, where:['k != 5'], answer:'v',
+      extras:['v+step','v-step','v+2*step','v-2*step','start+(10-k)*step','v+10'],
+      question:'Quel nombre indique la flèche ?', sub:'Regarde de combien on avance à chaque graduation : {step}.',
+      explain:'Chaque graduation vaut {step}. La flèche est à la graduation numéro {k} : {k} × {step}{start ? \' + \' + start : \'\'} = {v}.',
+      scene:{ type:'numberline', start:'start', step:'step', nb:10, labelEvery:5, k:'k' } };
+  }
+  registerTemplateType({ id:'droite', domain:'nombres', tag:'Nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
+    levels:[ { steps:[1] }, { steps:[10,20] }, { steps:[100,50,10] } ],
+    forms:[
+      droiteForm([0], 0, 1),
+      droiteForm([1], 0, 10), droiteForm([1], 0, 20),
+      droiteForm([2], 0, 100), droiteForm([2], {int:[0,8], step:100}, 10), droiteForm([2], 0, 50)
+    ],
+    note:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de {liste(steps0)} en {liste(steps0)} ; Moyen : de {liste(steps1)} ; Difficile : de {liste(steps2)} (le pas de 10 se lit entre deux centaines).' });
+
+  // -- Comparer (<, =, >) --
+  registerTemplateType({ id:'compare', domain:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
+    levels:[ { lo:0, hi:20, pExpr:0 }, { lo:5, hi:30, pExpr:0.6 }, { lo:5, hi:99, pExpr:0.75 } ],
+    forms:[
+      { w:'1 - pExpr', vars:{ a:{int:['lo','hi']}, b:'rand() < 0.2 ? a : lo + floor(rand()*(hi-lo+1))' }, answer:'signe(a,b)', options:['<','=','>'],
+        question:'Quel signe faut-il mettre : {a} … {b} ?', sub:'< veut dire « plus petit que », > « plus grand que », = « égal à ».',
+        explain:'{compareExplain(a,b)}', eq:'{a}  ?  {b}' },
+      // deux additions à comparer ; une fois sur trois, elles ont la même somme (8 + 5 et 9 + 4)
+      { w:'pExpr', vars:{ a:{int:[1,15]}, b:{int:[1,15]}, same:'rand() < 0.34',
+          c:{int:['same ? max(1, a+b-15) : 1', 'same ? min(15, a+b-1) : 15']}, d:'same ? a+b-c : 1 + floor(rand()*15)' },
+        where:['!same || (c != a && c != b) || tries >= 10'], answer:'signe(a+b, c+d)', options:['<','=','>'],
+        question:'Quel signe faut-il mettre : {a} + {b} … {c} + {d} ?', sub:'< veut dire « plus petit que », > « plus grand que », = « égal à ».',
+        explain:'{a} + {b} = {a+b} et {c} + {d} = {c+d}. {compareExplain(a+b, c+d)}', eq:'{a} + {b}  ?  {c} + {d}' }
+    ],
+    note:'Choisir le bon signe. Facile : deux nombres de {lo0} à {hi0} ; Moyen : de {lo1} à {hi1}, et {round(pExpr1*100)} % du temps deux additions à comparer ; Difficile : de {lo2} à {hi2}, {round(pExpr2*100)} % d\'additions. Parfois les deux côtés sont égaux.' });
   /* ===================== THÈME PATRON / SOLIDES 3D =====================
      Patron → Solide (animation 3D) et les questions de Quizz sur les solides.
   */

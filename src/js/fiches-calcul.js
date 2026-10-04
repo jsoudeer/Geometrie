@@ -1,5 +1,5 @@
   /* ===================== FICHES D'ACTIVITÉS : calcul =====================
-     10 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
+     12 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
      à registerTemplateType. Les `levels` sont les réglages Facile / Moyen / Difficile ; la note de réglage
      (« note ») est générée à partir d'eux. */
 
@@ -11,6 +11,10 @@
   TEMPLATE_FNS.somme = function(c, r){ return Array(r+1).join(c + ' + ').slice(0,-3); };   // somme(5,3) -> « 5 + 5 + 5 »
   TEMPLATE_FNS.blocsExplain = function(hu, te, un){
     return (hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + (hu*100 + te*10 + un) + '.';
+  };
+  TEMPLATE_FNS.signe = function(x, y){ return x < y ? '<' : x > y ? '>' : '='; };
+  TEMPLATE_FNS.compareExplain = function(x, y){
+    return x === y ? x + ' est égal à ' + y + ' : =.' : (x > y ? x + ' est plus grand que ' + y : x + ' est plus petit que ' + y) + ' : ' + x + ' ' + (x < y ? '<' : '>') + ' ' + y + '.';
   };
   TEMPLATE_FNS.tableHint = function(t){
     return t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
@@ -168,3 +172,36 @@
         explain:'{r} paquets car {r} × {c} = {total}.', scene:{ type:'emoji', icon:'ic', caption:'{total} → paquets de {c}' } }
     ],
     note:'Compter une grille de points, additionner plusieurs fois le même nombre, partager en parts égales (Moyen/Difficile : aussi faire des paquets). Facile : 2 à {rHi0} lignes, partage entre {liste(kids0)} ; Moyen : jusqu\'à {rHi1} lignes de {cHi1} points ; Difficile : jusqu\'à {cHi2} colonnes, partages entre {liste(kids2)}.' });
+
+  // -- Droite graduée : lire le nombre pointé (10 graduations, pas de 1, 10, 20, 50 ou 100) --
+  function droiteForm(levels, start, step){
+    return { levels:levels, vars:{ start:start, step:step, k:{int:[1,9]}, v:'start + k*step' }, where:['k != 5'], answer:'v',
+      extras:['v+step','v-step','v+2*step','v-2*step','start+(10-k)*step','v+10'],
+      question:'Quel nombre indique la flèche ?', sub:'Regarde de combien on avance à chaque graduation : {step}.',
+      explain:'Chaque graduation vaut {step}. La flèche est à la graduation numéro {k} : {k} × {step}{start ? \' + \' + start : \'\'} = {v}.',
+      scene:{ type:'numberline', start:'start', step:'step', nb:10, labelEvery:5, k:'k' } };
+  }
+  registerTemplateType({ id:'droite', domain:'nombres', tag:'Nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
+    levels:[ { steps:[1] }, { steps:[10,20] }, { steps:[100,50,10] } ],
+    forms:[
+      droiteForm([0], 0, 1),
+      droiteForm([1], 0, 10), droiteForm([1], 0, 20),
+      droiteForm([2], 0, 100), droiteForm([2], {int:[0,8], step:100}, 10), droiteForm([2], 0, 50)
+    ],
+    note:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de {liste(steps0)} en {liste(steps0)} ; Moyen : de {liste(steps1)} ; Difficile : de {liste(steps2)} (le pas de 10 se lit entre deux centaines).' });
+
+  // -- Comparer (<, =, >) --
+  registerTemplateType({ id:'compare', domain:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
+    levels:[ { lo:0, hi:20, pExpr:0 }, { lo:5, hi:30, pExpr:0.6 }, { lo:5, hi:99, pExpr:0.75 } ],
+    forms:[
+      { w:'1 - pExpr', vars:{ a:{int:['lo','hi']}, b:'rand() < 0.2 ? a : lo + floor(rand()*(hi-lo+1))' }, answer:'signe(a,b)', options:['<','=','>'],
+        question:'Quel signe faut-il mettre : {a} … {b} ?', sub:'< veut dire « plus petit que », > « plus grand que », = « égal à ».',
+        explain:'{compareExplain(a,b)}', eq:'{a}  ?  {b}' },
+      // deux additions à comparer ; une fois sur trois, elles ont la même somme (8 + 5 et 9 + 4)
+      { w:'pExpr', vars:{ a:{int:[1,15]}, b:{int:[1,15]}, same:'rand() < 0.34',
+          c:{int:['same ? max(1, a+b-15) : 1', 'same ? min(15, a+b-1) : 15']}, d:'same ? a+b-c : 1 + floor(rand()*15)' },
+        where:['!same || (c != a && c != b) || tries >= 10'], answer:'signe(a+b, c+d)', options:['<','=','>'],
+        question:'Quel signe faut-il mettre : {a} + {b} … {c} + {d} ?', sub:'< veut dire « plus petit que », > « plus grand que », = « égal à ».',
+        explain:'{a} + {b} = {a+b} et {c} + {d} = {c+d}. {compareExplain(a+b, c+d)}', eq:'{a} + {b}  ?  {c} + {d}' }
+    ],
+    note:'Choisir le bon signe. Facile : deux nombres de {lo0} à {hi0} ; Moyen : de {lo1} à {hi1}, et {round(pExpr1*100)} % du temps deux additions à comparer ; Difficile : de {lo2} à {hi2}, {round(pExpr2*100)} % d\'additions. Parfois les deux côtés sont égaux.' });

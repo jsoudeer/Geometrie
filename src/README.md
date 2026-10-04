@@ -28,7 +28,7 @@ src/
     calcul.js           Calcul, Monnaie, Maths de la vie, arithmétique élargie, suites de nombres
     nombres.js          nombres jusqu'à 1000 (blocs, lettres, ±10/100, encadrer, droite graduée) et calcul écrit (additions/soustractions posées, multiplier)
     gabarits.js         moteur de FICHES d'activités arithmétiques : évaluateur d'expressions sûr (pas d'eval), variables, contraintes, fausses réponses, textes, note de réglage générée ; `registerTemplateType(fiche)`
-    fiches-calcul.js    les fiches des 10 activités migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions et Soustractions posées, Dénombrement visuel, Compter jusqu'à 1000, Multiplier/partager
+    fiches-calcul.js    les fiches des 12 activités migrées : Calcul, Soustraction, Doubles/moitiés, Compléments, Tables, Additions et Soustractions posées, Dénombrement visuel, Compter jusqu'à 1000, Multiplier/partager, Droite graduée, Comparer
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
@@ -121,7 +121,7 @@ registerTemplateType({ id:'soustraction', domain:'calcul', label:'Soustraction',
   note:'Facile : jusqu\'à {aHi0} ; Moyen : jusqu\'à {aHi1} ; Difficile : jusqu\'à {aHi2}.' });   // note GÉNÉRÉE : k0, k1, k2 = réglage k du niveau 0, 1, 2
 ```
 
-Scène (ce qui est dessiné) : `eq:'texte'` (équation écrite) ou `scene:{type:'blocks'|'scatter'|'grid'|'emoji'|'equation', …}` (paramètres = expressions ou textes à {trous}, voir `SCENES` dans `gabarits.js` ; le tirage se fait dans `make`, le dessin dans `draw`, qui ne tire rien).
+Scène (ce qui est dessiné) : `eq:'texte'` (équation écrite) ou `scene:{type:'blocks'|'scatter'|'grid'|'emoji'|'numberline'|'equation', …}` ; réponses non numériques : `options:['<','=','>']` avec `answer` = l'une d'elles (chaînes entre apostrophes dans les expressions) (paramètres = expressions ou textes à {trous}, voir `SCENES` dans `gabarits.js` ; le tirage se fait dans `make`, le dessin dans `draw`, qui ne tire rien).
 
 Variables : une expression, `{int:[lo,hi], step?}`, `{pick:[…]}` (ou nom d'un réglage), `{any:[spec,…]}` ; `where` = contraintes (rejet borné, `tries` = n° d'essai) ; `w` = poids de la forme ; `levels:[…]` = niveaux où la forme existe. Expressions : `+ - * / %`, comparaisons, `&& || !`, `?:`, `min max abs floor round rand liste`, plus les fonctions déclarées dans `TEMPLATE_FNS` (`carry`, `explainAdd`, `tableHint`). La fiche est validée à l'enregistrement (`validateFiche`) : un nom inconnu ou une faute de syntaxe lève une erreur claire. Test : `gabarits_check.js`.
 

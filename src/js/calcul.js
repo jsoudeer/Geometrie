@@ -80,39 +80,6 @@
   }
 
   // ===================== Arithmétique élargie =====================
-  // -- Comparer (<, >, =) --
-  function genCompareQuestion(level){
-    var lo = level===0 ? 0 : 5, hi = level===0 ? 20 : level===1 ? 30 : 99;
-    var expr = level>=1 && rnd()<0.6;
-    var left, right, lv, rv;
-    if(expr){
-      var a=randInt(1,15), b=randInt(1,15), c, d;
-      lv = a+b;
-      // une fois sur trois, les deux côtés sont égaux (ex. 8 + 5 et 9 + 4)
-      if(rnd()<0.34){ var tries=0; do { c=randInt(Math.max(1,lv-15), Math.min(15,lv-1)); d=lv-c; tries++; } while((c===a || c===b) && tries<10); }
-      else { c=randInt(1,15); d=randInt(1,15); }
-      rv = c+d; left = a+' + '+b; right = c+' + '+d;
-    } else {
-      lv = randInt(lo,hi); rv = rnd()<0.2 ? lv : randInt(lo,hi);
-      left = String(lv); right = String(rv);
-    }
-    var sign = lv<rv ? '<' : lv>rv ? '>' : '=';
-    var explain = expr ? (left+' = '+lv+' et '+right+' = '+rv+'. ') : '';
-    explain += lv===rv ? lv + ' est égal à ' + rv + ' : ' + sign + '.' : (lv>rv ? lv+' est plus grand que '+rv : lv+' est plus petit que '+rv) + ' : ' + lv + ' ' + sign + ' ' + rv + '.';
-    return {
-      tag:'Calcul', question:'Quel signe faut-il mettre : ' + left + ' … ' + right + ' ?',
-      sub:'< veut dire « plus petit que », > « plus grand que », = « égal à ».',
-      explain: explain,
-      draw:function(){
-        var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-        var txt = left + '  ?  ' + right;
-        svg.appendChild(svgText(100,112, txt.length>12 ? 22 : 34, txt));
-      },
-      cols3:true,
-      choices:['<','=','>'].map(function(l){ return { label:l, ok:l===sign }; })
-    };
-  }
-
   // -- Suites de nombres --
   var SUITE_NB_STEPS = [[1,2,5,10],[2,3,5,10],[3,4,6,7,9,11,20,25]];
   function genSuiteNombresQuestion(level){
@@ -286,9 +253,6 @@
   registerQuizType({ id:'vie', domain:'calcul', label:'Maths de la vie', longLabel:'Maths de la vie', defaultLevels:[1,2],
     randomNote:'Le modèle de problème est tiré au hasard parmi 6 scénarios fixes (sans répétition tant qu\'on ne les a pas tous vus), puis les nombres de l\'énoncé sont eux aussi tirés au hasard à l\'intérieur de chaque modèle.',
     generate:genVieQuestion });
-  registerQuizType({ id:'compare', domain:'calcul', label:'Comparer', longLabel:'Comparer des nombres (<, >, =)', defaultLevels:[0,1,2],
-    randomNote:'Choisir le bon signe. Facile : deux nombres jusqu\'à 20 ; Moyen : jusqu\'à 30, parfois deux additions à comparer ; Difficile : jusqu\'à 99, plus souvent des additions. Parfois les deux côtés sont égaux.',
-    generate:genCompareQuestion });
   registerQuizType({ id:'suiteNombres', domain:'logique', label:'Suite de nombres', longLabel:'Suite de nombres', defaultLevels:[1,2],
     randomNote:'Une suite où l\'on avance (ou recule) du même nombre à chaque fois ; on trouve le nombre manquant. Facile : de 1, 2, 5 ou 10 en 10 ; Moyen : de 2, 3, 5, 10, parfois en descendant ; Difficile : de 3, 4, 6, 7, 9, 11, 20, 25.',
     generate:genSuiteNombresQuestion });
