@@ -135,4 +135,4 @@ prix ou plus de points de base) ; migration des personnages déjà possédés (t
 `#bt-boost` devient un panneau « compétence » générique) ; test `skills_check.js` (une compétence par type, bonnes réponses = effet plein, mauvaises = effet réduit, jamais de blocage).
 
 ## Éditeur d'activités pour adulte
-Voir `AUDIT_ACTIVITES.md` (§9 modèle et paquets modulaires, §10 feuille de route P1–P8, §11 décisions). En pause volontaire : l'écran d'import et l'éditeur ont été retirés des Réglages (HISTORIQUE §66). Priorité actuelle : que la majorité des activités reposent sur des fiches (gabarits + variables).
+Voir `AUDIT_ACTIVITES.md` (§9 modèle et paquets modulaires, §10 feuille de route P1–P8, §11 décisions). En pause volontaire : l'écran d'import et l'éditeur ont été retirés des Réglages (HISTORIQUE §66). Migration vers les fiches terminée (36 types sur 47, HISTORIQUE §70) ; les 11 restants sont de la géométrie procédurale sans gain à migrer.
