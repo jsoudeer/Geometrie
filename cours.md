@@ -244,15 +244,6 @@ Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué 
 - **Avancement automatique** : après **5 bonnes réponses d'affilée**, on passe au niveau supérieur, en mode **Manuel** comme en mode **Aléatoire** (jamais en Chronométré) ; le changement a lieu à la question suivante, jamais sous les doigts de l'enfant. La série sans faute continue d'un niveau à l'autre.
 - **Effacer ma progression** : remet les étoiles à zéro et fait perdre tous les personnages débloqués **sauf le premier de chaque clan**, qui redevient la mascotte (en deux étapes). Il faut ensuite en débloquer d'autres (avec le bouton « +50 ⭐ » par exemple) pour pouvoir lancer une bataille.
 
-
-### Paquets d'activités (parents et enseignants)
-Un **paquet** est un petit fichier `.kvb.json` qui ajoute des activités au jeu : des **questions écrites à la main** (énoncé, une bonne réponse, 1 à 3 fausses, une explication ; le jeu mélange les réponses et ne répète pas une question avant de les avoir toutes vues) ou des **gabarits de calcul** (« la table de 7 jusqu'à 7 × 10 »). Un exemple complet : `exemples/paquet-exemple.kvb.json`.
-- **Où** : Réglages → 🔧 Mode débogage (le code adulte) → « 📦 Paquets d'activités » : **Importer un paquet…**, puis pour chacun **Désactiver / Activer**, **Exporter**, **Retirer**.
-- Les activités du paquet apparaissent dans « Configurer les activités » (au thème choisi, aux niveaux demandés) et dans le Quizz, comme les autres ; elles comptent dans la progression.
-- Le jeu **vérifie tout** avant d'installer : un paquet mal écrit est refusé avec un message qui dit quoi corriger (deux bonnes réponses, réponses identiques, nom inconnu dans un calcul…). Un paquet ne peut contenir ni code ni image (pour l'instant).
-- **Créer sans fichier** : au même endroit, « ✏️ Mes activités » → « Créer une activité » : une table de multiplication, ajouter ou retirer un nombre, une activité du jeu (calcul, soustraction, doubles et moitiés, comparer) avec d'autres tailles de nombres, un patron de cube que tu dessines en cochant des cases (le jeu vérifie tout seul s'il se plie en cube, et le dessine), ou tes propres questions. On règle (thème, niveaux, difficultés), on appuie sur **« Tester 20 questions »** pour vérifier les réponses, puis **Enregistrer**. Chaque activité peut être modifiée ou supprimée ; elles forment le paquet « Mes activités », qu'on peut aussi exporter.
-- Un paquet de version plus haute **remplace** l'ancien ; une version plus ancienne est refusée. Les paquets restent sur l'appareil ; rien n'est envoyé nulle part.
-
 ## 5. Un clan = sa propre progression
 - **Une mascotte par clan** : en changeant de clan on retrouve la mascotte de l'autre clan.
 - **Un défi réussi ne débloque que le personnage du clan dans lequel on joue** (il faut le refaire de l'autre côté pour l'autre personnage).

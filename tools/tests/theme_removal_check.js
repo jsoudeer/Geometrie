@@ -25,7 +25,6 @@ const THEMES = {
   'js/horloge.js':  ['clock-lire', 'clock-regler'],
   'js/patron3d.js': ['net'],
   'js/atelier.js':  ['atelier-sym', 'atelier-fraction', 'atelier-copie'],
-  'js/calcul.js':   [],
   'js/geometrie.js':['measure', 'deform']
 };
 

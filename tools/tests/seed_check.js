@@ -43,7 +43,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(r.free > 5, 'hors graine, le tirage reste libre (' + r.free + ' questions différentes sur 30)');
   // garde-fou : plus de Math.random() direct dans les fichiers qui fabriquent des questions (seuls les effets visuels l'utilisent)
   const fs = require('fs'), path = require('path');
-  const left = ['calcul', 'nombres', 'geometrie', 'horloge', 'patron3d', 'vocabulaire', 'atelier', 'competences']
+  const left = ['gabarits', 'fiches-calcul', 'fiches-nombres', 'nombres', 'geometrie', 'horloge', 'patron3d', 'vocabulaire', 'atelier', 'competences']
     .filter(f => /Math\.random\(\)/.test(fs.readFileSync(path.join(__dirname, '../../src/js', f + '.js'), 'utf8')));
   chk(left.length === 0, 'aucun Math.random() direct dans les fichiers de questions (utiliser rnd())' + (left.length ? ' : ' + left.join(', ') : ''));
   console.log(bad ? 'ÉCHEC seed : ' + bad : 'seed OK (' + r.same + ' cas identiques)');
