@@ -279,29 +279,6 @@
     };
   }
 
-  // -- Dénombrement : compter des objets, ou lire des blocs centaines/dizaines/unités --
-  var COUNT_ICONS = ['🍎','⭐','🐟','🚗','🎈','🐞','🍪','🌸'];
-  function genComptageQuestion(level){
-    if(level===0){
-      var n = randInt(3,12), icon = pick(COUNT_ICONS);
-      var cells = []; for(var i=0;i<16;i++) cells.push(i);
-      var chosen = shuffle(cells).slice(0,n);
-      var jit = chosen.map(function(){ return [randInt(-6,6), randInt(-4,4)]; });   // décalages tirés une fois : redessiner = même image
-      return {
-        tag:'Dénombrement', question:'Combien y a-t-il d\'objets ?', sub:'Compte-les un par un, sans en oublier ni en compter deux fois.',
-        explain:'Il y a ' + n + ' objets.',
-        draw:function(){
-          var svg=document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML="";
-          chosen.forEach(function(c, i){ var x = 28 + (c%4)*48 + jit[i][0], y = 52 + Math.floor(c/4)*44 + jit[i][1]; svg.appendChild(svgText(x,y,30,icon)); });
-        },
-        cols3:false, choices: numChoices(n, [n+1,n-1,n+2,n-2])
-      };
-    }
-    var hu = level===2 ? randInt(0,2) : 0, te = randInt(1,5), un = randInt(0,9);
-    if(hu*100 + te*10 + un === 0) return genComptageQuestion(level);
-    return blocksQuestion(hu, te, un);   // même scène que « Compter jusqu'à 1000 » (nombres.js)
-  }
-
   // ---- Déclaration des types de Quizz du thème Calcul ----
   registerQuizType({ id:'monnaie', domain:'calcul', label:'Monnaie', longLabel:'Monnaie', defaultLevels:[0,1,2],
     randomNote:'Le nombre de pièces/billets et leurs valeurs sont tirés au hasard. Facile : 2 pièces ou billets de 1, 2 ou 5 € ; Moyen : 2 ou 3, jusqu\'à 10 € ; Difficile : 3 ou 4, jusqu\'à 20 €.',
@@ -324,6 +301,3 @@
   registerQuizType({ id:'fraction', domain:'nombres', label:'Fractions (visuel)', longLabel:'Fractions : lire ou colorier (dessins)', defaultLevels:[0,1,2],
     randomNote:'Un disque ou une bande partagé(e) en parts égales : soit on lit la fraction coloriée, soit on choisit LE DESSIN qui montre la moitié, le quart, les trois quarts ou le tiers. Facile : demis et quarts ; Moyen : + tiers ; Difficile : jusqu\'aux huitièmes, avec des fractions égales (2/4 = 1/2).',
     generate:genFractionQuestion });
-  registerQuizType({ id:'comptage', domain:'nombres', label:'Dénombrement (visuel)', longLabel:'Dénombrement : compter des objets, des blocs', defaultLevels:[0,1,2],
-    randomNote:'Facile : compter 3 à 12 objets éparpillés. Moyen : lire des blocs (barres de 10, cubes). Difficile : + plaques de 100.',
-    generate:genComptageQuestion });

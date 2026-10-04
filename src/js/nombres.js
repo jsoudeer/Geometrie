@@ -159,86 +159,6 @@
   function hasCarry(a, b){ var A = String(a), B = String(b), i, c = 0; for(i=0;i<Math.max(A.length,B.length);i++){ var s = +(A.charAt(A.length-1-i)||0) + +(B.charAt(B.length-1-i)||0) + c; c = s>=10 ? 1 : 0; if(c) return true; } return false; }
   function hasBorrow(a, b){ var A = String(a), B = String(b), i, br = 0; for(i=0;i<A.length;i++){ var need = +(B.charAt(B.length-1-i)||0) + br; var da = +A.charAt(A.length-1-i); br = da<need ? 1 : 0; if(br) return true; } return false; }
   // ---- Multiplier (grilles, additions répétées) et partager ----
-  var PART_ICONS = ['🍬','🍪','⭐','🍎','🎈'];
-  function genMultiplierQuestion(level){
-    var kinds = level===0 ? ['grille','repete','partage'] : level===1 ? ['grille','repete','partage','groupes'] : ['grille','repete','partage','groupes','groupes'];
-    var kind = pick(kinds), r, c, total;
-    if(kind==='grille'){
-      r = level===0 ? randInt(2,3) : randInt(2,5); c = level===0 ? randInt(2,5) : level===1 ? randInt(2,5) : randInt(3,10);
-      total = r*c;
-      var q = bigNumQuestion('Calcul','Combien y a-t-il de points en tout ?','Compte les points d\'une ligne, puis répète : ' + r + ' lignes de ' + c + '.',
-        r + ' lignes de ' + c + ' : ' + Array(r+1).join(c + ' + ').slice(0,-3) + ' = ' + total + ' (' + r + ' × ' + c + ').', '', total, [total+c, total-c, total+r, c+r, total+1, total-1]);
-      q.draw = function(){
-        var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
-        var gap = Math.min(30, 170/c, 170/r), x0 = 100 - (c-1)*gap/2, y0 = 100 - (r-1)*gap/2, i, j;
-        for(i=0;i<r;i++) for(j=0;j<c;j++) svg.appendChild(el('circle',{cx:x0+j*gap,cy:y0+i*gap,r:Math.min(10,gap*0.36),fill:i%2 ? 'var(--accent2)' : 'var(--accent)',stroke:'var(--text)','stroke-width':1.8}));
-      };
-      return q;
-    }
-    if(kind==='repete'){
-      c = level===0 ? pick([2,5,10]) : level===1 ? randInt(2,6) : randInt(3,9);
-      r = level===0 ? randInt(3,4) : randInt(3,5);
-      total = r*c;
-      var eq = Array(r+1).join(c + ' + ').slice(0,-3);
-      return bigNumQuestion('Calcul','Combien font ' + r + ' fois ' + c + ' ?','Additionne ' + c + ' à chaque fois, ' + r + ' fois.', eq + ' = ' + total + ' (' + r + ' × ' + c + ').', eq,
-        total, [total+c, total-c, r+c, total+1, total-1, c*(r+1)]);
-    }
-    if(kind==='partage'){
-      var kids = level===0 ? 2 : level===1 ? pick([2,3,4,5]) : pick([2,3,4,5,6,10]);
-      var each = level===0 ? randInt(1,5) : level===1 ? randInt(2,5) : randInt(3,9);
-      total = kids*each;
-      var ic = pick(PART_ICONS);
-      var q2 = bigNumQuestion('Calcul','On partage ' + total + ' ' + ic + ' en parts égales entre ' + kids + ' enfants. Combien chacun en a-t-il ?','Cherche le nombre qui, répété ' + kids + ' fois, fait ' + total + '.',
-        'Chacun en a ' + each + ' car ' + kids + ' × ' + each + ' = ' + total + '.', '', each, [each+1, each-1, total-kids, kids, each*2, each+2]);
-      q2.draw = function(){ var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = ""; svg.appendChild(svgText(100,95,64,ic)); svg.appendChild(svgText(100,150,26,total + ' pour ' + kids)); };
-      return q2;
-    }
-    // groupes : « combien de paquets de c dans total ? »
-    c = level===1 ? pick([2,5,10]) : pick([3,4,5,6,10]);
-    r = level===1 ? randInt(2,5) : randInt(3,8);
-    total = r*c;
-    var ic2 = pick(PART_ICONS);
-    var q3 = bigNumQuestion('Calcul','Avec ' + total + ' ' + ic2 + ', on fait des paquets de ' + c + '. Combien de paquets ?','Combien de fois ' + c + ' dans ' + total + ' ?',
-      r + ' paquets car ' + r + ' × ' + c + ' = ' + total + '.', '', r, [r+1, r-1, total-c, c, r*2, r+2]);
-    q3.draw = function(){ var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = ""; svg.appendChild(svgText(100,95,64,ic2)); svg.appendChild(svgText(100,150,26,total + ' → paquets de ' + c)); };
-    return q3;
-  }
-
-  // ---- Compter avec des blocs jusqu'à 999 (plaques, barres, cubes) ----
-  // Une seule scène et une seule question « quel nombre est représenté ? », partagées par
-  // « Compter jusqu'à 1000 » (blocs1000) et par le Dénombrement visuel (comptage, Moyen/Difficile).
-  function blocksQuestion(hu, te, un){
-    var total = hu*100 + te*10 + un;
-    var swapV = te*100 + hu*10 + un;
-    return {
-      tag:'Dénombrement', question:'Quel nombre est représenté avec ces blocs ?', sub:'Une plaque = 100, une barre = 10, un petit cube = 1.',
-      explain: (hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + total + '.',
-      draw:function(){
-        var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
-        var i, j, s = 30, g = 3;
-        for(i=0;i<hu;i++){
-          var px = 8 + (i%5)*(s+g+3), py = 6 + Math.floor(i/5)*(s+g);
-          svg.appendChild(el('rect',{x:px,y:py,width:s,height:s,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--text)','stroke-width':2}));
-          for(j=1;j<5;j++){
-            svg.appendChild(el('line',{x1:px+j*s/5,y1:py,x2:px+j*s/5,y2:py+s,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
-            svg.appendChild(el('line',{x1:px,y1:py+j*s/5,x2:px+s,y2:py+j*s/5,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
-          }
-        }
-        var yb = hu>5 ? 82 : hu>0 ? 52 : 30;
-        for(i=0;i<te;i++){
-          var bx = 10 + i*13;
-          svg.appendChild(el('rect',{x:bx,y:yb,width:10,height:90,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
-          for(j=1;j<10;j++) svg.appendChild(el('line',{x1:bx,y1:yb+j*9,x2:bx+10,y2:yb+j*9,stroke:'var(--text)','stroke-width':0.6}));
-        }
-        for(i=0;i<un;i++) svg.appendChild(el('rect',{x:138+(i%3)*19,y:yb+4+Math.floor(i/3)*21,width:15,height:15,fill:'var(--accent)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':1.5}));
-      },
-      cols3:false, choices: numChoices(total, [total+10, total-10, total+100, total-100, swapV !== total ? swapV : total+1, total+1, total-1])
-    };
-  }
-  function genBlocsQuestion(level){
-    return blocksQuestion(level===1 ? randInt(1,4) : randInt(1,9), randInt(0,9), randInt(0,9));
-  }
-
   // ---- Problèmes à deux étapes ----
   var PROBLEMES2 = [
     function(L){ var A = L ? randInt(40,90) : randInt(10,20), B = randInt(3, Math.floor(A/2)), C = randInt(3, L ? 30 : 9), r = A-B+C, w = prenomAuHasard(), o = objetAuHasard('jeu');
@@ -269,9 +189,6 @@
   }
 
   // ---- Déclaration des types ----
-  registerQuizType({ id:'blocs1000', domain:'nombres', label:'Compter jusqu\'à 1000', longLabel:'Compter des blocs jusqu\'à 999', defaultLevels:[1,2],
-    randomNote:'Lire un nombre fait de plaques (100), barres (10) et cubes (1). Moyen : 1 à 4 plaques (jusqu\'à 499) ; Difficile : jusqu\'à 9 plaques (999), avec des chiffres 0 pièges.',
-    generate:genBlocsQuestion });
   registerQuizType({ id:'lettres', domain:'nombres', label:'Nombres en lettres', longLabel:'Nombres en lettres', defaultLevels:[0,1,2],
     randomNote:'Passer des lettres aux chiffres, ou des chiffres aux lettres. Facile : 10 à 69 ; Moyen : 70 à 99 (soixante-dix, quatre-vingts…) ; Difficile : 101 à 999.',
     generate:genLettresQuestion });
@@ -284,9 +201,6 @@
   registerQuizType({ id:'droite', domain:'nombres', label:'Droite graduée', longLabel:'Droite graduée : lire un nombre', defaultLevels:[0,1,2],
     randomNote:'Lire le nombre pointé par une flèche sur une droite de 10 graduations. Facile : de 1 en 1 (0 à 10) ; Moyen : de 10 en 10 ou de 20 en 20 ; Difficile : de 50 en 50, de 100 en 100 ou de 10 en 10 entre deux centaines.',
     generate:genDroiteQuestion });
-  registerQuizType({ id:'multiplier', domain:'calcul', label:'Multiplier, partager', longLabel:'Multiplier et partager (grilles, paquets)', defaultLevels:[0,1,2],
-    randomNote:'Compter une grille de points, additionner plusieurs fois le même nombre, partager en parts égales (Moyen/Difficile : aussi faire des paquets). Facile : 2 et 3 lignes, partage entre 2 ; Moyen : jusqu\'à 5 × 5 ; Difficile : plus de colonnes, partages entre 2 à 10.',
-    generate:genMultiplierQuestion });
   registerQuizType({ id:'probleme2', domain:'calcul', label:'Problèmes à 2 étapes', longLabel:'Problèmes à deux étapes', defaultLevels:[1,2],
     randomNote:'Un énoncé qui demande deux calculs à la suite (perdre puis gagner, deux achats, boîtes de gâteaux…). Moyen : additions et soustractions, nombres jusqu\'à environ 30 ; Difficile : nombres jusqu\'à environ 100 et énoncés avec une multiplication. Les modèles sont tirés sans répétition.',
     generate:genProbleme2Question });

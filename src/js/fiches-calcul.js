@@ -1,5 +1,5 @@
   /* ===================== FICHES D'ACTIVITÉS : calcul =====================
-     7 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
+     10 activités décrites par des données (moteur : gabarits.js). Pour en ajouter une : une fiche + un appel
      à registerTemplateType. Les `levels` sont les réglages Facile / Moyen / Difficile ; la note de réglage
      (« note ») est générée à partir d'eux. */
 
@@ -8,6 +8,10 @@
   TEMPLATE_FNS.explainAdd = addExplain;
   TEMPLATE_FNS.borrow = hasBorrow;
   TEMPLATE_FNS.explainSub = subExplain;
+  TEMPLATE_FNS.somme = function(c, r){ return Array(r+1).join(c + ' + ').slice(0,-3); };   // somme(5,3) -> « 5 + 5 + 5 »
+  TEMPLATE_FNS.blocsExplain = function(hu, te, un){
+    return (hu ? hu + ' plaque' + (hu>1?'s':'') + ' (' + hu*100 + ') + ' : '') + te + ' barre' + (te>1?'s':'') + ' (' + te*10 + ') + ' + un + ' cube' + (un>1?'s':'') + ' = ' + (hu*100 + te*10 + un) + '.';
+  };
   TEMPLATE_FNS.tableHint = function(t){
     return t===10 ? 'Multiplier par 10 : on ajoute un zéro.' : t===5 ? 'On compte de 5 en 5 : 5, 10, 15, 20…' : t===2 ? 'Multiplier par 2, c\'est le double.' : 'On compte de ' + t + ' en ' + t + '.';
   };
@@ -112,3 +116,55 @@
       soustractionPoseeForm([2], {any:[ {int:[11,99]}, {int:[101,'a-10']} ]}, ['a>b', 'borrow(a,b) || tries>=100 || rand()>=0.6'])
     ],
     note:'Facile : sans emprunt, jusqu\'à {max0} ; Moyen : jusqu\'à {max1}, souvent avec emprunt ; Difficile : jusqu\'à {max2}, souvent avec emprunt. L\'explication détaille chaque colonne.' });
+
+  // -- Blocs : « quel nombre est représenté ? » (Dénombrement visuel Moyen/Difficile et Compter jusqu'à 1000) --
+  function blocsForm(levels, vars){
+    vars.tot = 'hu*100 + te*10 + un'; vars.sw = 'te*100 + hu*10 + un';
+    return { levels:levels, vars:vars, answer:'tot',
+      extras:['tot+10','tot-10','tot+100','tot-100','sw != tot ? sw : tot+1','tot+1','tot-1'],
+      question:'Quel nombre est représenté avec ces blocs ?', sub:'Une plaque = 100, une barre = 10, un petit cube = 1.',
+      explain:'{blocsExplain(hu,te,un)}', scene:{ type:'blocks', hu:'hu', te:'te', un:'un' } };
+  }
+  var COMPTAGE_ICONS = ['🍎','⭐','🐟','🚗','🎈','🐞','🍪','🌸'];
+  registerTemplateType({ id:'comptage', domain:'nombres', label:'Dénombrement (visuel)', longLabel:'Dénombrement : compter des objets, des blocs', defaultLevels:[0,1,2],
+    levels:[ { icons:COMPTAGE_ICONS, huMax:0 }, { icons:COMPTAGE_ICONS, huMax:0 }, { icons:COMPTAGE_ICONS, huMax:2 } ],
+    forms:[
+      { levels:[0], vars:{ n:{int:[3,12]}, icon:{pick:'icons'} }, answer:'n', extras:['n+1','n-1','n+2','n-2'],
+        question:'Combien y a-t-il d\'objets ?', sub:'Compte-les un par un, sans en oublier ni en compter deux fois.', explain:'Il y a {n} objets.',
+        scene:{ type:'scatter', n:'n', icon:'icon' } },
+      blocsForm([1,2], { hu:{int:[0,'huMax']}, te:{int:[1,5]}, un:{int:[0,9]} })
+    ],
+    note:'Facile : compter 3 à 12 objets éparpillés. Moyen : lire des blocs (barres de 10, cubes). Difficile : + plaques de 100.' });
+  registerTemplateType({ id:'blocs1000', domain:'nombres', label:'Compter jusqu\'à 1000', longLabel:'Compter des blocs jusqu\'à 999', defaultLevels:[1,2],
+    levels:[ { huMax:4 }, { huMax:4 }, { huMax:9 } ],
+    forms:[ blocsForm([0,1,2], { hu:{int:[1,'huMax']}, te:{int:[0,9]}, un:{int:[0,9]} }) ],
+    note:'Lire un nombre fait de plaques (100), barres (10) et cubes (1). Moyen : 1 à {huMax1} plaques (jusqu\'à {huMax1*100+99}) ; Difficile : jusqu\'à {huMax2} plaques ({huMax2*100+99}), avec des chiffres 0 pièges.' });
+
+  // -- Multiplier et partager (grilles de points, additions répétées, partages, paquets) --
+  var PART_ICONS = ['🍬','🍪','⭐','🍎','🎈'];
+  function repeteForm(levels, cSpec){
+    return { levels:levels, vars:{ c:cSpec, r:{int:[3,'repR']}, total:'r*c' }, answer:'total', extras:['total+c','total-c','r+c','total+1','total-1','c*(r+1)'],
+      question:'Combien font {r} fois {c} ?', sub:'Additionne {c} à chaque fois, {r} fois.', explain:'{somme(c,r)} = {total} ({r} × {c}).',
+      eq:'{somme(c,r)}' };
+  }
+  registerTemplateType({ id:'multiplier', domain:'calcul', label:'Multiplier, partager', longLabel:'Multiplier et partager (grilles, paquets)', defaultLevels:[0,1,2],
+    levels:[
+      { rHi:3, cLo:2, cHi:5,  repR:4, kids:[2],             eachLo:1, eachHi:5, gLo:3, gHi:8, gC:[2,5,10],       icons:PART_ICONS },
+      { rHi:5, cLo:2, cHi:5,  repR:5, kids:[2,3,4,5],       eachLo:2, eachHi:5, gLo:2, gHi:5, gC:[2,5,10],       icons:PART_ICONS },
+      { rHi:5, cLo:3, cHi:10, repR:5, kids:[2,3,4,5,6,10],  eachLo:3, eachHi:9, gLo:3, gHi:8, gC:[3,4,5,6,10],   icons:PART_ICONS }
+    ],
+    forms:[
+      { vars:{ r:{int:[2,'rHi']}, c:{int:['cLo','cHi']}, total:'r*c' }, answer:'total', extras:['total+c','total-c','total+r','c+r','total+1','total-1'],
+        question:'Combien y a-t-il de points en tout ?', sub:'Compte les points d\'une ligne, puis répète : {r} lignes de {c}.',
+        explain:'{r} lignes de {c} : {somme(c,r)} = {total} ({r} × {c}).', scene:{ type:'grid', rows:'r', cols:'c' } },
+      repeteForm([0], {pick:[2,5,10]}),
+      repeteForm([1], {int:[2,6]}),
+      repeteForm([2], {int:[3,9]}),
+      { vars:{ kids:{pick:'kids'}, each:{int:['eachLo','eachHi']}, total:'kids*each', ic:{pick:'icons'} }, answer:'each', extras:['each+1','each-1','total-kids','kids','each*2','each+2'],
+        question:'On partage {total} {ic} en parts égales entre {kids} enfants. Combien chacun en a-t-il ?', sub:'Cherche le nombre qui, répété {kids} fois, fait {total}.',
+        explain:'Chacun en a {each} car {kids} × {each} = {total}.', scene:{ type:'emoji', icon:'ic', caption:'{total} pour {kids}' } },
+      { w:'level==0 ? 0 : level==1 ? 1 : 2', vars:{ c:{pick:'gC'}, r:{int:['gLo','gHi']}, total:'r*c', ic:{pick:'icons'} }, answer:'r', extras:['r+1','r-1','total-c','c','r*2','r+2'],
+        question:'Avec {total} {ic}, on fait des paquets de {c}. Combien de paquets ?', sub:'Combien de fois {c} dans {total} ?',
+        explain:'{r} paquets car {r} × {c} = {total}.', scene:{ type:'emoji', icon:'ic', caption:'{total} → paquets de {c}' } }
+    ],
+    note:'Compter une grille de points, additionner plusieurs fois le même nombre, partager en parts égales (Moyen/Difficile : aussi faire des paquets). Facile : 2 à {rHi0} lignes, partage entre {liste(kids0)} ; Moyen : jusqu\'à {rHi1} lignes de {cHi1} points ; Difficile : jusqu\'à {cHi2} colonnes, partages entre {liste(kids2)}.' });

@@ -330,3 +330,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - `soustractionPosee` migrée en fiche (7 activités par fiche) ; ancien code supprimé de `nombres.js` ; fonctions `borrow` et `explainSub` ajoutées aux fonctions nommées des fiches.
 - `blocksQuestion(hu, te, un)` (nombres.js) : une seule scène et une seule question « Quel nombre est représenté avec ces blocs ? » pour `blocs1000` et pour le Dénombrement visuel (Moyen/Difficile) ; les deux dessins en double sont fusionnés (les blocs de `comptage` sont un peu plus petits, comme ceux de `blocs1000`). Les identifiants de types ne changent pas : réglages et historique conservés.
 - Tests : `gabarits_check.js` étendu (soustractions posées, plages des blocs).
+
+## 59. Audit P5 (début) : scènes réutilisables, 10 activités en fiches (04/10/2026)
+- `gabarits.js` : registre `SCENES` (`equation`, `blocks`, `scatter`, `grid`, `emoji`). Chaque scène a `make` (tout le tirage, une fois) et `draw` (aucun tirage : redessiner = même image) ; une fiche l'appelle par `scene:{type, …}` ; la validation refuse une scène ou un paramètre inconnu.
+- Migrés en fiches : Dénombrement visuel (`comptage`), Compter jusqu'à 1000 (`blocs1000`), Multiplier/partager (`multiplier` : grille, additions répétées, partages, paquets). Le code des blocs, qui existait en deux exemplaires, est maintenant une seule scène ; `blocksQuestion` disparaît.
+- Les 10 activités par fiche : 6 du §57 + soustractions posées + ces 3. Plages inchangées (`gabarits_check`), `audit_check` et `seed_check` verts.
+- Reste de P5 : scènes `numberline` (droite graduée), `clock`, `fraction`, banque de texte (calendrier, énigmes, unités, durées).

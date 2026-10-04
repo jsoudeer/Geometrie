@@ -22,7 +22,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     tryF('syntaxe', function(f){ f.forms[0].answer = 'a +'; });
     tryF('texte', function(f){ delete f.forms[0].question; });
     tryF('niveaux', function(f){ f.levels.pop(); });
-    tryF('scene', function(f){ f.scene = 'hologramme'; });
+    tryF('scene', function(f){ f.forms[0].scene = { type:'hologramme' }; });
+    tryF('sceneArg', function(f){ f.forms[0].scene = { type:'blocks', hu:'a', te:'b' }; });
     tryF('id', function(f){ delete f.id; });
     tryF('texteInconnu', function(f){ f.forms[0].sub = 'Calcule {zz}.'; });
     var ok = true; try { validateFiche(good); } catch(e){ ok = false; }
@@ -76,7 +77,21 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     return JSON.stringify(o); })()`);
   chk(sp.reg && sp.neg === 0 && sp.borrow[0] === 0 && sp.borrow[1] > 250 && sp.borrow[2] > 250 && sp.max[0] <= 99 && sp.max[1] <= 99 && sp.max[2] <= 999 && sp.max[2] > 900, 'soustractions posées (fiche) : sans emprunt en Facile, souvent avec ensuite ; a ≤ ' + sp.max.join('/') + ' ; toujours a > b');
   chk(sp.bad === 0 && sp.c[1][1] <= 59 && sp.c[2][1] <= 259 && sp.c[2][0] >= 10 && sp.b1 === 0, 'comptage (Moyen/Difficile) et blocs1000 partagent la même scène de blocs ; plages ' + sp.c[1] + ' / ' + sp.c[2]);
-  await page.evaluate(() => window.__t.__eval("globalLevel=2; showFamily('quiz')")).catch(() => {});
+  const mu = await J(`(function(){
+    function def(id){ return QCM_TYPE_DEFS.filter(function(d){return d.id===id;})[0]; }
+    var o = { reg: !!TEMPLATE_FICHES.multiplier && !!TEMPLATE_FICHES.comptage && !!TEMPLATE_FICHES.blocs1000, kinds:[{},{},{}], gMax:[0,0,0], gMin:[99,99,99], wrongRes:0, cn:[99,0], dots:0, drawDiff:0 };
+    for(var lv=0; lv<3; lv++) for(var i=0;i<700;i++){
+      var q = def('multiplier').generate(lv), t = q.question, k = /points/.test(t) ? 'grille' : /fois/.test(t) ? 'repete' : /partage/.test(t) ? 'partage' : /paquets/.test(t) ? 'groupes' : '?';
+      o.kinds[lv][k] = (o.kinds[lv][k]||0) + 1;
+      if(k==='grille'){ var r = +/(\\d+) lignes de (\\d+)/.exec(q.sub)[1], c = +/(\\d+) lignes de (\\d+)/.exec(q.sub)[2]; o.gMax[lv] = Math.max(o.gMax[lv], c); o.gMin[lv] = Math.min(o.gMin[lv], r);
+        if(q.choices.filter(function(x){return x.ok;})[0].label != r*c) o.wrongRes++; var svg = document.getElementById('m4Svg'); q.draw(); if(svg.querySelectorAll('circle').length !== r*c) o.dots++; }
+    }
+    for(var i=0;i<300;i++){ var n = +def('comptage').generate(0).choices.filter(function(x){return x.ok;})[0].label; o.cn[0]=Math.min(o.cn[0],n); o.cn[1]=Math.max(o.cn[1],n); }
+    return JSON.stringify(o); })()`);
+  chk(mu.reg && mu.wrongRes === 0 && mu.dots === 0, 'multiplier, comptage, blocs1000 en fiches ; la grille dessine exactement r × c points');
+  const kk = mu.kinds;
+  chk(!kk[0].groupes && kk[0].grille > 100 && kk[0].repete > 100 && kk[0].partage > 100 && kk[1].groupes > 100 && kk[2].groupes > kk[2].partage * 1.5 && !kk[0]['?'] && !kk[1]['?'] && !kk[2]['?'], 'multiplier : 3 sortes en Facile, + paquets en Moyen, 2× plus de paquets en Difficile ' + JSON.stringify(kk));
+  chk(mu.gMax[0] <= 5 && mu.gMin[0] >= 2 && mu.gMax[2] <= 10 && mu.cn[0] >= 3 && mu.cn[1] <= 12, 'plages : grille Facile ≤ 5 colonnes, Difficile ≤ 10 ; dénombrement Facile ' + mu.cn);
   console.log(bad ? 'ÉCHEC gabarits : ' + bad : 'gabarits OK');
   if (bad) process.exitCode = 1;
 });

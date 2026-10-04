@@ -2,14 +2,14 @@
      Une activité arithmétique = une FICHE de données (voir fiches-calcul.js) lue par ce moteur :
      quoi tirer (variables), quelles contraintes (where), la bonne réponse, les fausses réponses,
      les textes, le dessin. Le jeu, les tests et (plus tard) l'éditeur lisent la même fiche.
-     Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
+     Les scènes (equation, blocks, scatter, grid, emoji) sont dans SCENES ci-dessous. Les expressions (« a+b<=99 », « carry(a,b) ») sont évaluées par NOTRE évaluateur ci-dessous :
      jamais eval ni code saisi, donc une fiche venue d'un fichier ne peut rien exécuter.
 
      Fiche :
-       { id, domain, label, longLabel, defaultLevels, tag?, scene:'equation',
+       { id, domain, label, longLabel, defaultLevels, tag?,
          levels:[ {paramètres du niveau 0}, {…1}, {…2} ],      // nombres, textes ou listes : ils entrent dans l'environnement
-         forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain, eq,
-                   extras?:[expr,…] } ],
+         forms:[ { w?, levels?, vars:{x:spec,…}, where?:[expr,…], answer:expr, question, sub, explain,
+                   eq:'texte dessiné' | scene:{type:'blocks', hu:'hu', …}, extras?:[expr,…] } ],
          note:'texte avec {expr}' }                              // la note de réglage est GÉNÉRÉE (voir templateNote)
      spec d'une variable : expr | {int:[lo,hi], step?} | {pick:[valeurs] ou "nomDeParamètre"} | {any:[spec,…]}
      Dans les textes : {expr}. Dans note : k0, k1, k2 = paramètre k du niveau 0, 1, 2. */
@@ -130,6 +130,57 @@
     else throw new Error('variable inconnue : ' + JSON.stringify(spec));
   }
 
+  // ---- SCÈNES : ce qui est dessiné. make(args) tire tout ce qui est aléatoire (une seule fois, à la génération) ;
+  // draw(svg, données) dessine, sans rien tirer : redessiner = même image. exprs = paramètres lus comme
+  // expressions, texts = paramètres lus comme textes à {trous}.
+  var SCENES = {
+    equation: { exprs:[], texts:['text'],
+      make:function(a){ return a; },
+      draw:function(svg, d){ svg.appendChild(svgText(100,112,d.text.length>11 ? 24 : 34,d.text)); } },
+    // plaques (100), barres (10), cubes (1) : « quel nombre est représenté ? »
+    blocks: { exprs:['hu','te','un'], texts:[],
+      make:function(a){ return a; },
+      draw:function(svg, d){
+        var hu = d.hu, te = d.te, un = d.un, i, j, s = 30, g = 3;
+        for(i=0;i<hu;i++){
+          var px = 8 + (i%5)*(s+g+3), py = 6 + Math.floor(i/5)*(s+g);
+          svg.appendChild(el('rect',{x:px,y:py,width:s,height:s,fill:'var(--accent2)','fill-opacity':0.6,stroke:'var(--text)','stroke-width':2}));
+          for(j=1;j<5;j++){
+            svg.appendChild(el('line',{x1:px+j*s/5,y1:py,x2:px+j*s/5,y2:py+s,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
+            svg.appendChild(el('line',{x1:px,y1:py+j*s/5,x2:px+s,y2:py+j*s/5,stroke:'var(--text)','stroke-width':0.5,'stroke-opacity':0.5}));
+          }
+        }
+        var yb = hu>5 ? 82 : hu>0 ? 52 : 30;
+        for(i=0;i<te;i++){
+          var bx = 10 + i*13;
+          svg.appendChild(el('rect',{x:bx,y:yb,width:10,height:90,fill:'var(--accent3)','fill-opacity':0.7,stroke:'var(--text)','stroke-width':1.5}));
+          for(j=1;j<10;j++) svg.appendChild(el('line',{x1:bx,y1:yb+j*9,x2:bx+10,y2:yb+j*9,stroke:'var(--text)','stroke-width':0.6}));
+        }
+        for(i=0;i<un;i++) svg.appendChild(el('rect',{x:138+(i%3)*19,y:yb+4+Math.floor(i/3)*21,width:15,height:15,fill:'var(--accent)','fill-opacity':0.75,stroke:'var(--text)','stroke-width':1.5}));
+      } },
+    // n objets éparpillés sur une grille 4×4 (positions et petits décalages tirés une fois)
+    scatter: { exprs:['n','icon'], texts:[],
+      make:function(a){
+        var cells = []; for(var i=0;i<16;i++) cells.push(i);
+        var chosen = shuffle(cells).slice(0, a.n);
+        return { icon:a.icon, items: chosen.map(function(c){ return { c:c, dx:randInt(-6,6), dy:randInt(-4,4) }; }) };
+      },
+      draw:function(svg, d){ d.items.forEach(function(it){ svg.appendChild(svgText(28 + (it.c%4)*48 + it.dx, 52 + Math.floor(it.c/4)*44 + it.dy, 30, d.icon)); }); } },
+    // rows × cols points
+    grid: { exprs:['rows','cols'], texts:[],
+      make:function(a){ return a; },
+      draw:function(svg, d){
+        var r = d.rows, c = d.cols, gap = Math.min(30, 170/c, 170/r), x0 = 100 - (c-1)*gap/2, y0 = 100 - (r-1)*gap/2, i, j;
+        for(i=0;i<r;i++) for(j=0;j<c;j++) svg.appendChild(el('circle',{cx:x0+j*gap,cy:y0+i*gap,r:Math.min(10,gap*0.36),fill:i%2 ? 'var(--accent2)' : 'var(--accent)',stroke:'var(--text)','stroke-width':1.8}));
+      } },
+    // un gros emoji et une ligne de légende
+    emoji: { exprs:['icon'], texts:['caption'],
+      make:function(a){ return a; },
+      draw:function(svg, d){ svg.appendChild(svgText(100,95,64,d.icon)); svg.appendChild(svgText(100,150,26,d.caption)); } }
+  };
+
+  // La scène d'une forme : `scene:{type:…}` ou, en raccourci, `eq:'texte'` (une équation écrite).
+  function formScene(form){ return form.scene || { type:'equation', text:form.eq }; }
   var TEMPLATE_FICHES = {};
   var TEMPLATE_FNS = {};   // fonctions nommées utilisables dans les fiches (carry, explainAdd…), déclarées par fiches-calcul.js
 
@@ -138,7 +189,6 @@
   function validateFiche(f){
     function bad(msg){ throw new Error('fiche « ' + f.id + ' » : ' + msg); }
     ['id','domain','label','longLabel'].forEach(function(k){ if(!f[k]) bad('« ' + k + ' » manquant'); });
-    if((f.scene || 'equation') !== 'equation') bad('scène inconnue « ' + f.scene + ' »');
     if(!f.levels || f.levels.length !== 3) bad('3 niveaux attendus (Facile, Moyen, Difficile)');
     if(!f.forms || !f.forms.length) bad('aucune forme de question');
     f.forms.forEach(function(form, fi){
@@ -148,7 +198,11 @@
       try {
         for(var name in vars){ var need = {}; specIdents(vars[name], need); for(var n in need) if(!known[n] && !own(EXPR_FNS, n) && n.charAt(0) !== '(') bad('forme ' + fi + ' : « ' + n + ' » inconnu dans la variable ' + name); known[name] = 1; }
         var all = [].concat(form.where || [], form.answer, form.extras || [], form.w === undefined ? [] : [form.w]).map(compileExpr)
-          .concat(['question','sub','explain','eq'].map(function(k){ if(typeof form[k] !== 'string') bad('forme ' + fi + ' : « ' + k + ' » manquant'); return compileText(form[k]); }));
+          .concat(['question','sub','explain'].map(function(k){ if(typeof form[k] !== 'string') bad('forme ' + fi + ' : « ' + k + ' » manquant'); return compileText(form[k]); }));
+        var sc = formScene(form), def = own(SCENES, sc.type) ? SCENES[sc.type] : null;
+        if(!def) bad('forme ' + fi + ' : scène inconnue « ' + sc.type + ' »');
+        def.exprs.forEach(function(k){ if(sc[k] === undefined) bad('forme ' + fi + ' : scène « ' + sc.type + ' » : « ' + k + ' » manquant'); all.push(compileExpr(sc[k])); });
+        def.texts.forEach(function(k){ if(typeof sc[k] !== 'string') bad('forme ' + fi + ' : scène « ' + sc.type + ' » : « ' + k + ' » manquant'); all.push(compileText(sc[k])); });
         all.forEach(function(c){ for(var n in c.idents){
           var fn = n.charAt(0) === '(' ? n.slice(2) : null;
           if(fn ? !(own(EXPR_FNS, fn) || own(TEMPLATE_FNS, fn)) : !known[n]) bad('forme ' + fi + ' : « ' + (fn || n) + ' » inconnu'); } });
@@ -185,13 +239,19 @@
     } while(tries < 200 && (form.where || []).some(function(c){ return !evalExpr(c, env); }));
     var correct = evalExpr(form.answer, env);
     var extras = (form.extras || []).map(function(x){ return evalExpr(x, env); });
-    var eq = compileText(form.eq)(env);
+    var sc = formScene(form), sdef = SCENES[sc.type], sargs = {};
+    sdef.exprs.forEach(function(k){ sargs[k] = evalExpr(sc[k], env); });
+    sdef.texts.forEach(function(k){ sargs[k] = compileText(sc[k])(env); });
+    var sdata = sdef.make(sargs);
     return {
       tag: f.tag || 'Calcul',
       question: compileText(form.question)(env),
       sub: compileText(form.sub)(env),
       explain: compileText(form.explain)(env),
-      draw: function(){ drawEquation(eq); },
+      draw: function(){
+        var svg = document.getElementById('m4Svg'); svg.setAttribute('viewBox','0 0 200 200'); svg.innerHTML = "";
+        sdef.draw(svg, sdata);
+      },
       cols3: false,
       choices: numChoices(correct, extras)
     };
