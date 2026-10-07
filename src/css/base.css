@@ -134,7 +134,7 @@
     #practice-exercise .choice-btn, #practice-exercise .qcm-choices .choice-btn{ padding-top:9px; padding-bottom:9px; }
     .qcm-choices, .choices{ margin-top:8px; gap:6px; }
     #practice-exercise .choice-btn.visual{ padding:2px; }
-    #practice-exercise .choice-btn.visual svg{ max-height:min(100px,11.5dvh); }
+    #practice-exercise .choice-btn.visual svg{ max-height:min(100px,10.5dvh); }
   }
 
   h1,h2,h3{ font-family:var(--font-display); margin:0; text-wrap:balance; }

@@ -10,7 +10,8 @@
     "css/admiration.css",
     "css/bataille-fx.css",
     "css/guide.css",
-    "css/chaleur.css"
+    "css/chaleur.css",
+    "css/paysage.css"
   ],
   "js": [
     "js/images-data.js",
