@@ -967,6 +967,12 @@
     [].slice.call(wrap.children).filter(function(c){
       return c.matches('.choices, .qcm-choices, .feedback, .btn-row');
     }).forEach(function(c){ bottom.appendChild(c); });
+    // Le haut (question, consigne, illustration) est regroupé dans .q-top : en portrait il est « transparent »
+    // (display:contents), en paysage sur téléphone c'est la colonne de gauche, les réponses (.q-bottom) sont à droite.
+    var top = document.createElement('div');
+    top.className = 'q-top';
+    while(wrap.firstChild) top.appendChild(wrap.firstChild);
+    wrap.appendChild(top);
     wrap.appendChild(bottom);
     // Dans la rangée de boutons : « Nouvelle activité » toujours à gauche,
     // « Vérifier » à sa droite. On change l'ordre dans la page elle-même (pas

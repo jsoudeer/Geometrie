@@ -2,7 +2,8 @@
 // Vérifier, Nouvelle activité) sont tous visibles sans faire défiler, pour chaque activité.
 // Usage : node fit_check.js [--all] (par défaut : un tirage par activité ; --all : 6 tirages).
 const { withPage, SHOTS } = require('./lib');
-const SIZES = [[360, 640], [390, 664], [412, 760], [375, 667]];
+// portrait puis paysage (téléphone couché : 360 à 430 px de haut)
+const SIZES = [[360, 640], [390, 664], [412, 760], [375, 667], [844, 390], [740, 360], [667, 375], [915, 412]];
 const REP = process.argv.includes('--all') ? 6 : 2;
 (async () => {
   let bad = 0; const worst = [];
@@ -16,7 +17,11 @@ const REP = process.argv.includes('--all') ? 6 : 2;
         const btns = [...document.querySelectorAll('#practice-exercise button, #practice-exercise .choice-btn, #practice-exercise .qcm-choice')]
           .filter(b => b.offsetParent && b.getBoundingClientRect().height > 0);
         const bottom = btns.length ? Math.max(...btns.map(b => b.getBoundingClientRect().bottom)) : 0;
-        return { doc: de.scrollHeight, vh, bottom: Math.round(bottom), n: btns.length };
+        // un bouton caché DANS une zone qui défile (carte, colonne des réponses) est aussi un défaut
+        let clipped = 0;
+        btns.forEach(b => { for (let p = b.parentElement; p && p !== document.body; p = p.parentElement) {
+          const o = getComputedStyle(p).overflowY; if (/(auto|scroll)/.test(o) && p.scrollHeight > p.clientHeight + 1 && (b.getBoundingClientRect().bottom > p.getBoundingClientRect().bottom + 1 || b.getBoundingClientRect().top < p.getBoundingClientRect().top - 1)) { clipped++; break; } } });
+        return { doc: de.scrollHeight, docW: de.scrollWidth, vw: innerWidth, vh, bottom: Math.round(bottom), n: btns.length, clipped };
       });
       const jobs = [];
       for (const lv of [0, 1, 2]) {
@@ -29,15 +34,15 @@ const REP = process.argv.includes('--all') ? 6 : 2;
           if (ok !== true) { console.log('  ✘ ÉCHEC génération', j.k, j.t, ok); bad++; break; }
           await page.waitForTimeout(30);
           const m = await measure();
-          const tooTall = m.doc > m.vh + 1 || m.bottom > m.vh + 1;
-          if (tooTall) { bad++; worst.push(`${w}x${h} ${j.t || j.k} niv${j.lv} : page ${m.doc}, boutons jusqu'à ${m.bottom} (écran ${m.vh})`); }
+          const tooTall = m.doc > m.vh + 1 || m.bottom > m.vh + 1 || m.docW > m.vw + 1 || m.clipped > 0;
+          if (tooTall) { bad++; worst.push(`${w}x${h} ${j.t || j.k} niv${j.lv} : page ${m.doc}x${m.docW}, boutons jusqu'à ${m.bottom} (écran ${m.vh}), zones coupées ${m.clipped}`); }
           // après une réponse : le retour (bonne/mauvaise réponse + explication) s'ajoute, tout doit encore tenir
           if (j.k === 'qcm' && r === 0) {
             const clicked = await page.evaluate(() => { const b = document.querySelector('#practice-exercise .qcm-choices button, #practice-exercise .choices button'); if (!b) return false; b.click(); return true; });
             if (clicked) {
               await page.waitForTimeout(40);
               const m2 = await measure();
-              if (m2.doc > m2.vh + 1 || m2.bottom > m2.vh + 1) { bad++; worst.push(`${w}x${h} ${j.t} niv${j.lv} APRÈS RÉPONSE : page ${m2.doc}, boutons jusqu'à ${m2.bottom} (écran ${m2.vh})`); }
+              if (m2.doc > m2.vh + 1 || m2.bottom > m2.vh + 1 || m2.docW > m2.vw + 1 || m2.clipped > 0) { bad++; worst.push(`${w}x${h} ${j.t} niv${j.lv} APRÈS RÉPONSE : page ${m2.doc}, boutons jusqu'à ${m2.bottom} (écran ${m2.vh})`); }
             }
           }
         }

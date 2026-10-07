@@ -18,7 +18,7 @@ C'est pourquoi l'ordre des fichiers JS compte (voir ci-dessous).
 src/
   index.template.html   structure de la page (les lignes @@CSS@@ et @@JS@@ sont remplacées)
   manifest.json         liste ordonnée des fichiers CSS et JS
-  css/                  base, exercices, interface (mascotte, effets…), boutique-bataille, evolution (cadres, halo et particules d'évolution), admiration (admirer, cérémonie), bataille-fx (effets sonores, boost), guide, chaleur
+  css/                  base, exercices, interface (mascotte, effets…), boutique-bataille, evolution (cadres, halo et particules d'évolution), admiration (admirer, cérémonie), bataille-fx (effets sonores, boost), guide, chaleur, paysage (téléphone couché : barre à gauche, deux colonnes ; `.q-top` / `.q-bottom`)
   js/
     noyau.js            outils partagés (el, shuffle, pick, rand…), thème, sons, effets,
                         mascotte, registre des types de Quizz
