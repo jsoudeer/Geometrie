@@ -162,6 +162,7 @@
   var currentFamily = null;
   var countdownScore = { correct:0, total:0 };
   var countdownRunning = false, countdownInterval = null, countdownEndAt = 0, countdownSeconds = 60;
+  var COUNTDOWN_AUTO_NEXT_MS = 5000, countdownAutoNext = null;   // passage automatique à la question suivante (annulé dès qu'on change de question à la main)
 
   // Tout est calculé à partir du registre (registerFamily, noyau.js) : aucune
   // activité n'est nommée ici. Ordre = champ `order` de chaque famille.
@@ -437,6 +438,7 @@
   // son toucher tombait sur la nouvelle (réponse comptée fausse, série perdue).
   var pendingAdvance = null;
   function nextPracticeQuestion(){
+    clearTimeout(countdownAutoNext); countdownAutoNext = null;   // un seul « suivant » : à la main ou automatique, jamais les deux
     if(pendingAdvance){ var adv = pendingAdvance; pendingAdvance = null; if(adv()) return; }
     var sig = null, prevShown = lastFamily;
     var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, domain} ou null
@@ -600,7 +602,7 @@
     countdownScore.total++;
     if(correct) countdownScore.correct++;
     updateCountdownHud();
-    setTimeout(function(){ if(countdownRunning) nextPracticeQuestion(); }, 900);
+    countdownAutoNext = setTimeout(function(){ if(countdownRunning) nextPracticeQuestion(); }, COUNTDOWN_AUTO_NEXT_MS);
   }
   function manualAdvanceLevel(newLevel){
     globalLevel = newLevel;
@@ -660,6 +662,7 @@
   }
   function endCountdown(){
     countdownRunning = false;
+    clearTimeout(countdownAutoNext); countdownAutoNext = null;
     clearInterval(countdownInterval);
     setChronoCompact(false);
     document.getElementById('countdown-hud').hidden = true;

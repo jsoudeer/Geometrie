@@ -417,3 +417,7 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - `index.html` (fragment de l'artefact) est inchangé : il garde ses polices Google.
 - Hébergement : GitHub Pages sur la branche `main`, dossier `/docs` (à activer dans Settings → Pages), ou tout hébergeur statique (Netlify, Cloudflare Pages : dossier `docs`). Adresse https obligatoire pour l'installation et le hors ligne. La progression reste dans le navigateur (`localStorage`), propre à chaque appareil et à chaque adresse.
 - Test `pwa_check.js` : page complète, manifeste et icônes, aucune ressource externe, service worker actif, polices chargées, **rechargement hors ligne** (réseau coupé).
+
+## 72. Chronomètre : un seul « suivant » ; icône de l'appli = premier chat (04/10→07/10/2026)
+- **Chronométré** : la question suivante arrive 5 s après la réponse (`COUNTDOWN_AUTO_NEXT_MS`, avant 0,9 s) ; passer à la main (toucher le commentaire, « Nouvelle activité ») **annule** le passage automatique : `nextPracticeQuestion` efface le minuteur en entrée (et `endCountdown` aussi). Plus de double saut. Test `chrono_suivant_check.js` (5 s, annulation, fin de chrono, parcours au doigt).
+- **Icône** : le premier chat du jeu (Lavandou, `assets/cats/cat01.png`) remplace le chat dessiné ; `tools/icones.py` régénère `docs/icons/` (plein cadre et version « maskable » à 64 %). L'onglet utilise la même image (plus l'emoji) et la couleur du thème devient celle du fond de l'image (#CAC0E2).
