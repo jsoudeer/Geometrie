@@ -52,11 +52,13 @@ def site(fragment):
     lines = fragment.split('\n')
     # le site embarque ses polices : on retire la feuille Google Fonts (l'artefact, lui, la garde)
     frag = '\n'.join(l for l in lines if 'fonts.googleapis.com' not in l)
+    # onglet et appli : la même image (le chat Lavandou) partout, pas l'emoji du fragment
+    frag = '\n'.join('<link rel="icon" type="image/png" href="icons/icon-192.png">' if l.startswith('<link rel="icon"') else l for l in frag.split('\n'))
     faces = ''.join("@font-face{font-family:'%s';font-weight:%d;font-style:normal;font-display:swap;src:url(%s) format('woff2')}\n" % (fam, w, f)
                     for (fam, w), f in zip(FONTS, font_files()))
     head = ('<!doctype html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
-            '<meta name="theme-color" content="#FFC2D1">\n'
+            '<meta name="theme-color" content="#CAC0E2">\n'
             '<meta name="description" content="Le grand jeu de maths du CE1 : nombres, calcul, formes, mesures, heure.">\n'
             '<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n'
             '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="Kawaii vs Brainrot">\n'
@@ -74,7 +76,7 @@ def site(fragment):
         'description': 'Le grand jeu de maths du CE1',
         'start_url': './', 'scope': './', 'id': './',
         'display': 'fullscreen', 'display_override': ['fullscreen', 'standalone'],
-        'orientation': 'any', 'background_color': '#FFF6F0', 'theme_color': '#FFC2D1', 'categories': ['education', 'games'],
+        'orientation': 'any', 'background_color': '#FFF6F0', 'theme_color': '#CAC0E2', 'categories': ['education', 'games'],
         'icons': [
             {'src': 'icons/icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},
             {'src': 'icons/icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'},

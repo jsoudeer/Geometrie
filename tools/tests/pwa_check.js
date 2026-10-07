@@ -16,6 +16,7 @@ const TYPES = { '.html':'text/html; charset=utf-8', '.webmanifest':'application/
   const html = fs.readFileSync(DOCS + '/index.html', 'utf8');
   chk(/^<!doctype html>/i.test(html) && /<meta name="viewport"[^>]*viewport-fit=cover/.test(html), 'page complète : doctype et viewport');
   chk(!/fonts\.googleapis|fonts\.gstatic/.test(html), 'aucune ressource externe (polices locales)');
+  chk(/<link rel="icon" type="image\/png" href="icons\/icon-192.png">/.test(html), 'onglet : la même icône que l\'appli (pas l\'emoji)');
   const man = JSON.parse(fs.readFileSync(DOCS + '/manifest.webmanifest', 'utf8'));
   chk(man.display === 'fullscreen' && man.display_override.includes('standalone') && man.start_url === './' && man.name, 'manifeste : plein écran, nom, démarrage');
   chk(man.icons.some(i => i.sizes === '192x192') && man.icons.some(i => i.sizes === '512x512' && i.purpose === 'any') && man.icons.some(i => i.purpose === 'maskable'), 'manifeste : icônes 192, 512, maskable');
