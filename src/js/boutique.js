@@ -317,16 +317,26 @@
      il suffit de déposer le fichier au bon endroit avec le bon nom (voir
      assets/MANIFEST.md). Si le fichier n'existe pas (ex : aperçu publié
      seul, sans le reste du dépôt), le dessin procédural reste affiché. */
-  function tryLoadCustomImage(container, svg, sprite){
+  // Image dédiée d'un niveau d'évolution (embarquée : CUSTOM_IMG[id].e1 / .e2, voir tools/evo.py) :
+  // Ultime sans image propre reprend celle d'Évolué. exact = l'image est bien celle de CE niveau
+  // (elle remplace alors le cadre, l'aura et les étincelles : seule l'étoile reste).
+  function evoArt(sprite, level){
+    var emb = CUSTOM_IMG[sprite.id];
+    if(!emb || !level) return null;
+    if(level >= 2 && emb.e2) return { rec:emb.e2, exact:true };
+    if(emb.e1) return { rec:emb.e1, exact:level === 1 };
+    return null;
+  }
+  function tryLoadCustomImage(container, svg, sprite, imgLevel){
     var exts = ['png','svg','jpg'];
     var side = spriteSide(sprite);
     var i = 0;
-    var emb = CUSTOM_IMG[sprite.id];
+    var emb = CUSTOM_IMG[sprite.id], ea = evoArt(sprite, imgLevel);
     if(emb){
       var im0 = new Image();
-      im0.className = 'sp-custom-img'; im0.alt = sprite.name;
+      im0.className = 'sp-custom-img' + (ea ? ' evo-art-img' : ''); im0.alt = sprite.name;
       im0.onload = function(){ svg.style.display = 'none'; container.insertBefore(im0, svg); };
-      im0.src = emb.f;
+      im0.src = ea ? ea.rec.f : emb.f;
       return;
     }
     function attempt(){
@@ -350,12 +360,13 @@
     if(level === undefined) level = spriteEvo(sprite);
     container.removeAttribute('data-evo-clan');
     if(!level) return;
-    container.classList.add('evo-' + level);
-    container.setAttribute('data-evo-clan', spriteSide(sprite));
+    var ea = evoArt(sprite, level);
+    if(!(ea && ea.exact)){ container.classList.add('evo-' + level); container.setAttribute('data-evo-clan', spriteSide(sprite)); }
     var badge = document.createElement('span');
     badge.className = 'evo-badge'; badge.setAttribute('aria-hidden','true');
     badge.textContent = level === 2 ? '★★' : '★';
     container.appendChild(badge);
+    if(ea && ea.exact) return;   // l'image de ce niveau EST l'effet d'évolution
     var halo = document.createElement('span');
     halo.className = 'evo-halo'; halo.setAttribute('aria-hidden','true');
     container.insertBefore(halo, container.firstChild);
@@ -370,11 +381,14 @@
       container.appendChild(sp);
     }
   }
-  function renderSpriteVisual(container, sprite, level){
+  // level : cadre / aura d'évolution (undefined = niveau possédé, 0 = aucun) ; imgLevel : niveau dont on
+  // montre l'IMAGE (par défaut le même : l'écran Admirer et la mascotte montrent un niveau choisi sans cadre).
+  function renderSpriteVisual(container, sprite, level, imgLevel){
     var svg = document.createElementNS(svgNS,'svg');
     container.appendChild(svg);
     drawSpriteInto(svg, sprite);
-    tryLoadCustomImage(container, svg, sprite);
+    if(imgLevel === undefined) imgLevel = level === undefined ? spriteEvo(sprite) : level;
+    tryLoadCustomImage(container, svg, sprite, imgLevel);
     applyEvoLook(container, sprite, level);
     return svg;
   }
@@ -385,16 +399,16 @@
      portrait du personnage (tête) au-dessus du buste générique inventé
      (voir paintMascotBody). mode==='head' (par défaut) garde le rendu
      portrait habituel, inchangé. */
-  function tryLoadFullBodyImage(sprite, side, onFound, onNotFound){
+  function tryLoadFullBodyImage(sprite, side, onFound, onNotFound, imgLevel){
     var exts = ['png','svg','jpg'];
     var i = 0;
-    var emb = CUSTOM_IMG[sprite.id];
+    var emb = CUSTOM_IMG[sprite.id], ea = evoArt(sprite, imgLevel);
     if(emb){
       var im0 = new Image();
-      im0.className = 'sp-full-img'; im0.alt = sprite.name;
+      im0.className = 'sp-full-img' + (ea ? ' evo-art-img' : ''); im0.alt = sprite.name;
       im0.onload = function(){ onFound(im0); };
       im0.onerror = function(){ onNotFound(); };
-      im0.src = emb.u;
+      im0.src = ea ? ea.rec.u : emb.u;
       return;
     }
     function attempt(){
@@ -408,10 +422,11 @@
     }
     attempt();
   }
-  function renderCreatureVisual(container, sprite, mode, level){
+  function renderCreatureVisual(container, sprite, mode, level, imgLevel){
     container.innerHTML = '';
+    if(imgLevel === undefined) imgLevel = level === undefined ? spriteEvo(sprite) : level;
     if(mode !== 'full'){
-      renderSpriteVisual(container, sprite, level);
+      renderSpriteVisual(container, sprite, level, imgLevel);
       return;
     }
     var side = spriteSide(sprite);
@@ -427,9 +442,9 @@
       var faceWrap = document.createElement('div');
       faceWrap.className = 'fb-face';
       wrap.appendChild(faceWrap);
-      renderSpriteVisual(faceWrap, sprite, 0);
+      renderSpriteVisual(faceWrap, sprite, 0, imgLevel);
       container.insertBefore(wrap, container.firstChild);
-    });
+    }, imgLevel);
   }
 
   /* ---- Persistance des personnages débloqués ---- */
@@ -752,6 +767,7 @@
       mascotBtn.textContent = isMascot ? '★ Mascotte actuelle' : '☆ Devenir mascotte';
       mascotBtn.addEventListener('click', function(){
         mascotIds[currentThemeKey()] = isMascot ? null : sprite.id;
+        mascotLvls[currentThemeKey()] = null;
         saveMascot();
         renderMascotDock();
         renderTopMascotIcon();
@@ -823,7 +839,7 @@
     panel.hidden = !sprite;
     if(!sprite) return;
     var art = document.createElement('div'); art.className = 'sm-art';
-    renderCreatureVisual(art, sprite, 'full');
+    renderCreatureVisual(art, sprite, 'full', mascotLevel(sprite));
     var txt = document.createElement('div'); txt.className = 'sm-txt';
     txt.innerHTML = '<span>Mascotte du clan</span><strong></strong><span></span><span class="sm-hint">🔍 Touche pour l\'admirer</span>';
     txt.querySelector('strong').textContent = sprite.name;
@@ -874,9 +890,28 @@
       }
     }catch(e){}
   })();
+  // Niveau d'évolution montré par la mascotte (choisi dans l'écran Admirer) ; null = le plus haut atteint.
+  var mascotLvls = { cats:null, brainrot:null };
+  (function loadMascotLvl(){
+    try{ ['cats','brainrot'].forEach(function(k){ var v = localStorage.getItem('geo_mascot_lv_'+k); if(v !== null && v !== '') mascotLvls[k] = parseInt(v,10) || 0; }); }catch(e){}
+  })();
   function activeMascotId(){ return mascotIds ? mascotIds[currentThemeKey()] : null; }
+  function mascotLevel(sprite){
+    var max = spriteEvo(sprite), v = mascotLvls[spriteSide(sprite)];
+    return (v === null || v === undefined) ? max : Math.max(0, Math.min(max, v));
+  }
+  // Choisir la mascotte du clan du personnage (lv : niveau montré ; null = toujours le plus haut atteint).
+  function setMascot(sprite, lv){
+    var side = spriteSide(sprite);
+    mascotIds[side] = sprite.id; mascotLvls[side] = (lv === undefined) ? null : lv;
+    saveMascot();
+    renderMascotDock(); renderTopMascotIcon();
+  }
   function saveMascot(){
-    try{ ['cats','brainrot'].forEach(function(k){ localStorage.setItem('geo_mascot_'+k, mascotIds[k] || ''); }); }catch(e){}
+    try{ ['cats','brainrot'].forEach(function(k){
+      localStorage.setItem('geo_mascot_'+k, mascotIds[k] || '');
+      if(mascotLvls[k] === null) localStorage.removeItem('geo_mascot_lv_'+k); else localStorage.setItem('geo_mascot_lv_'+k, String(mascotLvls[k]));
+    }); }catch(e){}
   }
   function renderTopMascotIcon(){
     var iconEl = document.getElementById('mascotIcon');
@@ -884,7 +919,7 @@
     var sprite = activeMascotId() ? findAnySprite(activeMascotId()) : null;
     iconEl.innerHTML = '';
     if(sprite){
-      renderSpriteVisual(iconEl, sprite);
+      renderSpriteVisual(iconEl, sprite, mascotLevel(sprite));
     } else {
       iconEl.textContent = THEMES[currentThemeKey()].mascot;
     }
@@ -918,7 +953,7 @@
     var custom = document.createElement('div');
     custom.className = 'mascot-custom-visual';
     visualWrap.appendChild(custom);
-    renderCreatureVisual(custom, sprite, 'full');
+    renderCreatureVisual(custom, sprite, 'full', mascotLevel(sprite));
   }
   /* ---- Réglage global "tête / plein pied" pour l'affichage des
      cartes en Bataille. ---- */
@@ -977,7 +1012,7 @@
      débloqués, mascotte, équipes de bataille et série en cours. Les
      réglages (thème, effets, affichage) sont conservés. ---- */
   function resetProgress(){
-    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_evo_cats','geo_evo_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_evo_cats','geo_evo_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_mascot_lv_cats','geo_mascot_lv_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
       try{ localStorage.removeItem(k); }catch(e){}
     });
     stars = 0;
@@ -991,6 +1026,7 @@
     var firstBrain = BRAINROT_SPRITES.filter(function(sp){ return sp.starter; })[0];
     ownedCats[firstCat.id] = true; ownedBrain[firstBrain.id] = true;
     mascotIds = { cats:firstCat.id, brainrot:firstBrain.id };
+    mascotLvls = { cats:null, brainrot:null };
     saveMascot();
     btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
     if(typeof resetFreeStreak === 'function') resetFreeStreak();
