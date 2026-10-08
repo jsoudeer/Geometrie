@@ -35,3 +35,10 @@
     .sfx-word, .bt-skill{ animation:none; } .bcard.charging, .bt-shake, .skill-tag{ animation:none; }
   }
   .bcard-art .evo-badge{ bottom:auto; top:-3px; left:-3px; }
+  /* compétence ratée : effet d'échec */
+  .sfx-word.miss{ --sfx-c:#8FA3B8; }
+  /* compétence réussie : on vise. Les cartes adverses sont mises en avant, les nôtres s'effacent (sauf l'attaquante). */
+  #bt-arena.bt-aim #bt-enemy-field .bcard.targetable{ box-shadow:0 0 0 3px #FFC83D, 0 0 18px 4px rgba(255,200,61,.75); animation:btAim 1s ease-in-out infinite; }
+  #bt-arena.bt-aim #bt-player-field .bcard:not(.selected){ opacity:.45; filter:saturate(.6); }
+  @keyframes btAim{ 50%{ transform:scale(1.05); } }
+  @media (prefers-reduced-motion: reduce){ #bt-arena.bt-aim #bt-enemy-field .bcard.targetable{ animation:none; } }

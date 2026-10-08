@@ -434,3 +434,8 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - **Admirer** : boutons *De base / ★ Évolué / ★★ Ultime* (niveaux atteints) et **« ☆ Choisir comme mascotte »** : la mascotte retient le personnage ET le niveau (`mascotLvls`, clés `geo_mascot_lv_cats` / `_brainrot` ; absent = niveau le plus haut, qui suit les évolutions). Effacer la progression les oublie.
 - Test `evo_images_check.js` (images par niveau, boutique, bataille, Admirer, mascotte, rechargement, effacement).
 - Les autres images déposées (4 chiens, 4 lapins, en visage + en pied) ne sont pas encore utilisées.
+
+## 75. Bataille : compétence jugée tout de suite, une seule fois (08/10/2026)
+- **Défaut** : la réponse à la compétence n'était jugée qu'à l'attaque ; en retouchant sa carte après avoir répondu, on pouvait relancer la question autant de fois qu'on voulait sans s'en servir. Et « Doubler ou fixe » affichait le résultat du ×2 (« Dégâts ×2 (24) ») : plus rien à calculer.
+- **Nouveau déroulé** (`btChooseSkill`, bataille.js) : la réponse est jugée au toucher et la compétence est **consommée**. Réussite → effet « 👍 BRAVO ! », bonus gardé dans `bt.armed`, cartes adverses mises en avant (`#bt-arena.bt-aim`, les nôtres s'effacent), l'attaquant est verrouillé jusqu'au choix de la cible. Échec → effet « 😕 RATÉ ! » (classe `miss`) avec la bonne réponse et l'explication, retour à `pick-attacker` : attaque normale, avec n'importe quelle carte. « Doubler ou fixe » : seul « ✖️ Dégâts ×2 » est écrit (le titre rappelle les points de la carte) ; le meilleur choix ou l'égalité = réussite, le moins bon = échec.
+- `skills_check.js` adapté (échec immédiat puis dégâts normaux, cibles mises en avant, pas de relance, résultat du ×2 caché).

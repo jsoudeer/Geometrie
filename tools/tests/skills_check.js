@@ -1,5 +1,6 @@
 // Compétences de personnage : catalogue (rareté, attribution, niveaux), déclenchement tous les 3 tours (2 au niveau Ultime),
-// panneau de question, bonne réponse = dégâts ×2 / ×2,5, erreur = dégâts normaux ; « Doubler ou fixe » (×m ou N fixes : −30 %, +30 %) ;
+// panneau de question jugé tout de suite (une seule fois) : bonne réponse = dégâts ×2 / ×2,5 sur la cible choisie ensuite,
+// erreur = effet d'échec et retour à l'écran normal (attaque sans bonus) ; « Doubler ou fixe » (×m ou N fixes : −30 %, +30 %) ;
 // effets sonores affichés et déroulé ralenti de la Bataille.
 const { withPage, SHOTS } = require('./lib');
 withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, async (page) => {
@@ -77,16 +78,31 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     const i = await ev(`bt.pl.field.indexOf(__att)`);
     await page.evaluate((i) => document.querySelectorAll('#bt-player-field .bcard')[i].click(), i);
     await wait(30);
+    let failed = false, failSub = '', aim = false, locked = null;
     if (pred === 'none') await page.evaluate(() => document.getElementById('bt-skill-none').click());
     else {
       const idx = await ev(`bt.proc.opts.findIndex(function(o){ return ${pred}; })`);
       await page.evaluate((k) => document.querySelectorAll('#bt-skill-row button')[k].click(), idx);
+      await wait(30);
+      if (await phase() === 'pick-attacker') {
+        // échec : effet d'échec (avec l'explication), retour à l'écran normal ; on attaque sans bonus avec la même carte
+        failed = true; failSub = await page.evaluate(() => (document.querySelector('#bt-sfx .sfx-sub') || {}).textContent || '');
+        await page.evaluate((i) => document.querySelectorAll('#bt-player-field .bcard')[i].click(), i);
+        await wait(30);
+      } else {
+        aim = await page.evaluate(() => document.getElementById('bt-arena').classList.contains('bt-aim'));
+        // le bonus est gagné : retoucher sa carte ne l'annule pas
+        await page.evaluate((i) => document.querySelectorAll('#bt-player-field .bcard')[i].click(), i);
+        await wait(30);
+        locked = await ev(`bt.phase === 'pick-target' && !!bt.armed && bt.selected === __att`);
+      }
     }
     await wait(30);
     await page.evaluate(() => document.querySelectorAll('#bt-enemy-field .bcard')[0].click());
     const t0 = Date.now(); let dmg = 0;
     while (Date.now() - t0 < 15000) { dmg = await ev('__t0 - __tg.pts'); if (dmg !== 0) break; await wait(15); }
     const info = JSON.parse(await ev(`JSON.stringify({ dmg: __t0 - __tg.pts, back: __a0 - __att.pts, procLeft: !!bt.proc, sfx: (document.querySelector('#bt-sfx .sfx-text')||{}).textContent, sub: (document.querySelector('#bt-sfx .sfx-sub')||{}).textContent || '' })`));
+    info.failed = failed; info.failSub = failSub; info.aim = aim; info.locked = locked;
     await untilPhase('pick-attacker', 40000);
     return info;
   }
@@ -96,17 +112,20 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(/(ZIIIP|TCHAK|PIOU|FLOP) !/.test(r.sfx || ''), 'effet sonore de tir (archer) affiché : « ' + r.sfx + ' »');
   chk(await ev(`BT_WORDS.hit.every(function(w){ return /!$/.test(w); }) && BT_WORDS.ko[0] === 'K.O. !'`), 'mots de coup (POW !, BAM !…) et K.O.');
 
-  // --- une compétence à question : bonne réponse = ×2 (×2,5 au niveau Évolué), erreur = dégâts normaux, pas de pénalité
+  // --- une compétence à question : bonne réponse = ×2 (×2,5 au niveau Évolué) ; erreur = échec tout de suite, attaque sans bonus
   async function skillRound(skillId, evo, pts, pred) {
     await ev(`bt.pl.field.forEach(function(u){ u.skill = null; }); bt.pl.field[0].skill = SKILLS.${skillId}; bt.pl.field[0].evo = ${evo}; bt.proc = btMakeProc(bt.pl.field[0]);`);
     await prep(pts);
     return attackWith(pred);
   }
   r = await skillRound('complement', 0, 40, 'o.ok');
-  chk(r.dmg === 80 && r.procLeft === false && r.back === 0, 'bonne réponse : ×2 → 80 dégâts pour 40 points, compétence consommée (' + r.sub + ')');
+  chk(r.dmg === 80 && r.procLeft === false && r.back === 0 && !r.failed, 'bonne réponse : ×2 → 80 dégâts pour 40 points, compétence consommée (' + r.sub + ')');
+  chk(r.aim === true, 'bonne réponse : les cartes adverses sont mises en avant pour viser');
+  chk(r.locked === true, 'bonne réponse : retoucher sa carte n\'annule pas le bonus (pas de relance)');
   chk(/✖️ ×2 BOOM/.test(r.sfx || '') && /👍/.test(r.sub), 'effet affiché « ' + r.sfx + ' » et verdict positif');
   r = await skillRound('complement', 0, 40, '!o.ok');
-  chk(r.dmg === 40 && r.procLeft === false && /bonne réponse était/.test(r.sub), 'mauvaise réponse : dégâts normaux (40), on voit la bonne réponse (' + r.sub + ')');
+  chk(r.failed && /bonne réponse était/.test(r.failSub), 'mauvaise réponse : échec tout de suite, avec la bonne réponse (' + r.failSub + ')');
+  chk(r.dmg === 40 && r.procLeft === false, 'après l\'échec : la compétence est consommée, l\'attaque fait des dégâts normaux (40)');
   r = await skillRound('table', 1, 40, 'o.ok');
   chk(r.dmg === 100, 'niveau Évolué : bonne réponse ×2,5 → 100 dégâts');
   r = await skillRound('double', 2, 40, 'o.ok');
@@ -125,21 +144,29 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     const k = labels.findIndex(t => kind === 'x2' ? /✖️/.test(t) : /fixes/.test(t));
     await page.evaluate((k) => document.querySelectorAll('#bt-skill-row button')[k].click(), k);
     await wait(30);
+    let failed = false, failSub = '';
+    if (await phase() === 'pick-attacker') {
+      failed = true; failSub = await page.evaluate(() => (document.querySelector('#bt-sfx .sfx-sub') || {}).textContent || '');
+      await page.evaluate((i) => document.querySelectorAll('#bt-player-field .bcard')[i].click(), i);
+      await wait(30);
+    }
     await page.evaluate(() => document.querySelectorAll('#bt-enemy-field .bcard')[0].click());
     const t0 = Date.now(); while (Date.now() - t0 < 15000 && await ev('__t0 - __tg.pts') === 0) await wait(15);
     const info = JSON.parse(await ev(`JSON.stringify({ dmg: __t0 - __tg.pts, procLeft: !!bt.proc, sfx: (document.querySelector('#bt-sfx .sfx-text')||{}).textContent, sub: (document.querySelector('#bt-sfx .sfx-sub')||{}).textContent || '', labels: ${JSON.stringify(labels)} })`));
+    info.failed = failed; info.failSub = failSub; info.title = await page.evaluate(() => document.getElementById('bt-skill-title').textContent);
     await untilPhase('pick-attacker', 40000);
     return info;
   }
   r = await boostRound(1, 'x2');
-  chk(r.dmg === 80 && r.procLeft === false, '×2 : 80 dégâts pour 40 points, compétence consommée (' + r.labels.join(' / ') + ')');
+  chk(r.dmg === 80 && r.procLeft === false && !r.failed, '×2 : 80 dégâts pour 40 points, compétence consommée (' + r.labels.join(' / ') + ')');
+  chk(r.labels.some(t => /^✖️ Dégâts ×2$/.test(t)) && !r.labels.some(t => /✖️.*80/.test(t)) && /40 points/.test(r.title), 'le résultat du ×2 n\'est pas affiché : l\'enfant le calcule (' + r.labels.join(' / ') + ')');
   chk(/pareil/.test(r.sub), 'facteur 1 : « les deux faisaient pareil » (' + r.sub + ')');
   r = await boostRound(1.3, 'fixed');
-  chk(r.dmg === 104 && /👍/.test(r.sub), 'fixe +30 % : 104 dégâts, bon calcul (' + r.sub + ')');
+  chk(r.dmg === 104 && /👍/.test(r.sub) && !r.failed, 'fixe +30 % : 104 dégâts, bon calcul (' + r.sub + ')');
   r = await boostRound(1.3, 'x2');
-  chk(r.dmg === 80 && /🤔/.test(r.sub) && /104/.test(r.sub), '×2 alors que fixe +30 % valait 104 : l\'autre était plus fort (' + r.sub + ')');
+  chk(r.failed && /104/.test(r.failSub) && r.dmg === 40, '×2 alors que fixe +30 % valait 104 : échec, puis attaque sans bonus (' + r.failSub + ')');
   r = await boostRound(0.7, 'fixed');
-  chk(r.dmg === 56 && /🤔/.test(r.sub) && /80/.test(r.sub), 'fixe −30 % : 56 dégâts, ×2 valait 80 (' + r.sub + ')');
+  chk(r.failed && /80/.test(r.failSub) && r.dmg === 40, 'fixe −30 % alors que ×2 valait 80 : échec, attaque sans bonus (' + r.failSub + ')');
   r = await boostRound(0.7, 'x2');
   chk(r.dmg === 80 && /👍/.test(r.sub), '×2 contre fixe −30 % : bon calcul');
 
