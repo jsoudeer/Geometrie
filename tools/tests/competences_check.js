@@ -31,7 +31,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
 
   // --- qui a sa compétence quand ?
   const who = await J(`(function(){ function f(id,l){ return !!skillFor(findAnySprite(id), l); }
-    return { communNiv0:f('cat13',0), communNiv1:f('cat13',1), communNiv2:f('cat13',2), rareNiv0:f('cat02',0), defiNiv0:f('cat21',0), starterRare:findAnySprite('cat01').rarity }; })()`);
+    return { communNiv0:f('cat20',0), communNiv1:f('cat20',1), communNiv2:f('cat20',2), rareNiv0:f('cat02',0), defiNiv0:f('cat21',0), starterRare:findAnySprite('cat01').rarity }; })()`);
   chk(!who.communNiv0 && !who.communNiv1 && who.communNiv2, 'un commun gagne sa compétence au niveau Ultime seulement');
   chk(who.rareNiv0 && who.defiNiv0, 'rare et défi : compétence dès le niveau de base');
 
@@ -67,12 +67,12 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(rg.big === 0, 'plages par niveau respectées (compléments à 10 / 20 / 100, doubles ≤ 10, monnaie sur 10 €)');
 
   // --- Boutique : la compétence s'affiche (🔒 pour un commun)
-  await ev(`ownedCats['cat02']=true; ownedCats['cat13']=true; renderShop();`);
+  await ev(`ownedCats['cat02']=true; ownedCats['cat20']=true; renderShop();`);
   await page.evaluate(() => document.getElementById('stars-btn').click());
   await page.waitForTimeout(200);
   const lines = await page.evaluate(() => [...document.querySelectorAll('#shop-grid .sprite-card.owned .sp-skill')].map(e => e.textContent));
   chk(lines.some(l => /Complément \(×2\)/.test(l)) && lines.some(l => /🔒 Compétence au niveau Ultime/.test(l)), 'Boutique : « ' + lines.join(' | ') + ' »');
-  await ev(`evoCats['cat13']=2; renderShop();`);
+  await ev(`evoCats['cat20']=2; renderShop();`);
   const l2 = await page.evaluate(() => [...document.querySelectorAll('#shop-grid .sprite-card.owned .sp-skill')].map(e => e.textContent));
   chk(!l2.some(l => /🔒/.test(l)) && l2.some(l => /×2,5/.test(l)), 'commun au niveau Ultime : compétence visible, ×2,5 (' + l2.join(' | ') + ')');
   await page.screenshot({ path: SHOTS + 'competences_boutique.png', fullPage: true });

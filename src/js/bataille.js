@@ -159,8 +159,8 @@
       ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points.'
       : 'Choisis au moins une carte pour voir les points de tes adversaires.';
     document.getElementById('bt-intro').textContent = btSide()==='cats'
-      ? 'Tu joues avec les Chats Kawaii contre les Brainrots. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.'
-      : 'Tu joues avec les Brainrots contre les Chats Kawaii. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.';
+      ? 'Tu joues avec la Team Kawaii contre les Brainrots. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.'
+      : 'Tu joues avec les Brainrots contre la Team Kawaii. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.';
   }
 
   // Petite flèche/éclair qui vole de l'attaquant vers la carte visée.
@@ -270,7 +270,7 @@
     document.getElementById('bt-setup').hidden = true;
     document.getElementById('bt-over').hidden = true;
     document.getElementById('bt-arena').hidden = false;
-    document.getElementById('bt-enemy-title').textContent = (side==='cats' ? 'Adversaires (Brainrots 👹)' : 'Adversaires (Chats Kawaii 🐱)') + ' · ❤️ ' + enTotal;
+    document.getElementById('bt-enemy-title').textContent = (side==='cats' ? 'Adversaires (Brainrots 👹)' : 'Adversaires (Team Kawaii 🐱)') + ' · ❤️ ' + enTotal;
     var intro = 'Difficulté ' + BT_DIFFS[btDiff].name + ' : équipe adverse ❤️ ' + enTotal + ' points, la tienne ❤️ ' + myTotal + '.';
     btLog([intro].concat(notes), true);
     btClearSfx();

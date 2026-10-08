@@ -59,13 +59,13 @@
     mkSprite('cat10','Merlinou',1,'glasses'),
     mkSprite('cat11','Fleurette',2,'crown'),
     mkSprite('cat12','Flammèche',3,'bell'),
-    mkSprite('cat13','Velours',4,'flower'),
-    mkSprite('cat14','Chamallow',5,'bow'),
-    mkSprite('cat15','Pixel',6,'star'),
-    mkSprite('cat16','Étincelle',7,'crown'),
-    mkSprite('cat17','Câline',0,'heart'),
-    mkSprite('cat18','Nougat',1,'glasses'),
-    mkSprite('cat19','Impériale',2,'crown'),
+    mkSprite('cat13','Postou',4,'flower'),
+    mkSprite('cat14','Vroumi',5,'bow'),
+    mkSprite('cat15','Kimono',6,'star'),
+    mkSprite('cat16','Bondi',7,'crown'),
+    mkSprite('cat17','Souplesse',0,'heart'),
+    mkSprite('cat18','Frisette',1,'glasses'),
+    mkSprite('cat19','Carotin',2,'crown'),
     mkSprite('cat20','Céleste',3,'star')
   ];
 
@@ -724,7 +724,7 @@
   function syncShopThemeToAppTheme(){
     shopTheme = currentThemeKey()==='brainrot' ? 1 : 0;
     var tag = document.getElementById('shop-clan-tag');
-    if(tag) tag.textContent = shopTheme===0 ? 'Chats kawaii 🐱' : 'Brainrots 👹';
+    if(tag) tag.textContent = shopTheme===0 ? 'Team Kawaii 🐱' : 'Brainrots 👹';
   }
   function roleLine(sprite){
     var m = BT_ROLE_META[sprite.role];

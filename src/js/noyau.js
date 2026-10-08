@@ -69,8 +69,8 @@
     if(!btn) return;
     var other = th==='cats' ? 'brainrot' : 'cats';
     btn.textContent = THEMES[other].mascot;
-    btn.setAttribute('aria-label', other==='brainrot' ? 'Passer dans le clan Brainrot' : 'Passer dans le clan Chats Kawaii');
-    btn.setAttribute('title', other==='brainrot' ? 'Passer dans le clan Brainrot' : 'Passer dans le clan Chats Kawaii');
+    btn.setAttribute('aria-label', other==='brainrot' ? 'Passer dans le clan Brainrot' : 'Passer dans la Team Kawaii');
+    btn.setAttribute('title', other==='brainrot' ? 'Passer dans le clan Brainrot' : 'Passer dans la Team Kawaii');
   }
   function applyTheme(th){
     document.body.setAttribute('data-app-theme', th);
