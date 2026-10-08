@@ -85,8 +85,15 @@
   function btUpdateSetupCard(card, sprite, picked, full){
     var evo = spriteEvo(sprite), pts = spritePts(sprite);
     card.className = 'sprite-card owned' + (picked ? ' selected' : '') + (full && !picked ? ' is-full' : '');
-    if(card._evo !== evo){ card._evo = evo; applyEvoLook(card, sprite, evo); }
-    else if(evo) card.classList.add('evo-' + evo);
+    if(card._evo !== evo){
+      // le niveau a changé (carte gardée en mémoire) : on redessine aussi l'image, qui peut être celle du nouveau niveau
+      if(card._evo !== -1){
+        Array.prototype.slice.call(card.querySelectorAll(':scope > svg, :scope > .sp-custom-img')).forEach(function(n){ n.remove(); });
+        var svg = renderSpriteVisual(card, sprite, evo); card.insertBefore(svg, card.firstChild);
+      } else applyEvoLook(card, sprite, evo);
+      card._evo = evo;
+    }
+    else if(evo && !(evoArt(sprite, evo) || {}).exact){ card.classList.add('evo-' + evo); card.setAttribute('data-evo-clan', spriteSide(sprite)); }
     var sk = skillFor(sprite, evo);
     card._pts.textContent = '❤️ ' + pts + ' points' + (sk ? ' · ' + sk.icon : '');
     card.setAttribute('aria-pressed', picked ? 'true' : 'false');

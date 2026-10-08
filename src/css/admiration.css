@@ -148,3 +148,19 @@
     .evo-ov.charging .eo-figure, .evo-ov.charging .eo-art, .evo-ov.boom .eo-figure, .evo-ov.boom .eo-ring, .evo-ov.boom .eo-flash, .eo-stars span{ animation:none; }
     .eo-stars span{ opacity:1; } .fx-rise, .fx-burst{ display:none; } .eo-info{ transition:none; }
   }
+  /* niveaux d'évolution (Admirer) : on passe de l'un à l'autre, et on choisit celui de la mascotte */
+  .adm-levels{ display:flex; justify-content:center; gap:6px; margin:8px 0 0; flex-wrap:wrap; }
+  .adm-levels[hidden]{ display:none; }
+  .adm-lv{ border:2px solid rgba(255,255,255,.55); background:rgba(0,0,0,.35); color:#fff; font:inherit; font-weight:800; font-size:13px;
+    padding:6px 12px; border-radius:999px; cursor:pointer; min-height:36px; }
+  .adm-lv.active{ background:var(--a); border-color:#fff; color:#1a0f1c; }
+  .adm-mascot{ margin-top:8px; border:2px solid #fff; background:rgba(255,255,255,.14); color:#fff; font:inherit; font-weight:800; font-size:14px;
+    padding:8px 16px; border-radius:999px; cursor:pointer; min-height:40px; }
+  .adm-mascot.active{ background:#FFE27A; color:#3a2a00; border-color:#FFE27A; cursor:default; }
+  /* image d'évolution en pied : son fond étincelant fait partie de l'image ; bords fondus, coins arrondis */
+  .sp-full-img.evo-art-img{ border-radius:14%;
+    -webkit-mask-image:linear-gradient(to right, transparent, #000 7%, #000 93%, transparent), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
+    -webkit-mask-composite:source-in;
+    mask-image:linear-gradient(to right, transparent, #000 7%, #000 93%, transparent), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
+    mask-composite:intersect; }
+  .adm-art .sp-full-img.evo-art-img, .adm-overlay.lv2 .adm-art .sp-full-img.evo-art-img{ filter:none; max-height:92%; margin-bottom:4%; }

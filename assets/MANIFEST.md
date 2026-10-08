@@ -29,6 +29,12 @@ avoir demandé à Claude de modifier l'apparence d'un personnage dans le
 code), il suffit de redemander l'export : Claude fait tourner le dessin
 généré dans un navigateur et réenregistre chaque `.svg` à jour.
 
+## Images d'évolution (facultatives)
+`<id>_evo1.png` (visage) et `<id>_evo1_full.png` (en pied) : image du personnage **Évolué** ; `<id>_evo2…` : **Ultime**
+(sans image propre, Ultime reprend celle d'Évolué ; sans version en pied, le visage sert). Elles gardent leur fond
+(flammes, eau, étincelles) : `tools/evo.py` les fabrique depuis `wip/` (recadrage du visage), puis `tools/embed.py`
+les embarque. Aujourd'hui : `cat01` à `cat12`, niveau Évolué.
+
 ## Chats (`assets/cats/`)
 
 | Fichier | Nom |

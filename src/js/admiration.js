@@ -124,6 +124,7 @@
     admireReturnFocus = null;
   }
   var admireReturnFocus = null, admireList = [], admireIdx = 0;
+  var admireLvl = null;   // niveau d'évolution montré (null = celui de la mascotte si c'est elle, sinon le plus haut atteint)
   function onAdmireKey(e){
     if(e.key==='Escape'){ e.preventDefault(); closeAdmire(); }
     else if(e.key==='ArrowLeft') admireStep(-1);
@@ -132,18 +133,22 @@
   function admireStep(d){
     if(admireList.length<2) return;
     admireIdx = (admireIdx + d + admireList.length) % admireList.length;
+    admireLvl = null;
     admireRender(d);
   }
   function admireRender(dir){
     var ov = document.getElementById('admire-overlay'); if(!ov) return;
     if(admireStop){ admireStop(); admireStop = null; }
-    var sp = admireList[admireIdx], side = spriteSide(sp), lvl = spriteEvo(sp);
+    var sp = admireList[admireIdx], side = spriteSide(sp), maxLvl = spriteEvo(sp);
+    var isMascot = mascotIds[side] === sp.id;
+    if(admireLvl === null || admireLvl > maxLvl) admireLvl = isMascot ? mascotLevel(sp) : maxLvl;
+    var lvl = admireLvl;
     ov.className = 'adm-overlay ' + fxEvoClass(side, lvl);
     ov.setAttribute('aria-label', 'Admirer ' + sp.name);
     var stage = ov.querySelector('.adm-stage'), art = ov.querySelector('.adm-art');
     var back = ov.querySelector('.adm-fx.back'), front = ov.querySelector('.adm-fx.front');
     back.innerHTML = ''; front.innerHTML = '';
-    renderCreatureVisual(art, sp, 'full', 0);   // niveau 0 : pas de cadre, la mise en scène s'en charge
+    renderCreatureVisual(art, sp, 'full', 0, lvl);   // pas de cadre (la mise en scène s'en charge), image du niveau montré
     stage.classList.remove('swap-l','swap-r'); void stage.offsetWidth;
     if(dir) stage.classList.add(dir>0 ? 'swap-r' : 'swap-l');
     ov.querySelector('.adm-name').textContent = sp.name;
@@ -152,6 +157,30 @@
     ov.querySelector('.adm-role').textContent = roleLine(sp) + ' · ' + RARITY_META[sp.rarity].label;
     ov.querySelector('.adm-evo').textContent = EVO_NAMES[lvl];
     ov.querySelector('.adm-prev').hidden = ov.querySelector('.adm-next').hidden = admireList.length<2;
+    // niveaux atteints : on passe de l'un à l'autre ; la mascotte retient le niveau choisi
+    var row = ov.querySelector('.adm-levels');
+    row.innerHTML = ''; row.hidden = maxLvl === 0;
+    for(var L = 0; L <= maxLvl; L++) (function(L){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'adm-lv' + (L === lvl ? ' active' : '');
+      b.textContent = (L === 2 ? '★★ ' : L === 1 ? '★ ' : '') + EVO_NAMES[L];
+      b.setAttribute('aria-pressed', L === lvl ? 'true' : 'false');
+      b.addEventListener('click', function(e){ e.stopPropagation(); admireLvl = L; admireRender(0); var nb = ov.querySelectorAll('.adm-lv')[L]; if(nb) nb.focus(); });
+      row.appendChild(b);
+    })(L);
+    var mb = ov.querySelector('.adm-mascot');
+    var here = isMascot && mascotLevel(sp) === lvl;
+    mb.textContent = here ? '★ Ma mascotte' : '☆ Choisir comme mascotte';
+    mb.setAttribute('aria-pressed', here ? 'true' : 'false');
+    mb.classList.toggle('active', here);
+    mb.setAttribute('aria-label', here ? sp.name + ' (' + EVO_NAMES[lvl] + ') est ta mascotte' : 'Choisir ' + sp.name + ' (' + EVO_NAMES[lvl] + ') comme mascotte');
+    mb.onclick = function(e){
+      e.stopPropagation();
+      if(here) return;
+      setMascot(sp, lvl === maxLvl ? null : lvl);   // le plus haut niveau : la mascotte suivra les évolutions suivantes
+      if(typeof renderShop === 'function' && !document.getElementById('tab-shop').hidden) renderShop();
+      admireRender(0); ov.querySelector('.adm-mascot').focus();
+    };
     admireStop = fxAmbient(back, front, side, lvl);
   }
   function showAdmire(sprite){
@@ -161,6 +190,7 @@
     var owned = side==='cats' ? ownedCats : ownedBrain;
     admireList = list.filter(function(s){ return owned[s.id]; });
     admireIdx = Math.max(0, admireList.indexOf(sprite));
+    admireLvl = null;
     admireReturnFocus = document.activeElement;
     var ov = document.createElement('div');
     ov.id = 'admire-overlay'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
@@ -170,7 +200,10 @@
       '<div class="adm-fx back" aria-hidden="true"></div><div class="adm-floor" aria-hidden="true"></div>' +
       '<div class="adm-figure"><div class="adm-bob"><div class="adm-art"></div></div></div>' +
       '<div class="adm-fx front" aria-hidden="true"></div></div>' +
-      '<div class="adm-info"><p class="adm-name"></p><p class="adm-line"><span class="adm-stars" aria-hidden="true"></span> <span class="adm-evo"></span></p><p class="adm-role"></p><p class="adm-hint">Touche et fais glisser pour la faire tourner</p></div>' +
+      '<div class="adm-info"><p class="adm-name"></p><p class="adm-line"><span class="adm-stars" aria-hidden="true"></span> <span class="adm-evo"></span></p><p class="adm-role"></p>' +
+      '<div class="adm-levels" role="group" aria-label="Niveau d\'évolution à admirer"></div>' +
+      '<button type="button" class="adm-mascot"></button>' +
+      '<p class="adm-hint">Touche et fais glisser pour la faire tourner</p></div>' +
       '<button type="button" class="adm-nav adm-prev" aria-label="Personnage précédent">◀</button><button type="button" class="adm-nav adm-next" aria-label="Personnage suivant">▶</button>';
     document.body.appendChild(ov);
     var spin = ov.querySelector('.adm-orbit-spin');

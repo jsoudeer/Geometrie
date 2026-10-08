@@ -33,7 +33,7 @@ src/
     atelier.js          activités interactives (on touche) : symétrie, fractions, modèle à copier, trouver l'erreur, axes de symétrie
     patron3d.js         Patron → Solide (3D) + questions sur les solides
     orchestrateur.js    moteur du Quizz, niveaux, chrono, séries, configuration des activités
-    images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py)
+    images-data.js      images des personnages en base64 (GÉNÉRÉ par tools/embed.py ; e1 / e2 = images d'évolution, voir tools/evo.py)
                         (chargé EN PREMIER : définit CUSTOM_IMG et SPLASH_IMG, lus par noyau.js)
     boutique.js         personnages, évolutions (spritePts, tryEvolve, applyEvoLook), défis, boutique, mascotte
     competences.js      compétences des personnages (SKILLS, skillFor, skillLine) : 10 questions de maths, niveaux, compétence d'un commun à l'Ultime
