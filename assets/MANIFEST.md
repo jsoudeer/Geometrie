@@ -35,7 +35,7 @@ généré dans un navigateur et réenregistre chaque `.svg` à jour.
 (flammes, eau, étincelles) : `tools/evo.py` les fabrique depuis `wip/` (recadrage du visage), puis `tools/embed.py`
 les embarque. Aujourd'hui : `cat01` à `cat12`, niveau Évolué.
 
-## Chats (`assets/cats/`)
+## Team Kawaii (`assets/cats/` : chats, chiens, lapins…)
 
 | Fichier | Nom |
 |---|---|
@@ -51,13 +51,13 @@ les embarque. Aujourd'hui : `cat01` à `cat12`, niveau Évolué.
 | cat10.png | Merlinou |
 | cat11.png | Fleurette |
 | cat12.png | Flammèche |
-| cat13.png | Velours |
-| cat14.png | Chamallow |
-| cat15.png | Pixel |
-| cat16.png | Étincelle |
-| cat17.png | Câline |
-| cat18.png | Nougat |
-| cat19.png | Impériale |
+| cat13.png | Postou (chien facteur) |
+| cat14.png | Vroumi (chien à moto) |
+| cat15.png | Kimono (shiba karaté) |
+| cat16.png | Bondi (lapin) |
+| cat17.png | Souplesse (lapine gymnaste) |
+| cat18.png | Frisette (lapin à la brosse) |
+| cat19.png | Carotin (lapin jardinier) |
 | cat20.png | Céleste |
 | cat21.png | Flocon — Défi chrono Facile · 1 min · 5 bonnes réponses |
 | cat22.png | Muffin — Défi chrono Facile · 2 min · 8 bonnes réponses |
