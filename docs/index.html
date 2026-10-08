@@ -1264,6 +1264,13 @@ html,body{margin:0}
     .sfx-word, .bt-skill{ animation:none; } .bcard.charging, .bt-shake, .skill-tag{ animation:none; }
   }
   .bcard-art .evo-badge{ bottom:auto; top:-3px; left:-3px; }
+  /* compétence ratée : effet d'échec */
+  .sfx-word.miss{ --sfx-c:#8FA3B8; }
+  /* compétence réussie : on vise. Les cartes adverses sont mises en avant, les nôtres s'effacent (sauf l'attaquante). */
+  #bt-arena.bt-aim #bt-enemy-field .bcard.targetable{ box-shadow:0 0 0 3px #FFC83D, 0 0 18px 4px rgba(255,200,61,.75); animation:btAim 1s ease-in-out infinite; }
+  #bt-arena.bt-aim #bt-player-field .bcard:not(.selected){ opacity:.45; filter:saturate(.6); }
+  @keyframes btAim{ 50%{ transform:scale(1.05); } }
+  @media (prefers-reduced-motion: reduce){ #bt-arena.bt-aim #bt-enemy-field .bcard.targetable{ animation:none; } }
   /* ===================== GUIDES (tutoriels en surbrillance) =====================
      Un voile sombre avec un « trou » autour de l'élément expliqué (ombre géante du
      cadre .guide-spot), et une bulle d'explication. Au-dessus de tout (z-index 6000). */
@@ -10447,7 +10454,7 @@ function phrase(tpl, vars){
       pl: { field:[], reserve:myUnits },
       en: { field:[], reserve:enUnits },
       phase: 'pick-attacker', selected: null, over: false, log: [], cards: {}, animateArrivals: false,
-      turn: 0, proc: null, skillChoice: null, factors: []
+      turn: 0, proc: null, skillChoice: null, armed: null, factors: []
     };
     var notes = [];
     for(var i=0;i<BT_FIELD_SIZE;i++){ btDrawFromReserve(bt.pl, notes); btDrawFromReserve(bt.en, notes); }
@@ -10464,7 +10471,7 @@ function phrase(tpl, vars){
   // Début de chaque tour du joueur : une compétence se déclenche sur une des cartes qui en ont une (voir l'en-tête).
   function btStartPlayerTurn(){
     bt.turn++;
-    bt.phase = 'pick-attacker'; bt.selected = null; bt.skillChoice = null;
+    bt.phase = 'pick-attacker'; bt.selected = null; bt.skillChoice = null; bt.armed = null;
     var spawned = false, skilled = bt.pl.field.filter(function(u){ return !!u.skill; });
     if(skilled.length && !bt.proc){
       var every = Math.min.apply(null, skilled.map(function(u){ return SKILL_LEVELS[Math.min(u.evo, SKILL_LEVELS.length - 1)].every; }));
@@ -10513,8 +10520,9 @@ function phrase(tpl, vars){
     var opts;
     if(sk.id === 'boost'){
       var v = btBoostValues(proc);
-      title.textContent = '🎁 ' + sk.name + ' : lequel fait le plus de dégâts ?';
-      opts = [{ label:'✖️ Dégâts ' + mult + ' (' + v.x2 + ')', aria:'Dégâts multipliés par ' + String(btSkillLevel(proc.unit).mult).replace('.', ',') + ', soit ' + v.x2, value:v.x2 },
+      // on n'affiche PAS le résultat du ×2 : c'est à l'enfant de calculer lequel est le plus fort
+      title.textContent = '🎁 ' + sk.name + ' : ' + proc.unit.sprite.name + ' a ' + proc.unit.pts + ' points. Lequel fait le plus de dégâts ?';
+      opts = [{ label:'✖️ Dégâts ' + mult, aria:'Dégâts multipliés par ' + String(btSkillLevel(proc.unit).mult).replace('.', ','), value:v.x2 },
               { label:'🎯 ' + v.fixed + ' dégâts fixes', aria:v.fixed + ' dégâts fixes', value:v.fixed }];
       opts = btShuffle(opts);
     } else {
@@ -10531,13 +10539,30 @@ function phrase(tpl, vars){
     });
   }
   // Choix du joueur dans le panneau (index de la proposition) ou -1 : attaquer sans la compétence.
+  // La réponse est jugée TOUT DE SUITE et la compétence est consommée (on ne peut plus la relancer) :
+  //  - réussite : la carte reste choisie, les cartes adverses sont mises en avant, l'attaque fera les dégâts gagnés ;
+  //  - échec : effet d'échec avec l'explication, retour à l'écran normal (on attaque sans bonus, avec la carte qu'on veut).
   function btChooseSkill(i){
     if(!bt || bt.phase !== 'pick-skill') return;
-    bt.skillChoice = i;             // index d'une proposition, ou -1
-    bt.phase = 'pick-target';
-    btSetStatus(i < 0
-      ? bt.selected.sprite.name + ' attaque sans compétence : touche la carte adverse à viser.'
-      : 'Réponse donnée ! Touche la carte adverse à viser.');
+    if(i < 0){
+      bt.skillChoice = -1; bt.phase = 'pick-target';
+      btSetStatus(bt.selected.sprite.name + ' attaque sans compétence : touche la carte adverse à viser.');
+      btRender(); return;
+    }
+    var attacker = bt.selected, proc = btProcFor(attacker), res = btSkillResult(attacker, proc, i);
+    bt.proc = null; bt.skillChoice = null;
+    if(res && res.ok){
+      bt.armed = res; bt.phase = 'pick-target';
+      btSfx('👍 BRAVO !', 'skill', { sub:res.verdict, ms:2600 });
+      playSound('good');
+      btSetStatus('🎯 Bravo ! Choisis la carte adverse qui recevra ' + res.dmg + ' dégâts.');
+    } else {
+      bt.armed = null; bt.selected = null; bt.phase = 'pick-attacker';
+      btSfx('😕 RATÉ !', 'miss', { sub:res ? res.verdict : '', ms:3200 });
+      playSound('bad');
+      btLog([res ? res.line : '']);
+      btSetStatus('Pas de bonus cette fois. ' + BT_STATUS_PICK);
+    }
     btRender();
   }
   // Résultat de la compétence pour l'attaque : dégâts, mot affiché, ligne du journal, verdict pédagogique. null = pas de compétence.
@@ -10547,11 +10572,11 @@ function phrase(tpl, vars){
     if(sk.id === 'boost'){
       var v = btBoostValues(proc), mine = o.value, other = Math.max(v.x2, v.fixed) === mine ? Math.min(v.x2, v.fixed) : Math.max(v.x2, v.fixed);
       var verdict = mine > other ? '👍 Bon calcul : c\'était le meilleur choix !' : mine === other ? '🟰 Les deux choix faisaient pareil (' + mine + ').' : '🤔 L\'autre choix faisait ' + other + ' (tu en as fait ' + mine + ').';
-      return { dmg:mine, ok:mine >= other, word:'🎯 ' + mine + ' !', verdict:verdict, line:sk.name + ' : ' + mine + ' dégâts. ' + verdict };
+      return { dmg:mine, ok:mine >= other, word:'🎯 ' + mine + ' !', verdict:verdict, line:sk.name + ' : ' + (mine >= other ? mine + ' dégâts. ' : 'pas de bonus. ') + verdict };
     }
     var right = proc.q.options.filter(function(x){ return x.ok; })[0].label;
     if(o.ok) return { dmg:Math.round(attacker.pts * lvl.mult), ok:true, word:'✖️ ' + mult + ' BOOM !', verdict:'👍 Bonne réponse : dégâts ' + mult + ' ! ' + proc.q.explain, line:sk.name + ' : bonne réponse, dégâts ' + mult + '.' };
-    return { dmg:attacker.pts, ok:false, word:btWord('hit'), verdict:'🤔 La bonne réponse était ' + right + '. ' + proc.q.explain, line:sk.name + ' : pas cette fois (réponse : ' + right + '), dégâts normaux.' };
+    return { dmg:attacker.pts, ok:false, word:btWord('hit'), verdict:'🤔 La bonne réponse était ' + right + '. ' + proc.q.explain, line:sk.name + ' : pas cette fois (réponse : ' + right + '), pas de bonus.' };
   }
   function btSetStatus(text){ document.getElementById('bt-status').textContent = text; }
   function btLog(lines, reset){
@@ -10621,9 +10646,8 @@ function phrase(tpl, vars){
       if(!bt || bt.over) return;
       if(isEnemy){
         if(bt.phase !== 'pick-target') return;
-        var attacker = bt.selected, res = btSkillResult(attacker, btProcFor(attacker), bt.skillChoice);
-        if(btProcFor(attacker) && bt.skillChoice !== null && bt.skillChoice >= 0) bt.proc = null;      // la compétence est consommée
-        bt.selected = null; bt.skillChoice = null; bt.phase = 'busy';
+        var attacker = bt.selected, res = bt.armed;      // bonus gagné (réponse juste) ou null
+        bt.selected = null; bt.skillChoice = null; bt.armed = null; bt.phase = 'busy';
         btSetStatus('Attaque en cours…');
         btRender();
         btResolveAttack(bt.pl, attacker, bt.en, unit, false, btAfterPlayerAttack, res);
@@ -10637,6 +10661,8 @@ function phrase(tpl, vars){
           btSetStatus(unit.sprite.name + ' est prêt : touche la carte adverse à attaquer (ou retouche ta carte pour changer).');
         }
         btRender();
+      } else if(bt.armed && bt.selected === unit){
+        btSetStatus('🎯 Ton bonus est prêt : touche une carte adverse !');      // bonus gagné : on ne peut plus changer d'avis
       } else if((bt.phase === 'pick-target' || bt.phase === 'pick-skill') && bt.selected === unit){
         bt.selected = null; bt.skillChoice = null; bt.phase = 'pick-attacker';
         btSetStatus(BT_STATUS_PICK);
@@ -10702,6 +10728,7 @@ function phrase(tpl, vars){
       return c;
     }));
     bt.animateArrivals = true;
+    var arena = document.getElementById('bt-arena'); if(arena) arena.classList.toggle('bt-aim', !!bt.armed && bt.phase === 'pick-target' && !bt.over);
     btRenderSkillPanel();
     document.getElementById('bt-player-reserve').textContent = 'Réserve : ' + bt.pl.reserve.length + ' carte' + (bt.pl.reserve.length>1 ? 's' : '');
     document.getElementById('bt-enemy-reserve').textContent = 'Réserve adverse : ' + bt.en.reserve.length + ' carte' + (bt.en.reserve.length>1 ? 's' : '');
