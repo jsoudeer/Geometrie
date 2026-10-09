@@ -195,6 +195,14 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(tm.capBad === 0, 'calendrier et fractions : aucun guillemet parasite dans le dessin');
   chk(tm.m5 > 10, 'l\'écran « Lire l\'heure » dessine sur sa propre horloge (m5Svg)');
 
+  // toutes les fiches, tous les niveaux : aucun dessin ni texte ne montre une formule (appel de fonction, accolade, concaténation)
+  const leak = await page.evaluate(() => window.__t.__eval(`(function(){ var out = [], svg = document.getElementById('m4Svg');
+    Object.keys(TEMPLATE_FICHES).forEach(function(id){ var def = QCM_TYPE_DEFS.filter(function(d){ return d.id === id; })[0];
+      for(var lv = 0; lv < 3; lv++) for(var i = 0; i < 60; i++){ var q = def.generate(lv); q.draw();
+        var t = [svg.textContent, q.question, q.sub, q.explain].concat(q.choices.map(function(c){ return c.label; })).join(' ¦ ');
+        if(/[a-zA-Z_]\\(|[{}]|'\\s*\\+|\\+\\s*'|undefined|NaN/.test(t)){ out.push(id + ' : ' + t.slice(0, 120)); break; } } });
+    return JSON.stringify(out.slice(0, 5)); })()`));
+  chk(JSON.parse(leak).length === 0, 'aucune fiche ne montre de formule dans son dessin ou ses textes ' + leak);
   console.log(bad ? 'ÉCHEC gabarits : ' + bad : 'gabarits OK');
   if (bad) process.exitCode = 1;
 });

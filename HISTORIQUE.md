@@ -457,3 +457,7 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - **Rareté fixe** (`COMMON_IDS`, boutique.js) : elle ne se déduit plus de la présence d'une image (sinon tout serait devenu rare et l'économie aurait doublé). Communs : Pinceau + br08-20 (10 ⭐) ; les autres achetables sont rares (20 ⭐). `cours.md` mis à jour.
 - Poids : `embed.py` compresse un peu plus (en pied 400 px, WebP 78) : 70 personnages, index.html ≈ 4,3 Mo.
 - Tests : `kawaii_check.js` (70 illustrés, noms uniques, 14 communs / 26 rares), `competences_check.js` (rareté par la liste).
+
+## 79. Correctif : légende des « Durées » (09/10/2026)
+- La légende sous le dessin des Durées affichait la formule (« dureeT(s) + ' + ' + dureeFmt(d) ») : dans la fiche, `caption` est un **texte à trous** (`{dureeT(s)} + {dureeFmt(d)}`), pas une expression. Erreur introduite au §69, que les tests ne voyaient pas (ils ne lisaient que l'énoncé).
+- Tests : `formes_check.js` lit la légende des Durées ; `gabarits_check.js` vérifie pour **toutes** les fiches et les 3 niveaux qu'aucun dessin, énoncé, explication ou réponse ne montre de formule (appel de fonction, accolade, concaténation, undefined, NaN).

@@ -111,6 +111,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
       if(e2 === null || g.length !== 1 || g[0].label !== e2) U.bad++;
       if(new Set(q.choices.map(function(c){return c.label;})).size < 4) U.dist++;
       U.kinds[lv][k3] = 1;
+      q.draw(); var cap = svg.textContent; if(/duree|\(|'/.test(cap) || (k3 !== 'conv' && !/\d+ h/.test(cap))) U.cap = (U.cap || 0) + 1, U.capEx = cap;
     }
     U.kinds = U.kinds.map(function(k){ return Object.keys(k).sort().join(); }); R.dur = U;
     // --- symétrie : vrai axe ? (la phrase d'explication dit la même chose que la bonne réponse) ---
@@ -169,6 +170,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
   chk(o.int.kinds.join('|') === 'poly|poly|poly,rect', 'intrus : sortes par niveau ' + o.int.kinds.join('|'));
   chk(o.reg3, 'duree, symVrai, symVisuel, enigme sont des fiches');
   chk(o.dur.bad === 0 && o.dur.dist === 0, 'durées : réponse recalculée (' + o.dur.bad + ' écarts)');
+  chk(!o.dur.cap, 'durées : la légende du dessin montre les heures, pas une formule' + (o.dur.capEx ? ' (« ' + o.dur.capEx + ' »)' : ''));
   chk(o.dur.kinds.join('|') === 'duree,fin|debut,duree,fin|conv,debut,duree,fin', 'durées : sortes par niveau ' + o.dur.kinds.join('|'));
   chk(o.sym.bad === 0 && o.sym.figs === 4 && o.sym.Oui && o.sym.Non, 'symétrie vrai/faux : explication = réponse, 4 figures, oui et non');
   chk(o.vis.bad === 0 && o.vis.dist === 0, 'symétrie visuelle : la bonne figure est le miroir (' + o.vis.bad + ' écarts)');
