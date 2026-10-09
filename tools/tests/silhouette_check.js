@@ -20,7 +20,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 800 } }, asy
     sigs[side] = await page.evaluate(() => document.querySelector('#shop-grid .sprite-card.locked svg').innerHTML);
     chk(r.n > 0 && r.svgs === 1 && r.custom === 0 && JSON.stringify(r.q) === '["?"]', side + ' : une seule image « ? » pour tous les verrouillés');
     chk(r.names.every(n => n && n !== '???') && new Set(r.names).size === r.n, side + ' : noms visibles (ex. ' + r.names.slice(0, 2).join(', ') + ')');
-    chk(r.roles.length === 1 && /Mystère/.test(r.roles[0]), side + ' : rôle et points cachés');
+    chk(r.roles.length >= 2 && r.roles.every(x => /^\S+ (Classique|Soutien|Archer) · ❤️ \?$/.test(x)), side + ' : classe visible, points cachés (' + r.roles.join(' | ') + ')');
     await page.evaluate(() => document.querySelector('#shop-grid .sprite-card.locked:not(.reward-locked)').click());
     chk(await page.evaluate(() => document.getElementById('info-overlay').hidden), side + ' : pas d\'aperçu au toucher');
     await page.evaluate(() => document.querySelector('#shop-grid .reward-locked').click());

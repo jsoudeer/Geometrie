@@ -743,7 +743,7 @@
     rarity.textContent = RARITY_META[sprite.rarity].label;
     rarity.style.background = RARITY_META[sprite.rarity].color;
     card.appendChild(rarity);
-    var roleEl = document.createElement('div'); roleEl.className='sp-role'; roleEl.textContent = isOwned ? roleLine(sprite) : '❔ Mystère';
+    var roleEl = document.createElement('div'); roleEl.className='sp-role'; roleEl.textContent = isOwned ? roleLine(sprite) : BT_ROLE_META[sprite.role].icon + ' ' + BT_ROLE_META[sprite.role].label + ' · ❤️ ?';   // verrouillé : la classe se voit (pour viser un archer, un soutien…), les points restent une surprise
     card.appendChild(roleEl);
     if(isOwned){
       var skEl = document.createElement('div'); skEl.className = 'sp-skill'; skEl.textContent = skillLine(sprite, spriteEvo(sprite));
