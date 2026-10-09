@@ -449,3 +449,11 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 ## 77. Appli installée : mise à jour automatique ; classe visible des personnages verrouillés (09/10/2026)
 - **Mise à jour** (`tools/build.py`, script d'enregistrement du service worker) : `sw.js` est demandé sans cache (`updateViaCache:"none"`), la vérification est refaite à chaque retour au premier plan (`visibilitychange` → `reg.update()`), et quand la nouvelle version prend la main (`controllerchange`) la page se recharge **une fois** toute seule. Il suffit donc de rouvrir l'appli (au pire deux fois si elle était déjà ouverte) : plus besoin de désinstaller. `pwa_check.js` simule une nouvelle version publiée (rechargement unique, ancienne mise en mémoire remplacée).
 - **Boutique** : un personnage verrouillé montre sa **classe** (⚔️ Classique / 💖 Soutien / 🏹 Archer · ❤️ ?) ; seuls ses points restent cachés. `silhouette_check.js` adapté.
+
+## 78. Grande fournée : les 70 personnages sont illustrés (09/10/2026)
+- 97 personnages déposés dans `wip/` (visage carré + en pied « -vK »). **42 retenus**, pour la variété : Team Kawaii = Pinceau (cat20) et les 15 de défi (cat21-35 : 5 éléments — glace, air, cristal, lumière, terre — et 10 métiers différents, chiens / chats / lapins mélangés) ; Brainrots = br08-20 et br23-35 (26 animaux tous différents, et différents des brainrots existants). Noms : français pour les Kawaii, faux-italien pour les Brainrots (`boutique.js`, `assets/MANIFEST.md`). Rôles, compétences et défis gardés (attachés à l'identifiant) ; les anciens `.svg` de ces personnages sont supprimés.
+- **55 de réserve** dans `wip/plus-tard/`, déjà découpés (`nom.png` + `nom_full.png`, originaux à côté), avec un nom proposé et la raison de la mise de côté (`NOMS.md`).
+- `tools/persos.py` (choix → assets, reste → plus-tard ; découpage commun avec `tools/kawaii.py`).
+- **Rareté fixe** (`COMMON_IDS`, boutique.js) : elle ne se déduit plus de la présence d'une image (sinon tout serait devenu rare et l'économie aurait doublé). Communs : Pinceau + br08-20 (10 ⭐) ; les autres achetables sont rares (20 ⭐). `cours.md` mis à jour.
+- Poids : `embed.py` compresse un peu plus (en pied 400 px, WebP 78) : 70 personnages, index.html ≈ 4,3 Mo.
+- Tests : `kawaii_check.js` (70 illustrés, noms uniques, 14 communs / 26 rares), `competences_check.js` (rareté par la liste).

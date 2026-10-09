@@ -45,8 +45,8 @@ for cid, side in ids_with_pair():
     base = os.path.join(ROOT, 'assets', side, cid)
     face = Image.open(base + '.png').convert('RGB')
     full = Image.open(base + '_full.png').convert('RGBA')
-    full = full.resize((round(full.width * 440 / full.height), 440), Image.LANCZOS)
-    fa, fu = b64(face, quality=82), b64(full, quality=86, method=6)
+    full = full.resize((round(full.width * 400 / full.height), 400), Image.LANCZOS)
+    fa, fu = b64(face, quality=80, method=6), b64(full, quality=78, method=6)
     total += len(fa) + len(fu)
     rec = 'f:"%s",u:"%s"' % (fa, fu)
     # images d'évolution (facultatives) : <id>_evo1.png / <id>_evo1_full.png (Évolué), _evo2 (Ultime) ; voir tools/evo.py

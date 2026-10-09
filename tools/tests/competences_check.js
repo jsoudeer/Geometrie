@@ -1,4 +1,4 @@
-// Compétences : rareté (SVG = commun, illustré = rare), points, attribution (1 compétence par personnage, équilibrée),
+// Compétences : rareté (liste fixe COMMON_IDS = commun, sinon rare), points, attribution (1 compétence par personnage, équilibrée),
 // compétence des communs au niveau Ultime, questions de chaque compétence (3 propositions, 1 bonne, calcul vérifié),
 // affichage dans la Boutique et dans le choix d'équipe.
 const { withPage, SHOTS } = require('./lib');
@@ -9,13 +9,13 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
 
   // --- raretés et points
   const rar = await J(`(function(){ var all=CAT_SPRITES.concat(BRAINROT_SPRITES), o={ badRarity:0, badPts:0, commun:0, rare:0, defi:0, minC:99, maxC:0, minR:99, maxR:0 };
-    all.forEach(function(s){ var img = !!CUSTOM_IMG[s.id]; o[s.rarity]++;
-      if(s.rarity!=='defi' && (img ? 'rare' : 'commun') !== s.rarity) o.badRarity++;
+    all.forEach(function(s){ var com = COMMON_IDS.indexOf(s.id) !== -1; o[s.rarity]++;
+      if(s.rarity!=='defi' && (com ? 'commun' : 'rare') !== s.rarity) o.badRarity++;
       if(s.rarity==='commun'){ o.minC=Math.min(o.minC,s.pts); o.maxC=Math.max(o.maxC,s.pts); }
       if(s.rarity==='rare'){ o.minR=Math.min(o.minR,s.pts); o.maxR=Math.max(o.maxR,s.pts); } });
     o.cost = all.filter(function(s){ return s.rarity!=='defi' && !s.starter; }).every(function(s){ return s.cost===(s.rarity==='rare'?20:10); });
     o.keys = Object.keys(RARITY_META).join(); return o; })()`);
-  chk(rar.badRarity === 0 && rar.rare > 0 && rar.commun > 0 && rar.defi === 30, `rareté : illustré = rare (${rar.rare}), SVG = commun (${rar.commun}), défis ${rar.defi}`);
+  chk(rar.badRarity === 0 && rar.rare > 0 && rar.commun > 0 && rar.defi === 30, `rareté : rares (${rar.rare}), communs de la liste fixe (${rar.commun}), défis ${rar.defi}`);
   chk(rar.keys === 'commun,rare,defi', 'raretés existantes : ' + rar.keys);
   chk(rar.minC >= 5 && rar.maxC <= 7 && rar.minR >= 9 && rar.maxR <= 11 && rar.maxC < rar.minR, `points : communs ${rar.minC}-${rar.maxC}, rares ${rar.minR}-${rar.maxR} (un commun a moins de points)`);
   chk(rar.cost, 'prix : commun 10 ⭐, rare 20 ⭐');

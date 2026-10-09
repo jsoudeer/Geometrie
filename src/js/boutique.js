@@ -27,8 +27,11 @@
   // +5 points à tous ses alliés en arrivant sur le terrain) ou "archer"
   // (attaque sans subir de dégâts en retour). Les points viennent de la rareté
   // (+ 0, 1 ou 2 selon le numéro, pour que deux personnages ne soient pas identiques).
+  // Rareté des personnages à acheter : liste FIXE (elle ne dépend plus de la présence d'une image, sinon tout
+  // deviendrait rare une fois illustré et l'équilibre du jeu changerait). Communs : moins de points, moitié prix.
+  var COMMON_IDS = ['cat20','br08','br09','br10','br11','br12','br13','br14','br15','br16','br17','br18','br19','br20'];
   function mkSprite(id, name, colorIdx, accessory, starter){
-    var rarity = (typeof CUSTOM_IMG !== 'undefined' && CUSTOM_IMG[id]) ? 'rare' : 'commun';
+    var rarity = COMMON_IDS.indexOf(id) !== -1 ? 'commun' : 'rare';
     return {
       id:id, name:name, rarity:rarity, colorIdx:colorIdx, accessory:accessory,
       cost: starter ? 0 : RARITY_META[rarity].cost, starter: !!starter,
@@ -66,7 +69,7 @@
     mkSprite('cat17','Souplesse',0,'heart'),
     mkSprite('cat18','Frisette',1,'glasses'),
     mkSprite('cat19','Carotin',2,'crown'),
-    mkSprite('cat20','Céleste',3,'star')
+    mkSprite('cat20','Pinceau',3,'star')
   ];
 
   var BRAINROT_SPRITES = [
@@ -77,19 +80,19 @@
     mkSprite('br05','Televisiogatto',4,'oneeye'),
     mkSprite('br06','Elefantino Aspiro',5,'antenna'),
     mkSprite('br07','Cagnolino Ventilo',6,'propeller'),
-    mkSprite('br08','Cannolotto Caos',7,'horns'),
-    mkSprite('br09','Raviolone Rex',0,'propeller'),
-    mkSprite('br10','Basilico Boom',1,'legs'),
-    mkSprite('br11','Tortellino Tornado',2,'antenna'),
-    mkSprite('br12','Focacciotto Fury',3,'horns'),
-    mkSprite('br13','Zeppolino Zap',4,'drill'),
-    mkSprite('br14','Panettonio Punch',5,'spiky'),
-    mkSprite('br15','Mortadellone Max',6,'antenna'),
-    mkSprite('br16','Caprese Comet',7,'propeller'),
-    mkSprite('br17','Arancino Alieno',0,'oneeye'),
-    mkSprite('br18','Struzzolino Strike',1,'horns'),
-    mkSprite('br19','Gnoccotto Gigante',2,'mustache'),
-    mkSprite('br20','Biscottino Blitz',3,'propeller')
+    mkSprite('br08','Ranocchio Telefonino',7,'horns'),
+    mkSprite('br09','Axolotto Fungolino',0,'propeller'),
+    mkSprite('br10','Castoro Spazzolino',1,'legs'),
+    mkSprite('br11','Squalo Canestro',2,'antenna'),
+    mkSprite('br12','Granchio Tastierino',3,'horns'),
+    mkSprite('br13','Tartaruga Portatile',4,'drill'),
+    mkSprite('br14','Pinguino Gelatino',5,'spiky'),
+    mkSprite('br15','Cervo Wifiello',6,'antenna'),
+    mkSprite('br16','Camaleonte Spinoso',7,'propeller'),
+    mkSprite('br17','Gallina Sveglietta',0,'oneeye'),
+    mkSprite('br18','Procione Pizzaiolo',1,'horns'),
+    mkSprite('br19','Topolino Cliccone',2,'mustache'),
+    mkSprite('br20','Colibrì Girasole',3,'propeller')
   ];
 
   // Rôles des personnages de base + personnage de départ (le premier de chaque clan).
@@ -111,16 +114,10 @@
   // pour le chat et le brainrot : un défi réussi débloque celui du clan actif.
   var REWARD_ROLES = ['classic','support','classic','archer','classic'];
   var CAT_REWARD_DEFS = [
-    ['Flocon',9,'halo'],['Muffin',8,'headphones'],['Caramel',10,'scarf'],['Zéphyr',11,'wizard'],
-    ['Saphir',9,'moon'],['Truffe',10,'shades'],['Perle',8,'halo'],['Cookie',11,'headphones'],
-    ['Aurore',9,'wizard'],['Volcan',10,'crown'],['Tonnerre',8,'shades'],['Comète',11,'moon'],
-    ['Astro',9,'star'],['Galaxie',10,'wizard'],['Phénix',8,'crown']
+    ['Flocon',9,'halo'],['Moka',8,'headphones'],['Preux',10,'scarf'],['Zéphyr',11,'wizard'],['Fossile',9,'moon'],['Indice',10,'shades'],['Perle',8,'halo'],['Bulle',11,'headphones'],['Aurore',9,'wizard'],['Galet',10,'crown'],['Boulon',8,'shades'],['Fiole',11,'moon'],['Astro',9,'star'],['Mielou',10,'wizard'],['Pimpon',8,'crown']
   ];
   var BRAIN_REWARD_DEFS = [
-    ['MiaoStation 5',8,'flame'],['Leone Spaghettoni',9,'bolt'],['Ciabattino Cric',10,'wings'],['Tiramisù Tuono',11,'sprout'],
-    ['Carciofo Comico',8,'bolt'],['Bruschetta Bum',9,'flame'],['Pistacchio Pop',11,'wings'],['Cornetto Crash',10,'sprout'],
-    ['Gorgonzolo Gong',8,'wings'],['Melanzano Magico',9,'sprout'],['Prosciutto Pazzo',10,'flame'],['Pecorino Pow',11,'bolt'],
-    ['Limoncello Laser',8,'horns'],['Mozzarello Mega',9,'antenna'],['Tartufo Titano',10,'propeller']
+    ['MiaoStation 5',8,'flame'],['Leone Spaghettoni',9,'bolt'],['Criceto Chiavetta',10,'wings'],['Coccodrillo Bombardino',11,'sprout'],['Volpe Joystickina',8,'bolt'],['Lumaca Stampante',9,'flame'],['Koala Tabletto',11,'wings'],['Bradipo Cassetta',10,'sprout'],['Pappagallo Webcammo',8,'wings'],['Suricato Flashino',9,'sprout'],['Riccio Tostapane',10,'flame'],['Gufo Grammofono',11,'bolt'],['Balena Ondina',8,'horns'],['Scimmia Bassone',9,'antenna'],['Pantera Ghiacciata',10,'propeller']
   ];
   var CAT_REWARDS = CAT_REWARD_DEFS.map(function(d,k){
     return mkReward('cat'+(21+k), d[0], d[1], d[2], 8 + Math.floor(k*0.5) + (k>=12?2:0), REWARD_ROLES[k%5], k);

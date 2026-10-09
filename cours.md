@@ -184,11 +184,11 @@ Chaque clan (Team Kawaii / Brainrot) a **35 personnages** : **un seul offert** (
 
 | Rareté | Qui ? | Points de base | Prix |
 |---|---|---|---|
-| Commun | personnage **dessiné en SVG** (sans illustration) | 5 à 7 ❤️ | 10 ⭐ |
-| Rare | personnage **illustré à la main** (une image existe) | 9 à 11 ❤️ | 20 ⭐ |
+| Commun | Pinceau (Team Kawaii) et les 13 Brainrots de Ranocchio Telefonino à Colibrì Girasole | 5 à 7 ❤️ | 10 ⭐ |
+| Rare | tous les autres personnages à acheter | 9 à 11 ❤️ | 20 ⭐ |
 | **Défi** | Ne s'achète pas : se débloque par un défi | 8 à 17 ❤️ | — |
 
-La rareté se déduit de la présence d'une image : quand un personnage est illustré, il devient rare tout seul. Un commun a donc moins de points qu'un rare et coûte deux fois moins cher : c'est ce qui équilibre le jeu.
+La rareté est fixée personnage par personnage (tous sont maintenant illustrés). Un commun a moins de points qu'un rare et coûte deux fois moins cher : c'est ce qui équilibre le jeu.
 
 Repères : une équipe de 5 personnages (1 offert + 4 achetés) coûte 40 à 80 ⭐ (1 ⭐ par bonne réponse, +3 ⭐ par victoire en bataille).
 
