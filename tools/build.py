@@ -64,8 +64,14 @@ def site(fragment):
             '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="Kawaii vs Brainrot">\n'
             '<link rel="manifest" href="manifest.webmanifest">\n<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">\n'
             '<style>\n' + faces + 'html,body{margin:0}\n</style>\n')
+    # Mise à jour : à chaque ouverture (et retour au premier plan) on demande au serveur s'il y a une nouvelle version ;
+    # quand la nouvelle version a pris la main, la page se recharge une fois toute seule (pas besoin de désinstaller).
     reg = ('<script>\nif("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){\n'
-           '  window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });\n}\n</script>\n')
+           '  var hadSW = !!navigator.serviceWorker.controller, reloaded = false;\n'
+           '  navigator.serviceWorker.addEventListener("controllerchange", function(){ if(hadSW && !reloaded){ reloaded = true; location.reload(); } });\n'
+           '  window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js", { updateViaCache:"none" }).then(function(reg){\n'
+           '    document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") reg.update().catch(function(){}); });\n'
+           '  }).catch(function(){}); });\n}\n</script>\n')
     page = head + frag.rstrip('\n') + '\n' + reg
     # le titre et l'icône du fragment vont dans <head> : ils y sont déjà (premières lignes du fragment)
     page = page.replace('</style>\n<title>', '</style>\n<title>', 1)

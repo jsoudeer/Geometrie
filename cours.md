@@ -268,7 +268,7 @@ En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horlog
 
 **Mode débogage** (Réglages, tout en bas) : le bouton « 🔧 Mode débogage » demande un code (réservé aux parents/testeurs). Une fois le bon code saisi, « 🔓 Tout débloquer » et « ⭐ +50 étoiles » apparaissent, jusqu'à la fermeture de la page : le code est à ressaisir à chaque session (rien n'est mémorisé).
 
-**Personnages verrouillés** : dans la Boutique, un personnage pas encore débloqué s'affiche avec une **image commune à tout son clan** (un chat noir avec un « ? » pour la Team Kawaii, un brainrot noir avec un « ? » pour les Brainrots) : on ne devine rien de son dessin. Son **nom** reste visible, avec sa rareté et son prix (ou le défi à relever) ; son rôle et ses points sont cachés (« ❔ Mystère »). Toucher sa carte n'ouvre pas d'aperçu : on le découvre au moment du reveal.
+**Personnages verrouillés** : dans la Boutique, un personnage pas encore débloqué s'affiche avec une **image commune à tout son clan** (un chat noir avec un « ? » pour la Team Kawaii, un brainrot noir avec un « ? » pour les Brainrots) : on ne devine rien de son dessin. Son **nom** reste visible, avec sa rareté, sa **classe** (⚔️ Classique, 💖 Soutien ou 🏹 Archer : on peut viser un nouvel archer) et son prix (ou le défi à relever) ; seuls ses points restent cachés (« ❤️ ? »). Toucher sa carte n'ouvre pas d'aperçu : on le découvre au moment du reveal.
 
 
 ## Progression de l'enfant (Réglages → 📈 Progression)

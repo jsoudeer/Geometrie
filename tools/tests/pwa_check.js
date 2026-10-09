@@ -3,10 +3,12 @@ const http = require('http'), fs = require('fs'), path = require('path');
 const { chromium } = require('playwright');
 const DOCS = '/home/claude/geometrie/docs';
 const TYPES = { '.html':'text/html; charset=utf-8', '.webmanifest':'application/manifest+json', '.js':'text/javascript', '.png':'image/png', '.woff2':'font/woff2' };
+let swExtra = '';
 (async () => {
   let bad = 0; const chk = (ok, msg) => { console.log(ok ? '  ok' : '  ✘ ÉCHEC', msg); if (!ok) bad++; };
   const srv = http.createServer((req, res) => {
     let p = decodeURIComponent(req.url.split('?')[0]); if (p === '/') p = '/index.html';
+    if (p === '/sw.js' && swExtra) { res.writeHead(200, { 'Content-Type': 'text/javascript' }); res.end(fs.readFileSync(DOCS + '/sw.js', 'utf8').replace('var CACHE = "kvb-', 'var CACHE = "kvb-v2-') + swExtra); return; }
     const f = path.join(DOCS, p);
     if (!f.startsWith(DOCS) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end('nf'); return; }
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
@@ -36,6 +38,15 @@ const TYPES = { '.html':'text/html; charset=utf-8', '.webmanifest':'application/
   chk(await page.evaluate(() => !!navigator.serviceWorker.controller), 'service worker actif sur la page');
   const fontsOk = await page.evaluate(async () => { const L = await Promise.all(['500 16px "Baloo 2"', '800 16px "Baloo 2"', '700 16px "Nunito"', '400 16px "Bungee"', '700 16px "Rubik"'].map(f => document.fonts.load(f))); return L.map(a => a.length > 0 && a.every(x => x.status === 'loaded')); });
   chk(fontsOk.every(Boolean), 'polices locales chargées : ' + fontsOk.join());
+  // nouvelle version publiée : la page se recharge toute seule une fois (pas besoin de désinstaller)
+  let loads = 0; page.on('load', () => loads++);
+  chk(/updateViaCache/.test(html) && /controllerchange/.test(html) && /visibilitychange/.test(html), 'la page vérifie les mises à jour à chaque ouverture');
+  swExtra = '\n// version 2\n';
+  await page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
+  const t0 = Date.now(); while (Date.now() - t0 < 8000 && loads === 0) await page.waitForTimeout(100);
+  await page.waitForTimeout(500);
+  chk(loads === 1, 'nouvelle version : rechargement automatique, une seule fois (' + loads + ')');
+  chk(await page.evaluate(() => caches.keys().then(k => k.length === 1 && /kvb-v2-/.test(k[0]))), 'l\'ancienne mise en mémoire est remplacée par la nouvelle');
   // hors ligne : on coupe le réseau, on recharge
   await ctx.setOffline(true);
   await page.reload(); await page.waitForTimeout(800);
