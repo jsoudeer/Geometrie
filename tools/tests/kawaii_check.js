@@ -6,6 +6,10 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 780 } }, asy
   const want = { cat13:'Postou', cat14:'Vroumi', cat15:'Kimono', cat16:'Bondi', cat17:'Souplesse', cat18:'Frisette', cat19:'Carotin' };
   const got = JSON.parse(await ev(`JSON.stringify(${JSON.stringify(Object.keys(want))}.map(function(id){ var s = findAnySprite(id), e = CUSTOM_IMG[id]; return [id, s && s.name, !!(e && e.f && e.u)]; }))`));
   chk(got.every(([id, name, img]) => name === want[id] && img), 'les 7 nouveaux membres ont nom, visage et image en pied : ' + got.map(g => g[1]).join(', '));
+  const all = JSON.parse(await ev(`JSON.stringify(CAT_SPRITES.concat(BRAINROT_SPRITES).map(function(s){ return [s.id, s.name, !!(CUSTOM_IMG[s.id] && CUSTOM_IMG[s.id].f && CUSTOM_IMG[s.id].u), s.rarity]; }))`));
+  chk(all.length === 70 && all.every(a => a[2]), 'les 70 personnages (35 par clan) sont illustrés : ' + all.filter(a => !a[2]).map(a => a[0]).join(','));
+  chk(new Set(all.map(a => a[1])).size === 70, 'aucun nom en double');
+  chk(all.filter(a => a[3] === 'commun').length === 14 && all.filter(a => a[3] === 'rare').length === 26, 'rareté fixe : 14 communs, 26 rares (+ 30 de défi)');
   await ev("unlockAllSprites(); 0");
   await page.click('#stars-btn'); await page.waitForTimeout(500);
   const shop = await page.evaluate(() => ({ tag: document.getElementById('shop-clan-tag').textContent, imgs: [...document.querySelectorAll('#shop-grid .sprite-card')].filter(c => /Postou|Vroumi|Kimono|Bondi|Souplesse|Frisette|Carotin/.test(c.textContent)).filter(c => c.querySelector('img.sp-custom-img')).length }));
