@@ -469,3 +469,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - **Séries** (`progWeakPick`) : les 3 questions avant un palier visent les **activités** les moins réussies (≥ 3 réponses, sous 90 %), et non plus un grand thème ; `forcedQcmDomain` supprimé (on impose le type de quiz).
 - **Écran Progression** (synthèse) : « 🎯 Activités à travailler » (par activité, tous niveaux, `progActivityRows`) et « 🌱 Peu pratiquées » au niveau en cours ; explication des réglages.
 - Mesuré (`priorite_check.js`) : une sorte de quiz ratée revient ≈ 27 % du temps en Aléatoire et ≈ 35 % en Révision, contre ≈ 1 % quand tout est réussi. `progress_check.js` adapté.
+
+## 81. Écran de démarrage : l'animation attend la vérification des mises à jour (10/10/2026)
+- **Défaut** : sur l'appli installée, l'animation du choc se jouait deux fois (au lancement, puis après le rechargement de la nouvelle version) ; et parfois la nouvelle version prenait la main avant que la page écoute (`controllerchange`) : pas de rechargement du tout.
+- **Site installable** (`tools/build.py`) : en tête de page, `window.KVB_READY` (promesse) vérifie les mises à jour avant tout : pas de version en mémoire → on part ; pas de mise à jour → on part (au plus 2,5 s) ; mise à jour → on attend (au plus 8 s). `splashSettle` (noyau.js) attend cette promesse avant de lancer l'animation (l'artefact, sans elle, part tout de suite).
+- **Rechargement** confié au service worker : à l'activation, s'il efface une ancienne version, il recharge les pages ouvertes (`client.navigate`). La page demande à une nouvelle version restée « en attente » de prendre la main (message `skip`), et se recharge elle-même si elle reste bloquée 1,5 s.
+- `pwa_check.js` : une seule animation sans mise à jour, une seule après une mise à jour trouvée au lancement ; tolère les rechargements pendant les mesures ; stable (12 passages sur 12).

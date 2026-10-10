@@ -27,6 +27,25 @@
 @font-face{font-family:'Bungee';font-weight:400;font-style:normal;font-display:swap;src:url(fonts/bungee-latin-400-normal.woff2) format('woff2')}
 html,body{margin:0}
 </style>
+<script>
+window.KVB_READY = new Promise(function(go){
+  var sw = navigator.serviceWorker, done = false;
+  function ok(){ if(!done){ done = true; go(); } }
+  if(!sw || !sw.controller) return ok();
+  var t = setTimeout(ok, 2500);
+  function skip(reg){
+    if(reg.waiting) reg.waiting.postMessage("skip");
+    setTimeout(function(){ if(reg.waiting){ reg.waiting.postMessage("skip"); location.reload(); } }, 1500);
+    var w = reg.installing; if(w) w.addEventListener("statechange", function(){ if(w.state === "installed") w.postMessage("skip"); });
+  }
+  function check(reg, again){
+    reg.update().then(function(){
+      if(reg.installing || reg.waiting){ clearTimeout(t); setTimeout(ok, 8000); skip(reg); } else ok();
+    }, function(){ if(again) setTimeout(function(){ check(reg, false); }, 300); else ok(); });
+  }
+  sw.getRegistration().then(function(reg){ if(!reg) return ok(); check(reg, true); }).catch(ok);
+});
+</script>
 <title>Kawaii vs Brainrot</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <style>
@@ -2187,10 +2206,16 @@ html,body{margin:0}
   }
   // L'animation ne démarre qu'une fois la recherche d'une image perso terminée (trySplashCustomMedia) :
   // jusque-là la carte reste en attente (classe sp-wait : dessin et textes invisibles).
+  // Site installé : on attend aussi la vérification des mises à jour (window.KVB_READY, posée par la page du site,
+  // voir tools/build.py) : si une nouvelle version arrive, la page se recharge avant que l'animation ne se joue.
   var splashSettled = false;
   function splashSettle(kind){
     if(splashSettled) return;
     splashSettled = true;
+    if(window.KVB_READY && !splashSettle.ready){
+      window.KVB_READY.then(function(){ splashSettle.ready = true; splashSettled = false; splashSettle(kind); });
+      return;
+    }
     var card = splashSvgEl && splashSvgEl.closest('.splash-card');
     if(kind==='svg'){
       drawSplashArt(splashSvgEl);
@@ -11621,8 +11646,6 @@ function phrase(tpl, vars){
 </script>
 <script>
 if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
-  var hadSW = !!navigator.serviceWorker.controller, reloaded = false;
-  navigator.serviceWorker.addEventListener("controllerchange", function(){ if(hadSW && !reloaded){ reloaded = true; location.reload(); } });
   window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js", { updateViaCache:"none" }).then(function(reg){
     document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") reg.update().catch(function(){}); });
   }).catch(function(){}); });

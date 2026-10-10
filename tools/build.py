@@ -63,12 +63,36 @@ def site(fragment):
             '<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n'
             '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="Kawaii vs Brainrot">\n'
             '<link rel="manifest" href="manifest.webmanifest">\n<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">\n'
-            '<style>\n' + faces + 'html,body{margin:0}\n</style>\n')
+            '<style>\n' + faces + 'html,body{margin:0}\n</style>\n'
+            # Écran de démarrage : on attend la vérification des mises à jour AVANT de lancer l'animation du choc
+            # (sinon elle se jouait deux fois : au lancement, puis après le rechargement de la nouvelle version).
+            # Pas de version en mémoire (1re visite) : rien à attendre. Pas de mise à jour : on part (au plus 2,5 s).
+            # Mise à jour trouvée : le service worker recharge la page (voir sw.js, activate) ; au pire on part au bout de 8 s.
+            '<script>\n'
+
+            'window.KVB_READY = new Promise(function(go){\n'
+            '  var sw = navigator.serviceWorker, done = false;\n'
+            '  function ok(){ if(!done){ done = true; go(); } }\n'
+            '  if(!sw || !sw.controller) return ok();\n'
+            '  var t = setTimeout(ok, 2500);\n'
+            # nouvelle version restée « en attente » : on lui demande de prendre la main tout de suite
+            '  function skip(reg){\n'
+            '    if(reg.waiting) reg.waiting.postMessage("skip");\n'
+            # encore en attente 1,5 s plus tard (une requête de la page la retient) : on recharge, ce qui la libère
+            '    setTimeout(function(){ if(reg.waiting){ reg.waiting.postMessage("skip"); location.reload(); } }, 1500);\n'
+            '    var w = reg.installing; if(w) w.addEventListener("statechange", function(){ if(w.state === "installed") w.postMessage("skip"); });\n'
+            '  }\n'
+            '  function check(reg, again){\n'
+            '    reg.update().then(function(){\n'
+            '      if(reg.installing || reg.waiting){ clearTimeout(t); setTimeout(ok, 8000); skip(reg); } else ok();\n'
+            '    }, function(){ if(again) setTimeout(function(){ check(reg, false); }, 300); else ok(); });\n'   # vérification déjà en cours : on réessaie une fois
+            '  }\n'
+            '  sw.getRegistration().then(function(reg){ if(!reg) return ok(); check(reg, true); }).catch(ok);\n'
+            '});\n</script>\n')
     # Mise à jour : à chaque ouverture (et retour au premier plan) on demande au serveur s'il y a une nouvelle version ;
-    # quand la nouvelle version a pris la main, la page se recharge une fois toute seule (pas besoin de désinstaller).
+    # quand la nouvelle version a pris la main, le service worker recharge la page une fois (pas besoin de désinstaller).
     reg = ('<script>\nif("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){\n'
-           '  var hadSW = !!navigator.serviceWorker.controller, reloaded = false;\n'
-           '  navigator.serviceWorker.addEventListener("controllerchange", function(){ if(hadSW && !reloaded){ reloaded = true; location.reload(); } });\n'
+
            '  window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js", { updateViaCache:"none" }).then(function(reg){\n'
            '    document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") reg.update().catch(function(){}); });\n'
            '  }).catch(function(){}); });\n}\n</script>\n')
@@ -93,7 +117,16 @@ def site(fragment):
     sw = ('// Généré par tools/build.py : ne pas modifier à la main.\n'
           'var CACHE = "kvb-%s", FILES = %s;\n'
           'self.addEventListener("install", function(e){ e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(FILES); }).then(function(){ return self.skipWaiting(); })); });\n'
-          'self.addEventListener("activate", function(e){ e.waitUntil(caches.keys().then(function(ks){ return Promise.all(ks.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); })); }).then(function(){ return self.clients.claim(); })); });\n'
+          # activation : on efface les anciennes versions ; s'il y en avait (= mise à jour), on recharge les pages ouvertes
+          # (une seule fois, côté service worker : ne dépend pas du moment où la page a commencé à écouter)
+          'self.addEventListener("activate", function(e){ e.waitUntil(caches.keys().then(function(ks){\n'
+          '  var old = ks.filter(function(k){ return k !== CACHE; });\n'
+          '  return Promise.all(old.map(function(k){ return caches.delete(k); })).then(function(){ return self.clients.claim(); }).then(function(){\n'
+          '    if(!old.length) return;\n'
+          '    return self.clients.matchAll({ type:"window" }).then(function(cs){ cs.forEach(function(c){ c.navigate(c.url).catch(function(){}); }); });\n'
+          '  });\n'
+          '})); });\n'
+          'self.addEventListener("message", function(e){ if(e.data === "skip") self.skipWaiting(); });\n'
           'self.addEventListener("fetch", function(e){\n'
           '  if(e.request.method !== "GET") return;\n'
           '  e.respondWith(caches.match(e.request, { ignoreSearch:true }).then(function(r){ return r || fetch(e.request); }));\n'
