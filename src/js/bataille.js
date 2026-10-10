@@ -32,7 +32,20 @@
   var BT_SPEED = 1;
   function btT(ms){ return Math.round(ms * BT_SPEED); }
   var BT_ROLE_ORDER = ['classic','support','archer'];
-  var BT_LIMITS = { classic:3, support:1, archer:1 };
+  /* Places dans l'équipe, PAR CLAN, selon le nombre de personnages débloqués de ce clan :
+     moins de 10 → 5 cartes (3 classiques, 1 soutien, 1 archer) ; 10 ou plus → 6 cartes (3 classiques + 3 soutiens
+     ou archers, 2 du même rôle au plus) ; 20 ou plus → 7 cartes (3 classiques, 2 soutiens, 2 archers). */
+  var BT_SLOT_STEPS = [
+    { owned:20, limits:{ classic:3, support:2, archer:2, special:4 } },
+    { owned:10, limits:{ classic:3, support:2, archer:2, special:3 } },
+    { owned:0,  limits:{ classic:3, support:1, archer:1, special:2 } }
+  ];
+  function btOwnedCount(side){ var o = side==='cats' ? ownedCats : ownedBrain; return Object.keys(o).filter(function(k){ return o[k]; }).length; }
+  function btLimits(side){
+    var n = btOwnedCount(side || btSide());
+    for(var i=0;i<BT_SLOT_STEPS.length;i++) if(n >= BT_SLOT_STEPS[i].owned) return BT_SLOT_STEPS[i].limits;
+  }
+  function btTeamSize(L){ return L.classic + L.special; }
 
   function btSide(){ return currentThemeKey()==='brainrot' ? 'brainrot' : 'cats'; }
   function btMyList(){ return btSide()==='cats' ? CAT_SPRITES : BRAINROT_SPRITES; }
@@ -51,7 +64,7 @@
     ['cats','brainrot'].forEach(function(side){
       try{
         var raw = JSON.parse(localStorage.getItem('geo_bt_team_'+side) || 'null');
-        if(raw) BT_ROLE_ORDER.forEach(function(r){ if(Array.isArray(raw[r])) btSel[side][r] = raw[r].slice(0, BT_LIMITS[r]); });
+        if(raw) BT_ROLE_ORDER.forEach(function(r){ if(Array.isArray(raw[r])) btSel[side][r] = raw[r].slice(0, 2); });   // recoupé aux places réelles dans renderBtSetup
       }catch(e){}
     });
   })();
@@ -100,17 +113,25 @@
     card.setAttribute('aria-label', sprite.name + ', ' + BT_ROLE_META[sprite.role].label + (evo ? ', ' + EVO_NAMES[evo] : '') + ', ' + pts + ' points' + (sk ? ', compétence ' + sk.name : '') + (picked ? ', choisi' : ''));
   }
   // Clic sur un personnage : on le retire s'il est choisi ; sinon on l'ajoute,
-  // et si la place est pleine, le PLUS ANCIEN choisi de ce rôle sort.
+  // et si la place est pleine, le PLUS ANCIEN choisi de ce rôle sort (ou, pour les places partagées soutien / archer,
+  // le plus ancien de l'autre rôle).
   function btToggleSetup(sprite){
-    var sel = btSel[btSide()], role = sprite.role;
+    var sel = btSel[btSide()], role = sprite.role, L = btLimits();
     var pos = sel[role].indexOf(sprite.id);
     if(pos !== -1) sel[role].splice(pos,1);
     else {
       sel[role].push(sprite.id);
-      while(sel[role].length > BT_LIMITS[role]) sel[role].shift();
+      btFitLimits(sel, L, role);
     }
     saveBtSel();
     renderBtSetup();
+  }
+  function btFitLimits(sel, L, last){
+    BT_ROLE_ORDER.forEach(function(r){ while(sel[r].length > L[r]) sel[r].shift(); });
+    while(sel.support.length + sel.archer.length > L.special){
+      var other = last === 'support' ? 'archer' : last === 'archer' ? 'support' : (sel.support.length >= sel.archer.length ? 'support' : 'archer');
+      if(sel[other].length) sel[other].shift(); else sel[last].shift();
+    }
   }
   // Équipe complète en un clic : les plus forts, ou au hasard, ou tout vider.
   function btAutoTeam(mode){
@@ -120,27 +141,41 @@
       if(mode==='clear'){ sel[role] = []; return; }
       if(mode==='random') mine = btShuffle(mine);
       else mine = mine.slice().sort(function(x,y){ return spritePts(y) - spritePts(x); });
-      sel[role] = mine.slice(0, BT_LIMITS[role]).map(function(x){ return x.id; });
+      sel[role] = mine.slice(0, btLimits()[role]).map(function(x){ return x.id; });
     });
+    // places partagées soutien / archer : au moins un de chaque si possible, puis les plus forts (ou au hasard)
+    var L = btLimits();
+    if(sel.support.length + sel.archer.length > L.special){
+      var sp = sel.support.slice(), ar = sel.archer.slice(), keep = { support:[], archer:[] };
+      if(sp.length) keep.support.push(sp.shift());
+      if(ar.length) keep.archer.push(ar.shift());
+      var rest = sp.map(function(id){ return ['support', id]; }).concat(ar.map(function(id){ return ['archer', id]; }));
+      if(mode !== 'random') rest.sort(function(a,b){ return spritePts(findSprite(btMyList(), b[1])) - spritePts(findSprite(btMyList(), a[1])); });
+      rest.slice(0, L.special - keep.support.length - keep.archer.length).forEach(function(x){ keep[x[0]].push(x[1]); });
+      sel.support = keep.support; sel.archer = keep.archer;
+    }
     saveBtSel();
     renderBtSetup();
   }
   function renderBtSetup(){
     if(!document.getElementById('bt-grid-classic')) return;
-    var side = btSide(), sel = btSel[side], owned = btMyOwned();
+    var side = btSide(), sel = btSel[side], owned = btMyOwned(), L = btLimits(side);
     var ok = true, missing = [];
+    BT_ROLE_ORDER.forEach(function(role){ sel[role] = sel[role].filter(function(id){ return !!owned[id]; }); });
+    btFitLimits(sel, L, null);
+    var specialFull = sel.support.length + sel.archer.length >= L.special;
     BT_ROLE_ORDER.forEach(function(role){
       // on oublie les personnages choisis qui ne sont plus possédés (ex : effacement de la progression)
       sel[role] = sel[role].filter(function(id){ return !!owned[id]; });
       var container = document.getElementById('bt-grid-'+role);
       var mine = btMyList().filter(function(s){ return s.role===role && owned[s.id]; });
-      var full = sel[role].length >= BT_LIMITS[role];
+      var full = sel[role].length >= L[role] || (role !== 'classic' && specialFull);
       btReconcile(container, mine.map(function(sprite){
         var card = btSetupCard(sprite);
         btUpdateSetupCard(card, sprite, sel[role].indexOf(sprite.id) !== -1, full);
         return card;
       }));
-      document.getElementById('bt-count-'+role).textContent = sel[role].length + '/' + BT_LIMITS[role];
+      document.getElementById('bt-count-'+role).textContent = sel[role].length + '/' + L[role];
     });
     var teamSize = BT_ROLE_ORDER.reduce(function(n, role){ return n + sel[role].length; }, 0);
     ok = teamSize >= 1;
@@ -161,12 +196,15 @@
     advEl.hidden = !adv;
     if(adv) advEl.textContent = btAdvLine(side, btAdv[side]);
     if(BT_DIFFS) document.getElementById('bt-diff-note').textContent = adv
-      ? 'Adversaires : ❤️ ' + btAdvTarget(btAdv[side]) + ' points (+10 % à chaque victoire). Ton équipe : ❤️ ' + total + ' points.'
-      : (ok ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points.'
+      ? 'Adversaires : ❤️ ' + btAdvTarget(btAdv[side]) + ' points (+3 à chaque victoire)' + (btAdvBoss(btAdv[side]) ? ' · 👑 combat de palier : adversaire redoutable' : '') + '. Ton équipe : ❤️ ' + total + ' points.'
+      : (ok ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points. ' + BT_AI_NOTES[btDiff]
             : 'Choisis au moins une carte pour voir les points de tes adversaires.');
-    document.getElementById('bt-intro').textContent = btSide()==='cats'
-      ? 'Tu joues avec la Team Kawaii contre les Brainrots. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.'
-      : 'Tu joues avec les Brainrots contre la Team Kawaii. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.';
+    var n = btOwnedCount(side), size = btTeamSize(L);
+    var comp = L.special === 2 ? '3 classiques, 1 soutien et 1 archer' : L.special === 3 ? '3 classiques et 3 soutiens ou archers (2 du même rôle au plus)' : '3 classiques, 2 soutiens et 2 archers';
+    var next = n < 10 ? ' Débloque ' + (10 - n) + ' personnage' + (10 - n > 1 ? 's' : '') + ' de plus pour une 6e place.' : n < 20 ? ' Débloque ' + (20 - n) + ' personnage' + (20 - n > 1 ? 's' : '') + ' de plus pour une 7e place.' : '';
+    document.getElementById('bt-intro').textContent = (side==='cats'
+      ? 'Tu joues avec la Team Kawaii contre les Brainrots.' : 'Tu joues avec les Brainrots contre la Team Kawaii.')
+      + ' Forme ton équipe : jusqu\'à ' + size + ' cartes, ' + comp + '.' + next;
   }
 
   // Petite flèche/éclair qui vole de l'attaquant vers la carte visée.
@@ -231,9 +269,9 @@
   var btDiff = 1;
   try{ var savedDiff = parseInt(localStorage.getItem('geo_bt_diff'),10); if(savedDiff>=0 && savedDiff<BT_DIFFS.length) btDiff = savedDiff; }catch(e){}
   /* ---- Deux modes : Entraînement (difficulté réglable, ci-dessus) et Aventure : les adversaires valent
-     ❤️ 30 points au niveau 1, puis 10 % de plus à chaque victoire (une défaite ne fait pas reculer).
+     ❤️ 30 points au niveau 1, puis 3 de plus à chaque victoire (une défaite ne fait pas reculer).
      Un niveau par clan ; tous les 10 niveaux, un nouveau palier (nom propre à chaque clan). ---- */
-  var BT_ADV_BASE = 30, BT_ADV_GROWTH = 0.1;
+  var BT_ADV_BASE = 30, BT_ADV_STEP = 3;
   var BT_TIERS = {
     cats:     ['Petit pompon','Patte de velours','Moustache courageuse','Cœur de héros','Étoile câline','Gardien arc-en-ciel','Chevalier des nuages','Champion kawaii','Légende étoilée','Mythe éternel'],
     brainrot: ['Petit bug','Glitch rigolo','Bizarro débutant','Chaos en herbe','Maestro du n\'importe quoi','Turbo brainrot','Méga mélange','Seigneur du chaos','Brainrot légendaire','Brainrot cosmique']
@@ -245,13 +283,15 @@
     ['cats','brainrot'].forEach(function(k){ var v = parseInt(savedAdv[k], 10); if(v >= 1) btAdv[k] = v; });
   }catch(e){}
   function btSaveAdv(){ try{ localStorage.setItem('geo_bt_adv', JSON.stringify(btAdv)); }catch(e){} }
-  function btAdvTarget(level){ return Math.round(BT_ADV_BASE * Math.pow(1 + BT_ADV_GROWTH, level - 1)); }
+  function btAdvTarget(level){ return BT_ADV_BASE + BT_ADV_STEP * (level - 1); }
   function btTierIndex(level){ return Math.floor((level - 1) / 10); }
   function btTierName(side, level){
     var names = BT_TIERS[side], i = btTierIndex(level);
     return i < names.length ? names[i] : names[names.length - 1] + ' ' + (i - names.length + 2);
   }
-  function btAdvLine(side, level){ return '🗺️ Aventure · niveau ' + level + ' · palier « ' + btTierName(side, level) + ' »'; }
+  function btAdvLine(side, level){ return '🗺️ Aventure · niveau ' + level + ' · palier « ' + btTierName(side, level) + ' »' + (btAdvBoss(level) ? ' · 👑' : ''); }
+  // Tous les 10 niveaux (10, 20, 30…) : combat de palier, l'adversaire joue en « Difficile ».
+  function btAdvBoss(level){ return level % 10 === 0; }
   function btTotal(units){ return units.reduce(function(sum, u){ return sum + u.base; }, 0); }
   // Équipe adverse : même composition que la tienne (mêmes nombres de classiques, soutien, archer),
   // tirée au hasard parmi les combinaisons dont le total est le plus proche de la cible (variété conservée).
@@ -303,7 +343,8 @@
       en: { field:[], reserve:enUnits },
       phase: 'pick-attacker', selected: null, over: false, log: [], cards: {}, animateArrivals: false,
       turn: 0, proc: null, skillChoice: null, armed: null, factors: [],
-      mode: btMode, advLevel: btMode === 'adv' ? btAdv[side] : 0
+      mode: btMode, advLevel: btMode === 'adv' ? btAdv[side] : 0,
+      ai: btMode === 'adv' ? (btAdvBoss(btAdv[side]) ? 2 : 1) : btDiff
     };
     var notes = [];
     for(var i=0;i<BT_FIELD_SIZE;i++){ btDrawFromReserve(bt.pl, notes); btDrawFromReserve(bt.en, notes); }
@@ -719,13 +760,29 @@
     btSetStatus('Tour de l\'adversaire…');
     setTimeout(function(){ if(bt) btEnemyTurn(); }, btT(700));
   }
+  /* IA de l'adversaire, de plus en plus fine (bt.ai : 0 Facile, 1 Normal, 2 Difficile ; en Aventure : Normal,
+     Difficile aux combats de palier). Règles, ajoutées niveau après niveau :
+       Facile    : joue presque au hasard (préfère juste un peu achever une carte) ;
+       Normal    : achève une carte quand il peut, et évite de perdre son attaquant ;
+       Difficile : en plus, vise d'abord les soutiens (ils soignent chaque tour), puis les archers (jamais blessés),
+                   et se sert de ses archers pour attaquer sans risque. */
+  var BT_AI_NOTES = ['L\'adversaire joue presque au hasard.', 'L\'adversaire achève tes cartes quand il peut et protège les siennes.', 'L\'adversaire vise d\'abord tes soutiens, puis tes archers, achève et protège ses cartes.'];
+  function btEnemyMoveScore(a, t, ai){
+    var archer = a.sprite.role === 'archer';
+    var kills = a.pts >= t.pts, dies = !archer && t.pts >= a.pts, r = Math.random();
+    if(ai <= 0) return (kills ? 1 : 0) + r * 3;
+    var sc = (kills ? 4 : 0) + (dies ? -5 : 0) + (archer ? 1 : 0) + a.pts * 0.05 - t.pts * 0.1 + r;
+    if(ai >= 2){
+      var prio = t.sprite.role === 'support' ? 3 : t.sprite.role === 'archer' ? 2 : 0;
+      sc += prio + (kills ? prio * 0.7 : 0) + (dies ? -2 : 0) + (archer ? 1.5 : 0) - r * 0.8;
+    }
+    return sc;
+  }
   function btChooseEnemyMove(){
-    var best = null, bestScore = -1e9;
+    var best = null, bestScore = -1e9, ai = bt.ai === undefined ? 1 : bt.ai;
     bt.en.field.forEach(function(a){
       bt.pl.field.forEach(function(t){
-        var archer = a.sprite.role === 'archer';
-        var kills = a.pts >= t.pts, dies = !archer && t.pts >= a.pts;
-        var score = (kills ? 4 : 0) + (dies ? -5 : 0) + (archer ? 2 : 0) + a.pts*0.05 - t.pts*0.1 + Math.random();
+        var score = btEnemyMoveScore(a, t, ai);
         if(score > bestScore){ bestScore = score; best = { a:a, t:t }; }
       });
     });

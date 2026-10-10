@@ -22,7 +22,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 } }, asy
   // victoire
   await ev(`bt.en.field=[]; bt.en.reserve=[]; btCheckEnd(); 0`); await page.waitForTimeout(200);
   chk(await ev('btAdv.cats === 2 && JSON.parse(localStorage.getItem("geo_bt_adv")).cats === 2'), 'victoire : niveau 2, enregistré');
-  chk(/Niveau 2 débloqué[^.]*❤️ 33 points/.test(await txt('bt-over-text')), 'message : prochains adversaires à 33 points (+10 %)');
+  chk(/Niveau 2 débloqué[^.]*❤️ 33 points/.test(await txt('bt-over-text')), 'message : prochains adversaires à 33 points (+3)');
   chk(!(await vis('bt-quit-row')) && await vis('bt-again') && await vis('bt-stop'), 'fin de partie : « Abandonner » caché, « Nouvelle partie » et « Arrêter » côte à côte');
   await page.screenshot({ path: SHOTS + 'aventure_victoire.png' });
   // nouvelle partie : on demande si l'on garde la même équipe
@@ -38,7 +38,7 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 } }, asy
   // paliers : passage du niveau 10 au 11
   await ev(`btAdv.cats = 10; btStart(); bt.en.field=[]; bt.en.reserve=[]; btCheckEnd(); 0`); await page.waitForTimeout(150);
   chk(/Nouveau palier : « Patte de velours »/.test(await txt('bt-over-text')), 'niveau 11 : nouveau palier « Patte de velours »');
-  chk(await ev('btAdvTarget(11) === Math.round(30 * Math.pow(1.1, 10)) && btAdvTarget(11) === 78'), 'niveau 11 : adversaires à 78 points');
+  chk(await ev('btAdvTarget(11) === 60 && btAdvTarget(2) === 33'), 'niveau 11 : adversaires à 60 points (+3 par victoire)');
   chk(await ev('btTierName("brainrot", 1) === "Petit bug" && btTierName("brainrot", 25) === "Bizarro débutant" && /Mythe éternel 2/.test(btTierName("cats", 105))'), 'paliers Brainrot et au-delà du dernier palier');
   // grande cible : les points des adversaires sont ajustés même au-delà de ce que les cartes valent
   await ev(`btAdv.cats = 40; btStart(); 0`);
