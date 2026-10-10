@@ -20,7 +20,9 @@ Au lancement : une carte « 🎓 Maths · CE1 » avec le duo Kawaii VS Brainrot 
 | **Chronométré** (1, 2, 3 ou 5 min) | Un maximum de bonnes réponses avant la fin du temps | Seulement Mesurer, Quizz et Lire l'heure (réponse en un geste) |
 | **Manuel** | On choisit un **thème** (grille de tuiles) (🔷 Formes & angles, 🦋 Symétrie, 🧭 Repérage, 🧊 Solides & patrons, 🕒 Heure & calendrier, 📏 Mesures, 🔢 Nombres & fractions, ➕ Calcul & problèmes, 🧩 Logique & énigmes), puis une activité de ce thème ou « 🎲 Un peu de tout » (mélange des activités du thème), puis un niveau : **aucun niveau n'est choisi d'office et aucune épreuve n'apparaît** tant qu'on n'a pas touché Facile, Moyen ou Difficile ; ce toucher affiche l'épreuve et replie la liste des activités (bouton « Afficher / Masquer les activités », plus de minuterie) | Toutes les familles |
 
-En chronométré, à la fin : +1 ⭐ pour 2 bonnes réponses (au moins 1 ⭐). Après une réponse, la question suivante arrive toute seule au bout de **5 secondes** ; on peut aussi toucher le commentaire (ou « Nouvelle activité ») pour passer tout de suite : le passage automatique est alors annulé.
+En chronométré, à la fin : +1 ⭐ pour 2 bonnes réponses (au moins 1 ⭐).
+
+**« Nouvelle activité » (passer une question)** : le bouton ne s'active que **5 secondes** après l'arrivée de la question (un petit compte à rebours s'affiche) ; **3 questions passées d'affilée** sans répondre font repartir la **série sans faute** à zéro (un avertissement prévient à la 2e) ; en **Chronométré**, chaque question passée **coûte 5 secondes** au chrono. Passer une question déjà ratée une fois reste une erreur, comme avant. Après une réponse, la question suivante arrive toute seule au bout de **5 secondes** ; on peut aussi toucher le commentaire (ou « Nouvelle activité ») pour passer tout de suite : le passage automatique est alors annulé.
 
 ---
 
