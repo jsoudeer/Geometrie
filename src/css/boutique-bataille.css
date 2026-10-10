@@ -237,3 +237,8 @@
   }
 
   .sp-skill{ font-size:12px; font-weight:800; line-height:1.25; margin-top:2px; color:var(--text); }
+  /* Aventure : niveau et palier (préparation et terrain) */
+  .bt-adv-level, .bt-adv-badge{ font-family:var(--font-display); font-weight:800; font-size:15px; text-align:center; margin:8px 0;
+    padding:6px 12px; border-radius:999px; background:var(--surface2); border:1.5px solid var(--accent); }
+  .bt-adv-badge{ font-size:13.5px; margin:0 0 6px; }
+  .bt-again-q{ text-align:center; font-weight:800; margin:6px 0 4px; }

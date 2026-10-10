@@ -288,6 +288,8 @@
                 <li>Ton équipe : jusqu'à 3 classiques, 1 soutien et 1 archer. Soutien et archer ne sont pas obligatoires : à toi de choisir ! L'équipe adverse a la même composition que la tienne. 3 cartes sont posées au hasard sur le terrain ; quand une carte est battue, une autre la remplace.</li>
               </ul>
             </details>
+            <div class="level-row" id="bt-mode-row" role="group" aria-label="Mode de combat"></div>
+            <p class="bt-adv-level" id="bt-adv-level" hidden></p>
             <p class="muted" id="bt-intro">Forme ton équipe : jusqu'à 3 classiques, 1 soutien et 1 archer.</p>
             <div class="btn-row bt-auto-row">
               <button class="btn ghost" id="bt-auto-best" type="button">⚡ Équipe complète (les plus forts)</button>
@@ -301,8 +303,10 @@
             <p class="qtype-tag" id="bt-tag-archer" style="margin-top:14px;">🏹 Archer : <span id="bt-count-archer">0/1</span></p>
             <div class="sprite-grid" id="bt-grid-archer"></div>
             <p class="muted" id="bt-missing" hidden></p>
-            <p class="muted" style="margin-top:14px;">Difficulté du combat :</p>
-            <div class="level-row" id="bt-diff-row"></div>
+            <div id="bt-train-box" style="margin-top:14px;">
+              <p class="muted">Difficulté de l'entraînement :</p>
+              <div class="level-row" id="bt-diff-row"></div>
+            </div>
             <p class="muted" id="bt-diff-note"></p>
             <div class="btn-row" style="justify-content:center;">
               <button class="btn primary" id="bt-start" type="button" disabled>Commencer le combat ⚔️</button>
@@ -311,6 +315,7 @@
 
           <!-- ----- Terrain ----- -->
           <div id="bt-arena" hidden>
+            <p class="bt-adv-badge" id="bt-adv-badge" hidden></p>
             <p class="bt-status" id="bt-status" role="status" aria-live="polite"></p>
             <div class="bt-side">
               <p class="bt-side-title" id="bt-enemy-title">Adversaires</p>
@@ -331,7 +336,7 @@
               <div class="bt-field" id="bt-player-field"></div>
               <p class="bt-reserve" id="bt-player-reserve"></p>
             </div>
-            <div class="btn-row" style="justify-content:center;">
+            <div class="btn-row" id="bt-quit-row" style="justify-content:center;">
               <button class="btn ghost" id="bt-quit" type="button">↩️ Abandonner</button>
             </div>
           </div>
@@ -339,9 +344,17 @@
           <!-- ----- Fin du combat ----- -->
           <div id="bt-over" hidden>
             <p class="bt-result" id="bt-over-text" role="status"></p>
-            <div class="btn-row" style="justify-content:center;">
-              <button class="btn primary" id="bt-again" type="button">Rejouer ↻</button>
-              <button class="btn ghost" id="bt-change-team" type="button">Changer d'équipe</button>
+            <!-- Fin de partie : « Nouvelle partie » demande si l'on garde la même équipe ; « Arrêter » quitte la bataille. -->
+            <div class="btn-row" id="bt-over-row" style="justify-content:center;">
+              <button class="btn primary" id="bt-again" type="button">Nouvelle partie ↻</button>
+              <button class="btn ghost" id="bt-stop" type="button">↩️ Arrêter</button>
+            </div>
+            <div id="bt-again-ask" role="group" aria-labelledby="bt-again-q" hidden>
+              <p class="bt-again-q" id="bt-again-q">Tu gardes la même équipe ?</p>
+              <div class="btn-row" style="justify-content:center;">
+                <button class="btn primary" id="bt-same-team" type="button">✅ Oui, même équipe</button>
+                <button class="btn ghost" id="bt-new-team" type="button">🔄 Non, je change</button>
+              </div>
             </div>
           </div>
         </div>

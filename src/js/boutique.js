@@ -1009,7 +1009,7 @@
      débloqués, mascotte, équipes de bataille et série en cours. Les
      réglages (thème, effets, affichage) sont conservés. ---- */
   function resetProgress(){
-    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_evo_cats','geo_evo_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_mascot_lv_cats','geo_mascot_lv_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought'].forEach(function(k){
+    ['geo_stars','geo_owned_cats','geo_owned_brain','geo_evo_cats','geo_evo_brain','geo_mascot_id','geo_mascot_cats','geo_mascot_brainrot','geo_mascot_lv_cats','geo_mascot_lv_brainrot','geo_bt_team_cats','geo_bt_team_brainrot','geo_bought','geo_bt_adv'].forEach(function(k){
       try{ localStorage.removeItem(k); }catch(e){}
     });
     stars = 0;
@@ -1026,6 +1026,7 @@
     mascotLvls = { cats:null, brainrot:null };
     saveMascot();
     btSel = { cats:{classic:[],support:[],archer:[]}, brainrot:{classic:[],support:[],archer:[]} };
+    if(typeof btAdv !== 'undefined'){ btAdv.cats = 1; btAdv.brainrot = 1; }
     if(typeof resetFreeStreak === 'function') resetFreeStreak();
     guideResetContextual();
     saveOwned();
