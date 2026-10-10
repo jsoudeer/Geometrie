@@ -2543,12 +2543,38 @@
      opts : { feedback: id ou élément, tries: 1|3 }
      La rangée de boutons masquée est la .btn-row qui suit le retour. */
   var MANIP_TRIES = 3;
+  /* « Nouvelle activité » (passer une question sans y répondre) :
+     - le bouton n'est utilisable que 5 s après l'arrivée de la question (pas de clics en rafale pour « chercher »
+       une question facile) ; un petit compte à rebours s'affiche dessus ;
+     - 3 questions passées d'affilée sans répondre : la série sans faute repart à zéro (prévenu à la 2e) ;
+     - en Chronométré : chaque question passée coûte 5 s au chrono. */
+  var SKIP_COOLDOWN_MS = 5000, SKIP_RUN_MAX = 3, SKIP_CHRONO_COST_MS = 5000;
+  var skipRun = 0;   // questions passées d'affilée sans répondre (remis à zéro dès qu'on répond)
+  function showSmallToast(text){
+    var t = document.createElement('div');
+    t.className = 'auto-advance-toast'; t.setAttribute('role', 'status'); t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2600);
+  }
   var qfFocusNext = false;   // la question suivante a été demandée depuis le retour, au clavier
   function makeQuestionFlow(opts){
     var fb = typeof opts.feedback==='string' ? document.getElementById(opts.feedback) : opts.feedback;
     var row = fb.parentNode.querySelector('.btn-row');
     function famWrap(){ return fb.closest('[id^="fam-"]') || fb.parentNode; }
-    var flow = { tries:0, maxTries:opts.tries || 1, closed:false, fb:fb };
+    var flow = { tries:0, maxTries:opts.tries || 1, closed:false, fb:fb, skipReadyAt:0, cdTimer:null };
+    function skipBtn(){ return row ? row.querySelector('[id$="-next"], [id$="-new"]') : null; }
+    function startCooldown(){
+      var b = skipBtn(); clearInterval(flow.cdTimer);
+      if(!b) return;
+      if(!b.dataset.label) b.dataset.label = b.textContent;
+      flow.skipReadyAt = Date.now() + SKIP_COOLDOWN_MS;
+      function tick(){
+        var left = Math.ceil((flow.skipReadyAt - Date.now()) / 1000);
+        if(left <= 0){ clearInterval(flow.cdTimer); b.disabled = false; b.textContent = b.dataset.label; b.removeAttribute('aria-describedby'); return; }
+        b.disabled = true; b.textContent = b.dataset.label.replace(/\s*↻\s*$/, '') + ' (' + left + ' s)';
+      }
+      if(SKIP_COOLDOWN_MS > 0){ tick(); flow.cdTimer = setInterval(tick, 250); } else { b.disabled = false; b.textContent = b.dataset.label; }
+    }
     // Accessibilité : annoncé par les lecteurs d'écran, atteignable au clavier,
     // Entrée/Espace fait la même chose qu'un toucher.
     fb.setAttribute('aria-live','polite');
@@ -2575,6 +2601,7 @@
       // sur le retour, pour qu'Entrée passe à la question suivante (RGAA 12.8)
       var ae = document.activeElement, hadFocus = !ae || ae === document.body || famWrap().contains(ae);   // (un bouton de réponse désactivé perd le focus : il retombe sur la page)
       if(row) row.hidden = true;
+      skipRun = 0;          // il a répondu : les « questions passées d'affilée » repartent de zéro
       show(ok, html, true);
       if(hadFocus) fb.focus();
       if(ok) addStar(1);
@@ -2588,6 +2615,7 @@
       flow.tries = 0; flow.closed = false;
       fb.className = 'feedback'; fb.innerHTML = '';
       if(row) row.hidden = false;
+      startCooldown();
     };
     // Efface le retour d'un essai raté dès que l'enfant recommence à manipuler.
     flow.clearHint = function(){
@@ -2622,7 +2650,20 @@
     };
     // Bouton « Nouvelle activité ».
     flow.skip = function(){
+      if(Date.now() < flow.skipReadyAt) return;      // encore en attente (compte à rebours sur le bouton)
       if(!flow.closed && flow.tries > 0){ flow.closed = true; onPracticeAnswered(false); }
+      else if(!flow.closed){
+        skipRun++;
+        if(countdownRunning){
+          countdownEndAt -= SKIP_CHRONO_COST_MS; updateCountdownHud();
+          showSmallToast('⏱️ Question passée : −' + (SKIP_CHRONO_COST_MS / 1000) + ' s');
+        } else if(skipRun >= SKIP_RUN_MAX){
+          skipRun = 0;
+          if(freeStreak > 0){ resetFreeStreak(); showSmallToast('⚠️ ' + SKIP_RUN_MAX + ' questions passées d\'affilée : ta série sans faute repart à zéro.'); }
+        } else if(skipRun === SKIP_RUN_MAX - 1 && freeStreak > 0){
+          showSmallToast('⚠️ Encore une question passée sans répondre et ta série sans faute repart à zéro !');
+        }
+      }
       nextPracticeQuestion();
     };
     return flow;

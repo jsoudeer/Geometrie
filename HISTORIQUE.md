@@ -491,3 +491,8 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 
 ## 84. Bataille : deux soutiens, deux soins (10/10/2026)
 - `btSupportTick` : à la fin du tour d'un camp, **chaque** soutien encore sur le terrain donne +2 à chacun de ses alliés (pas à lui-même) ; avec deux soutiens, chacun soigne l'autre. Cas rare (il faut qu'ils soient sur le terrain en même temps). Tests : `bataille_ia_check` (classique +4, soutiens +2), `nav_check` (formule générale).
+
+## 85. « Nouvelle activité » : attente de 5 s, série perdue après 3 passages, −5 s en chrono (10/10/2026)
+- `makeQuestionFlow` (noyau.js) : à chaque question, le bouton « Nouvelle activité » est grisé 5 s avec un compte à rebours (`SKIP_COOLDOWN_MS`, `flow.skip` ne fait rien pendant l'attente) ; `skipRun` compte les questions passées d'affilée sans répondre (remis à zéro à chaque réponse) : à la 2e, avertissement ; à la 3e (`SKIP_RUN_MAX`), `resetFreeStreak()` ; en Chronométré, chaque passage retire 5 s (`SKIP_CHRONO_COST_MS`) avec un message « −5 s ». Messages courts : `showSmallToast`.
+- Tests : `cooldown_check.js` ; `lib.js` met l'attente à 0 dans tous les autres tests.
+- `VALEUR_PERSONNAGES.md` : constat chiffré et propositions pour la valeur des personnages (échelle, évolutions, expérience, Aventure) — à décider, rien de codé.
