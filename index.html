@@ -2159,10 +2159,16 @@
   }
   // L'animation ne démarre qu'une fois la recherche d'une image perso terminée (trySplashCustomMedia) :
   // jusque-là la carte reste en attente (classe sp-wait : dessin et textes invisibles).
+  // Site installé : on attend aussi la vérification des mises à jour (window.KVB_READY, posée par la page du site,
+  // voir tools/build.py) : si une nouvelle version arrive, la page se recharge avant que l'animation ne se joue.
   var splashSettled = false;
   function splashSettle(kind){
     if(splashSettled) return;
     splashSettled = true;
+    if(window.KVB_READY && !splashSettle.ready){
+      window.KVB_READY.then(function(){ splashSettle.ready = true; splashSettled = false; splashSettle(kind); });
+      return;
+    }
     var card = splashSvgEl && splashSvgEl.closest('.splash-card');
     if(kind==='svg'){
       drawSplashArt(splashSvgEl);
