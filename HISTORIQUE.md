@@ -482,3 +482,9 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - **Correctif** (déjà présent depuis §78) : en Entraînement Facile côté Brainrots, aucune équipe Kawaii n'était assez faible (ratio 0,96 au lieu de 0,8, `bataille_diff_check` en échec) : si l'équipe la plus proche s'écarte de plus de 5 %, ses points sont ajustés.
 - Effacer la progression remet l'aventure au niveau 1. Test `aventure_check.js`.
 - À surveiller : avec +10 % par victoire, la cible dépasse une équipe Ultime complète vers le niveau 15-20 (❤️ 100-180).
+
+## 83. Bataille : places selon les déblocages, IA graduée, Aventure +3 par victoire (10/10/2026)
+- **Aventure** : `btAdvTarget(n) = 30 + 3 × (n − 1)` (au lieu de +10 %). Combats de palier (`btAdvBoss` : niveaux 10, 20…, 👑) : IA Difficile ; sinon Normal.
+- **Places** (`btLimits`, par clan, `BT_SLOT_STEPS`) : < 10 personnages débloqués → 5 (3/1/1) ; ≥ 10 → 6 (3 classiques + 3 soutiens ou archers, 2 du même au plus : `special`) ; ≥ 20 → 7 (3/2/2). `btFitLimits` : en ajoutant un soutien ou un archer au-delà des places partagées, le plus ancien de l'autre rôle sort. « Équipe complète » garde au moins un soutien et un archer. L'écran dit les places et le nombre de déblocages pour la suivante. Un seul soutien soigne par tour (le premier) ; `nav_check` adapté.
+- **IA** (`btEnemyMoveScore`, `bt.ai` : 0 / 1 / 2 = difficulté de l'Entraînement) : Facile ≈ hasard ; Normal : achever (+4), ne pas perdre l'attaquant (−5) — c'était le comportement unique d'avant ; Difficile : + priorité de cible soutien (+3) puis archer (+2), bonus à l'achever, archers favorisés, moins de hasard. Note de l'écran de préparation selon la difficulté (`BT_AI_NOTES`).
+- Test `bataille_ia_check.js` (places par clan, places partagées, IA sur scénarios fabriqués, palier en Difficile) ; `aventure_check.js` adapté (+3).
