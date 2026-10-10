@@ -90,6 +90,11 @@ moins pertinent.
   après N tirages sans nouveauté), que devient un doublon au niveau maximum (étoiles rendues ?), les personnages
   « défi » (non achetables) restent hors tirage, migration des achats déjà faits, équilibrage de la Bataille.
 
+## Style des personnages 3D (à faire, 10/10/2026)
+- La grande fournée du 09/10 (HISTORIQUE §78) est en **3D « industrielle »**, alors que les chats 01-12 sont en **dessin 2D** (contour brun, aplats, gros yeux brillants). Décision : **on ne change rien pour l'instant** (la 3D achetable est en Commun : Pinceau + br08-20 ; le reste occupe les 15 places Défi de chaque clan).
+- À faire : repasser les 3D dans un style proche des 2D (prompt Grok « image vers image » proposé le 10/10, à affiner sur 2-3 essais), puis refaire visage + en pied avec `tools/persos.py` / `tools/kawaii.py` et `tools/embed.py`.
+- À décider ensuite : plus de places Commun côté Kawaii (aujourd'hui 1 seule) avec des personnages de la réserve `wip/plus-tard/` ; garder les places Défi pour les images les plus soignées.
+
 ## Raretés, compétences de personnage et gatcha (idées du 04/10/2026)
 
 **État (§53)** : FAIT sans gatcha — raretés commun/rare/défi déduites de l'image, communs à 5–7 points et rares à 9–11, achat direct à
