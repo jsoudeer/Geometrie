@@ -29,7 +29,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     var diffs = bt.pl.field.map(function(u,i){ return after[i]-before[i]; });
     return JSON.stringify({did:did, diffs:diffs, roles:bt.pl.field.map(function(u){return u.sprite.role;})});
   })()`));
-  const healer = r.roles.indexOf('support');   // un seul soutien soigne par tour (le premier) ; un 2e soutien est soigné comme un allié
-  chk(r.did && r.diffs.every((d, i) => d === (i === healer ? 0 : 2)), 'soutien : +2 aux alliés, rien pour lui : ' + JSON.stringify(r));
+  // chaque soutien donne +2 à chacun de ses alliés, pas à lui-même (deux soutiens : chacun soigne l'autre)
+  const nSup = r.roles.filter(x => x === 'support').length;
+  chk(r.did && r.diffs.every((d, i) => d === 2 * (nSup - (r.roles[i] === 'support' ? 1 : 0))), 'soutiens : +2 aux alliés chacun, rien pour eux-mêmes : ' + JSON.stringify(r));
   console.log(bad ? 'ÉCHEC' : 'OK');
 });

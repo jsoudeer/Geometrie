@@ -51,6 +51,10 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 844 } }, asy
   // Difficile : ne sacrifie pas son attaquant même pour viser un soutien qu'il ne peut pas achever
   const risky = `bt.en.field = [${U('classic', 5)}]; bt.pl.field = [${U('support', 9)}, ${U('classic', 3)}]`;
   chk(((await choose(2, risky))['classic:3<classic'] || 0) >= 190, 'Difficile : n\'attaque pas un soutien plus fort (il perdrait sa carte) : il achève la petite');
+  // ---- deux soutiens sur le terrain : les deux soignent (chacun soigne l'autre, pas lui-même)
+  const heal = await J(`(function(){ var sd = { field:[${U('classic', 10)}, ${U('support', 8)}, ${U('support', 8)}] }; var b = sd.field.map(function(u){ return u.pts; });
+    btSupportTick(sd); return JSON.stringify(sd.field.map(function(u, i){ return u.pts - b[i]; })); })()`);
+  chk(JSON.stringify(heal) === '[4,2,2]', 'deux soutiens : le classique reçoit +4, chaque soutien +2 (de l\'autre) : ' + JSON.stringify(heal));
   // ---- Aventure : +3 par victoire ; combats de palier en Difficile
   await ev(`btBackToSetup(); btMode = 'adv'; btAdv.cats = 9; btStart(); 0`);
   chk(await ev(`bt.ai === 1 && btTotal(bt.en.field.concat(bt.en.reserve)) === 54`), 'Aventure niveau 9 : adversaire Normal, ❤️ 54');
