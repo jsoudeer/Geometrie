@@ -63,7 +63,6 @@
   // Jamais deux fois de suite le même type de Quizz (quand il y a le choix).
   var lastQcmType = null;
   var forcedQcmType = null;  // type de quiz imposé pour la prochaine question (mode Révision)
-  var forcedQcmDomain = null;   // thème de quiz imposé pour la prochaine question (sujet à travailler)
   var lastFamily = null;
   function pickOther(arr, last){
     if(arr.length>1 && last!==null){
@@ -77,7 +76,7 @@
     var poolTypes = lv.types;
     var typeSel = forcedQcmType || m4TypeFilter;
     var freeType = (typeSel==='random' || lv.types.indexOf(typeSel)===-1);
-    var cat = forcedQcmDomain || 'all';     // forcedQcmDomain : sujet à travailler (voir progression.js)
+    var cat = 'all';
     if(cat==='all' && freeType){
       // Tirage « sans remise » au niveau des thèmes : chacun sort une fois
       // avant qu'aucun ne revienne.
@@ -441,17 +440,19 @@
     clearTimeout(countdownAutoNext); countdownAutoNext = null;   // un seul « suivant » : à la main ou automatique, jamais les deux
     if(pendingAdvance){ var adv = pendingAdvance; pendingAdvance = null; if(adv()) return; }
     var sig = null, prevShown = lastFamily;
-    var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, domain} ou null
+    var focus = challengeFocusActive() ? progWeakPick() : null;     // {key, type} ou null : activité à travailler (séries)
     var review = null;                                               // unité imposée : {key, type, why} (Révision ou « un peu de tout » du mode Manuel)
     var reviewing = (appMode==='auto' && practiceMode==='review');
     var mixing = (appMode==='manual' && manualMix);
+    // mode Aléatoire : de temps en temps, une activité nouvelle, peu pratiquée ou ratée (voir progNudgePick)
+    var nudge = (!focus && appMode==='auto' && practiceMode==='free' && !countdownRunning) ? progNudgePick() : null;
     for(var tries=0; tries<15; tries++){
       lastFamily = prevShown;   // on évite la famille réellement affichée, pas un essai rejeté
       if(reviewing) review = progReviewPick();
       else if(mixing) review = manualMixPick();
+      else review = (nudge && tries===0) ? nudge : null;
       var key = focus ? focus.key : (review ? review.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh()));
-      forcedQcmDomain = (focus && focus.key==='qcm') ? focus.domain : null;
-      forcedQcmType = (review && review.type) ? review.type : null;
+      forcedQcmType = focus ? (focus.type || null) : ((review && review.type) ? review.type : null);
       lastFamily = key;
       // d'abord on retente dans la même famille (elle garde son tour), puis on en change
       var fresh = false;
@@ -462,9 +463,9 @@
       }
       if(fresh) break;
     }
-    forcedQcmDomain = null; forcedQcmType = null;
+    forcedQcmType = null;
     if(review && review.why){
-      document.getElementById('practice-family-tag').textContent += review.why==='raté' ? ' · 🔁 à revoir' : ' · ✨ pas encore fait';
+      document.getElementById('practice-family-tag').textContent += review.why==='raté' ? ' · 🔁 à revoir' : review.why==='peu fait' ? ' · 🌱 peu pratiqué' : ' · ✨ pas encore fait';
     }
     if(focus){
       var tagEl = document.getElementById('practice-family-tag');

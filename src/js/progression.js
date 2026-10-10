@@ -78,33 +78,27 @@
      l'activité la moins réussie disponible au niveau en cours. */
   function progWeakPick(){
     if(!progEvents || progEvents.length < 20) return null;
-    var stats = progSkillStats().filter(function(st){ return st.rateRecent !== null && st.rateRecent < PROG_WEAK_BELOW; });
-    if(!stats.length) return null;
-    stats.sort(function(a,b){ return (a.rateRecent - b.rateRecent) || (Math.random() - .5); });
-    var weak = stats.slice(0, 3);
-    var st = pickFresh('weakskill|' + weak.map(function(w){ return w.skill.id; }).join(','), weak);
-    // activités disponibles pour cette compétence au niveau courant
-    var dom = st.skill.id, options = [];
-    FAMILIES.forEach(function(f){ if(f.key!=='qcm' && familyAvailable(f, globalLevel) && domainOrFallback(f.domain)===dom) options.push({ key:f.key, domain:null }); });
-    if(M4_LEVELS[globalLevel].types.some(function(t){ var d = quizTypeById(t); return d && quizDomainId(d)===dom; })) options.push({ key:'qcm', domain:dom });
-    if(!options.length) return null;
-    // la moins réussie récemment (les activités sans donnée passent après)
-    var all = progSkillEvents(st.index);
-    function optionRate(o){
-      var l = all.filter(function(e){ return o.key==='qcm' ? (e[2]==='qcm' && eventDomain(e)===o.domain) : e[2]===o.key; }).slice(-20);
-      return l.length ? progRate(l) : 0.5;
-    }
-    options.sort(function(a,b){ return (optionRate(a) - optionRate(b)) || (Math.random() - .5); });
-    return { key:options[0].key, domain:options[0].domain };
+    // ACTIVITÉ par activité (une famille, ou un type de quiz précis) au niveau en cours : les moins réussies
+    // sur leurs 10 dernières réponses (au moins 3), sous le seuil « à travailler ».
+    var weak = progReviewUnits().map(function(u){
+      var ev = progUnitEvents(u).slice(-REVIEW_RECENT); u.n = ev.length; u.rate = ev.length ? progRate(ev) : null; return u;
+    }).filter(function(u){ return u.n >= 3 && u.rate < PROG_WEAK_BELOW; });
+    if(!weak.length) return null;
+    weak.sort(function(a,b){ return (a.rate - b.rate) || (a.id < b.id ? -1 : 1); });
+    weak = weak.slice(0, 3);
+    var u = pickFresh('weakunit|' + globalLevel + '|' + weak.map(function(w){ return w.id; }).join(','), weak);
+    return { key:u.key, type:u.type };
   }
-  /* ---- Mode Révision : mettre en avant les exercices ratés et ceux jamais faits ----
+  /* ---- Priorité ACTIVITÉ par activité (mode Révision, mode Aléatoire, séries) ----
      Une « unité » = une activité au niveau en cours (une famille, ou un type de quiz précis).
-     Poids de tirage : jamais faite à ce niveau = 3 ; sinon 0,25 + 4 × (part d'erreurs sur ses
-     10 dernières réponses), +1 si la toute dernière réponse était fausse. Une activité
-     toujours réussie reste possible (poids faible), pour ne pas tourner en rond.
-     Renvoie { key, type (quiz seulement), why : 'raté' | 'nouveau' | '' }. Jamais deux fois de suite
-     la même famille quand il y a le choix. */
-  var REVIEW_RECENT = 10, REVIEW_NEW_WEIGHT = 3;
+     Poids : jamais faite à ce niveau = 3 (« nouveau ») ; sinon 0,25 + 4 × (part d'erreurs sur ses 10 dernières
+     réponses) + 1 si la toute dernière était fausse (« raté ») + 1 si moins de 5 réponses (« peu fait »).
+     Une activité toujours réussie et bien pratiquée garde un poids faible (0,25), pour ne pas tourner en rond.
+     - Révision : toutes les questions sont tirées ainsi (progReviewPick, voir plus bas) ;
+     - Aléatoire : 25 % des questions vont à une activité à travailler (nouvelle, peu faite ou ratée), le reste
+       suit le tirage habituel sans remise (progNudgePick ; à partir de 20 réponses à ce niveau) ;
+     - séries sans faute : les 3 questions avant un palier vont aux activités les moins réussies (progWeakPick). */
+  var REVIEW_RECENT = 10, REVIEW_NEW_WEIGHT = 3, PROG_FEW = 5, NUDGE_SHARE = 0.25;
   var reviewLast = null;
   function progReviewUnits(){
     var units = [];
@@ -115,43 +109,67 @@
     });
     return units;
   }
-  function progReviewWeight(u){
-    var ev = (progEvents || []).filter(function(e){
-      return e[4]===globalLevel && (u.type ? (e[2]==='qcm' && e[3]===u.type) : e[2]===u.key);
+  function progUnitEvents(u, lv){
+    if(lv === undefined) lv = globalLevel;
+    return (progEvents || []).filter(function(e){
+      return (lv === null || e[4]===lv) && (u.type ? (e[2]==='qcm' && e[3]===u.type) : e[2]===u.key);
     });
+  }
+  function progReviewWeight(u){
+    var ev = progUnitEvents(u);
     if(!ev.length) return { w:REVIEW_NEW_WEIGHT, why:'nouveau' };
     var last = ev.slice(-REVIEW_RECENT), errs = last.filter(function(e){ return !e[5]; }).length;
-    var w = 0.25 + 4 * errs / last.length + (last[last.length-1][5] ? 0 : 1);
-    return { w:w, why: errs ? 'raté' : '' };
+    var few = ev.length < PROG_FEW;
+    var w = 0.25 + 4 * errs / last.length + (last[last.length-1][5] ? 0 : 1) + (few ? 1 : 0);
+    return { w:w, why: errs ? 'raté' : (few ? 'peu fait' : '') };
   }
   function weightedPick(list){
-    var total = list.reduce(function(s,u){ return s + u.w; }, 0), x = Math.random() * total;
+    var total = list.reduce(function(s,u){ return s + u.w; }, 0), x = rnd() * total;
     for(var i=0;i<list.length;i++){ x -= list[i].w; if(x <= 0) return list[i]; }
     return list[list.length-1];
   }
-  // Deux étages : d'abord la famille (le quiz pèse la moyenne de ses types × 1,5 : il en contient
-  // une vingtaine, il ne doit pas écraser le reste), puis, pour le quiz, le type précis.
+  // Mode Aléatoire : une question sur quatre environ va à une activité à travailler ; null = tirage habituel.
+  function progNudgePick(){
+    if(rnd() >= NUDGE_SHARE) return null;
+    if((progEvents || []).filter(function(e){ return e[4] === globalLevel; }).length < 20) return null;   // débutant : le tirage habituel fait déjà tout découvrir
+    var units = progReviewUnits().map(function(u){ var r = progReviewWeight(u); u.w = r.w; u.why = r.why; return u; })
+      .filter(function(u){ return !!u.why; });
+    var other = units.filter(function(u){ return u.key !== lastFamily; });
+    if(other.length) units = other;
+    if(!units.length) return null;
+    var u = weightedPick(units);
+    return { key:u.key, type:u.type, why:u.why };
+  }
+  // Révision, en deux étages, guidés par les ACTIVITÉS :
+  //  1) l'écran (famille) : poids = celui de sa meilleure activité à travailler (une seule sorte de quiz ratée suffit
+  //     à faire revenir le quiz, sans être noyée par la vingtaine de types maîtrisés) ; jamais deux fois de suite le
+  //     même écran quand il y a le choix ;
+  //  2) l'activité dans l'écran : 9 fois sur 10 parmi celles à travailler (nouvelles, peu faites, ratées).
+  var reviewLastUnit = null;
+  function progPickUnit(pool){
+    var other = pool.filter(function(u){ return u.id !== reviewLastUnit; });
+    if(other.length) pool = other;
+    var toWork = pool.filter(function(u){ return !!u.why; });
+    return (toWork.length && rnd() < 0.9) ? weightedPick(toWork) : weightedPick(pool);
+  }
   function progReviewPick(){
     var units = progReviewUnits().map(function(u){ var r = progReviewWeight(u); u.w = r.w; u.why = r.why; return u; });
     var fams = [], byKey = {};
     units.forEach(function(u){
       var f = byKey[u.key];
-      if(!f){ f = byKey[u.key] = { key:u.key, units:[], w:0, why:'' }; fams.push(f); }
+      if(!f){ f = byKey[u.key] = { key:u.key, units:[], w:0 }; fams.push(f); }
       f.units.push(u);
+      if(u.id !== reviewLastUnit) f.w = Math.max(f.w, u.w);
     });
-    fams.forEach(function(f){
-      f.w = f.units.reduce(function(s,u){ return s + u.w; }, 0) / f.units.length * (f.key==='qcm' ? 1.5 : 1);
-      f.why = f.units.some(function(u){ return u.why==='raté'; }) ? 'raté' : (f.units.every(function(u){ return u.why==='nouveau'; }) ? 'nouveau' : '');
-    });
-    var pool = fams.filter(function(f){ return f.key !== reviewLast; });
+    var pool = fams.filter(function(f){ return f.w > 0 && f.key !== reviewLast; });
+    if(!pool.length) pool = fams.filter(function(f){ return f.w > 0; });
     if(!pool.length) pool = fams;
     var fam = weightedPick(pool);
-    reviewLast = fam.key;
-    var u = weightedPick(fam.units);
+    var u = progPickUnit(fam.units);
+    reviewLast = fam.key; reviewLastUnit = u.id;
     return { key:u.key, type:u.type, why:u.why };
   }
   // thème de quiz d'un événement, retrouvée à partir de son type
-  function eventDomain(e){ var d = e[3] ? quizTypeById(e[3]) : null; return d ? quizDomainId(d) : null; }
 
   /* ---- Écran « Progression » (Réglages) ---- */
   var progTab = 0;                 // 0 synthèse · 1 détail · 2 activité
@@ -207,11 +225,21 @@
       var best = known.slice(0, 2), worst = known.slice(-2).reverse().filter(function(st){ return st.rateRecent < PROG_WEAK_BELOW; });
       var ul = progMk('ul', 'prog-points');
       ul.appendChild(progMk('li', '', '💪 Points forts : ' + best.map(function(st){ return st.skill.icon + ' ' + st.skill.short + ' (' + progPct(st.rateRecent) + ')'; }).join(', ')));
-      if(worst.length) ul.appendChild(progMk('li', '', '🎯 À travailler : ' + worst.map(function(st){ return st.skill.icon + ' ' + st.skill.short + ' (' + progPct(st.rateRecent) + ')'; }).join(', ')));
-      else ul.appendChild(progMk('li', '', '🌟 Tout est au-dessus de 90 % : bravo !'));
+      if(!worst.length) ul.appendChild(progMk('li', '', '🌟 Tous les thèmes sont au-dessus de 90 % : bravo !'));
       body.appendChild(ul);
     }
-    body.appendChild(progMk('p', 'muted settings-hint', '🎯 Dans les séries sans faute (paliers 20, 25 et 30), les 3 questions avant un palier sont posées dans les sujets à travailler (il faut au moins 20 réponses enregistrées).'));
+    // activité par activité (tous niveaux) : les moins réussies, puis celles peu pratiquées au niveau en cours
+    var acts = progActivityRows();
+    var weakActs = acts.filter(function(a){ return a.n >= PROG_FEW && a.rate < PROG_WEAK_BELOW; }).slice(0, 5);
+    var fewActs = progReviewUnits().filter(function(u){ return progUnitEvents(u).length < PROG_FEW; });
+    var ul2 = progMk('ul', 'prog-points prog-acts-focus');
+    ul2.appendChild(progMk('li', '', weakActs.length ? '🎯 Activités à travailler : ' + weakActs.map(function(a){ return a.label + ' (' + progPct(a.rate) + ')'; }).join(', ')
+      : '🌟 Aucune activité sous 90 % de réussite (parmi celles faites au moins ' + PROG_FEW + ' fois).'));
+    if(fewActs.length) ul2.appendChild(progMk('li', '', '🌱 Peu pratiquées en ' + ['Facile','Moyen','Difficile'][globalLevel] + ' (moins de ' + PROG_FEW + ' réponses) : ' + fewActs.length + ' activité' + (fewActs.length>1?'s':'') + ' — ' +
+      fewActs.slice(0, 6).map(function(u){ return progActivityLabel([0,0,u.key,u.type||'']); }).join(', ') + (fewActs.length > 6 ? '…' : '')));
+    body.appendChild(ul2);
+    body.appendChild(progMk('p', 'muted settings-hint', '🎲 En mode Aléatoire, environ une question sur quatre va à une activité nouvelle, peu pratiquée ou ratée ; le mode Révision ne pose que celles-là en priorité.'));
+    body.appendChild(progMk('p', 'muted settings-hint', '🎯 Dans les séries sans faute (paliers 20, 25 et 30), les 3 questions avant un palier sont posées sur les activités les moins réussies (il faut au moins 20 réponses enregistrées).'));
     var unknown = stats.filter(function(st){ return st.rateRecent===null; });
     if(unknown.length) body.appendChild(progMk('p', 'muted settings-hint', 'Pas encore assez de réponses (moins de ' + PROG_MIN_RECENT + ') : ' + unknown.map(function(st){ return st.skill.short; }).join(', ') + '.'));
   }
@@ -219,6 +247,16 @@
   function progActivityLabel(e){
     if(e[2]==='qcm'){ var d = e[3] ? quizTypeById(e[3]) : null; return d ? (d.longLabel || d.label || e[3]) : 'Quiz'; }
     return FAMILY_TAGS[e[2]] || e[2];
+  }
+  // Toutes les activités pratiquées (tous niveaux) : libellé, nombre de réponses, réussite sur les 20 dernières ; les moins réussies d'abord.
+  function progActivityRows(){
+    var acts = {};
+    progEvents.forEach(function(e){
+      var k = e[2]==='qcm' ? 'qcm|' + e[3] : e[2];
+      (acts[k] = acts[k] || { label:progActivityLabel(e), list:[] }).list.push(e);
+    });
+    return Object.keys(acts).map(function(k){ var a = acts[k]; return { id:k, label:a.label, n:a.list.length, rate:progRate(a.list.slice(-20)) }; })
+      .sort(function(a,b){ return a.rate - b.rate; });
   }
   function progRenderDetail(body, stats){
     if(!progEvents.length){ body.appendChild(progMk('p', 'muted', 'Pas encore de résultats.')); return; }
