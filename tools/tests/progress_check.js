@@ -39,8 +39,8 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 900 } }, asy
     await ev(`freeStreak=${17 + (k % 3)}; var f=progWeakPick(); window.__p=f;`);
     picks.push(await ev(`JSON.stringify(window.__p)`));
   }
-  const keys = [...new Set(picks.map(p => JSON.parse(p)).map(p => p.key + (p.domain ? ':' + p.domain : '')))];
-  chk(keys.every(k => ['qcm:calcul', 'measure', 'net', 'qcm:solides'].includes(k)), 'sujets choisis parmi les plus faibles : ' + keys.join(', '));
+  const keys = [...new Set(picks.map(p => JSON.parse(p)).map(p => p.key + (p.type ? ':' + p.type : '')))];
+  chk(keys.length === 3 && keys.every(k => ['qcm:calc', 'measure', 'net'].includes(k)), 'activités choisies parmi les moins réussies (activité par activité, en tournant) : ' + keys.join(', '));
   // défi déjà réussi : pas de ciblage
   await ev(`ownedCats[CAT_REWARDS[12].id]=true; freeStreak=18; nextPracticeQuestion();`);
   chk(!(await page.evaluate(() => /🎯/.test(document.getElementById('practice-family-tag').textContent))), 'défi du niveau déjà réussi : pas de ciblage');

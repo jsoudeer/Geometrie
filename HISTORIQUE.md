@@ -461,3 +461,11 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 ## 79. Correctif : légende des « Durées » (09/10/2026)
 - La légende sous le dessin des Durées affichait la formule (« dureeT(s) + ' + ' + dureeFmt(d) ») : dans la fiche, `caption` est un **texte à trous** (`{dureeT(s)} + {dureeFmt(d)}`), pas une expression. Erreur introduite au §69, que les tests ne voyaient pas (ils ne lisaient que l'énoncé).
 - Tests : `formes_check.js` lit la légende des Durées ; `gabarits_check.js` vérifie pour **toutes** les fiches et les 3 niveaux qu'aucun dessin, énoncé, explication ou réponse ne montre de formule (appel de fonction, accolade, concaténation, undefined, NaN).
+
+## 80. Priorité activité par activité, aussi en mode Aléatoire (10/10/2026)
+- `progression.js` : un seul calcul de priorité par **activité** (famille, ou type de quiz) au niveau en cours (`progReviewWeight`) : jamais faite = 3 (« nouveau »), sinon 0,25 + 4 × part d'erreurs sur les 10 dernières + 1 si la dernière est fausse (« raté ») + 1 si moins de 5 réponses (« peu fait », `PROG_FEW`).
+- **Révision** (`progReviewPick`) : écran pondéré par sa **meilleure** activité à travailler (avant : la moyenne, qui noyait une sorte de quiz ratée parmi les ~40 maîtrisées), puis l'activité 9 fois sur 10 parmi celles à travailler ; jamais deux fois de suite le même écran.
+- **Aléatoire** (`progNudgePick`, appelé par `nextPracticeQuestion`) : à partir de 20 réponses au niveau, 25 % des questions (`NUDGE_SHARE`) vont à une activité nouvelle, peu faite ou ratée (étiquette « 🔁 à revoir » / « 🌱 peu pratiqué » / « ✨ pas encore fait ») ; pas en Chronométré ni pendant les questions ciblées des séries.
+- **Séries** (`progWeakPick`) : les 3 questions avant un palier visent les **activités** les moins réussies (≥ 3 réponses, sous 90 %), et non plus un grand thème ; `forcedQcmDomain` supprimé (on impose le type de quiz).
+- **Écran Progression** (synthèse) : « 🎯 Activités à travailler » (par activité, tous niveaux, `progActivityRows`) et « 🌱 Peu pratiquées » au niveau en cours ; explication des réglages.
+- Mesuré (`priorite_check.js`) : une sorte de quiz ratée revient ≈ 27 % du temps en Aléatoire et ≈ 35 % en Révision, contre ≈ 1 % quand tout est réussi. `progress_check.js` adapté.

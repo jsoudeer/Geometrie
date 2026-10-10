@@ -16,7 +16,7 @@ Au lancement : une carte « 🎓 Maths · CE1 » avec le duo Kawaii VS Brainrot 
 | Mode | Comment | Ce qui est proposé |
 |---|---|---|
 | **Aléatoire** (onglets Facile / Moyen / Difficile) | Une activité tirée au hasard à chaque question | Les 6 familles ci-dessous |
-| **Révision** (à côté d'Aléatoire) | Le jeu repose surtout les exercices ratés, avec aussi des exercices jamais faits | Mêmes activités ; étiquette « 🔁 à revoir » ou « ✨ pas encore fait » |
+| **Révision** (à côté d'Aléatoire) | Le jeu repose surtout les exercices ratés, avec aussi des exercices jamais faits | Mêmes activités ; étiquette « 🔁 à revoir », « 🌱 peu pratiqué » ou « ✨ pas encore fait » |
 | **Chronométré** (1, 2, 3 ou 5 min) | Un maximum de bonnes réponses avant la fin du temps | Seulement Mesurer, Quizz et Lire l'heure (réponse en un geste) |
 | **Manuel** | On choisit un **thème** (grille de tuiles) (🔷 Formes & angles, 🦋 Symétrie, 🧭 Repérage, 🧊 Solides & patrons, 🕒 Heure & calendrier, 📏 Mesures, 🔢 Nombres & fractions, ➕ Calcul & problèmes, 🧩 Logique & énigmes), puis une activité de ce thème ou « 🎲 Un peu de tout » (mélange des activités du thème), puis un niveau : **aucun niveau n'est choisi d'office et aucune épreuve n'apparaît** tant qu'on n'a pas touché Facile, Moyen ou Difficile ; ce toucher affiche l'épreuve et replie la liste des activités (bouton « Afficher / Masquer les activités », plus de minuterie) | Toutes les familles |
 
@@ -254,7 +254,11 @@ Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué 
 - Les **solides** sont dessinés en entier, arêtes cachées en pointillés (cube, pavé, pyramides, prismes, cylindre, cône).
 
 ## Répartition des questions (tirage sans remise)
-**Révision** : pour chaque activité (une famille, ou un type de quiz) au niveau en cours, le jeu regarde les 10 dernières réponses : une activité ratée pèse jusqu'à 5 fois plus qu'une activité toujours réussie, une activité jamais faite pèse 3 (donc entre les deux). Rien n'est exclu, et jamais deux fois de suite la même famille. La révision ne compte ni pour la série sans faute ni pour la montée de niveau automatique.
+**Priorité activité par activité** : pour chaque activité (une famille, ou une sorte de question du quiz) au niveau en cours, le jeu regarde ses 10 dernières réponses. Une activité **ratée** pèse lourd, une activité **jamais faite** ou **peu pratiquée** (moins de 5 réponses) aussi, une activité toujours réussie très peu (mais elle reste possible).
+- **Révision** : toutes les questions sont choisies ainsi (9 fois sur 10 parmi les activités à travailler) ; une seule sorte de quiz ratée suffit à faire revenir le quiz. Jamais deux fois de suite le même écran. La révision ne compte ni pour la série sans faute ni pour la montée de niveau automatique.
+- **Aléatoire** : à partir de 20 réponses au niveau en cours, environ **une question sur quatre** va à une activité à travailler (étiquette « 🔁 à revoir », « 🌱 peu pratiqué » ou « ✨ pas encore fait ») ; les autres suivent le tirage habituel. Pas en Chronométré.
+- **Séries sans faute** : les 3 questions avant un palier vont aux **activités** les moins réussies (et non plus aux grands thèmes).
+- **Progression de l'enfant** : la synthèse liste les **activités à travailler** (sous 90 % sur leurs 20 dernières réponses) et celles **peu pratiquées** au niveau en cours.
 
 En mode Aléatoire, chaque activité (mesure, déformation, patron, quiz, horloge lire/régler, ateliers) sort une fois par tour avant qu'aucune ne revienne (le quiz compte triple), et jamais deux fois de suite. Dans le quiz, les **catégories** (formes, repère, solides, temps…) tournent aussi sans remise, puis les types à l'intérieur de chaque catégorie. Une question déjà vue dans la série est retirée (4 essais dans la même activité, puis changement d'activité).
 
