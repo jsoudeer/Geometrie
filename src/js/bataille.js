@@ -155,9 +155,15 @@
     document.getElementById('bt-start').disabled = !ok;
     var total = 0;
     BT_ROLE_ORDER.forEach(function(role){ sel[role].forEach(function(id){ var sp = findSprite(btMyList(), id); if(sp) total += spritePts(sp); }); });
-    if(BT_DIFFS) document.getElementById('bt-diff-note').textContent = ok
-      ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points.'
-      : 'Choisis au moins une carte pour voir les points de tes adversaires.';
+    var adv = btMode === 'adv', side = btSide();
+    document.getElementById('bt-train-box').hidden = adv;
+    var advEl = document.getElementById('bt-adv-level');
+    advEl.hidden = !adv;
+    if(adv) advEl.textContent = btAdvLine(side, btAdv[side]);
+    if(BT_DIFFS) document.getElementById('bt-diff-note').textContent = adv
+      ? 'Adversaires : ❤️ ' + btAdvTarget(btAdv[side]) + ' points (+10 % à chaque victoire). Ton équipe : ❤️ ' + total + ' points.'
+      : (ok ? 'Ton équipe : ❤️ ' + total + ' points. Adversaires : environ ❤️ ' + Math.round(total * BT_DIFFS[btDiff].factor) + ' points.'
+            : 'Choisis au moins une carte pour voir les points de tes adversaires.');
     document.getElementById('bt-intro').textContent = btSide()==='cats'
       ? 'Tu joues avec la Team Kawaii contre les Brainrots. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.'
       : 'Tu joues avec les Brainrots contre la Team Kawaii. Forme ton équipe : jusqu\'à 3 classiques, 1 soutien et 1 archer.';
@@ -224,11 +230,33 @@
   ];
   var btDiff = 1;
   try{ var savedDiff = parseInt(localStorage.getItem('geo_bt_diff'),10); if(savedDiff>=0 && savedDiff<BT_DIFFS.length) btDiff = savedDiff; }catch(e){}
+  /* ---- Deux modes : Entraînement (difficulté réglable, ci-dessus) et Aventure : les adversaires valent
+     ❤️ 30 points au niveau 1, puis 10 % de plus à chaque victoire (une défaite ne fait pas reculer).
+     Un niveau par clan ; tous les 10 niveaux, un nouveau palier (nom propre à chaque clan). ---- */
+  var BT_ADV_BASE = 30, BT_ADV_GROWTH = 0.1;
+  var BT_TIERS = {
+    cats:     ['Petit pompon','Patte de velours','Moustache courageuse','Cœur de héros','Étoile câline','Gardien arc-en-ciel','Chevalier des nuages','Champion kawaii','Légende étoilée','Mythe éternel'],
+    brainrot: ['Petit bug','Glitch rigolo','Bizarro débutant','Chaos en herbe','Maestro du n\'importe quoi','Turbo brainrot','Méga mélange','Seigneur du chaos','Brainrot légendaire','Brainrot cosmique']
+  };
+  var btMode = 'train', btAdv = { cats:1, brainrot:1 };
+  try{
+    if(localStorage.getItem('geo_bt_mode') === 'adv') btMode = 'adv';
+    var savedAdv = JSON.parse(localStorage.getItem('geo_bt_adv') || '{}') || {};
+    ['cats','brainrot'].forEach(function(k){ var v = parseInt(savedAdv[k], 10); if(v >= 1) btAdv[k] = v; });
+  }catch(e){}
+  function btSaveAdv(){ try{ localStorage.setItem('geo_bt_adv', JSON.stringify(btAdv)); }catch(e){} }
+  function btAdvTarget(level){ return Math.round(BT_ADV_BASE * Math.pow(1 + BT_ADV_GROWTH, level - 1)); }
+  function btTierIndex(level){ return Math.floor((level - 1) / 10); }
+  function btTierName(side, level){
+    var names = BT_TIERS[side], i = btTierIndex(level);
+    return i < names.length ? names[i] : names[names.length - 1] + ' ' + (i - names.length + 2);
+  }
+  function btAdvLine(side, level){ return '🗺️ Aventure · niveau ' + level + ' · palier « ' + btTierName(side, level) + ' »'; }
   function btTotal(units){ return units.reduce(function(sum, u){ return sum + u.base; }, 0); }
   // Équipe adverse : même composition que la tienne (mêmes nombres de classiques, soutien, archer),
   // tirée au hasard parmi les combinaisons dont le total est le plus proche de la cible (variété conservée).
   function btBuildEnemyTeam(myUnits){
-    var target = btTotal(myUnits) * BT_DIFFS[btDiff].factor;
+    var adv = btMode === 'adv', target = adv ? btAdvTarget(btAdv[btSide()]) : btTotal(myUnits) * BT_DIFFS[btDiff].factor;
     var pool = btEnemyList();
     function byRole(role){ return pool.filter(function(s){ return s.role === role; }); }
     var classics = byRole('classic'), supports = byRole('support'), archers = byRole('archer');
@@ -248,7 +276,18 @@
     var best = cands[0].gap;
     var near = cands.filter(function(c){ return c.gap <= best; });    // ex æquo au plus près
     if(near.length < 6) near = cands.slice(0, 6).filter(function(c){ return c.gap <= best + 1; });
-    return pick_(near).team.map(function(sp){ return btMakeUnit(sp, false); });
+    var units = pick_(near).team.map(function(sp){ return btMakeUnit(sp, false); });
+    // Aventure : toujours ajusté à la cible. Entraînement : seulement si aucune équipe n'approche la cible à 5 % près
+    // (ex. Brainrots communs très faibles en Facile : aucune équipe Kawaii n'est assez faible).
+    if(adv || Math.abs(btTotal(units) - target) > target * 0.05) btScaleTo(units, Math.round(target));
+    return units;
+  }
+  // Aventure : les points des cartes adverses sont ajustés (même proportion pour toutes) pour que le total soit la cible.
+  function btScaleTo(units, target){
+    var total = btTotal(units); if(!total) return;
+    units.forEach(function(u){ u.base = u.pts = Math.max(1, Math.round(u.base * target / total)); });
+    var diff = target - btTotal(units), big = units.slice().sort(function(a,b){ return b.base - a.base; })[0];
+    if(big && big.base + diff >= 1){ big.base += diff; big.pts = big.base; }
   }
   function pick_(arr){ return arr[btRand(arr.length)]; }
   function btStart(){
@@ -263,15 +302,22 @@
       pl: { field:[], reserve:myUnits },
       en: { field:[], reserve:enUnits },
       phase: 'pick-attacker', selected: null, over: false, log: [], cards: {}, animateArrivals: false,
-      turn: 0, proc: null, skillChoice: null, armed: null, factors: []
+      turn: 0, proc: null, skillChoice: null, armed: null, factors: [],
+      mode: btMode, advLevel: btMode === 'adv' ? btAdv[side] : 0
     };
     var notes = [];
     for(var i=0;i<BT_FIELD_SIZE;i++){ btDrawFromReserve(bt.pl, notes); btDrawFromReserve(bt.en, notes); }
     document.getElementById('bt-setup').hidden = true;
     document.getElementById('bt-over').hidden = true;
+    document.getElementById('bt-again-ask').hidden = true;
+    document.getElementById('bt-over-row').hidden = false;
+    document.getElementById('bt-quit-row').hidden = false;
+    var badge = document.getElementById('bt-adv-badge');
+    badge.hidden = bt.mode !== 'adv';
+    if(bt.mode === 'adv') badge.textContent = btAdvLine(side, bt.advLevel);
     document.getElementById('bt-arena').hidden = false;
     document.getElementById('bt-enemy-title').textContent = (side==='cats' ? 'Adversaires (Brainrots 👹)' : 'Adversaires (Team Kawaii 🐱)') + ' · ❤️ ' + enTotal;
-    var intro = 'Difficulté ' + BT_DIFFS[btDiff].name + ' : équipe adverse ❤️ ' + enTotal + ' points, la tienne ❤️ ' + myTotal + '.';
+    var intro = (bt.mode === 'adv' ? 'Aventure, niveau ' + bt.advLevel : 'Entraînement ' + BT_DIFFS[btDiff].name) + ' : équipe adverse ❤️ ' + enTotal + ' points, la tienne ❤️ ' + myTotal + '.';
     btLog([intro].concat(notes), true);
     btClearSfx();
     btStartPlayerTurn();
@@ -650,7 +696,18 @@
     if(!me && !foe) text = '🤝 Égalité ! Il ne reste plus aucune carte des deux côtés.';
     else if(me){ text = '🏆 Victoire ! Tu as battu toute l\'équipe adverse. +3 ⭐'; addStar(3); playSound('good'); celebrate('good', document.getElementById('bt-over-text')); }
     else { text = '💥 Défaite… toute ton équipe a été battue. Réessaie, tu peux changer d\'équipe !'; playSound('bad'); }
+    if(bt.mode === 'adv'){
+      var side = bt.side, lv = bt.advLevel;
+      if(me && !foe){
+        btAdv[side] = Math.max(btAdv[side], lv + 1); btSaveAdv();
+        text += ' Niveau ' + (lv + 1) + ' débloqué : les prochains adversaires auront ❤️ ' + btAdvTarget(lv + 1) + ' points.';
+        if(btTierIndex(lv + 1) > btTierIndex(lv)) text += ' 🎉 Nouveau palier : « ' + btTierName(side, lv + 1) + ' » !';
+      } else text += ' Tu restes au niveau ' + lv + ' (❤️ ' + btAdvTarget(lv) + ') : améliore ton équipe (boutique, évolutions) et retente !';
+    }
     document.getElementById('bt-over-text').textContent = text;
+    document.getElementById('bt-quit-row').hidden = true;      // la partie est finie : « Arrêter » est à côté de « Nouvelle partie »
+    document.getElementById('bt-again-ask').hidden = true;
+    document.getElementById('bt-over-row').hidden = false;
     document.getElementById('bt-over').hidden = false;
     document.getElementById('bt-arena').hidden = false;
     btSetStatus('Combat terminé.');
@@ -704,8 +761,21 @@
   document.getElementById('bt-start').addEventListener('click', btStart);
   document.getElementById('bt-skill-none').addEventListener('click', function(){ btChooseSkill(-1); });
   document.getElementById('bt-quit').addEventListener('click', btBackToSetup);
-  document.getElementById('bt-change-team').addEventListener('click', btBackToSetup);
-  document.getElementById('bt-again').addEventListener('click', btStart);
+  // Nouvelle partie : même équipe, ou retour au choix de l'équipe
+  document.getElementById('bt-again').addEventListener('click', function(){
+    document.getElementById('bt-over-row').hidden = true;
+    document.getElementById('bt-again-ask').hidden = false;
+    document.getElementById('bt-same-team').focus();
+  });
+  document.getElementById('bt-same-team').addEventListener('click', btStart);
+  document.getElementById('bt-new-team').addEventListener('click', btBackToSetup);
+  // Arrêter : on quitte la bataille (retour aux exercices)
+  document.getElementById('bt-stop').addEventListener('click', function(){ btBackToSetup(); showTab(lastPracticeTab); });
+  buildLevelRow(document.getElementById('bt-mode-row'), ['🎯 Entraînement','🗺️ Aventure'], btMode === 'adv' ? 1 : 0, function(idx){
+    btMode = idx === 1 ? 'adv' : 'train';
+    try{ localStorage.setItem('geo_bt_mode', btMode); }catch(e){}
+    renderBtSetup();
+  });
 
   renderShop();
   renderBtSetup();
