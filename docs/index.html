@@ -10524,15 +10524,18 @@ function phrase(tpl, vars){
       notes.push(unit.sprite.name + ' reçoit +' + BT_SUPPORT_BONUS + ' points du soutien.');
     }
   }
-  // Fin de tour d'un camp : son Soutien (s'il est encore là) donne des points à ses alliés.
+  // Fin de tour d'un camp : CHAQUE soutien encore là donne des points à ses alliés (deux soutiens = deux soins ;
+  // un soutien est soigné par l'autre, pas par lui-même).
   function btSupportTick(sideObj){
-    var sup = sideObj.field.filter(function(u){ return u.sprite.role==='support' && u.pts>0; })[0];
-    if(!sup) return false;
-    var allies = sideObj.field.filter(function(u){ return u!==sup && u.pts>0; });
-    if(!allies.length) return false;
-    allies.forEach(function(u){ u.pts += BT_SUPPORT_TURN; u.buffed = true; });
-    btLog([sup.sprite.name + ' soutient son équipe : +' + BT_SUPPORT_TURN + ' points à chaque allié.']);
-    return true;
+    var sups = sideObj.field.filter(function(u){ return u.sprite.role==='support' && u.pts>0; }), did = false;
+    sups.forEach(function(sup){
+      var allies = sideObj.field.filter(function(u){ return u!==sup && u.pts>0; });
+      if(!allies.length) return;
+      allies.forEach(function(u){ u.pts += BT_SUPPORT_TURN; u.buffed = true; });
+      btLog([sup.sprite.name + ' soutient son équipe : +' + BT_SUPPORT_TURN + ' points à chaque allié.']);
+      did = true;
+    });
+    return did;
   }
   function btDrawFromReserve(sideObj, notes){
     if(!sideObj.reserve.length || sideObj.field.length >= BT_FIELD_SIZE) return null;
