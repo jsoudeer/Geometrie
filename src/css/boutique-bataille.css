@@ -242,3 +242,6 @@
     padding:6px 12px; border-radius:999px; background:var(--surface2); border:1.5px solid var(--accent); }
   .bt-adv-badge{ font-size:13.5px; margin:0 0 6px; }
   .bt-again-q{ text-align:center; font-weight:800; margin:6px 0 4px; }
+  /* personnage sans image en pied : son visage, en grand, coins arrondis */
+  .sp-full-img.sp-face-as-full{ border-radius:22%; aspect-ratio:1; object-fit:cover; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  .adm-art .sp-full-img.sp-face-as-full{ max-height:70%; margin-bottom:12%; }

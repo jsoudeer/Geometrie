@@ -4,9 +4,9 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 780 } }, asy
   let bad = 0; const chk = (ok, msg) => { console.log(ok ? '  ok' : '  ✘ ÉCHEC', msg); if (!ok) bad++; };
   const ev = c => page.evaluate(x => window.__t.__eval(x), c);
   const want = { cat13:'Postou', cat14:'Vroumi', cat15:'Kimono', cat16:'Bondi', cat17:'Souplesse', cat18:'Frisette', cat19:'Carotin' };
-  const got = JSON.parse(await ev(`JSON.stringify(${JSON.stringify(Object.keys(want))}.map(function(id){ var s = findAnySprite(id), e = CUSTOM_IMG[id]; return [id, s && s.name, !!(e && e.f && e.u)]; }))`));
-  chk(got.every(([id, name, img]) => name === want[id] && img), 'les 7 nouveaux membres ont nom, visage et image en pied : ' + got.map(g => g[1]).join(', '));
-  const all = JSON.parse(await ev(`JSON.stringify(CAT_SPRITES.concat(BRAINROT_SPRITES).map(function(s){ return [s.id, s.name, !!(CUSTOM_IMG[s.id] && CUSTOM_IMG[s.id].f && CUSTOM_IMG[s.id].u), s.rarity]; }))`));
+  const got = JSON.parse(await ev(`JSON.stringify(${JSON.stringify(Object.keys(want))}.map(function(id){ var s = findAnySprite(id), e = CUSTOM_IMG[id]; return [id, s && s.name, !!(e && e.f)]; }))`));
+  chk(got.every(([id, name, img]) => name === want[id] && img), 'les 7 nouveaux membres ont nom et visage : ' + got.map(g => g[1]).join(', '));
+  const all = JSON.parse(await ev(`JSON.stringify(CAT_SPRITES.concat(BRAINROT_SPRITES).map(function(s){ return [s.id, s.name, !!(CUSTOM_IMG[s.id] && CUSTOM_IMG[s.id].f), s.rarity]; }))`));
   chk(all.length === 70 && all.every(a => a[2]), 'les 70 personnages (35 par clan) sont illustrés : ' + all.filter(a => !a[2]).map(a => a[0]).join(','));
   chk(new Set(all.map(a => a[1])).size === 70, 'aucun nom en double');
   chk(all.filter(a => a[3] === 'commun').length === 14 && all.filter(a => a[3] === 'rare').length === 26, 'rareté fixe : 14 communs, 26 rares (+ 30 de défi)');
@@ -18,5 +18,11 @@ withPage({ page: 'index_test.html', viewport: { width: 390, height: 780 } }, asy
   await page.click('#battle-btn'); await page.waitForTimeout(300);
   chk(/Team Kawaii/.test(await page.evaluate(() => document.getElementById('bt-intro').textContent)), 'bataille : « Tu joues avec la Team Kawaii »');
   chk(!/Chats kawaii|Chats Kawaii/.test(await page.evaluate(() => document.body.innerText)), 'plus de « Chats kawaii » à l\'écran');
+  // Team Kawaii en 2D : sans image en pied (4 personnages), l'écran Admirer montre le grand visage (pas le corps de chat générique)
+  const noFull = JSON.parse(await ev(`JSON.stringify(CAT_SPRITES.filter(function(s){ return CUSTOM_IMG[s.id] && !CUSTOM_IMG[s.id].u; }).map(function(s){ return s.id; }))`));
+  chk(JSON.stringify(noFull) === '["cat13","cat14","cat16","cat25"]', 'sans image en pied (en attente) : ' + noFull.join(', '));
+  await ev(`showAdmire(findAnySprite('cat13')); 0`); await page.waitForTimeout(700);
+  chk(await page.evaluate(() => !!document.querySelector('.adm-art img.sp-face-as-full') && !document.querySelector('.adm-art .fullbody-compose')), 'Admirer : grand visage arrondi au lieu du corps générique');
+  await page.keyboard.press('Escape');
   console.log(bad ? 'ÉCHEC' : 'kawaii_check OK'); process.exit(bad ? 1 : 0);
 });

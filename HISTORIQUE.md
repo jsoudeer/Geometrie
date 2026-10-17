@@ -496,3 +496,8 @@ Bug : les étoiles gagnées s'affichaient en haut mais pas dans la Boutique (com
 - `makeQuestionFlow` (noyau.js) : à chaque question, le bouton « Nouvelle activité » est grisé 5 s avec un compte à rebours (`SKIP_COOLDOWN_MS`, `flow.skip` ne fait rien pendant l'attente) ; `skipRun` compte les questions passées d'affilée sans répondre (remis à zéro à chaque réponse) : à la 2e, avertissement ; à la 3e (`SKIP_RUN_MAX`), `resetFreeStreak()` ; en Chronométré, chaque passage retire 5 s (`SKIP_CHRONO_COST_MS`) avec un message « −5 s ». Messages courts : `showSmallToast`.
 - Tests : `cooldown_check.js` ; `lib.js` met l'attente à 0 dans tous les autres tests.
 - `VALEUR_PERSONNAGES.md` : constat chiffré et propositions pour la valeur des personnages (échelle, évolutions, expérience, Aventure) — à décider, rien de codé.
+
+## 86. Team Kawaii : les 23 personnages 3D passent en 2D (17/10/2026)
+- 42 images déposées dans `wip/` : versions 2D (contour brun, aplats, fond pastel) de cat13 à cat35 (Postou … Pimpon). `tools/kawaii2d.py` : visage 256 px + en pied détouré (cutout de `tools/kawaii.py`) ; noms, rôles, compétences inchangés.
+- 4 sans image en pied (Postou, Vroumi, Bondi, Fossile) : `embed.py` accepte désormais un personnage **visage seul** (`u` absent) ; `tryLoadFullBodyImage` montre alors le **grand visage arrondi** (`.sp-face-as-full`) au lieu du corps générique (un chat, incongru pour un chien ou un lapin).
+- Brainrots inchangés (3D, communs pour la plupart). `kawaii_check.js` : visage obligatoire, en pied facultatif, Admirer sans corps générique.
