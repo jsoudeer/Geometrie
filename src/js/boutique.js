@@ -400,6 +400,15 @@
     var exts = ['png','svg','jpg'];
     var i = 0;
     var emb = CUSTOM_IMG[sprite.id], ea = evoArt(sprite, imgLevel);
+    if(emb && !emb.u && !ea){
+      // visage seul (pas encore d'image en pied) : on montre le grand visage, coins arrondis (le corps générique est un chat)
+      var imf = new Image();
+      imf.className = 'sp-full-img sp-face-as-full'; imf.alt = sprite.name;
+      imf.onload = function(){ onFound(imf); };
+      imf.onerror = function(){ onNotFound(); };
+      imf.src = emb.f;
+      return;
+    }
     if(emb){
       var im0 = new Image();
       im0.className = 'sp-full-img' + (ea ? ' evo-art-img' : ''); im0.alt = sprite.name;

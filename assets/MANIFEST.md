@@ -29,6 +29,9 @@ avoir demandé à Claude de modifier l'apparence d'un personnage dans le
 code), il suffit de redemander l'export : Claude fait tourner le dessin
 généré dans un navigateur et réenregistre chaque `.svg` à jour.
 
+## Team Kawaii en 2D (17/10/2026)
+cat13 à cat35 : versions 2D (`tools/kawaii2d.py`), à la place des 3D. Sans image en pied pour l'instant : cat13, cat14, cat16, cat25 (le jeu montre leur visage en grand).
+
 ## Personnages de réserve
 `wip/plus-tard/` : 55 personnages déjà découpés (visage + en pied), avec un nom proposé (`NOMS.md`).
 

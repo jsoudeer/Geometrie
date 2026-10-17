@@ -28,14 +28,14 @@ def b64(im, **kw):
 
 
 def ids_with_pair():
+    """Personnages illustrés : <id>.png (visage) obligatoire, <id>_full.png (en pied) facultatif."""
     found = []
     for side in ('cats', 'brainrot'):
-        for full in sorted(glob.glob(os.path.join(ROOT, 'assets', side, '*_full.png'))):
-            cid = os.path.basename(full)[:-len('_full.png')]
-            if '_evo' in cid:
-                continue   # image d'évolution : rangée avec son personnage (voir plus bas)
-            if os.path.exists(os.path.join(ROOT, 'assets', side, cid + '.png')):
-                found.append((cid, side))
+        for face in sorted(glob.glob(os.path.join(ROOT, 'assets', side, '*.png'))):
+            cid = os.path.basename(face)[:-4]
+            if '_' in cid:
+                continue   # _full, _evo1… : rangés avec leur personnage
+            found.append((cid, side))
     # cats d'abord (cat01…), puis brainrot (br01…), comme dans le catalogue
     return sorted(found, key=lambda t: (t[1] != 'cats', t[0]))
 
@@ -44,11 +44,15 @@ parts, total = [], 0
 for cid, side in ids_with_pair():
     base = os.path.join(ROOT, 'assets', side, cid)
     face = Image.open(base + '.png').convert('RGB')
-    full = Image.open(base + '_full.png').convert('RGBA')
-    full = full.resize((round(full.width * 400 / full.height), 400), Image.LANCZOS)
-    fa, fu = b64(face, quality=80, method=6), b64(full, quality=78, method=6)
-    total += len(fa) + len(fu)
-    rec = 'f:"%s",u:"%s"' % (fa, fu)
+    fa = b64(face, quality=80, method=6)
+    rec = 'f:"%s"' % fa
+    total += len(fa)
+    if os.path.exists(base + '_full.png'):   # sans image en pied : le jeu compose le visage sur un corps générique
+        full = Image.open(base + '_full.png').convert('RGBA')
+        full = full.resize((round(full.width * 400 / full.height), 400), Image.LANCZOS)
+        fu = b64(full, quality=78, method=6)
+        total += len(fu)
+        rec += ',u:"%s"' % fu
     # images d'évolution (facultatives) : <id>_evo1.png / <id>_evo1_full.png (Évolué), _evo2 (Ultime) ; voir tools/evo.py
     for lv in (1, 2):
         ef = base + '_evo%d.png' % lv
