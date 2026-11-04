@@ -95,10 +95,12 @@
      réponses) + 1 si la toute dernière était fausse (« raté ») + 1 si moins de 5 réponses (« peu fait »).
      Une activité toujours réussie et bien pratiquée garde un poids faible (0,25), pour ne pas tourner en rond.
      - Révision : toutes les questions sont tirées ainsi (progReviewPick, voir plus bas) ;
-     - Aléatoire : 25 % des questions vont à une activité à travailler (nouvelle, peu faite ou ratée), le reste
-       suit le tirage habituel sans remise (progNudgePick ; à partir de 20 réponses à ce niveau) ;
+     - Aléatoire : environ 15 % des questions vont à une activité à travailler (nouvelle, peu faite ou ratée), le reste
+       suit le tirage habituel sans remise, égal entre TOUTES les activités (progNudgePick ; à partir de 20 réponses à ce niveau ;
+       jamais deux de suite rapprochées (4 questions d'écart), pas juste après une faute, pas la même activité dans les 8 dernières) ;
      - séries sans faute : les 3 questions avant un palier vont aux activités les moins réussies (progWeakPick). */
-  var REVIEW_RECENT = 10, REVIEW_NEW_WEIGHT = 3, PROG_FEW = 5, NUDGE_SHARE = 0.25;
+  var REVIEW_RECENT = 10, REVIEW_NEW_WEIGHT = 3, PROG_FEW = 5, NUDGE_SHARE = 0.15, NUDGE_GAP = 4, NUDGE_MEMORY = 8;
+  var nudgeSince = 99, nudgeRecent = [];   // questions depuis la dernière priorité ; activités récemment mises en avant
   var reviewLast = null;
   function progReviewUnits(){
     var units = [];
@@ -128,16 +130,24 @@
     for(var i=0;i<list.length;i++){ x -= list[i].w; if(x <= 0) return list[i]; }
     return list[list.length-1];
   }
-  // Mode Aléatoire : une question sur quatre environ va à une activité à travailler ; null = tirage habituel.
+  // Mode Aléatoire : environ une question sur sept va à une activité à travailler ; null = tirage habituel.
   function progNudgePick(){
+    nudgeSince++;
+    if(nudgeSince <= NUDGE_GAP) return null;                      // jamais deux « priorités » rapprochées
+    var mine = (progEvents || []).filter(function(e){ return e[4] === globalLevel; });
+    if(mine.length < 20) return null;                             // débutant : le tirage habituel fait déjà tout découvrir
+    if(mine.length && !mine[mine.length-1][5]) return null;       // elle vient de rater : on lui laisse souffler, pas de question difficile en plus
     if(rnd() >= NUDGE_SHARE) return null;
-    if((progEvents || []).filter(function(e){ return e[4] === globalLevel; }).length < 20) return null;   // débutant : le tirage habituel fait déjà tout découvrir
     var units = progReviewUnits().map(function(u){ var r = progReviewWeight(u); u.w = r.w; u.why = r.why; return u; })
       .filter(function(u){ return !!u.why; });
+    var rested = units.filter(function(u){ return nudgeRecent.indexOf(u.id) === -1; });   // pas la même activité en boucle (si d'autres sont à travailler)
+    if(rested.length) units = rested;
     var other = units.filter(function(u){ return u.key !== lastFamily; });
     if(other.length) units = other;
     if(!units.length) return null;
     var u = weightedPick(units);
+    nudgeSince = 0;
+    nudgeRecent.push(u.id); if(nudgeRecent.length > NUDGE_MEMORY) nudgeRecent.shift();
     return { key:u.key, type:u.type, why:u.why };
   }
   // Révision, en deux étages, guidés par les ACTIVITÉS :
@@ -238,7 +248,7 @@
     if(fewActs.length) ul2.appendChild(progMk('li', '', '🌱 Peu pratiquées en ' + ['Facile','Moyen','Difficile'][globalLevel] + ' (moins de ' + PROG_FEW + ' réponses) : ' + fewActs.length + ' activité' + (fewActs.length>1?'s':'') + ' — ' +
       fewActs.slice(0, 6).map(function(u){ return progActivityLabel([0,0,u.key,u.type||'']); }).join(', ') + (fewActs.length > 6 ? '…' : '')));
     body.appendChild(ul2);
-    body.appendChild(progMk('p', 'muted settings-hint', '🎲 En mode Aléatoire, environ une question sur quatre va à une activité nouvelle, peu pratiquée ou ratée ; le mode Révision ne pose que celles-là en priorité.'));
+    body.appendChild(progMk('p', 'muted settings-hint', '🎲 En mode Aléatoire, environ une question sur sept va à une activité nouvelle, peu pratiquée ou ratée ; le mode Révision ne pose que celles-là en priorité.'));
     body.appendChild(progMk('p', 'muted settings-hint', '🎯 Dans les séries sans faute (paliers 20, 25 et 30), les 3 questions avant un palier sont posées sur les activités les moins réussies (il faut au moins 20 réponses enregistrées).'));
     var unknown = stats.filter(function(st){ return st.rateRecent===null; });
     if(unknown.length) body.appendChild(progMk('p', 'muted settings-hint', 'Pas encore assez de réponses (moins de ' + PROG_MIN_RECENT + ') : ' + unknown.map(function(st){ return st.skill.short; }).join(', ') + '.'));

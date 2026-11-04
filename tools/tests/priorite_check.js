@@ -23,7 +23,7 @@ withPage({ page: 'index_test.html' }, async (page) => {
   // mode Aléatoire : part des questions sur l'activité ratée
   async function share(n, mode) {
     await ev(`practiceMode='${mode}'; resetFreeStreak(); 0`);
-    return J(`JSON.stringify((function(){ var hit = 0, tag = 0; for(var i=0;i<${n};i++){ freeStreak = 0; nextPracticeQuestion();
+    return J(`JSON.stringify((function(){ var hit = 0, tag = 0; for(var i=0;i<${n};i++){ freeStreak = 0; progEvents.push([Date.now(),0,'clock-lire','',globalLevel,1]); nextPracticeQuestion();
       if(currentFamily==='qcm' && m4Current && m4Current.typeId==='perimetre'){ hit++; if(/🔁 à revoir/.test(document.getElementById('practice-family-tag').textContent)) tag++; } }
       return { hit: hit / ${n}, tag: tag }; })())`);
   }
@@ -31,7 +31,7 @@ withPage({ page: 'index_test.html' }, async (page) => {
   await setHist('qcm|perimetre');
   const free = await share(600, 'free');
   chk(base.hit < 0.06, 'sans échec : le Périmètre sort rarement en Aléatoire (' + Math.round(base.hit * 100) + ' %)');
-  chk(free.hit > 0.14 && free.hit < 0.4, 'Périmètre raté : il revient souvent en Aléatoire, sans tout envahir (' + Math.round(free.hit * 100) + ' %)');
+  chk(free.hit > 0.07 && free.hit < 0.3, 'Périmètre raté : il revient souvent en Aléatoire, sans tout envahir (' + Math.round(free.hit * 100) + ' %)');
   chk(free.tag > 0, 'la question poussée porte « 🔁 à revoir »');
   const rev = await share(400, 'review');
   chk(rev.hit > free.hit, 'en Révision, il revient encore plus souvent (' + Math.round(rev.hit * 100) + ' %)');
