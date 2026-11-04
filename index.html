@@ -8317,14 +8317,17 @@ function phrase(tpl, vars){
   // En mode Chronométré, seules les familles `timed` (réponse en un toucher)
   // sont tirées, une fois chacune : les manipulations lentes et le patron 3D
   // (dont l'animation de pliage n'aurait pas le temps de se jouer) en sont exclus.
-  function familyKeys(){
-    var keys = [];
+  // Les « unités » du tirage : une par ACTIVITÉ (un écran propre = une unité ; le Quizz en compte une par type de quiz).
+  // Chaque activité pèse donc pareil, quel que soit l'écran qui la porte. En Chronométré : seulement les activités chronométrées.
+  function drawUnits(){
+    var units = [];
     FAMILIES.forEach(function(f){
       if(!familyAvailable(f, globalLevel)) return;
-      if(practiceMode==='countdown'){ if(f.timed) keys.push(f.key); return; }
-      for(var i=0;i<(f.weight || 1);i++) keys.push(f.key);
+      if(practiceMode==='countdown' && !f.timed) return;
+      if(f.key==='qcm') M4_LEVELS[globalLevel].types.forEach(function(t){ units.push({ key:'qcm', type:t, id:'qcm|' + t }); });
+      else units.push({ key:f.key, type:null, id:f.key });
     });
-    return keys;
+    return units;
   }
   function showFamily(key){
     currentFamily = key;
@@ -8358,32 +8361,22 @@ function phrase(tpl, vars){
     showFamily(key);
     familyDef(key).generate(globalLevel);
   }
-  // Choix de la famille « sans remise » : chaque famille sort (le quiz autant de
-  // fois que son poids) avant qu'aucune ne revienne ; jamais deux fois de suite
-  // la même famille quand il y a le choix.
-  var FAM_BAG = { sig:'', bag:[] };
-  function pickFamilyFresh(){
-    var keys = familyKeys(), sig = keys.join(',');
-    if(FAM_BAG.sig!==sig || !FAM_BAG.bag.length){
-      var order, ok, guard = 0, distinct = keys.filter(function(k,i){ return keys.indexOf(k)===i; }).length;
-      do {
-        order = shuffle(keys.slice());
-        ok = true;
-        if(distinct>1){
-          // on lit le sac par la fin (pop) : order[len-1] sort en premier
-          if(order[order.length-1]===lastFamily) ok = false;
-          for(var i=1;i<order.length && ok;i++){ if(order[i]===order[i-1]) ok = false; }
-        }
-      } while(!ok && ++guard<200);
-      FAM_BAG = { sig:sig, bag:order };
+  // Choix de l'activité « sans remise » : chaque activité sort une fois avant qu'aucune ne revienne (donc une
+  // répartition égale entre TOUTES les activités) ; jamais deux fois de suite la même quand il y a le choix.
+  var UNIT_BAG = { sig:'', bag:[] }, lastUnitId = null;
+  function pickUnitFresh(){
+    var units = drawUnits(), sig = units.map(function(u){ return u.id; }).join(',');
+    if(UNIT_BAG.sig!==sig || !UNIT_BAG.bag.length){
+      var order, guard = 0;
+      do { order = shuffle(units.slice()); }          // on lit le sac par la fin (pop)
+      while(units.length>1 && order[order.length-1].id===lastUnitId && ++guard<50);
+      UNIT_BAG = { sig:sig, bag:order };
     }
-    // on prend la première famille (par le haut du sac) différente de celle affichée
-    var bag = FAM_BAG.bag, at = bag.length-1;
-    while(at>0 && bag[at]===lastFamily) at--;
-    // Il ne reste dans le sac que la famille déjà affichée (des tirages écartés ont vidé le reste) : nouveau sac.
-    if(bag[at]===lastFamily && keys.some(function(k){ return k!==lastFamily; })){ FAM_BAG = { sig:'', bag:[] }; return pickFamilyFresh(); }
-    var key = bag.splice(at,1)[0];
-    return key;
+    var bag = UNIT_BAG.bag, at = bag.length-1;
+    while(at>0 && bag[at].id===lastUnitId) at--;
+    var u = bag.splice(at,1)[0];
+    lastUnitId = u.id;
+    return u;
   }
   var STREAK_GOALS = [20, 25, 30];   // paliers de la série sans faute : défis 12 (Facile), 13 (Moyen), 14 (Difficile)
   // Séries sans faute (paliers 20, 25, 30) : les 3 questions qui précèdent un palier non encore
@@ -8412,9 +8405,11 @@ function phrase(tpl, vars){
       if(reviewing) review = progReviewPick();
       else if(mixing) review = manualMixPick();
       else review = (nudge && tries===0) ? nudge : null;
-      var key = focus ? focus.key : (review ? review.key : ((appMode==='manual' && manualFamily) ? manualFamily : pickFamilyFresh()));
-      forcedQcmType = focus ? (focus.type || null) : ((review && review.type) ? review.type : null);
+      var drawn = (focus || review || (appMode==='manual' && manualFamily)) ? null : pickUnitFresh();
+      var key = focus ? focus.key : (review ? review.key : (drawn ? drawn.key : manualFamily));
+      forcedQcmType = focus ? (focus.type || null) : ((review && review.type) ? review.type : (drawn ? drawn.type : null));
       lastFamily = key;
+      if(review) lastUnitId = review.type ? 'qcm|' + review.type : review.key;   // le tirage normal ne répète pas l'activité qui vient de sortir
       // d'abord on retente dans la même famille (elle garde son tour), puis on en change
       var fresh = false;
       for(var again=0; again<4 && !fresh; again++){
@@ -8598,6 +8593,7 @@ function phrase(tpl, vars){
     resetSeenQuestions();
     countdownScore = { correct:0, total:0 };
     countdownRunning = true;
+    countdownPaused = false;
     countdownLevel = globalLevel;
     updateStreakPill();
     countdownEndAt = Date.now() + countdownSeconds*1000;
@@ -8609,18 +8605,61 @@ function phrase(tpl, vars){
     updateCountdownHud();
     clearInterval(countdownInterval);
     countdownInterval = setInterval(function(){
+      if(countdownPaused) return;     // fenêtre « Arrêter le chrono ? » ouverte : le temps ne s'écoule pas
       var remain = Math.max(0, countdownEndAt - Date.now());
       updateCountdownHud(remain);
       if(remain<=0) endCountdown();
     }, 250);
     nextPracticeQuestion();
   }
-  // Quitter le défi en cours (bouton 🏠) : on abandonne sans résultat ni
-  // étoiles, et on revient au mode Aléatoire, interface complète.
+  // Quitter le défi en cours (bouton 🏠) : on demande l'accord de l'enfant (le chrono est en pause pendant la
+  // question). S'il a DÉJÀ atteint l'objectif du défi, il l'obtient : la manche se termine comme à la fin du temps
+  // (étoiles, défi, personnages). Sinon il abandonne sans résultat ni étoiles et revient au mode Aléatoire.
+  var countdownPaused = false, pausedRemain = 0, pausedAutoNext = false;
+  function countdownTarget(){
+    var d = TIMED_DURATIONS.indexOf(countdownSeconds);
+    return d === -1 ? 0 : TIMED_TARGETS[countdownLevel][d];
+  }
+  function resumeCountdown(){
+    if(!countdownPaused) return;
+    countdownPaused = false;
+    countdownEndAt = Date.now() + pausedRemain;
+    if(pausedAutoNext && countdownRunning){
+      countdownAutoNext = setTimeout(function(){ if(countdownRunning) nextPracticeQuestion(); }, COUNTDOWN_AUTO_NEXT_MS);
+    }
+  }
   function quitCountdown(){
-    if(!countdownRunning) return;
-    var firstBtn = document.querySelector('#practice-mode .level-btn');
-    if(firstBtn) firstBtn.click(); // = repasser sur "Aléatoire" (arrête le chrono et réaffiche l'interface)
+    if(!countdownRunning || countdownPaused) return;
+    countdownPaused = true;
+    pausedRemain = Math.max(0, countdownEndAt - Date.now());
+    pausedAutoNext = countdownAutoNext !== null;
+    clearTimeout(countdownAutoNext); countdownAutoNext = null;
+    var target = countdownTarget(), reached = target > 0 && countdownScore.correct >= target;
+    openInfoDialog('Arrêter le chrono ?', function(body){
+      var p = document.createElement('p');
+      p.textContent = 'Tu as ' + countdownScore.correct + ' bonne(s) réponse(s) sur ' + countdownScore.total + '. ' +
+        (reached ? '🎉 Tu as déjà atteint l\'objectif du défi : si tu arrêtes maintenant, tu l\'obtiens !'
+          : (target > 0 ? 'Il te manque ' + (target - countdownScore.correct) + ' bonne(s) réponse(s) pour réussir le défi. Si tu arrêtes maintenant, tu ne gagnes rien.' : 'Si tu arrêtes maintenant, tu ne gagnes rien.'));
+      body.appendChild(p);
+      var row = document.createElement('div');
+      row.className = 'btn-row'; row.style.justifyContent = 'center';
+      var go = document.createElement('button');
+      go.type = 'button'; go.className = 'btn primary'; go.textContent = '▶️ Continuer';
+      go.addEventListener('click', closeInfoDialog);   // la fermeture relance le chrono
+      var stop = document.createElement('button');
+      stop.type = 'button'; stop.className = 'btn ghost'; stop.id = 'countdown-quit-confirm';
+      stop.textContent = reached ? '🏁 Arrêter et prendre mon défi' : '↩️ Arrêter';
+      stop.addEventListener('click', function(){
+        infoOnClose = null;               // pas de reprise du chrono
+        closeInfoDialog();
+        countdownPaused = false;
+        if(reached){ endCountdown(); return; }
+        var firstBtn = document.querySelector('#practice-mode .level-btn');
+        if(firstBtn) firstBtn.click();    // = repasser sur « Aléatoire » (arrête le chrono et réaffiche l'interface)
+      });
+      row.appendChild(go); row.appendChild(stop);
+      body.appendChild(row);
+    }, resumeCountdown);
   }
   function endCountdown(){
     countdownRunning = false;
@@ -9351,8 +9390,9 @@ function phrase(tpl, vars){
 
   /* ---- Fenêtre d'information (accessible : rôle dialog, focus rendu à la
      fermeture, Échap pour fermer) ---- */
-  var infoReturnFocus = null;
-  function openInfoDialog(title, buildBody){
+  var infoReturnFocus = null, infoOnClose = null;
+  function openInfoDialog(title, buildBody, onClose){
+    infoOnClose = onClose || null;   // appelée quand la fenêtre se ferme (bouton ✕, Échap, clic à côté) ; la vider avant de fermer pour l'éviter
     var overlay = document.getElementById('info-overlay');
     document.getElementById('info-title').textContent = title;
     var body = document.getElementById('info-body');
@@ -9363,7 +9403,9 @@ function phrase(tpl, vars){
     document.getElementById('info-close').focus();
   }
   function closeInfoDialog(){
+    var cb = infoOnClose; infoOnClose = null;
     document.getElementById('info-overlay').hidden = true;
+    if(cb) cb();
     if(infoReturnFocus && infoReturnFocus.focus){ try{ infoReturnFocus.focus(); }catch(e){} }
     infoReturnFocus = null;
   }
@@ -11228,10 +11270,12 @@ function phrase(tpl, vars){
      réponses) + 1 si la toute dernière était fausse (« raté ») + 1 si moins de 5 réponses (« peu fait »).
      Une activité toujours réussie et bien pratiquée garde un poids faible (0,25), pour ne pas tourner en rond.
      - Révision : toutes les questions sont tirées ainsi (progReviewPick, voir plus bas) ;
-     - Aléatoire : 25 % des questions vont à une activité à travailler (nouvelle, peu faite ou ratée), le reste
-       suit le tirage habituel sans remise (progNudgePick ; à partir de 20 réponses à ce niveau) ;
+     - Aléatoire : environ 15 % des questions vont à une activité à travailler (nouvelle, peu faite ou ratée), le reste
+       suit le tirage habituel sans remise, égal entre TOUTES les activités (progNudgePick ; à partir de 20 réponses à ce niveau ;
+       jamais deux de suite rapprochées (4 questions d'écart), pas juste après une faute, pas la même activité dans les 8 dernières) ;
      - séries sans faute : les 3 questions avant un palier vont aux activités les moins réussies (progWeakPick). */
-  var REVIEW_RECENT = 10, REVIEW_NEW_WEIGHT = 3, PROG_FEW = 5, NUDGE_SHARE = 0.25;
+  var REVIEW_RECENT = 10, REVIEW_NEW_WEIGHT = 3, PROG_FEW = 5, NUDGE_SHARE = 0.15, NUDGE_GAP = 4, NUDGE_MEMORY = 8;
+  var nudgeSince = 99, nudgeRecent = [];   // questions depuis la dernière priorité ; activités récemment mises en avant
   var reviewLast = null;
   function progReviewUnits(){
     var units = [];
@@ -11261,16 +11305,24 @@ function phrase(tpl, vars){
     for(var i=0;i<list.length;i++){ x -= list[i].w; if(x <= 0) return list[i]; }
     return list[list.length-1];
   }
-  // Mode Aléatoire : une question sur quatre environ va à une activité à travailler ; null = tirage habituel.
+  // Mode Aléatoire : environ une question sur sept va à une activité à travailler ; null = tirage habituel.
   function progNudgePick(){
+    nudgeSince++;
+    if(nudgeSince <= NUDGE_GAP) return null;                      // jamais deux « priorités » rapprochées
+    var mine = (progEvents || []).filter(function(e){ return e[4] === globalLevel; });
+    if(mine.length < 20) return null;                             // débutant : le tirage habituel fait déjà tout découvrir
+    if(mine.length && !mine[mine.length-1][5]) return null;       // elle vient de rater : on lui laisse souffler, pas de question difficile en plus
     if(rnd() >= NUDGE_SHARE) return null;
-    if((progEvents || []).filter(function(e){ return e[4] === globalLevel; }).length < 20) return null;   // débutant : le tirage habituel fait déjà tout découvrir
     var units = progReviewUnits().map(function(u){ var r = progReviewWeight(u); u.w = r.w; u.why = r.why; return u; })
       .filter(function(u){ return !!u.why; });
+    var rested = units.filter(function(u){ return nudgeRecent.indexOf(u.id) === -1; });   // pas la même activité en boucle (si d'autres sont à travailler)
+    if(rested.length) units = rested;
     var other = units.filter(function(u){ return u.key !== lastFamily; });
     if(other.length) units = other;
     if(!units.length) return null;
     var u = weightedPick(units);
+    nudgeSince = 0;
+    nudgeRecent.push(u.id); if(nudgeRecent.length > NUDGE_MEMORY) nudgeRecent.shift();
     return { key:u.key, type:u.type, why:u.why };
   }
   // Révision, en deux étages, guidés par les ACTIVITÉS :
@@ -11371,7 +11423,7 @@ function phrase(tpl, vars){
     if(fewActs.length) ul2.appendChild(progMk('li', '', '🌱 Peu pratiquées en ' + ['Facile','Moyen','Difficile'][globalLevel] + ' (moins de ' + PROG_FEW + ' réponses) : ' + fewActs.length + ' activité' + (fewActs.length>1?'s':'') + ' — ' +
       fewActs.slice(0, 6).map(function(u){ return progActivityLabel([0,0,u.key,u.type||'']); }).join(', ') + (fewActs.length > 6 ? '…' : '')));
     body.appendChild(ul2);
-    body.appendChild(progMk('p', 'muted settings-hint', '🎲 En mode Aléatoire, environ une question sur quatre va à une activité nouvelle, peu pratiquée ou ratée ; le mode Révision ne pose que celles-là en priorité.'));
+    body.appendChild(progMk('p', 'muted settings-hint', '🎲 En mode Aléatoire, environ une question sur sept va à une activité nouvelle, peu pratiquée ou ratée ; le mode Révision ne pose que celles-là en priorité.'));
     body.appendChild(progMk('p', 'muted settings-hint', '🎯 Dans les séries sans faute (paliers 20, 25 et 30), les 3 questions avant un palier sont posées sur les activités les moins réussies (il faut au moins 20 réponses enregistrées).'));
     var unknown = stats.filter(function(st){ return st.rateRecent===null; });
     if(unknown.length) body.appendChild(progMk('p', 'muted settings-hint', 'Pas encore assez de réponses (moins de ' + PROG_MIN_RECENT + ') : ' + unknown.map(function(st){ return st.skill.short; }).join(', ') + '.'));

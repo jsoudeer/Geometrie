@@ -576,8 +576,9 @@
 
   /* ---- Fenêtre d'information (accessible : rôle dialog, focus rendu à la
      fermeture, Échap pour fermer) ---- */
-  var infoReturnFocus = null;
-  function openInfoDialog(title, buildBody){
+  var infoReturnFocus = null, infoOnClose = null;
+  function openInfoDialog(title, buildBody, onClose){
+    infoOnClose = onClose || null;   // appelée quand la fenêtre se ferme (bouton ✕, Échap, clic à côté) ; la vider avant de fermer pour l'éviter
     var overlay = document.getElementById('info-overlay');
     document.getElementById('info-title').textContent = title;
     var body = document.getElementById('info-body');
@@ -588,7 +589,9 @@
     document.getElementById('info-close').focus();
   }
   function closeInfoDialog(){
+    var cb = infoOnClose; infoOnClose = null;
     document.getElementById('info-overlay').hidden = true;
+    if(cb) cb();
     if(infoReturnFocus && infoReturnFocus.focus){ try{ infoReturnFocus.focus(); }catch(e){} }
     infoReturnFocus = null;
   }

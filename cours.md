@@ -22,6 +22,10 @@ Au lancement : une carte « 🎓 Maths · CE1 » avec le duo Kawaii VS Brainrot 
 
 En chronométré, à la fin : +1 ⭐ pour 2 bonnes réponses (au moins 1 ⭐).
 
+**Arrêter un chrono avant la fin** (bouton du menu) : l'appli demande d'abord l'accord de l'enfant, et le temps est **en pause** pendant la question. S'il a déjà atteint l'objectif du défi, il **l'obtient** (étoiles, défi et personnages, comme à la fin du temps) ; sinon il abandonne sans rien gagner, et un message lui dit combien de bonnes réponses il manquait.
+
+**Répartition des questions** : en Aléatoire comme en Chronométré, chaque **activité** sort la même fois que les autres (un tour complet avant qu'aucune ne revienne), quel que soit l'écran qui la porte : le Quizz compte autant d'activités que de types de quiz.
+
 **« Nouvelle activité » (passer une question)** : le bouton ne s'active que **5 secondes** après l'arrivée de la question (un petit compte à rebours s'affiche) ; **3 questions passées d'affilée** sans répondre font repartir la **série sans faute** à zéro (un avertissement prévient à la 2e) ; en **Chronométré**, chaque question passée **coûte 5 secondes** au chrono. Passer une question déjà ratée une fois reste une erreur, comme avant. Après une réponse, la question suivante arrive toute seule au bout de **5 secondes** ; on peut aussi toucher le commentaire (ou « Nouvelle activité ») pour passer tout de suite : le passage automatique est alors annulé.
 
 ---
@@ -264,7 +268,7 @@ Chaque personnage possédé peut **évoluer deux fois** (bouton « ⬆ Évolué 
 ## Répartition des questions (tirage sans remise)
 **Priorité activité par activité** : pour chaque activité (une famille, ou une sorte de question du quiz) au niveau en cours, le jeu regarde ses 10 dernières réponses. Une activité **ratée** pèse lourd, une activité **jamais faite** ou **peu pratiquée** (moins de 5 réponses) aussi, une activité toujours réussie très peu (mais elle reste possible).
 - **Révision** : toutes les questions sont choisies ainsi (9 fois sur 10 parmi les activités à travailler) ; une seule sorte de quiz ratée suffit à faire revenir le quiz. Jamais deux fois de suite le même écran. La révision ne compte ni pour la série sans faute ni pour la montée de niveau automatique.
-- **Aléatoire** : à partir de 20 réponses au niveau en cours, environ **une question sur quatre** va à une activité à travailler (étiquette « 🔁 à revoir », « 🌱 peu pratiqué » ou « ✨ pas encore fait ») ; les autres suivent le tirage habituel. Pas en Chronométré.
+- **Aléatoire** : à partir de 20 réponses au niveau en cours, environ **une question sur sept** va à une activité à travailler (jamais deux rapprochées, jamais juste après une faute) (étiquette « 🔁 à revoir », « 🌱 peu pratiqué » ou « ✨ pas encore fait ») ; les autres sont tirées **à égalité entre toutes les activités**. Pas en Chronométré.
 - **Séries sans faute** : les 3 questions avant un palier vont aux **activités** les moins réussies (et non plus aux grands thèmes).
 - **Progression de l'enfant** : la synthèse liste les **activités à travailler** (sous 90 % sur leurs 20 dernières réponses) et celles **peu pratiquées** au niveau en cours.
 
